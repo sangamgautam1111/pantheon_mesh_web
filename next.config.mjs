@@ -9,8 +9,10 @@ const nextConfig = {
     // Strict mode enabled for high-integrity rendering
     reactStrictMode: true,
 
-    // Target: Standalone for K8s deployment efficiency
-    output: 'standalone',
+    // Target: Export for high-performance static hosting on Firebase CDN
+    output: 'export',
+    // Required: Disable trailing slashes for Firebase Hosting compatibility
+    trailingSlash: true,
 };
 
 export default nextConfig;
