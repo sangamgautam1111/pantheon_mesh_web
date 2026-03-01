@@ -1,0 +1,349 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ════════════════════════════════════════════════
+   DARK THEME — Deep professional. Not gray, not child-like.
+   Inspired by GCP Console dark + GitHub Dark Dimmed
+   ════════════════════════════════════════════════ */
+:root {
+    /* Backgrounds — true dark, not washed gray */
+    --bg-primary: #0f1114;
+    --bg-surface: #161a1e;
+    --bg-surface-variant: #1c2128;
+    --bg-hover: #21262d;
+    --bg-active: #1a2332;
+
+    /* Top bar & sidebar */
+    --topbar-bg: #0d1117;
+    --sidebar-bg: #0d1117;
+    --sidebar-hover: #161b22;
+    --sidebar-active: rgba(66, 133, 244, 0.12);
+
+    /* Borders — subtle, not distracting */
+    --border-color: #21262d;
+    --border-subtle: #30363d;
+
+    /* Text hierarchy */
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-disabled: #484f58;
+    --text-link: #58a6ff;
+
+    /* GCP Accent Colors — vibrant on dark */
+    --gcp-blue: #4285f4;
+    --gcp-blue-hover: #5a95f5;
+    --gcp-green: #34a853;
+    --gcp-green-dark: #2ea44f;
+    --gcp-yellow: #fbbc04;
+    --gcp-yellow-dark: #f0b400;
+    --gcp-red: #ea4335;
+    --gcp-red-dark: #d93025;
+    --gcp-cyan: #24c1e0;
+
+    /* Cards */
+    --card-bg: #161a1e;
+    --card-border: #21262d;
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+
+    /* Buttons */
+    --btn-primary-bg: #4285f4;
+    --btn-primary-text: #ffffff;
+    --btn-primary-hover: #5a95f5;
+    --btn-secondary-bg: #21262d;
+    --btn-secondary-text: #c9d1d9;
+
+    /* Inputs */
+    --input-bg: #0d1117;
+    --input-border: #30363d;
+    --input-focus: #4285f4;
+
+    /* Overlay */
+    --overlay-bg: rgba(1, 4, 9, 0.7);
+
+    /* Scrollbar */
+    --scrollbar-track: #0d1117;
+    --scrollbar-thumb: #30363d;
+}
+
+/* ════════════════════════════════════════════════
+   LIGHT THEME — Google Cloud Console official feel
+   Clean white cards on light gray background
+   ════════════════════════════════════════════════ */
+[data-theme="light"] {
+    --bg-primary: #ffffff;
+    --bg-surface: #ffffff;
+    --bg-surface-variant: #f8f9fa;
+    --bg-hover: #f1f3f4;
+    --bg-active: #e8f0fe;
+
+    --topbar-bg: #ffffff;
+    --sidebar-bg: #ffffff;
+    --sidebar-hover: #f1f3f4;
+    --sidebar-active: rgba(66, 133, 244, 0.08);
+
+    --border-color: #dadce0;
+    --border-subtle: #e8eaed;
+
+    --text-primary: #202124;
+    --text-secondary: #5f6368;
+    --text-disabled: #9aa0a6;
+    --text-link: #1a73e8;
+
+    --gcp-blue: #1a73e8;
+    --gcp-blue-hover: #1967d2;
+    --gcp-green: #188038;
+    --gcp-green-dark: #137333;
+    --gcp-yellow: #f9ab00;
+    --gcp-yellow-dark: #e37400;
+    --gcp-red: #d93025;
+    --gcp-red-dark: #c5221f;
+    --gcp-cyan: #12b5cb;
+
+    --card-bg: #ffffff;
+    --card-border: #dadce0;
+    --card-shadow: 0 1px 2px rgba(60, 64, 67, 0.1), 0 1px 3px rgba(60, 64, 67, 0.08);
+
+    --btn-primary-bg: #1a73e8;
+    --btn-primary-text: #ffffff;
+    --btn-primary-hover: #1967d2;
+    --btn-secondary-bg: #ffffff;
+    --btn-secondary-text: #3c4043;
+
+    --input-bg: #ffffff;
+    --input-border: #dadce0;
+    --input-focus: #1a73e8;
+
+    --overlay-bg: rgba(32, 33, 36, 0.5);
+
+    --scrollbar-track: #f1f3f4;
+    --scrollbar-thumb: #dadce0;
+}
+
+/* ════════════════════════════════════════════════
+   BASE + TYPOGRAPHY
+   ════════════════════════════════════════════════ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+    font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.font-heading { font-family: 'Google Sans', sans-serif; }
+.font-mono { font-family: 'Google Sans Mono', 'JetBrains Mono', monospace; }
+
+/* ════════════════════════════════════════════════
+   SCROLLBAR
+   ════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-disabled); }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ════════════════════════════════════════════════
+   GCP COMPONENTS
+   ════════════════════════════════════════════════ */
+.gcp-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.gcp-card:hover {
+    border-color: var(--gcp-blue);
+    box-shadow: var(--card-shadow), 0 0 0 1px var(--gcp-blue);
+}
+
+.gcp-card-hover {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+    cursor: pointer;
+}
+.gcp-card-hover:hover {
+    border-color: var(--gcp-blue);
+    box-shadow: var(--card-shadow), 0 0 0 1px var(--gcp-blue);
+    transform: translateY(-1px);
+}
+
+.gcp-btn-primary {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    padding: 8px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s;
+}
+.gcp-btn-primary:hover { background: var(--btn-primary-hover); box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.gcp-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.gcp-btn-text {
+    background: transparent;
+    color: var(--gcp-blue);
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.gcp-btn-text:hover { background: var(--sidebar-active); }
+
+.gcp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.gcp-input {
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.gcp-input:focus {
+    border-color: var(--input-focus);
+    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+.gcp-input::placeholder { color: var(--text-disabled); }
+
+/* ════════════════════════════════════════════════
+   TAILWIND SEMANTIC COLORS (mapped to variables)
+   ════════════════════════════════════════════════ */
+@layer base {
+    .text-gcp-text { color: var(--text-primary); }
+    .text-gcp-text-secondary { color: var(--text-secondary); }
+    .text-gcp-text-disabled { color: var(--text-disabled); }
+    .text-gcp-blue { color: var(--gcp-blue); }
+    .text-gcp-green { color: var(--gcp-green); }
+    .text-gcp-green-dark { color: var(--gcp-green-dark); }
+    .text-gcp-yellow-dark { color: var(--gcp-yellow-dark); }
+    .text-gcp-red { color: var(--gcp-red); }
+    .text-gcp-red-dark { color: var(--gcp-red-dark); }
+    .text-gcp-cyan { color: var(--gcp-cyan); }
+
+    .bg-gcp-surface { background: var(--bg-surface); }
+    .bg-gcp-surface-v { background: var(--bg-surface-variant); }
+    .border-gcp-border { border-color: var(--border-color); }
+    .bg-sidebar-hover { background: var(--sidebar-hover); }
+    .bg-sidebar-active { background: var(--sidebar-active); }
+}
+
+/* ════════════════════════════════════════════════
+   GUIDE OVERLAY ANIMATIONS
+   ════════════════════════════════════════════════ */
+.guide-ring { animation: guide-pulse 1.5s ease-in-out infinite; }
+.guide-arrow { animation: guide-bounce 1s ease-in-out infinite; }
+
+@keyframes guide-pulse {
+    0%, 100% { box-shadow: 0 0 0 9999px var(--overlay-bg), 0 0 0 3px var(--gcp-blue); }
+    50% { box-shadow: 0 0 0 9999px var(--overlay-bg), 0 0 12px 4px var(--gcp-blue); }
+}
+@keyframes guide-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+/* ════════════════════════════════════════════════
+   AUTH FORM UTILITIES
+   ════════════════════════════════════════════════ */
+.gcp-input {
+    background: var(--bg-surface-variant);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: var(--text-primary);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    font-family: inherit;
+}
+.gcp-input:focus {
+    border-color: var(--gcp-blue);
+    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.15);
+}
+.gcp-input::placeholder {
+    color: var(--text-disabled);
+}
+
+.gcp-btn-primary {
+    background: var(--gcp-blue);
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+.gcp-btn-primary:hover { background: var(--gcp-blue-hover); }
+.gcp-btn-primary:active { transform: scale(0.97); }
+
+.gcp-btn-text {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    color: var(--text-secondary);
+}
+.gcp-btn-text:hover { background: var(--bg-hover); }
+
+/* Common color utilities */
+.text-gcp-text { color: var(--text-primary); }
+.text-gcp-text-secondary { color: var(--text-secondary); }
+.text-gcp-blue { color: var(--gcp-blue); }
+.text-gcp-green { color: var(--gcp-green); }
+.text-gcp-yellow { color: var(--gcp-yellow); }
+.text-gcp-red { color: var(--gcp-red); }
+.text-gcp-cyan { color: var(--gcp-cyan); }
+.bg-gcp-blue { background: var(--gcp-blue); }
+.bg-gcp-green { background: var(--gcp-green); }
+
+/* ════════════════════════════════════════════════
+   RESPONSIVE — Mobile-first breakpoints
+   ════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .desktop-only { display: none !important; }
+    .mobile-sidebar-overlay {
+        position: fixed; inset: 0; z-index: 45;
+        background: var(--overlay-bg);
+    }
+}
+@media (min-width: 769px) {
+    .mobile-only { display: none !important; }
+}
