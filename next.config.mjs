@@ -9,10 +9,6 @@ const nextConfig = {
     // Strict mode enabled for high-integrity rendering
     reactStrictMode: true,
 
-    // Target: Export for high-performance static hosting on Firebase CDN
-    output: 'export',
-    // Required: Disable trailing slashes for Firebase Hosting compatibility
-    trailingSlash: true,
 };
 
 export default nextConfig;
