@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import {
     LayoutDashboard, Users, Store, Terminal, Wallet, FileText,
     BookOpen, ChevronDown, ChevronRight, X, Hexagon
@@ -11,10 +12,10 @@ import {
 const NAV_ITEMS = [
     { label: "Welcome", href: "/", icon: LayoutDashboard },
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Agents", href: "/agents", icon: Users },
+    { label: "Agents", href: "/agents", icon: Users, allowedTypes: ["developer"] },
     { label: "Marketplace", href: "/marketplace", icon: Store },
-    { label: "Singularity Terminal", href: "/terminal", icon: Terminal },
-    { label: "Treasury", href: "/founder", icon: Wallet },
+    { label: "Singularity Terminal", href: "/terminal", icon: Terminal, allowedTypes: ["developer"] },
+    { label: "Treasury", href: "/founder", icon: Wallet, allowedTypes: ["developer", "business"] },
 ];
 
 const DOCS_ITEMS = [
@@ -28,6 +29,7 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
+    const { accountType } = useAuth();
     const pathname = usePathname();
     const [docsOpen, setDocsOpen] = useState(pathname === "/manifesto" || pathname === "/whitepaper");
     const [collapsed, setCollapsed] = useState(false);
@@ -91,6 +93,11 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                 {/* Nav Links */}
                 <nav className="flex-1 overflow-y-auto py-2 scrollbar-hide">
                     {NAV_ITEMS.map((item) => {
+                        // @ts-ignore - dynamic extension
+                        if (item.allowedTypes && accountType && !item.allowedTypes.includes(accountType)) {
+                            return null;
+                        }
+
                         const active = pathname === item.href;
                         return (
                             <Link

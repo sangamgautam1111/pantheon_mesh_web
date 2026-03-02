@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Terminal as TerminalIcon, ShieldCheck, ChevronRight, Loader2, Sparkles, X } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const KERNEL_HOST = process.env.NEXT_PUBLIC_KERNEL_HOST || "localhost";
 const KERNEL_PORT = process.env.NEXT_PUBLIC_KERNEL_PORT || "9090";
@@ -14,6 +15,7 @@ interface LogEntry {
 }
 
 export const SingularityTerminal = () => {
+    const { accountType } = useAuth();
     const [logs, setLogs] = useState<LogEntry[]>([
         { type: "system", content: "ANTP KERNEL INITIALIZED", timestamp: new Date().toLocaleTimeString() },
         { type: "system", content: "CYBERSHIELD: EIP-191 SIGNATURE LAYER ACTIVE", timestamp: new Date().toLocaleTimeString() },
@@ -22,6 +24,9 @@ export const SingularityTerminal = () => {
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [kernelConnected, setKernelConnected] = useState(false);
+    const [history, setHistory] = useState<string[]>([]);
+    const [historyIdx, setHistoryIdx] = useState(-1);
+
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -53,6 +58,27 @@ export const SingularityTerminal = () => {
         } catch {
             setKernelConnected(false);
             addLog("system", "KERNEL BRIDGE: SIMULATION MODE (kernel offline)");
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "ArrowUp") {
+            e.preventDefault();
+            if (history.length > 0 && historyIdx < history.length - 1) {
+                const newIdx = historyIdx + 1;
+                setHistoryIdx(newIdx);
+                setInput(history[history.length - 1 - newIdx]);
+            }
+        } else if (e.key === "ArrowDown") {
+            e.preventDefault();
+            if (historyIdx > 0) {
+                const newIdx = historyIdx - 1;
+                setHistoryIdx(newIdx);
+                setInput(history[history.length - 1 - newIdx]);
+            } else if (historyIdx === 0) {
+                setHistoryIdx(-1);
+                setInput("");
+            }
         }
     };
 
@@ -147,6 +173,8 @@ export const SingularityTerminal = () => {
         if (!cmd) return;
 
         addLog("input", cmd);
+        setHistory(prev => [cmd, ...prev.filter(c => c !== cmd)].slice(0, 50));
+        setHistoryIdx(-1);
         setInput("");
         setLoading(true);
 
@@ -173,34 +201,41 @@ export const SingularityTerminal = () => {
     };
 
     return (
-        <div className="flex flex-col h-[600px] w-full rounded-lg overflow-hidden shadow-2xl border border-[#30363d] font-mono text-sm"
-            style={{ background: "#0d1117" }}>
+        <div className="flex flex-col h-[650px] w-full rounded-lg overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-[#30363d] font-mono text-sm relative"
+            style={{ background: "#000000" }}>
 
-            <div className="flex items-center justify-between px-4 py-2 bg-[#161b22] border-b border-[#30363d]">
+            {/* CRT Scanline Effect */}
+            <div className="absolute inset-0 pointer-events-none z-10 opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+
+            <div className="flex items-center justify-between px-4 py-2 bg-[#0a0c0f] border-b border-[#30363d] z-20">
                 <div className="flex items-center gap-2">
-                    <TerminalIcon size={14} className="text-[#8b949e]" />
-                    <span className="text-xs text-[#8b949e] font-bold tracking-tight">AXIOM_SHELL</span>
-                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold tracking-tighter ${kernelConnected ? "bg-[#81c995]/20 text-[#81c995]" : "bg-[#fde293]/20 text-[#fde293]"}`}>
-                        {kernelConnected ? "KERNEL LIVE" : "SIMULATION"}
-                    </span>
+                    <TerminalIcon size={14} className="text-[#gcp-blue]" />
+                    <span className="text-[11px] text-[#8b949e] font-bold tracking-widest uppercase">AXIOM_SHELL_V1.0</span>
+                    <div className="flex items-center gap-1.5 ml-4">
+                        <span className={`w-1.5 h-1.5 rounded-full ${kernelConnected ? "bg-[#34a853]" : "bg-[#fbbc04]"} animate-pulse`} />
+                        <span className="text-[9px] font-bold tracking-tighter opacity-80" style={{ color: kernelConnected ? "#34a853" : "#fbbc04" }}>
+                            {kernelConnected ? "KERNELBRIDGE_ACTIVE" : "SIMULATION_MODE"}
+                        </span>
+                    </div>
                 </div>
-                <div className="flex gap-1.5">
-                    <div className="w-3 h-3 rounded-full bg-[#f28b82] opacity-30" />
-                    <div className="w-3 h-3 rounded-full bg-[#fde293] opacity-30" />
-                    <div className="w-3 h-3 rounded-full bg-[#81c995] opacity-30" />
+                <div className="flex gap-2">
+                    <button onClick={() => setLogs([])} className="p-1 hover:bg-[#1c2128] rounded text-[#484f58] transition-colors"><X size={14} /></button>
                 </div>
             </div>
 
-            <div ref={scrollRef} className="flex-1 p-4 overflow-y-auto space-y-2 custom-scrollbar">
+            <div ref={scrollRef} className="flex-1 p-6 overflow-y-auto space-y-3 custom-scrollbar z-0 relative">
+                {/* Glow Overlay */}
+                <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_0%,rgba(66,133,244,0.05)_0%,transparent_70%)]" />
+
                 {logs.map((log, i) => (
-                    <div key={i} className="flex flex-col">
-                        <div className="flex items-start gap-2">
-                            <span className="text-[#484f58] shrink-0">[{log.timestamp}]</span>
-                            {log.type === "input" && <span className="text-[#81c995] italic">user@axiom:~$</span>}
-                            <div className={`whitespace-pre-wrap break-all ${log.type === "input" ? "text-[#e6edf3]" :
-                                log.type === "error" ? "text-[#f28b82]" :
-                                    log.type === "system" ? "text-[#8ab4f8]" :
-                                        "text-[#c9d1d9]"
+                    <div key={i} className="flex flex-col animate-in fade-in slide-in-from-left-2 duration-300">
+                        <div className="flex items-start gap-3">
+                            <span className="text-[#484f58] shrink-0 text-[10px] mt-0.5">[{log.timestamp}]</span>
+                            {log.type === "input" && <span className="text-[#4285f4] font-bold">▶</span>}
+                            <div className={`whitespace-pre-wrap break-all leading-relaxed ${log.type === "input" ? "text-[#ffffff] font-medium" :
+                                log.type === "error" ? "text-[#ea4335]" :
+                                    log.type === "system" ? "text-[#24c1e0] opacity-80" :
+                                        "text-[#e6edf3]"
                                 }`}>
                                 {log.content}
                             </div>
@@ -208,42 +243,46 @@ export const SingularityTerminal = () => {
                     </div>
                 ))}
                 {loading && (
-                    <div className="flex items-center gap-2 text-[#8ab4f8] animate-pulse">
-                        <Loader2 size={14} className="animate-spin" />
-                        <span>RESOLVING MESH QUORUM...</span>
+                    <div className="flex items-center gap-3 text-[#24c1e0] animate-pulse">
+                        <Loader2 size={16} className="animate-spin" />
+                        <span className="text-xs font-bold tracking-[0.2em]">MESH_NEGOTIATING_QUORUM...</span>
                     </div>
                 )}
             </div>
 
-            <form onSubmit={handleCommand} className="flex items-center gap-2 p-4 bg-[#0d1117] border-t border-[#30363d]">
-                <span className="text-[#81c995] font-bold">user@axiom:~$</span>
+            <form onSubmit={handleCommand} className="flex items-center gap-3 p-5 bg-[#050505] border-t border-[#1c2128] z-20">
+                <span className="text-[#4285f4] font-black drop-shadow-[0_0_8px_rgba(66,133,244,0.4)]">ANTP://{accountType || "GUEST"}#</span>
                 <input
                     ref={inputRef}
                     autoFocus
                     type="text"
                     value={input}
                     onChange={e => setInput(e.target.value)}
-                    className="flex-1 bg-transparent border-none outline-none text-[#e6edf3] placeholder:text-[#484f58]"
-                    placeholder="Type a command or an intent..."
+                    onKeyDown={handleKeyDown}
+                    className="flex-1 bg-transparent border-none outline-none text-[#ffffff] placeholder:text-[#30363d] font-bold"
+                    placeholder="ENTER_INTENT_COMMAND"
                 />
-                <button type="submit" disabled={loading} className="text-[#81c995] hover:text-[#aff5b4] transition-colors disabled:opacity-30">
-                    <ChevronRight size={20} />
-                </button>
+                <div className="flex items-center gap-2">
+                    <div className="text-[10px] text-[#484f58] mr-2 hidden md:block">SHIFT + ENTER FOR MULTI-LINE</div>
+                    <button type="submit" disabled={loading} className="p-1.5 rounded bg-[#4285f4]/10 text-[#4285f4] hover:bg-[#4285f4]/20 transition-all disabled:opacity-20 border border-[#4285f4]/30">
+                        <ChevronRight size={18} />
+                    </button>
+                </div>
             </form>
 
             <style jsx>{`
                 .custom-scrollbar::-webkit-scrollbar {
-                    width: 8px;
+                    width: 4px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-track {
                     background: transparent;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: #30363d;
-                    border-radius: 4px;
+                    background: #1c2128;
+                    border-radius: 2px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: #484f58;
+                    background: #30363d;
                 }
             `}</style>
         </div>

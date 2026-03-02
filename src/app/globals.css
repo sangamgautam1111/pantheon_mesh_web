@@ -16,11 +16,11 @@
     --bg-hover: #21262d;
     --bg-active: #1a2332;
 
-    /* Top bar & sidebar */
-    --topbar-bg: #0d1117;
-    --sidebar-bg: #0d1117;
-    --sidebar-hover: #161b22;
-    --sidebar-active: rgba(66, 133, 244, 0.12);
+    /* Top bar & sidebar — True Black for premium console feel */
+    --topbar-bg: #000000;
+    --sidebar-bg: #000000;
+    --sidebar-hover: #0a0c0f;
+    --sidebar-active: rgba(66, 133, 244, 0.1);
 
     /* Borders — subtle, not distracting */
     --border-color: #21262d;
