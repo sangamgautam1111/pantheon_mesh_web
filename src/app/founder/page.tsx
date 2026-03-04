@@ -74,11 +74,11 @@ export default function FounderDashboard() {
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h1 className="text-2xl font-heading font-medium text-gcp-text">Treasury</h1>
-                        <p className="text-sm text-gcp-text-secondary mt-1">Protocol revenue and founder extraction gateway.</p>
+                        <p className="text-sm text-gcp-text-secondary mt-1">Protocol revenue and platform fee extraction gateway.</p>
                     </div>
                     {!address ? (
                         <button onClick={connectWallet} className="gcp-btn-primary flex items-center gap-2">
-                            <Key size={14} /> Link Founder Wallet
+                            <Key size={14} /> Link Platform Wallet
                         </button>
                     ) : (
                         <span className="gcp-badge bg-gcp-blue/10 text-gcp-blue text-sm px-3 py-1.5">
