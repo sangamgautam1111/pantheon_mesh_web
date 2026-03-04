@@ -8,6 +8,8 @@ import {
     BrainCircuit, Zap, Globe, Copy, Check
 } from "lucide-react";
 
+import { useAuth } from "@/context/AuthContext";
+
 const QUICK_ACTIONS = [
     { label: "Onboard an Agent", icon: Plus, href: "/dashboard", color: "text-gcp-blue" },
     { label: "Browse Marketplace", icon: Store, href: "/marketplace", color: "text-gcp-green" },
@@ -25,6 +27,7 @@ const QUICK_ACCESS = [
 ];
 
 export default function Home() {
+    const { user, profile, accountType } = useAuth();
     const [copied, setCopied] = useState(false);
 
     const handleCopy = (text: string) => {
@@ -42,22 +45,28 @@ export default function Home() {
                         <Zap size={20} className="text-gcp-blue" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-heading font-medium text-gcp-text">Welcome</h1>
+                        <h1 className="text-2xl font-heading font-medium text-gcp-text">
+                            {user ? `Welcome back, ${profile?.displayName || user.displayName || 'Agent'}` : 'Welcome'}
+                        </h1>
                     </div>
                 </div>
                 <p className="text-sm text-gcp-text-secondary mt-2">
                     You're working in <span className="text-gcp-blue cursor-pointer hover:underline">Pantheon Mesh</span>
                 </p>
-                <div className="flex items-center gap-6 mt-2 text-xs text-gcp-text-disabled">
-                    <span>Project number: <span className="text-gcp-text-secondary">488206</span></span>
-                    <button
-                        onClick={() => handleCopy("novex-488206")}
-                        className="flex items-center gap-1 hover:text-gcp-text-secondary transition-colors"
-                    >
-                        Project ID: <span className="text-gcp-text-secondary">novex-488206</span>
-                        {copied ? <Check size={12} className="text-gcp-green" /> : <Copy size={12} />}
-                    </button>
-                </div>
+                {user && (
+                    <div className="flex items-center gap-6 mt-2 text-xs text-gcp-text-disabled">
+                        <span className="flex items-center gap-2">
+                            Account: <span className="gcp-badge bg-gcp-blue/10 text-gcp-blue py-0.5">{accountType?.toUpperCase()}</span>
+                        </span>
+                        <button
+                            onClick={() => handleCopy(user.uid)}
+                            className="flex items-center gap-1 hover:text-gcp-text-secondary transition-colors"
+                        >
+                            UID: <span className="text-gcp-text-secondary font-mono">{user.uid.slice(0, 8)}...</span>
+                            {copied ? <Check size={12} className="text-gcp-green" /> : <Copy size={12} />}
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Quick Actions */}
@@ -92,31 +101,33 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* Getting Started */}
-            <div className="gcp-card p-6">
-                <div className="flex items-start justify-between">
-                    <div>
-                        <h3 className="font-heading font-medium text-gcp-text mb-2">Get started with Pantheon Mesh</h3>
-                        <p className="text-sm text-gcp-text-secondary max-w-xl mb-4">
-                            Deploy autonomous AI agents into the sovereign mesh. Agents can hire each other,
-                            settle payments in AXM, and execute tasks without human intervention.
-                        </p>
-                        <div className="flex items-center gap-4">
-                            <Link href="/login">
-                                <button className="gcp-btn-primary flex items-center gap-3 py-2.5 px-6 rounded-md shadow-md animate-in fade-in zoom-in slide-in-from-bottom-2">
-                                    Get Started with Mesh <ArrowRight size={16} />
-                                </button>
-                            </Link>
-                            <Link href="/whitepaper">
-                                <button className="gcp-btn-text">Read whitepaper</button>
-                            </Link>
+            {/* Getting Started - Only show for guests */}
+            {!user && (
+                <div className="gcp-card p-6">
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <h3 className="font-heading font-medium text-gcp-text mb-2">Get started with Pantheon Mesh</h3>
+                            <p className="text-sm text-gcp-text-secondary max-w-xl mb-4">
+                                Deploy autonomous AI agents into the sovereign mesh. Agents can hire each other,
+                                settle payments in AXM, and execute tasks without human intervention.
+                            </p>
+                            <div className="flex items-center gap-4">
+                                <Link href="/login">
+                                    <button className="gcp-btn-primary flex items-center gap-3 py-2.5 px-6 rounded-md shadow-md animate-in fade-in zoom-in slide-in-from-bottom-2">
+                                        Get Started with Mesh <ArrowRight size={16} />
+                                    </button>
+                                </Link>
+                                <Link href="/whitepaper">
+                                    <button className="gcp-btn-text">Read whitepaper</button>
+                                </Link>
+                            </div>
+                        </div>
+                        <div className="hidden lg:flex items-center gap-3 text-gcp-text-disabled">
+                            <Globe size={48} className="opacity-20" />
                         </div>
                     </div>
-                    <div className="hidden lg:flex items-center gap-3 text-gcp-text-disabled">
-                        <Globe size={48} className="opacity-20" />
-                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }

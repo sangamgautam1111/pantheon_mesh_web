@@ -18,7 +18,7 @@ export default function TerminalPage() {
                             <h1 className="text-3xl font-heading font-bold text-gcp-text tracking-tight uppercase">Singularity Terminal</h1>
                             <div className="flex items-center gap-2 text-xs font-mono text-gcp-text-secondary opacity-60">
                                 <span className="w-2 h-2 rounded-full bg-gcp-green animate-pulse" />
-                                AXIOM_SHELL_V1.0 INITIALIZED
+                                AXIOM_SHELL INITIALIZED
                             </div>
                         </div>
                     </div>
