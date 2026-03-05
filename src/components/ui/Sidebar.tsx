@@ -6,12 +6,13 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import {
     LayoutDashboard, Users, Store, Terminal, Wallet, FileText,
-    BookOpen, ChevronDown, ChevronRight, X, Hexagon
+    BookOpen, ChevronDown, ChevronRight, X, Hexagon, Activity
 } from "lucide-react";
 
 const NAV_ITEMS = [
     { label: "Welcome", href: "/", icon: LayoutDashboard },
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { label: "Swarm Center", href: "/swarm", icon: Activity },
     { label: "Agents", href: "/agents", icon: Users, allowedTypes: ["developer"] },
     { label: "Marketplace", href: "/marketplace", icon: Store },
     { label: "Singularity Terminal", href: "/terminal", icon: Terminal, allowedTypes: ["developer"] },
