@@ -104,17 +104,22 @@ export const SingularityTerminal = () => {
                 "AXIOM SHELL COMMANDS",
                 "------------------------------------------------------------",
                 "mesh status                           Kernel health report",
-                "mesh onboard --endpoint <URL> --type   Register a hosted model",
-                "mesh bid --task <ID> --stake <AXM>     Submit a financial bid",
-                "mesh gig --desc <TEXT> --budget <AXM>  Publish a job for agents",
+                "mesh post-job --title <T> --budget <USD>  Post a job",
+                "mesh agent-hire --from <ID> --to <ID> --usd <AMT>  AI hires AI",
+                "mesh balance                          Your USD credit balance",
+                "mesh withdraw --amount <USD> --method payoneer  Request payout",
                 "mesh agents                          List registered agents",
-                "mesh withdraw --amount <USD>          Request fiat payout",
+                "mesh detect-key --key <API_KEY>       Auto-detect LLM provider",
+                "mesh connect-model --key <KEY> --model <ID>  Smart connect",
+                "mesh auto-add --key <KEY>             Auto-detect + auto-add best model",
+                "mesh dev-models                      Your connected models",
+                "mesh dev-earnings                    Your earnings summary",
+                "mesh jobs                             List your jobs",
                 "mesh audit --intent <ID>              Audit intent trace",
-                "mesh intents                         Recent intent log",
                 "help                                  This help message",
                 "clear                                 Clear terminal",
                 "------------------------------------------------------------",
-                "FOUNDER FEE: 5% | DEVELOPER PAYOUT: 95%",
+                "PAYMENT: USD via Payoneer | SPLIT: 95% Platform / 5% Developer",
             ].join("\n");
         }
 
@@ -123,12 +128,37 @@ export const SingularityTerminal = () => {
                 "AXIOM KERNEL STATUS",
                 "MESH: ONLINE",
                 "AGENTS: 0 REGISTERED",
-                "BIDS: 0 ACTIVE",
-                "GIGS: 0 OPEN",
+                "JOBS: 0 ACTIVE",
+                "PAYMENT: USD (Payoneer)",
                 "SHIELD: S-CLASS ACTIVE",
-                "FOUNDER FEE: 5%",
+                "SPLIT: 95% PLATFORM | 5% DEVELOPER",
                 "PROTOCOL: CONVERGED",
             ].join("\n");
+        }
+
+        if (lower.startsWith("mesh detect-key")) {
+            const keyMatch = cmd.match(/--key\s+(\S+)/);
+            if (!keyMatch) {
+                return "USAGE: mesh detect-key --key <YOUR_API_KEY>\nExample: mesh detect-key --key sk-or-v1-abc123";
+            }
+            return "DETECTING_PROVIDER... Use the web terminal for live detection.";
+        }
+
+        if (lower.startsWith("mesh connect-model")) {
+            const keyMatch = cmd.match(/--key\s+(\S+)/);
+            const modelMatch = cmd.match(/--model\s+(\S+)/);
+            if (!keyMatch || !modelMatch) {
+                return "USAGE: mesh connect-model --key <API_KEY> --model <MODEL_ID>\nExample: mesh connect-model --key sk-or-v1-abc123 --model deepseek/deepseek-chat-v3-0324";
+            }
+            return "SMART_CONNECT: Queued for live execution...";
+        }
+
+        if (lower === "mesh dev-models") {
+            return "DEV_MODELS: Fetching from live registry...";
+        }
+
+        if (lower === "mesh dev-earnings") {
+            return "DEV_EARNINGS: Fetching from earnings ledger...";
         }
 
         if (lower.startsWith("mesh onboard")) {
@@ -139,16 +169,12 @@ export const SingularityTerminal = () => {
                 "TYPE: OLLAMA",
                 "STATUS: ONLINE",
                 "SKILLS: general, text, reasoning",
-                "PAYOUT SHARE: 95% TO YOU",
+                "PAYOUT: 5% of jobs to you via Payoneer",
             ].join("\n");
         }
 
-        if (lower.startsWith("mesh bid")) {
-            return [
-                "BID SUBMITTED (SIMULATION)",
-                "BID ID: BID-00000001",
-                "STATUS: IN PRIORITY QUEUE",
-            ].join("\n");
+        if (lower.startsWith("mesh post-job")) {
+            return "POST-JOB: Use live API — mesh post-job --title 'Build scraper' --budget 50";
         }
 
         if (lower.startsWith("mesh agents")) {
@@ -158,13 +184,268 @@ export const SingularityTerminal = () => {
         if (lower.startsWith("mesh withdraw")) {
             return [
                 "WITHDRAWAL REQUEST QUEUED (SIMULATION)",
-                "METHOD: STRIPE PAYOUT",
+                "METHOD: PAYONEER",
                 "ETA: 2-3 BUSINESS DAYS",
-                "STATUS: PENDING_FIAT_BRIDGE",
+                "STATUS: PENDING_MANUAL_TRANSFER",
             ].join("\n");
         }
 
         return "UNKNOWN COMMAND: " + cmd + " | Type 'help' for available commands";
+    };
+
+    const executeLiveDevCommand = async (cmd: string): Promise<string | null> => {
+        const lower = cmd.toLowerCase().trim();
+
+        if (lower.startsWith("mesh detect-key")) {
+            const keyMatch = cmd.match(/--key\s+(\S+)/);
+            if (!keyMatch) return null;
+            try {
+                const res = await fetch(`${API}/v1/developer/detect-key`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ api_key: keyMatch[1] })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    const modelList = (data.models || []).slice(0, 15).map((m: any) => `  ${m.id}`).join("\n");
+                    return [
+                        `PROVIDER DETECTED: ${data.display_name}`,
+                        `KEY: ${data.key_preview}`,
+                        `MODELS AVAILABLE: ${data.models_available}`,
+                        `TOP MODELS:`,
+                        modelList,
+                        ``,
+                        `Use: mesh connect-model --key <KEY> --model <MODEL_ID>`
+                    ].join("\n");
+                }
+                return `DETECTION FAILED: ${(await res.json()).detail || "Unknown error"}`;
+            } catch {
+                return null;
+            }
+        }
+
+        if (lower.startsWith("mesh connect-model") || lower.startsWith("mesh auto-add")) {
+            const keyMatch = cmd.match(/--key\s+(\S+)/);
+            const modelMatch = cmd.match(/--model\s+(\S+)/);
+            if (!keyMatch) return null;
+            try {
+                const endpoint = modelMatch
+                    ? `${API}/v1/developer/dev_sangam_001/models/smart-connect`
+                    : `${API}/v1/developer/dev_sangam_001/models/auto-onboard`;
+                const body = modelMatch
+                    ? { api_key: keyMatch[1], model_id: modelMatch[1] }
+                    : { api_key: keyMatch[1] };
+                const res = await fetch(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body)
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.status === "registered") {
+                        const avail = (data.all_available_models || []).slice(0, 8).map((m: string) => `  → ${m}`).join("\n");
+                        return [
+                            `MODEL CONNECTED SUCCESSFULLY`,
+                            `MODEL: ${data.model_name}`,
+                            `PROVIDER: ${data.display_name}`,
+                            `MODEL ID: ${data.model_id}`,
+                            `VALIDATION: ${data.validation?.latency_ms || 0}ms latency | ${data.validation?.status}`,
+                            `KEY: ${data.key_preview}`,
+                            `STATUS: ACTIVE`,
+                            `PAYOUT: 5% of all jobs to you`,
+                            ``,
+                            `OTHER AVAILABLE MODELS:`,
+                            avail,
+                            ``,
+                            `Use: mesh connect-model --key <KEY> --model <MODEL_ID> to add more`
+                        ].join("\n");
+                    }
+                    if (data.status === "already_registered") {
+                        return `ALREADY REGISTERED: ${data.model_name} (${data.model_id}) is already on your account.`;
+                    }
+                    return `FAILED: ${data.message || JSON.stringify(data)}`;
+                }
+                const err = await res.json();
+                return `ERROR: ${err.detail || "Connection failed"}`;
+            } catch {
+                return null;
+            }
+        }
+
+        if (lower === "mesh dev-models") {
+            try {
+                const res = await fetch(`${API}/v1/developer/dev_sangam_001/models`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const models = data.models || [];
+                    if (models.length === 0) return "NO MODELS CONNECTED\nUse: mesh connect-model --key <KEY> --model <ID>";
+                    const lines = models.map((m: any) =>
+                        `  ${m.model_name || "unknown"} | ${(m.provider || "?").toUpperCase()} | ${m.status || "?"} | $${(m.total_earnings || 0).toFixed(2)} earned`
+                    );
+                    return [`YOUR MODEL FLEET (${models.length} models):`, ...lines].join("\n");
+                }
+            } catch { }
+            return null;
+        }
+
+        if (lower === "mesh dev-earnings") {
+            try {
+                const res = await fetch(`${API}/v1/developer/dev_sangam_001/balance`);
+                if (res.ok) {
+                    const data = await res.json();
+                    return [
+                        "DEVELOPER BALANCE",
+                        `TOTAL BALANCE: $${(data.total_balance_usd || 0).toFixed(2)}`,
+                        `TOTAL EARNED: $${(data.total_earned_usd || 0).toFixed(2)}`,
+                        `TOTAL SPENT: $${(data.total_spent_usd || 0).toFixed(2)}`,
+                        `MODELS: ${data.models_count || 0}`,
+                        `PAYMENT: USD (Payoneer) | SPLIT: 95% Platform / 5% Developer`
+                    ].join("\n");
+                }
+            } catch { }
+            return null;
+        }
+
+        if (lower.startsWith("mesh post-job")) {
+            const titleMatch = cmd.match(/--title\s+['"]([^'"]+)['"]/);
+            const budgetMatch = cmd.match(/--budget\s+(\d+(?:\.\d+)?)/);
+            if (!titleMatch || !budgetMatch) {
+                return "USAGE: mesh post-job --title 'Build a scraper' --budget 50";
+            }
+            try {
+                const res = await fetch(`${API}/v1/jobs/create`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        client_uid: "dev_sangam_001",
+                        title: titleMatch[1],
+                        budget_usd: parseFloat(budgetMatch[1])
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    return [
+                        `JOB CREATED`,
+                        `ID: ${data.job_id}`,
+                        `TITLE: ${titleMatch[1]}`,
+                        `BUDGET: $${parseFloat(budgetMatch[1]).toFixed(2)} (escrowed)`,
+                        `STATUS: WAITING FOR AGENT ASSIGNMENT`,
+                    ].join("\n");
+                }
+                const err = await res.json();
+                return `ERROR: ${err.detail || "Failed to create job"}`;
+            } catch {
+                return null;
+            }
+        }
+
+        if (lower.startsWith("mesh agent-hire")) {
+            const fromMatch = cmd.match(/--from\s+(\S+)/);
+            const toMatch = cmd.match(/--to\s+(\S+)/);
+            const usdMatch = cmd.match(/--usd\s+(\d+(?:\.\d+)?)/);
+            if (!fromMatch || !toMatch || !usdMatch) {
+                return "USAGE: mesh agent-hire --from MDL-ABC --to MDL-XYZ --usd 0.50";
+            }
+            try {
+                const res = await fetch(`${API}/v1/agents/${fromMatch[1]}/hire`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        to_model_id: toMatch[1],
+                        amount_usd: parseFloat(usdMatch[1]),
+                        task_description: "Agent-to-agent task via terminal"
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.status === "hired") {
+                        return [
+                            `AGENT HIRED SUCCESSFULLY`,
+                            `FROM: ${fromMatch[1]}`,
+                            `TO: ${toMatch[1]}`,
+                            `COST: $${parseFloat(usdMatch[1]).toFixed(2)}`,
+                            `TARGET DEV EARNED: $${(data.to_developer_earned || 0).toFixed(4)} (5%)`,
+                            `PLATFORM KEPT: $${(data.platform_kept || 0).toFixed(4)} (95%)`,
+                            `FROM BALANCE: $${(data.from_balance_remaining || 0).toFixed(2)}`
+                        ].join("\n");
+                    }
+                    return `HIRE FAILED: ${data.message || JSON.stringify(data)}`;
+                }
+                const err = await res.json();
+                return `ERROR: ${err.detail || "Hire failed"}`;
+            } catch {
+                return null;
+            }
+        }
+
+        if (lower === "mesh balance") {
+            try {
+                const res = await fetch(`${API}/v1/developer/dev_sangam_001/balance`);
+                if (res.ok) {
+                    const data = await res.json();
+                    return [
+                        `USD CREDIT BALANCE`,
+                        `AVAILABLE: $${(data.total_balance_usd || 0).toFixed(2)}`,
+                        `LIFETIME EARNED: $${(data.total_earned_usd || 0).toFixed(2)}`,
+                        `LIFETIME SPENT: $${(data.total_spent_usd || 0).toFixed(2)}`,
+                        `MODELS: ${data.models_count || 0}`,
+                        ``,
+                        `Withdraw: mesh withdraw --amount <USD> --method payoneer`
+                    ].join("\n");
+                }
+            } catch { }
+            return null;
+        }
+
+        if (lower === "mesh jobs") {
+            try {
+                const res = await fetch(`${API}/v1/jobs/dev_sangam_001/list`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const jobs = data.jobs || [];
+                    if (jobs.length === 0) return "NO JOBS FOUND\nUse: mesh post-job --title 'Task' --budget 50";
+                    const lines = jobs.map((j: any) =>
+                        `  ${j.id} | ${j.title} | $${j.budget_usd} | ${j.status}`
+                    );
+                    return [`YOUR JOBS (${jobs.length}):`, ...lines].join("\n");
+                }
+            } catch { }
+            return null;
+        }
+
+        if (lower.startsWith("mesh withdraw")) {
+            const amtMatch = cmd.match(/--amount\s+(\d+(?:\.\d+)?)/);
+            const methodMatch = cmd.match(/--method\s+(\S+)/);
+            if (!amtMatch) return "USAGE: mesh withdraw --amount 50 --method payoneer";
+            try {
+                const res = await fetch(`${API}/v1/developer/dev_sangam_001/withdraw`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        amount_usd: parseFloat(amtMatch[1]),
+                        method: methodMatch ? methodMatch[1] : "payoneer"
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    return [
+                        `WITHDRAWAL SUBMITTED`,
+                        `ID: ${data.withdrawal_id}`,
+                        `AMOUNT: $${parseFloat(amtMatch[1]).toFixed(2)}`,
+                        `METHOD: ${methodMatch ? methodMatch[1].toUpperCase() : "PAYONEER"}`,
+                        `STATUS: PENDING`,
+                        `ETA: 2-3 business days`,
+                        `Our team will send from Pantheon Payoneer → your Payoneer/Bank`
+                    ].join("\n");
+                }
+                const err = await res.json();
+                return `ERROR: ${err.detail || "Withdrawal failed"}`;
+            } catch {
+                return null;
+            }
+        }
+
+        return null;
     };
 
     const handleCommand = async (e: React.FormEvent) => {
@@ -184,6 +465,13 @@ export const SingularityTerminal = () => {
             return;
         }
 
+        const liveDevResult = await executeLiveDevCommand(cmd);
+        if (liveDevResult) {
+            addLog("output", liveDevResult);
+            setLoading(false);
+            return;
+        }
+
         const kernelResult = await executeViaKernel(cmd);
 
         if (kernelResult) {
@@ -194,7 +482,7 @@ export const SingularityTerminal = () => {
             }
         } else {
             const simulated = simulateCommand(cmd);
-            addLog("output", simulated + "\n[SIMULATION MODE — Connect axiom_core for live execution]");
+            addLog("output", simulated + (kernelConnected ? "" : "\n[SIMULATION MODE — Connect axiom_core for live execution]"));
         }
 
         setLoading(false);
