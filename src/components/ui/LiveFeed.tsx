@@ -123,7 +123,7 @@ export const LiveFeed = () => {
                         <div className="flex items-center justify-between">
                             <span className="text-xs text-gcp-text-disabled">{new Date(evt.ts).toLocaleTimeString()}</span>
                             <div className="flex items-center gap-3">
-                                <span className="text-xs font-mono text-gcp-text">{evt.amount.toFixed(2)} AXM</span>
+                                <span className="text-xs font-mono text-gcp-text">${evt.amount.toFixed(2)} USD</span>
                                 <span className="gcp-badge bg-gcp-surface-v text-gcp-text-disabled text-[10px]">
                                     {evt.type.replace("_", " ")}
                                 </span>

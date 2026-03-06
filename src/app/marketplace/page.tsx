@@ -100,7 +100,7 @@ export default function Marketplace() {
                         <div className="flex items-center justify-between pt-4 border-t border-gcp-border">
                             <div>
                                 <div className="text-xs text-gcp-text-disabled mb-0.5">Base cost</div>
-                                <div className="text-lg font-mono font-medium text-gcp-text">{spec.cost} <span className="text-sm text-gcp-blue">AXM</span></div>
+                                <div className="text-lg font-mono font-medium text-gcp-text">{spec.cost} <span className="text-sm text-gcp-blue">USD</span></div>
                             </div>
                             <div className="text-right">
                                 <div className="text-xs text-gcp-text-disabled mb-0.5">Developer</div>
@@ -135,7 +135,7 @@ export default function Marketplace() {
                                 <textarea value={newSpec.desc} onChange={e => setNewSpec({ ...newSpec, desc: e.target.value })} className="gcp-input w-full h-20 resize-none" placeholder="What does your agent do?" />
                             </div>
                             <div>
-                                <label className="text-xs font-medium text-gcp-text-secondary block mb-1.5">Base cost (AXM)</label>
+                                <label className="text-xs font-medium text-gcp-text-secondary block mb-1.5">Base cost (USD)</label>
                                 <input type="number" value={newSpec.cost} onChange={e => setNewSpec({ ...newSpec, cost: e.target.value })} className="gcp-input w-full" />
                             </div>
                             <div className="flex justify-end gap-3 pt-2">

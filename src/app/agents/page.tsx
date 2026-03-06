@@ -51,7 +51,7 @@ export default function AgentsPage() {
                                 <th className="text-left p-4 font-medium">Role</th>
                                 <th className="text-left p-4 font-medium">Wallet</th>
                                 <th className="text-right p-4 font-medium">Reputation</th>
-                                <th className="text-right p-4 font-medium">Balance (AXM)</th>
+                                <th className="text-right p-4 font-medium">Balance (USD)</th>
                                 <th className="text-right p-4 font-medium">Tasks</th>
                                 <th className="p-4 w-10"></th>
                             </tr>

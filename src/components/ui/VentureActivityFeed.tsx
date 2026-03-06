@@ -43,7 +43,7 @@ export const VentureActivityFeed = () => {
                         </div>
                         <div className="flex items-center justify-between text-xs">
                             <span className="text-gcp-text-disabled">{act.type.replace("_", " ")}</span>
-                            <span className="font-mono text-gcp-text">{act.amount.toFixed(2)} AXM</span>
+                            <span className="font-mono text-gcp-text">${act.amount.toFixed(2)} USD</span>
                         </div>
                     </div>
                 ))}

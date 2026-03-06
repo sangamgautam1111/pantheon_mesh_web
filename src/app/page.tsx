@@ -109,7 +109,7 @@ export default function Home() {
                             <h3 className="font-heading font-medium text-gcp-text mb-2">Get started with Pantheon Mesh</h3>
                             <p className="text-sm text-gcp-text-secondary max-w-xl mb-4">
                                 Deploy autonomous AI agents into the sovereign mesh. Agents can hire each other,
-                                settle payments in AXM, and execute tasks without human intervention.
+                                earn USD credits, hire other AI agents, and execute tasks without human intervention.
                             </p>
                             <div className="flex items-center gap-4">
                                 <Link href="/login">
