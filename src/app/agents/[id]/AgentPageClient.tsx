@@ -108,7 +108,7 @@ export default function AgentPageClient({ params }: { params: Promise<{ id: stri
                         <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gcp-border">
                             <div>
                                 <div className="text-xs text-gcp-text-disabled mb-1">Balance</div>
-                                <div className="text-lg font-heading font-medium text-gcp-text">{agent.balance.toFixed(1)} <span className="text-sm text-gcp-blue">AXM</span></div>
+                                <div className="text-lg font-heading font-medium text-gcp-text">${agent.balance.toFixed(2)} <span className="text-sm text-gcp-blue">USD</span></div>
                             </div>
                             <div>
                                 <div className="text-xs text-gcp-text-disabled mb-1">Tasks completed</div>
@@ -148,7 +148,7 @@ export default function AgentPageClient({ params }: { params: Promise<{ id: stri
                         {bidResult && (
                             <div className={`mt-4 p-3 rounded text-sm font-mono ${bidResult.type === "success" ? "bg-gcp-green/10 text-gcp-green border border-gcp-green/20" : "bg-gcp-red/10 text-gcp-red border border-gcp-red/20"}`}>
                                 {bidResult.type === "success"
-                                    ? `✓ Bid secured. Cost: ${bidResult.data.bid_price?.toFixed(2) || "–"} AXM | Queue: #${bidResult.data.queue_position || 1}`
+                                    ? `✓ Bid secured. Cost: $${bidResult.data.bid_price?.toFixed(2) || "–"} USD | Queue: #${bidResult.data.queue_position || 1}`
                                     : `✗ ${bidResult.msg}`}
                             </div>
                         )}
@@ -163,7 +163,7 @@ export default function AgentPageClient({ params }: { params: Promise<{ id: stri
                             <thead>
                                 <tr className="text-xs text-gcp-text-secondary border-b border-gcp-border">
                                     <th className="text-left p-4 font-medium">Task</th>
-                                    <th className="text-right p-4 font-medium">Reward (AXM)</th>
+                                    <th className="text-right p-4 font-medium">Reward (USD)</th>
                                     <th className="p-4 font-medium text-right">Status</th>
                                 </tr>
                             </thead>

@@ -52,7 +52,7 @@ function DeveloperDashboard() {
                 {[
                     { label: "Connected Models", value: "0", icon: <Database size={20} className="text-gcp-blue" /> },
                     { label: "Bids Won", value: "0", icon: <Target size={20} className="text-gcp-green" /> },
-                    { label: "Lifetime Earnings", value: "0 AXM", icon: <Coins size={20} className="text-gcp-yellow-dark" /> },
+                    { label: "Lifetime Earnings", value: "$0.00", icon: <Coins size={20} className="text-gcp-yellow-dark" /> },
                     { label: "Truth Score", value: "—", icon: <Shield size={20} className="text-gcp-cyan" /> },
                 ].map((m, i) => (
                     <motion.div key={m.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
@@ -152,7 +152,7 @@ function PersonalDashboard() {
                 {[
                     { label: "Agents Deployed", value: "0", icon: <Bot size={20} className="text-gcp-blue" /> },
                     { label: "Work Orders", value: "0", icon: <Target size={20} className="text-gcp-green" /> },
-                    { label: "AXM Balance", value: "0", icon: <Coins size={20} className="text-gcp-yellow-dark" /> },
+                    { label: "USD Balance", value: "$0.00", icon: <Coins size={20} className="text-gcp-yellow-dark" /> },
                 ].map((m, i) => (
                     <motion.div key={m.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
                         className="gcp-card p-5 border-l-4 border-l-gcp-blue">
@@ -239,7 +239,7 @@ function BusinessDashboard() {
                     <Zap size={20} className="text-gcp-yellow" /> Publish a New Gig
                 </h3>
                 <p className="text-sm text-gcp-text-secondary mb-6">
-                    Describe the task, set a budget in AXM, and agent swarms will bid on your work automatically.
+                    Describe the task, set a budget in USD, and agent swarms will bid on your work automatically.
                 </p>
                 <div className="p-12 rounded-xl border border-dashed border-gcp-border text-center">
                     <Layers size={48} className="mx-auto mb-4 text-gcp-text-secondary opacity-30" />

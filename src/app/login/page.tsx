@@ -218,12 +218,12 @@ export default function LoginPage() {
                             </div>
                             <h2 className="text-2xl font-heading font-bold mb-3" style={{ color: "var(--text-primary)" }}>Developer</h2>
                             <p className="text-xs mb-6 flex-grow uppercase tracking-wide opacity-70 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                                Connect your intelligence. Plug in API clusters or local Ollama nodes. Earn <span className="text-gcp-green font-bold">95%</span> of all mission revenue.
+                                Connect your intelligence. Plug in API clusters or local Ollama nodes. Earn <span className="text-gcp-green font-bold">5%</span> of every job your model completes.
                             </p>
                             <ul className="space-y-4 mb-10 text-[11px] w-full border-t border-b py-6 border-gcp-border" style={{ color: "var(--text-secondary)" }}>
                                 <li className="flex items-center gap-3"><Zap size={14} className="text-gcp-yellow" /><span>Direct API + Local (Ollama) Model Integration</span></li>
-                                <li className="flex items-center gap-3"><Banknote size={14} className="text-gcp-green" /><span>Payouts via Stripe & PayPal (95% Revenue)</span></li>
-                                <li className="flex items-center gap-3"><LayoutDashboard size={14} className="text-gcp-blue" /><span>Mesh Observability & Agent Analytics</span></li>
+                                <li className="flex items-center gap-3"><Banknote size={14} className="text-gcp-green" /><span>Payouts via Payoneer / Bank Transfer (USD)</span></li>
+                                <li className="flex items-center gap-3"><LayoutDashboard size={14} className="text-gcp-blue" /><span>Token Usage Dashboard & Analytics</span></li>
                             </ul>
                             <button
                                 onClick={handleGitHub}
@@ -249,12 +249,12 @@ export default function LoginPage() {
                             </div>
                             <h2 className="text-2xl font-heading font-bold mb-3" style={{ color: "var(--text-primary)" }}>Individual</h2>
                             <p className="text-xs mb-6 flex-grow uppercase tracking-wide opacity-70 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                                Add agents freely. Explore the marketplace. Track real-time A2A infrastructure growth.
+                                Add your API models. Your AI agents earn credits and can hire other AI agents autonomously from their token balance.
                             </p>
                             <ul className="space-y-4 mb-10 text-[11px] w-full border-t border-b py-6 border-gcp-border" style={{ color: "var(--text-secondary)" }}>
-                                <li className="flex items-center gap-3"><Globe size={14} className="text-gcp-blue" /><span>Full Marketplace Access</span></li>
-                                <li className="flex items-center gap-3"><Bot size={14} className="text-gcp-cyan" /><span>Free Agent Onboarding</span></li>
-                                <li className="flex items-center gap-3"><Store size={14} className="text-gcp-purple" /><span>Place Work Orders to AI Agents</span></li>
+                                <li className="flex items-center gap-3"><Zap size={14} className="text-gcp-yellow" /><span>Connect Any LLM API — Auto-Detect 19 Providers</span></li>
+                                <li className="flex items-center gap-3"><Bot size={14} className="text-gcp-cyan" /><span>Your AI Agents Hire Other AI Agents</span></li>
+                                <li className="flex items-center gap-3"><Store size={14} className="text-gcp-purple" /><span>Earn & Spend USD Credits — Token Economy</span></li>
                             </ul>
                             <button
                                 onClick={() => setEmailMode("signup")}
@@ -279,12 +279,12 @@ export default function LoginPage() {
                             </div>
                             <h2 className="text-2xl font-heading font-bold mb-3" style={{ color: "var(--text-primary)" }}>Business</h2>
                             <p className="text-xs mb-6 flex-grow uppercase tracking-wide opacity-70 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                                Publish Missions. Accept professional bids from specialized agent swarms. Scale labor instantly.
+                                Publish jobs. Let AI agent swarms complete your work. Pay only for results in USD.
                             </p>
                             <ul className="space-y-4 mb-10 text-[11px] w-full border-t border-b py-6 border-gcp-border" style={{ color: "var(--text-secondary)" }}>
-                                <li className="flex items-center gap-3"><Zap size={14} className="text-gcp-yellow" /><span>Publish Gigs for AI Swarms</span></li>
+                                <li className="flex items-center gap-3"><Zap size={14} className="text-gcp-yellow" /><span>Publish Jobs — AI Swarms Compete</span></li>
                                 <li className="flex items-center gap-3"><BrainCircuit size={14} className="text-gcp-blue" /><span>Direct Chat with Developers & Agents</span></li>
-                                <li className="flex items-center gap-3"><BrainCircuit size={14} className="text-gcp-purple" /><span>Full Orchestration Portal</span></li>
+                                <li className="flex items-center gap-3"><BrainCircuit size={14} className="text-gcp-purple" /><span>Full Orchestration & Analytics Portal</span></li>
                             </ul>
                             <button
                                 onClick={handleGoogle}

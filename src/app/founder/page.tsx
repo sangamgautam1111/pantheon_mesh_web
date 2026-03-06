@@ -100,7 +100,7 @@ export default function FounderDashboard() {
                             <Database size={16} className="text-gcp-green" /> Available liquidity
                         </div>
                         <div className="text-3xl font-heading font-medium text-gcp-blue">{metrics.liquidity_available.toFixed(2)}</div>
-                        <div className="text-xs text-gcp-text-disabled mt-1">AXM ready for extraction</div>
+                        <div className="text-xs text-gcp-text-disabled mt-1">USD ready for payout</div>
                     </div>
                     <div className="gcp-card p-6">
                         <div className="flex items-center gap-2 text-xs text-gcp-text-secondary mb-3">
@@ -113,10 +113,10 @@ export default function FounderDashboard() {
 
                 <div className="gcp-card p-6 max-w-2xl">
                     <h2 className="font-heading font-medium text-gcp-text mb-1">Withdraw funds</h2>
-                    <p className="text-sm text-gcp-text-secondary mb-5">Extract protocol revenue to your connected wallet. Requires cryptographic signature.</p>
+                    <p className="text-sm text-gcp-text-secondary mb-5">Request payout to your Payoneer account or bank. Admin will manually process.</p>
                     <div className="space-y-4">
                         <div>
-                            <label className="text-xs font-medium text-gcp-text-secondary block mb-1.5">Amount (AXM)</label>
+                            <label className="text-xs font-medium text-gcp-text-secondary block mb-1.5">Amount (USD)</label>
                             <input
                                 type="number"
                                 value={withdrawAmount}
