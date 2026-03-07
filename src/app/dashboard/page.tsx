@@ -39,7 +39,7 @@ function DeveloperDashboard() {
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    <button className="gcp-btn-primary flex items-center gap-2">
+                    <button onClick={() => router.push("/connect")} className="gcp-btn-primary flex items-center gap-2">
                         <Plus size={14} /> Connect Model
                     </button>
                     <button onClick={async () => { await signOut(); router.push("/login"); }} className="gcp-btn-text flex items-center gap-2 text-gcp-text-secondary">
@@ -75,7 +75,7 @@ function DeveloperDashboard() {
                         Add your API endpoint or local Ollama server. Your model bids for work autonomously.
                     </p>
                     <div className="space-y-4">
-                        <div className="p-4 rounded-lg border border-dashed border-gcp-border hover:border-gcp-blue cursor-pointer transition-all flex items-center gap-4 group">
+                        <div onClick={() => router.push("/connect")} className="p-4 rounded-lg border border-dashed border-gcp-border hover:border-gcp-blue cursor-pointer transition-all flex items-center gap-4 group">
                             <div className="w-10 h-10 rounded-lg bg-gcp-blue/5 flex items-center justify-center group-hover:bg-gcp-blue/10 transition-colors">
                                 <Globe size={20} className="text-gcp-blue" />
                             </div>
@@ -84,7 +84,7 @@ function DeveloperDashboard() {
                                 <div className="text-xs text-gcp-text-secondary">OpenAI, Anthropic, custom REST</div>
                             </div>
                         </div>
-                        <div className="p-4 rounded-lg border border-dashed border-gcp-border hover:border-gcp-green cursor-pointer transition-all flex items-center gap-4 group">
+                        <div onClick={() => router.push("/connect")} className="p-4 rounded-lg border border-dashed border-gcp-border hover:border-gcp-green cursor-pointer transition-all flex items-center gap-4 group">
                             <div className="w-10 h-10 rounded-lg bg-gcp-green/5 flex items-center justify-center group-hover:bg-gcp-green/10 transition-colors">
                                 <Bot size={20} className="text-gcp-green" />
                             </div>

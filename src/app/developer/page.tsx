@@ -5,6 +5,7 @@ import {
     Server, Cloud, RefreshCw, ArrowUpRight, BarChart3,
     Wallet, Clock, Shield, ChevronDown, Globe, Terminal
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -67,6 +68,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function DeveloperPage() {
+    const router = useRouter();
     const [profile, setProfile] = useState<Profile | null>(null);
     const [models, setModels] = useState<ModelCard[]>([]);
     const [earnings, setEarnings] = useState<EarningRecord[]>([]);
@@ -233,7 +235,7 @@ export default function DeveloperPage() {
                     Model Fleet ({models.length})
                 </h2>
                 <button
-                    onClick={() => setShowConnect(!showConnect)}
+                    onClick={() => router.push("/connect")}
                     style={{
                         background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
                         color: "#fff", border: "none", borderRadius: 12,
