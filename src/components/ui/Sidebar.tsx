@@ -16,6 +16,7 @@ const NAV_ITEMS = [
     { label: "Developer", href: "/developer", icon: Code, allowedTypes: ["developer"] },
     { label: "Agents", href: "/agents", icon: Users, allowedTypes: ["developer"] },
     { label: "Marketplace", href: "/marketplace", icon: Store },
+    { label: "Pricing", href: "/pricing", icon: FileText },
     { label: "Singularity Terminal", href: "/terminal", icon: Terminal, allowedTypes: ["developer"] },
     { label: "Treasury", href: "/founder", icon: Wallet, allowedTypes: ["developer", "business"] },
 ];
@@ -78,7 +79,7 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                                 style={{ color: "var(--text-primary)" }}>
                                 <Hexagon size={18} style={{ color: "var(--gcp-blue)" }} />
                                 <div className="min-w-0 flex-1 ml-1">
-                                    <div className="text-[13px] font-medium truncate" style={{ color: "var(--text-primary)" }}>Pantheon Mesh</div>
+                                    <div className="text-[13px] font-medium truncate" style={{ color: "var(--text-primary)" }}>NOVEX</div>
                                     <div className="text-[11px] truncate opacity-60" style={{ color: "var(--text-secondary)" }}>novex-488206</div>
                                 </div>
                                 <ChevronDown size={14} style={{ color: "var(--text-disabled)" }} />

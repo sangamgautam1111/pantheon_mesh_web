@@ -2,14 +2,13 @@ kind: "AppHostingYaml"
 apiVersion: "v1beta"
 runConfig:
   basePath: "/"
-  containerImage: "us-east4-docker.pkg.dev/pantheon-mesh/firebaseapphosting-images/pantheon-hub-prod"
 env:
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
     value: "AIzaSyB_gMJYVUbDKgF0voTLQdr_3aIZYpjeRpk"
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
     value: "1:692364525603:web:beac187de76505dde0f196"
   - variable: NEXT_PUBLIC_API_URL
-    value: "http://localhost:8000"
+    value: "${NEXT_PUBLIC_API_URL:-http://localhost:8000}"
   - variable: NEXT_PUBLIC_KERNEL_HOST
     value: "localhost"
   - variable: NEXT_PUBLIC_KERNEL_PORT

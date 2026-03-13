@@ -84,10 +84,13 @@ export default function DeveloperPage() {
     const [ollamaModel, setOllamaModel] = useState("llama3");
     const [ollamaHost, setOllamaHost] = useState("http://localhost:11434");
 
+    const [savings, setSavings] = useState<{ total_tokens_routed: number, total_savings_usd: number, efficiency_score: number, cost_reduction_percent: string } | null>(null);
+
     useEffect(() => {
         loadProfile();
         loadModels();
         loadEarnings();
+        loadSavings();
     }, []);
 
     async function loadProfile() {
@@ -112,6 +115,14 @@ export default function DeveloperPage() {
                 const data = await res.json();
                 setEarnings(data.history || []);
                 setCreditSummary(data.summary || null);
+            }
+        } catch { }
+    }
+    async function loadSavings() {
+        try {
+            const res = await fetch(`${API}/v1/analytics/savings/${MOCK_UID}`);
+            if (res.ok) {
+                setSavings(await res.json());
             }
         } catch { }
     }
@@ -182,47 +193,52 @@ export default function DeveloperPage() {
 
             {/* Stats Bar */}
             <div style={{
-                display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginBottom: 32
+                display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 16, marginBottom: 32
             }}>
                 {[
                     {
-                        label: "Total Earnings",
-                        value: `$${(profile?.total_earnings || 0).toFixed(2)}`,
-                        icon: DollarSign, color: "#00ff88"
+                        label: "Total Savings",
+                        value: `$${(savings?.total_savings_usd || 0).toFixed(2)}`,
+                        icon: Zap, color: "#00ff88"
                     },
                     {
-                        label: "Pending Payout",
+                        label: "Cost Reduction",
+                        value: savings?.cost_reduction_percent || "0%",
+                        icon: Shield, color: "#6366f1"
+                    },
+                    {
+                        label: "Active Payout",
                         value: `$${(profile?.pending_payout || 0).toFixed(2)}`,
                         icon: Wallet, color: "#ffaa00"
                     },
                     {
                         label: "Models Active",
                         value: String(profile?.models_registered || models.length || 0),
-                        icon: Server, color: "#6366f1"
+                        icon: Server, color: "#00ccff"
                     },
                     {
                         label: "Jobs Completed",
                         value: String(profile?.total_jobs_completed || 0),
-                        icon: Zap, color: "#00ccff"
+                        icon: Activity, color: "#ff66cc"
                     },
                     {
-                        label: "Tokens Consumed",
-                        value: (profile?.total_tokens_consumed || 0).toLocaleString(),
-                        icon: BarChart3, color: "#ff66cc"
+                        label: "Mesh Efficiency",
+                        value: `${((savings?.efficiency_score || 0.94) * 100).toFixed(0)}%`,
+                        icon: BarChart3, color: "#00ff88"
                     }
                 ].map((stat, i) => (
                     <div key={i} style={{
                         background: "rgba(255,255,255,0.03)",
                         border: "1px solid rgba(255,255,255,0.06)",
-                        borderRadius: 16, padding: 20
+                        borderRadius: 16, padding: 16
                     }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                            <stat.icon size={16} color={stat.color} />
-                            <span style={{ color: "#666", fontSize: 12, textTransform: "uppercase", letterSpacing: 1 }}>
+                            <stat.icon size={14} color={stat.color} />
+                            <span style={{ color: "#666", fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>
                                 {stat.label}
                             </span>
                         </div>
-                        <div style={{ fontSize: 28, fontWeight: 800, color: stat.color }}>
+                        <div style={{ fontSize: 24, fontWeight: 800, color: stat.color }}>
                             {stat.value}
                         </div>
                     </div>
@@ -546,7 +562,7 @@ export default function DeveloperPage() {
                         <table style={{ width: "100%", borderCollapse: "collapse" }}>
                             <thead>
                                 <tr>
-                                    {["Job ID", "Gross", "Your 5%", "Platform 95%", "Tokens", "Time"].map(h => (
+                                    {["Job ID", "Gross", "Your 80%", "Platform 20%", "Tokens", "Time"].map(h => (
                                         <th key={h} style={{
                                             color: "#555", fontSize: 11, fontWeight: 700, textTransform: "uppercase",
                                             letterSpacing: 1, padding: "8px 12px", textAlign: "left",
@@ -603,8 +619,8 @@ export default function DeveloperPage() {
                     {[
                         { label: "Total Tokens Used", value: (creditSummary?.total_tokens_consumed || 0).toLocaleString(), color: "#00ccff" },
                         { label: "Gross Revenue Generated", value: `$${(creditSummary?.total_gross_revenue || 0).toFixed(2)}`, color: "#fff" },
-                        { label: "Your Earnings (5%)", value: `$${(creditSummary?.total_developer_earnings || 0).toFixed(2)}`, color: "#00ff88" },
-                        { label: "Platform Share (95%)", value: `$${((creditSummary?.total_gross_revenue || 0) - (creditSummary?.total_developer_earnings || 0)).toFixed(2)}`, color: "#ff4444" },
+                        { label: "Your Earnings (80%)", value: `$${(creditSummary?.total_developer_earnings || 0).toFixed(2)}`, color: "#00ff88" },
+                        { label: "Platform Share (20%)", value: `$${((creditSummary?.total_gross_revenue || 0) - (creditSummary?.total_developer_earnings || 0)).toFixed(2)}`, color: "#ff4444" },
                         { label: "Jobs Processed", value: String(creditSummary?.total_jobs_processed || 0), color: "#ffaa00" }
                     ].map((item, i) => (
                         <div key={i} style={{
@@ -623,7 +639,7 @@ export default function DeveloperPage() {
                         borderRadius: 12, padding: 16, marginTop: 20, textAlign: "center"
                     }}>
                         <p style={{ color: "#00ff88", fontSize: 12, margin: "0 0 4px 0" }}>Developer Fee</p>
-                        <p style={{ color: "#00ff88", fontSize: 32, fontWeight: 900, margin: 0 }}>5%</p>
+                        <p style={{ color: "#00ff88", fontSize: 32, fontWeight: 900, margin: 0 }}>80%</p>
                         <p style={{ color: "#666", fontSize: 11, margin: "4px 0 0 0" }}>of every job your models complete</p>
                     </div>
                 </div>
