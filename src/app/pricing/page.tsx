@@ -14,7 +14,7 @@ export default function PricingPage() {
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
                 {/* Free Tier */}
                 <div className="gcp-card p-6 border-t-4 border-t-gcp-surface-v">
                     <h3 className="text-xl font-bold text-gcp-text mb-2">Free</h3>
@@ -30,11 +30,11 @@ export default function PricingPage() {
                         </div>
                         <div className="flex items-start gap-3 text-sm">
                             <Check size={16} className="text-gcp-text-disabled mt-0.5" />
-                            <span className="text-gcp-text-secondary">Standard routing (Cheapest first)</span>
+                            <span className="text-gcp-text-secondary">Basic API rate limits</span>
                         </div>
                         <div className="flex items-start gap-3 text-sm">
                             <Check size={16} className="text-gcp-text-disabled mt-0.5" />
-                            <span className="text-gcp-text-secondary">Basic API rate limits</span>
+                            <span className="text-gcp-text-secondary">1 model limit</span>
                         </div>
                     </div>
                 </div>
@@ -61,63 +61,35 @@ export default function PricingPage() {
                         </div>
                         <div className="flex items-start gap-3 text-sm">
                             <Check size={16} className="text-gcp-blue mt-0.5" />
-                            <span className="text-gcp-text-secondary text-gcp-text">Increased rate limits</span>
-                        </div>
-                        <div className="flex items-start gap-3 text-sm">
-                            <Check size={16} className="text-gcp-blue mt-0.5" />
-                            <span className="text-gcp-text-secondary text-gcp-text">Agent memory & custom tools</span>
+                            <span className="text-gcp-text-secondary text-gcp-text">Up to 20+ models connected</span>
                         </div>
                     </div>
                 </div>
 
-                {/* Team Tier */}
+                {/* Elite / Team Tier */}
                 <div className="gcp-card p-6 border-t-4 border-t-gcp-green">
-                    <h3 className="text-xl font-bold text-gcp-text mb-2">Team</h3>
+                    <h3 className="text-xl font-bold text-gcp-text mb-2">Premium</h3>
                     <div className="text-3xl font-bold text-gcp-text mb-1">$149<span className="text-sm font-normal text-gcp-text-disabled">/month</span></div>
-                    <p className="text-sm text-gcp-text-secondary mb-6 h-10">Collaborative workspaces and pooled usage.</p>
+                    <p className="text-sm text-gcp-text-secondary mb-6 h-10">High AI usage & priority execution access.</p>
 
-                    <button className="gcp-btn-secondary w-full mb-8">Upgrade to Team</button>
-
-                    <div className="space-y-4">
-                        <div className="flex items-start gap-3 text-sm">
-                            <Check size={16} className="text-gcp-text-disabled mt-0.5" />
-                            <span className="text-gcp-text-secondary">Up to 10 team members</span>
-                        </div>
-                        <div className="flex items-start gap-3 text-sm">
-                            <Check size={16} className="text-gcp-text-disabled mt-0.5" />
-                            <span className="text-gcp-text-secondary">Shared dashboards & analytics</span>
-                        </div>
-                        <div className="flex items-start gap-3 text-sm">
-                            <Check size={16} className="text-gcp-text-disabled mt-0.5" />
-                            <span className="text-gcp-text-secondary">Centralized billing (Pay-as-you-go)</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Enterprise Tier */}
-                <div className="gcp-card p-6 border-t-4 border-t-gcp-purple">
-                    <h3 className="text-xl font-bold text-gcp-text mb-2">Enterprise</h3>
-                    <div className="text-3xl font-bold text-gcp-text mb-1">Custom</div>
-                    <p className="text-sm text-gcp-text-secondary mb-6 h-10">Private data sovereignty and dedicated support.</p>
-
-                    <button className="gcp-btn-secondary w-full mb-8">Contact Sales</button>
+                    <button className="gcp-btn-secondary w-full mb-8" style={{ color: "var(--gcp-green)", borderColor: "var(--gcp-green)" }}>Upgrade to Premium</button>
 
                     <div className="space-y-4">
                         <div className="flex items-start gap-3 text-sm">
-                            <Check size={16} className="text-gcp-text-disabled mt-0.5" />
-                            <span className="text-gcp-text-secondary">Private mesh licensing</span>
+                            <Check size={16} className="text-gcp-green mt-0.5" />
+                            <span className="text-gcp-text-secondary">85% revenue share for your models</span>
                         </div>
                         <div className="flex items-start gap-3 text-sm">
-                            <Check size={16} className="text-gcp-text-disabled mt-0.5" />
-                            <span className="text-gcp-text-secondary">SSO & advanced directory integrations</span>
+                            <Check size={16} className="text-gcp-green mt-0.5" />
+                            <span className="text-gcp-text-secondary">Higher chance of receiving model jobs</span>
                         </div>
                         <div className="flex items-start gap-3 text-sm">
-                            <Check size={16} className="text-gcp-text-disabled mt-0.5" />
-                            <span className="text-gcp-text-secondary">On-premise deployment options</span>
+                            <Check size={16} className="text-gcp-green mt-0.5" />
+                            <span className="text-gcp-text-secondary">Connect up to 50+ models</span>
                         </div>
                         <div className="flex items-start gap-3 text-sm">
-                            <Check size={16} className="text-gcp-text-disabled mt-0.5" />
-                            <span className="text-gcp-text-secondary">Guaranteed SLAs</span>
+                            <Check size={16} className="text-gcp-green mt-0.5" />
+                            <span className="text-gcp-text-secondary">Priority support & analytics</span>
                         </div>
                     </div>
                 </div>

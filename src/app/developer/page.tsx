@@ -458,6 +458,17 @@ export default function DeveloperPage() {
                                 display: "flex", gap: 8
                             }}>
                                 <button
+                                    onClick={() => alert("Model is in testing & deploying phase.")}
+                                    style={{
+                                        background: "rgba(99,102,241,0.1)", border: "none",
+                                        borderRadius: 8, padding: "8px 12px", cursor: "pointer",
+                                        color: "#818cf8", fontSize: 12, fontWeight: 700
+                                    }}
+                                    title="Send to Work"
+                                >
+                                    Send to Work
+                                </button>
+                                <button
                                     onClick={() => healthCheck(m.model_id)}
                                     style={{
                                         background: "rgba(255,255,255,0.05)", border: "none",

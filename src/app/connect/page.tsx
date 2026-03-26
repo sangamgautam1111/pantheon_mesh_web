@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     Key, Zap, CheckCircle, XCircle, Loader2, ChevronDown,
     Shield, Bot, DollarSign, ArrowRight, Sparkles, Copy,
-    AlertTriangle, Search, Cpu, ExternalLink, Globe, Terminal, Server
+    AlertTriangle, Search, Cpu, ExternalLink, Globe, Terminal, Server,
+    Network, Layout, BrainCircuit, Box, Boxes, MonitorPlay, Infinity, Wifi, Binary, Wind
 } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
@@ -13,24 +14,25 @@ import { useRouter } from "next/navigation";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-const PROVIDER_LOGOS: Record<string, { color: string; icon: string }> = {
-    openrouter: { color: "#6366f1", icon: "🔀" },
-    openai: { color: "#10a37f", icon: "🧠" },
-    anthropic: { color: "#d97706", icon: "🏛️" },
-    google_gemini: { color: "#4285f4", icon: "💎" },
-    groq: { color: "#f97316", icon: "⚡" },
-    xai: { color: "#1d9bf0", icon: "𝕏" },
-    nvidia_nim: { color: "#76b900", icon: "🟢" },
-    perplexity: { color: "#20b2aa", icon: "🔍" },
-    huggingface: { color: "#ffd21e", icon: "🤗" },
-    cohere: { color: "#39594d", icon: "🧬" },
-    mistral: { color: "#ff7000", icon: "🌬️" },
-    together: { color: "#0ea5e9", icon: "🤝" },
-    fireworks: { color: "#ef4444", icon: "🎆" },
-    deepseek: { color: "#0066ff", icon: "🔬" },
-    replicate: { color: "#000000", icon: "🔄" },
-    sambanova: { color: "#ff6600", icon: "⚙️" },
-    ollama: { color: "#6366f1", icon: "🦙" },
+// Changed to use React/Lucide components instead of strings
+const PROVIDER_LOGOS: Record<string, { color: string; icon: any }> = {
+    openrouter: { color: "#6366f1", icon: <Globe size={24} /> },
+    openai: { color: "#10a37f", icon: <BrainCircuit size={24} /> },
+    anthropic: { color: "#d97706", icon: <Box size={24} /> },
+    google_gemini: { color: "#4285f4", icon: <Sparkles size={24} /> },
+    groq: { color: "#f97316", icon: <Zap size={24} /> },
+    xai: { color: "#1d9bf0", icon: <XCircle size={24} /> },
+    nvidia_nim: { color: "#76b900", icon: <Cpu size={24} /> },
+    perplexity: { color: "#20b2aa", icon: <Search size={24} /> },
+    huggingface: { color: "#ffd21e", icon: <Boxes size={24} /> },
+    cohere: { color: "#39594d", icon: <Network size={24} /> },
+    mistral: { color: "#ff7000", icon: <Wind size={24} /> }, // Note: We need to import Wind or use another
+    together: { color: "#0ea5e9", icon: <Wifi size={24} /> },
+    fireworks: { color: "#ef4444", icon: <Infinity size={24} /> },
+    deepseek: { color: "#0066ff", icon: <Binary size={24} /> },
+    replicate: { color: "#000000", icon: <MonitorPlay size={24} /> },
+    sambanova: { color: "#ff6600", icon: <Layout size={24} /> },
+    ollama: { color: "#6366f1", icon: <Terminal size={24} /> },
 };
 
 interface DetectionResult {
@@ -166,7 +168,7 @@ export default function ConnectPage() {
                 display_name: "Local Ollama",
                 validation: { status: "valid" },
                 key_preview: "Local Connection",
-                payout_share: "5%",
+                payout_share: "80%",
                 message: "Local Ollama model connected to mesh.",
                 all_available_models: [ollamaModel]
             });
@@ -215,7 +217,7 @@ export default function ConnectPage() {
                         <div>
                             <h1 className="text-2xl font-heading font-bold" style={{ color: "var(--text-primary)" }}>Connect Your AI Model</h1>
                             <p className="text-xs opacity-50" style={{ color: "var(--text-secondary)" }}>
-                                Link your AI models to the mesh and earn 5% of every job they complete.
+                                Link your AI models to the mesh and earn up to 85% of every job they complete.
                             </p>
                         </div>
                     </div>
@@ -268,7 +270,7 @@ export default function ConnectPage() {
                                         <div className="flex flex-wrap gap-4 text-[10px]" style={{ color: "var(--text-secondary)" }}>
                                             <span className="flex items-center gap-1"><Shield size={10} className="text-gcp-green" /> AES-256 encrypted storage</span>
                                             <span className="flex items-center gap-1"><Zap size={10} className="text-gcp-yellow" /> 16 providers auto-detected</span>
-                                            <span className="flex items-center gap-1"><DollarSign size={10} className="text-gcp-green" /> Earn 5% payout</span>
+                                            <span className="flex items-center gap-1"><DollarSign size={10} className="text-gcp-green" /> Earn 80% payout</span>
                                         </div>
                                     </>
                                 ) : (
@@ -441,7 +443,7 @@ export default function ConnectPage() {
                                     </div>
                                     <div className="gcp-card p-4 bg-gcp-card-bg/50">
                                         <p className="text-[10px] uppercase tracking-widest opacity-50 mb-1 text-gcp-text-secondary">Earnings Share</p>
-                                        <p className="text-sm font-bold text-gcp-green">5% Developer Payout</p>
+                                        <p className="text-sm font-bold text-gcp-green">80% Developer Payout</p>
                                     </div>
                                 </div>
 

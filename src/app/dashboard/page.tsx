@@ -35,7 +35,7 @@ function DeveloperDashboard() {
                         </div>
                     </div>
                     <p className="text-sm text-gcp-text-secondary mt-2">
-                        Developer Account — Your agents work, <span className="text-gcp-green font-bold">you earn 95%</span>
+                        Developer Account — Your agents work, <span className="text-gcp-green font-bold">you earn 80%</span>
                     </p>
                 </div>
                 <div className="flex gap-2">
@@ -112,22 +112,13 @@ function DeveloperDashboard() {
                 </section>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-4">
-                <Link href="/terminal" className="gcp-card p-6 flex items-center gap-4 hover:border-gcp-blue/30 transition-all group">
-                    <LayoutDashboard size={24} className="text-gcp-blue group-hover:scale-110 transition-transform" />
-                    <div>
-                        <div className="font-bold text-sm text-gcp-text">Axiom Shell</div>
-                        <div className="text-xs text-gcp-text-secondary">Access kernel commands</div>
-                    </div>
-                </Link>
-                <Link href="/marketplace" className="gcp-card p-6 flex items-center gap-4 hover:border-gcp-blue/30 transition-all group">
+                <Link href="/marketplace" className="gcp-card p-6 flex items-center gap-4 hover:border-gcp-purple/30 transition-all group col-span-2 md:col-span-1">
                     <Store size={24} className="text-gcp-purple group-hover:scale-110 transition-transform" />
                     <div>
                         <div className="font-bold text-sm text-gcp-text">Marketplace</div>
                         <div className="text-xs text-gcp-text-secondary">Browse active gigs</div>
                     </div>
                 </Link>
-            </div>
         </div>
     );
 }
@@ -165,16 +156,11 @@ function PersonalDashboard() {
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
                 <Link href="/marketplace" className="gcp-card p-8 flex flex-col items-center text-center hover:border-gcp-blue/30 transition-all group">
                     <Store size={40} className="text-gcp-blue mb-4 group-hover:scale-110 transition-transform" />
                     <h3 className="font-bold text-gcp-text mb-2">Explore Marketplace</h3>
                     <p className="text-xs text-gcp-text-secondary">Find agents, place work orders, bid on tasks</p>
-                </Link>
-                <Link href="/terminal" className="gcp-card p-8 flex flex-col items-center text-center hover:border-gcp-blue/30 transition-all group">
-                    <LayoutDashboard size={40} className="text-gcp-cyan mb-4 group-hover:scale-110 transition-transform" />
-                    <h3 className="font-bold text-gcp-text mb-2">Agent Terminal</h3>
-                    <p className="text-xs text-gcp-text-secondary">Deploy and manage your agent swarm</p>
                 </Link>
             </div>
         </div>
@@ -247,22 +233,13 @@ function BusinessDashboard() {
                 </div>
             </section>
 
-            <div className="grid grid-cols-2 gap-4">
-                <Link href="/marketplace" className="gcp-card p-6 flex items-center gap-4 hover:border-gcp-yellow/30 transition-all group">
+                <Link href="/marketplace" className="gcp-card p-6 flex items-center gap-4 hover:border-gcp-yellow/30 transition-all group col-span-2 md:col-span-1">
                     <Store size={24} className="text-gcp-yellow group-hover:scale-110 transition-transform" />
                     <div>
                         <div className="font-bold text-sm text-gcp-text">Marketplace</div>
                         <div className="text-xs text-gcp-text-secondary">Browse agent capabilities</div>
                     </div>
                 </Link>
-                <Link href="/terminal" className="gcp-card p-6 flex items-center gap-4 hover:border-gcp-yellow/30 transition-all group">
-                    <BrainCircuit size={24} className="text-gcp-blue group-hover:scale-110 transition-transform" />
-                    <div>
-                        <div className="font-bold text-sm text-gcp-text">Orchestration</div>
-                        <div className="text-xs text-gcp-text-secondary">Chat with agents directly</div>
-                    </div>
-                </Link>
-            </div>
         </div>
     );
 }

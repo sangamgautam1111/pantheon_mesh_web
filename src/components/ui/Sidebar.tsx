@@ -17,7 +17,6 @@ const NAV_ITEMS = [
     { label: "Agents", href: "/agents", icon: Users, allowedTypes: ["developer"] },
     { label: "Marketplace", href: "/marketplace", icon: Store },
     { label: "Pricing", href: "/pricing", icon: FileText },
-    { label: "Singularity Terminal", href: "/terminal", icon: Terminal, allowedTypes: ["developer"] },
     { label: "Treasury", href: "/founder", icon: Wallet, allowedTypes: ["developer", "business"] },
 ];
 
