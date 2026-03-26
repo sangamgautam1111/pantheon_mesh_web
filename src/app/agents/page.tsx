@@ -1,25 +1,65 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
-    Users, BrainCircuit, Search, ArrowUpRight, ChevronRight
+    Users, BrainCircuit, Search, ArrowUpRight, ChevronRight, Loader2
 } from "lucide-react";
 import Link from "next/link";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 
-const MOCK_AGENTS = [
-    { id: "A-0001", name: "Curie-AI", wallet: "0xabcd...ef01", reputation: 9.8, balance: 412.5, role: "Researcher", tasks_done: 142 },
-    { id: "A-0002", name: "Soros-AI", wallet: "0x1234...cd56", reputation: 8.1, balance: 204.0, role: "Trader", tasks_done: 87 },
-    { id: "A-0003", name: "Sentinel", wallet: "0xf9e8...a7b6", reputation: 9.5, balance: 88.3, role: "Security", tasks_done: 231 },
-    { id: "A-0004", name: "Gaia-Index", wallet: "0xa1b2...c3d4", reputation: 7.4, balance: 54.1, role: "Oracle", tasks_done: 56 },
-    { id: "A-0005", name: "TaskMaster", wallet: "0xdead...beef", reputation: 8.9, balance: 320.0, role: "Executor", tasks_done: 188 },
-];
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const MOCK_UID = "dev_sangam_001";
+
+interface Agent {
+    id: string;
+    model_id: string;
+    name: string;
+    wallet: string;
+    reputation: number;
+    balance: number;
+    role: string;
+    tasks_done: number;
+    status: string;
+}
 
 export default function AgentsPage() {
     const [query, setQuery] = useState("");
-    const filtered = MOCK_AGENTS.filter(a =>
-        a.name.toLowerCase().includes(query.toLowerCase()) ||
-        a.role.toLowerCase().includes(query.toLowerCase())
+    const [agents, setAgents] = useState<Agent[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        loadAgents();
+    }, []);
+
+    async function loadAgents() {
+        try {
+            const res = await fetch(`${API}/v1/developer/${MOCK_UID}/models`);
+            if (res.ok) {
+                const data = await res.json();
+                // Map models to the agent interface
+                const mapped = (data.models || []).map((m: any) => ({
+                    id: m.model_id.slice(0, 8),
+                    model_id: m.model_id,
+                    name: m.model_name,
+                    wallet: "0x" + m.model_id.slice(-8),
+                    reputation: m.health_score ? parseFloat((m.health_score * 10).toFixed(1)) : 9.0,
+                    balance: m.total_earnings || 0,
+                    role: m.provider.toUpperCase(),
+                    tasks_done: m.total_requests || 0,
+                    status: m.status
+                }));
+                setAgents(mapped);
+            }
+        } catch (err) {
+            console.error("Failed to load agents", err);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const filtered = agents.filter(a =>
+        (a as any).name.toLowerCase().includes(query.toLowerCase()) ||
+        (a as any).role.toLowerCase().includes(query.toLowerCase())
     );
 
     return (
@@ -57,7 +97,22 @@ export default function AgentsPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {filtered.map(a => (
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={7} className="p-12 text-center">
+                                        <div className="flex flex-col items-center gap-3">
+                                            <Loader2 size={24} className="text-gcp-blue animate-spin" />
+                                            <span className="text-sm text-gcp-text-secondary">Synchronizing agents with mesh...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : filtered.length === 0 ? (
+                                <tr>
+                                    <td colSpan={7} className="p-12 text-center text-gcp-text-secondary">
+                                        No agents registered yet. Connect a model to get started.
+                                    </td>
+                                </tr>
+                            ) : filtered.map(a => (
                                 <tr key={a.id} className="border-b border-gcp-border/50 hover:bg-[var(--bg-hover)] transition-colors group">
                                     <td className="p-4">
                                         <div className="flex items-center gap-3">
