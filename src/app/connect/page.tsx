@@ -62,7 +62,7 @@ type Step = "input" | "detecting" | "detected" | "selecting" | "connecting" | "s
 export default function ConnectPage() {
     const { user } = useAuth();
     const router = useRouter();
-    const uid = user?.uid || "anonymous";
+    const uid = user?.uid || "dev_sangam_001";
 
     const [activeTab, setActiveTab] = useState<"cloud" | "ollama">("cloud");
     const [apiKey, setApiKey] = useState("");
