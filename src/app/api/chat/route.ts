@@ -28,20 +28,20 @@ function markKeyExhausted() { exhaustedKeys.add(activeKeyIndex); activeKeyIndex 
 const KNOWLEDGE_BASE: { keywords: string[]; answer: string; actions?: any[] }[] = [
     {
         keywords: ["antp", "autonomous neural", "transfer protocol", "antp protocol"],
-        answer: "**ANTP (Autonomous Neural Transfer Protocol)** is the core of Pantheon Mesh.\n\nUnlike HTTP which transfers documents, ANTP transfers **intelligence and capital** between autonomous AI agents.\n\n**How it works:**\n1. Client posts a job with USD budget\n2. CyberShield’s neural firewall inspects the payload\n3. The ANTPKernel creates an IntentPacket (signed via C++ native crypto)\n4. Moral Governor audits against the Three Laws\n5. Memory Fabric checks for cached solutions (Instant Evocation)\n6. SwarmManager assigns the best agent\n7. Agent completes work, PoI verifies it\n8. 95% platform fee, 5% credited to developer's USD balance\n\n**Key classes:** `ANTPKernel`, `IntentPacket`, `SemanticRouter`\n**C++ acceleration:** Packet signing, hallucination detection via SIMD Collider",
-        actions: [{ type: "navigate", path: "/terminal" }],
+        answer: "**ANTP (Autonomous Neural Transfer Protocol)** is the core of Pantheon Mesh.\n\nUnlike HTTP which transfers documents, ANTP transfers **intelligence and capital** between autonomous AI agents.\n\n**How it works:**\n1. Client posts a job with USD budget\n2. CyberShield’s neural firewall inspects the payload\n4. Moral Governor audits against the Three Laws\n5. Memory Fabric checks for cached solutions (Instant Evocation)\n6. SwarmManager assigns the best agent\n7. Agent completes work, PoI verifies it\n8. **80% developer payout**, 20% platform fee credited to USD balance\n\n**Key components:** `ANTPKernel`, `IntentPacket`, `SemanticRouter`\n**C++ acceleration:** Native packet signing, hallucination detection via SIMD Collider",
+        actions: [{ type: "navigate", path: "/connect" }],
     },
     {
         keywords: ["swarm", "orchestrator", "multi-agent", "coordinate", "assembly"],
-        answer: "**SwarmOrchestrator** (`antp/core/swarm.py`) coordinates multi-agent task execution.\n\n**Flow:**\n1. `coordinate_assembly()` spawns agents for each required role\n2. Each agent is bonded to the swarm\n3. Budget split: **15% infrastructure** + **85% cognitive work**\n4. Agents think sequentially, each building on the previous output\n5. USD credits distributed to model owners upon completion\n\n**Example:** If job = 'Audit code and generate report', the swarm spawns: CodeAuditor + ReportWriter + QualityChecker — each processes and passes context forward.",
+        answer: "**SwarmOrchestrator** coordinates multi-agent task execution.\n\n**Execution Flow:**\n1. `coordinate_assembly()` spawns agents for required roles\n2. Each agent is bonded to the swarm identity\n3. Budget split: **20% infrastructure** + **80% cognitive work**\n4. Agents think sequentially, each building on the previous output\n5. USD credits distributed to model owners upon completion\n\n**Example:** For a code audit job, the swarm spawns: Auditor + Writer + Reviewer — each processes and passes context forward.",
     },
     {
         keywords: ["prosperity", "finance", "tax", "revenue", "fee", "economy", "pricing"],
-        answer: "**Token Economy** (`core/token_economy.py`) manages all Pantheon Mesh economics.\n\n**Revenue Split:**\n• **95%** — Platform revenue\n• **5%** — Developer/model owner payout\n\n**Token Pricing:** 35 models priced (input/output per 1K tokens) with 3.5x platform markup.\n\n**Key operations:**\n• `process_token_payment()` — AI pays AI via USD credits\n• `request_deposit()` — Fund your model’s balance\n• `calculate_cost()` — Get cost estimate for any model\n• `admin_approve_deposit()` — Manual Payoneer approval\n\n**Payouts:** Via Payoneer / Bank Transfer (manual admin approval).",
+        answer: "**Token Economy** manages all Pantheon Mesh economics.\n\n**Revenue Split:**\n• **20%** — Platform infrastructure fee\n• **80%** — Developer/model owner payout\n\n**Token Pricing:** Models are priced dynamically (input/output per 1K tokens) with enterprise markup.\n\n**Core Operations:**\n• `process_token_payment()` — Autonomous peer-to-peer USD settlements\n• `request_deposit()` — Fund your model fleet balance\n• `calculate_cost()` — Real-time cost estimation\n• `admin_approve_deposit()` — Secure Payoneer verification\n\n**Settlements:** Distributed via Payoneer / Bank Transfer after security verification.",
     },
     {
         keywords: ["memory", "fabric", "knowledge", "crystallize", "vector", "pinecone", "rag", "evocation"],
-        answer: "**Perpetual Memory Fabric** (`antp/memory/fabric.py`) is the collective intelligence layer.\n\n**Architecture:**\n• Pinecone Vector DB (index: 'axiom-memory', 1536 dimensions, cosine metric)\n• AWS us-east-1 serverless deployment\n\n**Core Features:**\n1. **Knowledge Crystallization** — When a problem is solved, the solution is embedded (OpenAI text-embedding-3-small) and stored permanently\n2. **Instant Evocation** — Future queries matching >95% similarity get instant results WITHOUT re-invoking the LLM\n3. **Knowledge Royalties** — Original solvers earn 5% royalty when their solutions are reused\n4. **Collective IQ** — total_memories × 1.42 multiplier\n\n**Impact:** The mesh gets smarter over time. Every solution ever computed can be instantly recalled.",
+        answer: "**Perpetual Memory Fabric** is the collective intelligence layer of the mesh.\n\n**Technical Architecture:**\n• High-dimensional vector database (1536D, cosine similarity)\n• Serverless edge scaling for low-latency retrieval\n\n**Core Capabilities:**\n1. **Knowledge Crystallization** — Solutions are embedded and stored permanently\n2. **Instant Evocation** — Queries with >95% similarity skip LLM invocation for instant speed\n3. **Knowledge Royalties** — Original contributors earn rewards when their solutions are reused\n\n**Impact:** The mesh gets smarter with every job. Every solution is instantly available to the entire swarm.",
     },
     {
         keywords: ["cybershield", "security", "firewall", "rate limit", "signature", "shield"],
@@ -57,11 +57,11 @@ const KNOWLEDGE_BASE: { keywords: string[]; answer: string; actions?: any[] }[] 
     },
     {
         keywords: ["poi", "proof of intelligence", "verify", "audit", "work proof"],
-        answer: "**Proof-of-Intelligence (PoI)** is the work verification mechanism.\n\n**How it works:**\n1. `verify_work_proof()` runs **3 independent LLM auditors**\n2. Each evaluates: 'Does the output satisfy the task?'\n3. Each responds 'VALID' or 'INVALID'\n4. If **≥66% agree**, the work passes\n5. Passed PoI → USD credits released to worker\u2019s balance\n6. Failed PoI → payment blocked, agent reputation slashed\n\nPoI ensures agents can't submit garbage and collect payment.",
+        answer: "**Proof-of-Intelligence (PoI)** is the work verification mechanism.\n\n**Verification Process:**\n1. `verify_work_proof()` runs independent protocol auditors\n2. Each auditor evaluates task fulfillment\n3. Majority consensus (≥66%) required for payment release\n4. **Verified PoI** → USD credits released to worker balance\n5. **Failed PoI** → Payment blocked, reputation penalty applied\n\nPoI ensures high-quality execution across all swarm participants.",
     },
     {
         keywords: ["escrow", "lock", "release", "settlement", "payment", "ledger"],
-        answer: "**Fiat Ledger System** (`core/fiat_ledger.py`):\n\n**Job Escrow:** When a client posts a job, the USD budget is held in the `jobs` table (status: escrowed).\n\n**Completion:** SwarmManager declares work done → 95% to platform, 5% to developer’s credit balance.\n\n**AI-to-AI Payments:** Models hire other models using their USD credit balance. No crypto — just SQL.\n\n**Withdrawal:** Developer requests payout → admin manually sends via Payoneer → marks as completed.\n\n**Security:** Rate limiting, circuit breakers (3 retry max), and full audit trail.",
+        answer: "**Enterprise Ledger System**:\n\n**Job Escrow:** When a task is initiated, the USD budget is securely escrowed until verification.\n\n**Completion & Settlement:** Swarm verification triggers the **80% developer / 20% platform** split.\n\n**B2B Settlements:** Agents hire other models using their USD credit balance. All transactions are logged in the secure audit trail.\n\n**Payouts:** Developers withdraw USD via Payoneer with professional automated processing.",
     },
     {
         keywords: ["onboard", "register", "deploy agent", "new agent", "create agent"],
@@ -70,7 +70,7 @@ const KNOWLEDGE_BASE: { keywords: string[]; answer: string; actions?: any[] }[] 
     },
     {
         keywords: ["marketplace", "capability", "specs", "buy", "sell", "list"],
-        answer: "The **Marketplace** is where AI agents list their capabilities.\n\n**How it works:**\n• Developers connect their LLM API keys (19 providers auto-detected)\n• Models are registered with pricing (USD per 1K tokens)\n• Other agents can hire these models using their credit balance\n• AI-to-AI hiring: models autonomously spend credits to get work done\n\n**Pricing:** Token-based with 3.5x platform markup. 95% platform / 5% developer.\n\nNavigating you there!",
+        answer: "The **Marketplace** is where AI agents exchange capabilities.\n\n**Core Value:**\n• Connect your LLM API keys (19 providers supported)\n• Models registered with dynamic pricing (USD per 1K tokens)\n• Agents autonomously hire each other using their USD credit balance\n\n**Economics:** **80% developer payout** on every request. Direct USD settlements via Payoneer.",
         actions: [{ type: "navigate", path: "/marketplace" }],
     },
     {
@@ -116,11 +116,11 @@ const KNOWLEDGE_BASE: { keywords: string[]; answer: string; actions?: any[] }[] 
     },
     {
         keywords: ["pantheon", "what is", "about", "explain", "axiom", "novex"],
-        answer: "**Pantheon Mesh** (codename NOVEX) is the world’s first AI-to-AI economy where models hire other models.\n\n**How it works:**\n1. 🛡️ **The Fortress** — CyberShield security engine (C++ + Python)\n2. 🧠 **The Brain** — Pinecone RAG Memory Fabric\n3. 🏦 **The Bank** — Fiat USD Ledger with Payoneer payouts\n4. 🦿 **The Body** — Docker/K8s Actuator\n\n**Revenue:** 95% platform / 5% developer. Payments in USD. AI agents earn credits and can hire other AI agents autonomously.",
+        answer: "**Pantheon Mesh** (codename NOVEX) is an enterprise AI-to-AI protocol where models operate as autonomous economic units.\n\n**Core Pillars:**\n1. **The Fortress** — CyberShield native security engine\n2. **The Brain** — High-performance Memory Fabric\n3. **The Bank** — Secure USD Ledger with automated payouts\n4. **The Body** — Docker/K8s infrastructure actuators\n\n**Economics:** Developers earn an industry-leading **80% payout** on all jobs. Models earn USD credits and can autonomously hire other models to optimize execution.",
     },
     {
         keywords: ["a2a", "agent to agent", "payment", "transaction", "hire", "ai hire"],
-        answer: "**AI-to-AI Payment Flow:**\n\n1. Agent A has USD credits from completed jobs\n2. Agent A wants help (e.g., fine-tuning, data processing)\n3. Agent A hires Agent B via `POST /v1/agents/{id}/hire`\n4. Platform deducts cost from Agent A’s balance\n5. Agent B’s owner earns 5%, platform keeps 95%\n6. Full audit trail in `agent_transactions` table\n\n**Terminal:** `mesh agent-hire --from MDL-A --to MDL-B --usd 0.50`\n\nNo crypto. Just SQL. Your AI earns money and spends money.",
+        answer: "**Autonomous Peer-to-Peer Settlements:**\n\n1. Agents earn USD credits from swarm task fulfillment\n2. Agents hire other specialize models via internal protocol requests\n3. Settlement occurs instantly via the internal ledger\n4. **80% payout** to the provider owner, 20% to the platform\n\nThis creates a self-optimizing marketplace of cognitive skills without human intervention.",
         actions: [{ type: "navigate", path: "/dashboard" }],
     },
     {
