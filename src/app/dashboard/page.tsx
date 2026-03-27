@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
     Activity, BrainCircuit, Database, Users, Zap, Shield,
@@ -13,9 +13,50 @@ import { useAuth } from "@/context/AuthContext";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useRouter } from "next/navigation";
 
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 function DeveloperDashboard() {
-    const { profile, signOut } = useAuth();
+    const { user, profile, signOut } = useAuth();
     const router = useRouter();
+    const uid = user?.uid;
+
+    const [modelCount, setModelCount] = useState(0);
+    const [totalEarnings, setTotalEarnings] = useState(0);
+    const [jobsCompleted, setJobsCompleted] = useState(0);
+    const [models, setModels] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (!uid) return;
+        async function fetchData() {
+            try {
+                const res = await fetch(`${API}/v1/developer/${uid}/models`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const m = data.models || [];
+                    setModels(m);
+                    setModelCount(m.length);
+                }
+            } catch { }
+            try {
+                const res = await fetch(`${API}/v1/developer/${uid}/profile`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setTotalEarnings(data.total_earnings || 0);
+                    setJobsCompleted(data.total_jobs_completed || 0);
+                }
+            } catch { }
+            try {
+                const res = await fetch(`${API}/v1/developer/${uid}/earnings`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.summary) {
+                        setTotalEarnings(prev => data.summary.total_developer_earnings || prev);
+                    }
+                }
+            } catch { }
+        }
+        fetchData();
+    }, [uid]);
 
     return (
         <div className="p-8 max-w-7xl">
@@ -42,6 +83,9 @@ function DeveloperDashboard() {
                     <button onClick={() => router.push("/connect")} className="gcp-btn-primary flex items-center gap-2">
                         <Plus size={14} /> Connect Model
                     </button>
+                    <button onClick={() => router.push("/developer")} className="gcp-btn-text flex items-center gap-2 text-gcp-text-secondary">
+                        <LayoutDashboard size={14} /> Developer Console
+                    </button>
                     <button onClick={async () => { await signOut(); router.push("/login"); }} className="gcp-btn-text flex items-center gap-2 text-gcp-text-secondary">
                         <LogOut size={14} /> Sign Out
                     </button>
@@ -50,9 +94,9 @@ function DeveloperDashboard() {
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 {[
-                    { label: "Connected Models", value: "0", icon: <Database size={20} className="text-gcp-blue" /> },
-                    { label: "Bids Won", value: "0", icon: <Target size={20} className="text-gcp-green" /> },
-                    { label: "Lifetime Earnings", value: "$0.00", icon: <Coins size={20} className="text-gcp-yellow-dark" /> },
+                    { label: "Connected Models", value: String(modelCount), icon: <Database size={20} className="text-gcp-blue" /> },
+                    { label: "Bids Won", value: String(jobsCompleted), icon: <Target size={20} className="text-gcp-green" /> },
+                    { label: "Lifetime Earnings", value: `$${totalEarnings.toFixed(2)}`, icon: <Coins size={20} className="text-gcp-yellow-dark" /> },
                     { label: "Truth Score", value: "—", icon: <Shield size={20} className="text-gcp-cyan" /> },
                 ].map((m, i) => (
                     <motion.div key={m.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
@@ -103,12 +147,32 @@ function DeveloperDashboard() {
                     <p className="text-sm text-gcp-text-secondary mb-6">
                         Track your earnings across all connected models. Payouts via Stripe & PayPal.
                     </p>
-                    <div className="flex items-center justify-center py-12 text-center">
-                        <div className="opacity-40">
-                            <TrendingUp size={48} className="mx-auto mb-4 text-gcp-text-secondary" />
-                            <p className="text-sm text-gcp-text-secondary">Connect a model to start earning</p>
+                    {modelCount > 0 ? (
+                        <div className="space-y-3">
+                            {models.map((m: any, i: number) => (
+                                <div key={m.model_id || i} className="p-3 rounded-lg bg-gcp-blue/5 border border-gcp-border flex items-center justify-between">
+                                    <div>
+                                        <div className="font-bold text-sm text-gcp-text">{m.model_name}</div>
+                                        <div className="text-xs text-gcp-text-secondary">{m.provider?.toUpperCase()} • {m.status}</div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-sm font-bold text-gcp-green">${(m.total_earnings || 0).toFixed(2)}</div>
+                                        <div className="text-xs text-gcp-text-secondary">{m.total_requests || 0} requests</div>
+                                    </div>
+                                </div>
+                            ))}
+                            <button onClick={() => router.push("/developer")} className="w-full p-3 rounded-lg border border-dashed border-gcp-border hover:border-gcp-blue cursor-pointer transition-all text-center text-sm text-gcp-text-secondary hover:text-gcp-blue">
+                                View Full Developer Console →
+                            </button>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="flex items-center justify-center py-12 text-center">
+                            <div className="opacity-40">
+                                <TrendingUp size={48} className="mx-auto mb-4 text-gcp-text-secondary" />
+                                <p className="text-sm text-gcp-text-secondary">Connect a model to start earning</p>
+                            </div>
+                        </div>
+                    )}
                 </section>
             </div>
 

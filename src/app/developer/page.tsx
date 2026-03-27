@@ -6,6 +6,7 @@ import {
     Wallet, Clock, Shield, ChevronDown, Globe, Terminal
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -51,7 +52,7 @@ interface CreditSummary {
     developer_fee_percent: number;
 }
 
-const MOCK_UID = "dev_sangam_001";
+// UID now comes from Firebase Auth via useAuth() hook
 
 const PROVIDER_ICONS: Record<string, any> = {
     ollama: Terminal,
@@ -69,6 +70,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function DeveloperPage() {
     const router = useRouter();
+    const { user } = useAuth();
+    const uid = user?.uid;
     const [profile, setProfile] = useState<Profile | null>(null);
     const [models, setModels] = useState<ModelCard[]>([]);
     const [earnings, setEarnings] = useState<EarningRecord[]>([]);
@@ -87,21 +90,24 @@ export default function DeveloperPage() {
     const [savings, setSavings] = useState<{ total_tokens_routed: number, total_savings_usd: number, efficiency_score: number, cost_reduction_percent: string } | null>(null);
 
     useEffect(() => {
+        if (!uid) return;
         loadProfile();
         loadModels();
         loadEarnings();
         loadSavings();
-    }, []);
+    }, [uid]);
 
     async function loadProfile() {
+        if (!uid) return;
         try {
-            const res = await fetch(`${API}/v1/developer/${MOCK_UID}/profile`);
+            const res = await fetch(`${API}/v1/developer/${uid}/profile`);
             if (res.ok) setProfile(await res.json());
         } catch { }
     }
     async function loadModels() {
+        if (!uid) return;
         try {
-            const res = await fetch(`${API}/v1/developer/${MOCK_UID}/models`);
+            const res = await fetch(`${API}/v1/developer/${uid}/models`);
             if (res.ok) {
                 const data = await res.json();
                 setModels(data.models || []);
@@ -109,8 +115,9 @@ export default function DeveloperPage() {
         } catch { }
     }
     async function loadEarnings() {
+        if (!uid) return;
         try {
-            const res = await fetch(`${API}/v1/developer/${MOCK_UID}/earnings`);
+            const res = await fetch(`${API}/v1/developer/${uid}/earnings`);
             if (res.ok) {
                 const data = await res.json();
                 setEarnings(data.history || []);
@@ -119,8 +126,9 @@ export default function DeveloperPage() {
         } catch { }
     }
     async function loadSavings() {
+        if (!uid) return;
         try {
-            const res = await fetch(`${API}/v1/analytics/savings/${MOCK_UID}`);
+            const res = await fetch(`${API}/v1/analytics/savings/${uid}`);
             if (res.ok) {
                 setSavings(await res.json());
             }
@@ -128,7 +136,8 @@ export default function DeveloperPage() {
     }
 
     async function connectCloudModel() {
-        const res = await fetch(`${API}/v1/developer/${MOCK_UID}/models/connect-api`, {
+        if (!uid) return;
+        const res = await fetch(`${API}/v1/developer/${uid}/models/connect-api`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -148,7 +157,8 @@ export default function DeveloperPage() {
     }
 
     async function connectOllama() {
-        const res = await fetch(`${API}/v1/developer/${MOCK_UID}/models/connect-ollama`, {
+        if (!uid) return;
+        const res = await fetch(`${API}/v1/developer/${uid}/models/connect-ollama`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ model_name: ollamaModel, host: ollamaHost })
@@ -161,13 +171,15 @@ export default function DeveloperPage() {
     }
 
     async function disconnectModel(modelId: string) {
-        await fetch(`${API}/v1/developer/${MOCK_UID}/models/${modelId}`, { method: "DELETE" });
+        if (!uid) return;
+        await fetch(`${API}/v1/developer/${uid}/models/${modelId}`, { method: "DELETE" });
         loadModels();
         loadProfile();
     }
 
     async function healthCheck(modelId: string) {
-        await fetch(`${API}/v1/developer/${MOCK_UID}/models/${modelId}/health`, { method: "POST" });
+        if (!uid) return;
+        await fetch(`${API}/v1/developer/${uid}/models/${modelId}/health`, { method: "POST" });
         loadModels();
     }
 
