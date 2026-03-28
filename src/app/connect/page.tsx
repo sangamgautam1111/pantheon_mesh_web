@@ -57,7 +57,7 @@ interface OnboardResult {
     all_available_models: string[];
 }
 
-type Step = "input" | "detecting" | "detected" | "selecting" | "connecting" | "success" | "error";
+type Step = "input" | "detecting" | "detected" | "selecting" | "connecting" | "success" | "error" | "connection_error";
 
 export default function ConnectPage() {
     const { user } = useAuth();
@@ -138,11 +138,11 @@ export default function ConnectPage() {
                 setStep("success");
             } else {
                 setErrorMsg(data.message || "Unexpected response.");
-                setStep("error");
+                setStep("connection_error");
             }
         } catch {
             setErrorMsg("Network error.");
-            setStep("error");
+            setStep("connection_error");
         }
     };
 
@@ -328,7 +328,7 @@ export default function ConnectPage() {
                     )}
 
                     {/* Step 2: Provider Detected + Model Selection */}
-                    {(step === "detected" || step === "selecting" || step === "connecting") && activeTab === "cloud" && detection && (
+                    {(step === "detected" || step === "selecting" || step === "connecting" || step === "connection_error") && activeTab === "cloud" && detection && (
                         <motion.div key="detected-container" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
                             {/* Provider Card */}
                             <div className="gcp-card p-6 mb-4" style={{ background: "var(--bg-surface)" }}>
@@ -403,6 +403,17 @@ export default function ConnectPage() {
                                     </div>
                                 )}
                             </div>
+
+                            {step === "connection_error" && errorMsg && (
+                                <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
+                                    className="mb-4 p-4 rounded-lg bg-red-500/5 border border-red-500/20 flex items-start gap-3">
+                                    <AlertTriangle size={16} className="text-red-500 mt-0.5 shrink-0" />
+                                    <div>
+                                        <p className="text-sm font-bold text-red-500 mb-1">Connection Blocked</p>
+                                        <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{errorMsg}</p>
+                                    </div>
+                                </motion.div>
+                            )}
 
                             <motion.button
                                 onClick={handleConnect}

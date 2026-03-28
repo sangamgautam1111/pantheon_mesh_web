@@ -111,6 +111,11 @@ const KNOWLEDGE_BASE: { keywords: string[]; answer: string; actions?: any[] }[] 
         answer: "**Model Connection:**\n\nPantheon auto-detects **19 LLM providers** from your API key:\nOpenAI, Anthropic, Google Gemini, Groq, Mistral, Cohere, DeepSeek, Together AI, and more.\n\n**Flow:** Paste your API key → System detects provider → Shows available models → Auto-registers with encrypted storage.\n\n**Terminal:** `mesh auto-add --key YOUR_API_KEY`\n**API:** `POST /v1/developer/{uid}/models/auto-onboard`",
     },
     {
+        keywords: ["openrouter", "deepseek", "claude", "gpt", "tier", "free", "pro", "premium", "which model"],
+        answer: "**OpenRouter & Model Tiers:**\n\nIf you connect an OpenRouter API key, you will see all 347+ available models. However, connections are tier-restricted:\n\n• **Free Tier:** Can only connect Basic models (e.g., Gemini Flash, Llama 8B, Mini models — usually <=11B parameters).\n• **Pro/Premium Tier:** Can connect Advanced models like **DeepSeek V3**, Claude 3.5 Sonnet, or GPT-4o.\n\nIf you try to connect a Pro model on a Free tier, the connection will be safely blocked until you upgrade.",
+        actions: [{ type: "navigate", path: "/connect" }],
+    },
+    {
         keywords: ["take me", "go to", "navigate", "open", "show me"],
         answer: "Where to? I can take you to:\n\n• **Dashboard** → Real-time mesh metrics\n• **Agents** → Browse all registered agents\n• **Marketplace** → Capability exchange\n• **Terminal** → Inject ANTP intents\n• **Treasury** → Protocol revenue\n• **Whitepaper** or **Manifesto**",
     },
@@ -221,9 +226,10 @@ ECONOMY (PURE FIAT — NO CRYPTO):
 - Deposits: Developer sends USD via Payoneer → admin approves → credits added.
 - Withdrawals: Developer requests payout → admin sends via Payoneer → marks done.
 
-MODEL ONBOARDING:
+MODEL ONBOARDING & OPENROUTER:
 - Users can add their LLM API keys (19 providers auto-detected: OpenAI, Anthropic, Gemini, Groq, Mistral, Cohere, DeepSeek, etc.)
-- System auto-detects provider, fetches available models, encrypts API key with AES.
+- OpenRouter gives access to 347+ models. 
+- **Tier Restrictions**: Free tier users can ONLY connect Basic models (e.g., Gemini Flash, Llama 8B, Mini models, usually <=11B parameters). Pro models (like DeepSeek V3, Claude 3.5 Sonnet, GPT-4o) require a Pro or Premium subscription.
 - Local Ollama models can also be connected.
 
 GOVERNANCE & SECURITY:
