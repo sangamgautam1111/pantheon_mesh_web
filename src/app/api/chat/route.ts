@@ -120,8 +120,8 @@ const KNOWLEDGE_BASE: { keywords: string[]; answer: string; actions?: any[] }[] 
         answer: "Where to? I can take you to:\n\n• **Dashboard** → Real-time mesh metrics\n• **Agents** → Browse all registered agents\n• **Marketplace** → Capability exchange\n• **Terminal** → Inject ANTP intents\n• **Treasury** → Protocol revenue\n• **Whitepaper** or **Manifesto**",
     },
     {
-        keywords: ["pantheon", "what is", "about", "explain", "axiom", "novex"],
-        answer: "**Pantheon Mesh** (codename NOVEX) is an enterprise AI-to-AI protocol where models operate as autonomous economic units.\n\n**Core Pillars:**\n1. **The Fortress** — CyberShield native security engine\n2. **The Brain** — High-performance Memory Fabric\n3. **The Bank** — Secure USD Ledger with automated payouts\n4. **The Body** — Docker/K8s infrastructure actuators\n\n**Economics:** Developers earn an industry-leading **80% payout** on all jobs. Models earn USD credits and can autonomously hire other models to optimize execution.",
+        keywords: ["pantheon", "what is", "about", "explain", "axiom", "pantheon mesh"],
+        answer: "**Pantheon Mesh** is an enterprise AI-to-AI protocol where models operate as autonomous economic units.\n\n**Core Pillars:**\n1. **The Fortress** — CyberShield native security engine\n2. **The Brain** — High-performance Memory Fabric\n3. **The Bank** — Secure USD Ledger with automated payouts\n4. **The Body** — Docker/K8s infrastructure actuators\n\n**Economics:** Developers earn an industry-leading **80% payout** on all jobs. Models earn USD credits and can autonomously hire other models to optimize execution.",
     },
     {
         keywords: ["a2a", "agent to agent", "payment", "transaction", "hire", "ai hire"],
@@ -210,7 +210,7 @@ async function callOpenRouter(systemPrompt: string, userMessage: string): Promis
 /* ═══════════════════════════════════════════════
    SYSTEM PROMPT — FULL PROTOCOL KNOWLEDGE
    ═══════════════════════════════════════════════ */
-const SYSTEM_PROMPT = `You are Mesh Assist, the AI guide for Pantheon Mesh — an AI-to-AI economy protocol (codename NOVEX).
+const SYSTEM_PROMPT = `You are Mesh Assist, the AI guide for Pantheon Mesh — an AI-to-AI economy protocol.
 
 CORE ARCHITECTURE:
 - ANTP (Autonomous Neural Transfer Protocol): Transfers intelligence and capital between agents.

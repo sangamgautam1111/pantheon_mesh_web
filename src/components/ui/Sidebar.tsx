@@ -8,6 +8,8 @@ import {
     LayoutDashboard, Users, Store, Terminal, Wallet, FileText,
     BookOpen, ChevronDown, ChevronRight, X, Hexagon, Activity, Code
 } from "lucide-react";
+import Image from "next/image";
+import logoImg from "@/app/logo.png";
 
 const NAV_ITEMS = [
     { label: "Welcome", href: "/", icon: LayoutDashboard },
@@ -71,15 +73,17 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                         <div className="flex items-center justify-between">
                             <button
                                 onClick={() => {
-                                    navigator.clipboard.writeText("novex-488206");
+                                    navigator.clipboard.writeText("pantheon-mesh-488206");
                                     alert("Project ID copied to clipboard!");
                                 }}
                                 className="flex items-center gap-2 px-2 py-1.5 rounded transition-colors text-left flex-1 hover:bg-sidebar-hover"
                                 style={{ color: "var(--text-primary)" }}>
-                                <Hexagon size={18} style={{ color: "var(--gcp-blue)" }} />
+                                <div className="w-5 h-5 bg-white rounded-md flex items-center justify-center p-0.5 overflow-hidden shadow-sm border border-gcp-border/10">
+                                    <Image src={logoImg} alt="logo" className="w-full h-full object-contain" />
+                                </div>
                                 <div className="min-w-0 flex-1 ml-1">
-                                    <div className="text-[13px] font-medium truncate" style={{ color: "var(--text-primary)" }}>NOVEX</div>
-                                    <div className="text-[11px] truncate opacity-60" style={{ color: "var(--text-secondary)" }}>novex-488206</div>
+                                    <div className="text-[13px] font-medium truncate" style={{ color: "var(--text-primary)" }}>Pantheon Mesh</div>
+                                    <div className="text-[11px] truncate opacity-60" style={{ color: "var(--text-secondary)" }}>pantheon-mesh-488206</div>
                                 </div>
                                 <ChevronDown size={14} style={{ color: "var(--text-disabled)" }} />
                             </button>

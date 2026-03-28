@@ -6,33 +6,41 @@ import {
     Key, Zap, CheckCircle, XCircle, Loader2, ChevronDown,
     Shield, Bot, DollarSign, ArrowRight, Sparkles, Copy,
     AlertTriangle, Search, Cpu, ExternalLink, Globe, Terminal, Server,
-    Network, Layout, BrainCircuit, Box, Boxes, MonitorPlay, Infinity, Wifi, Binary, Wind
+    Network, Layout, BrainCircuit, Box, Boxes, MonitorPlay, Infinity, Wifi, Binary, Wind, Layers
 } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import logoImg from "../logo.png";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-// Changed to use React/Lucide components instead of strings
-const PROVIDER_LOGOS: Record<string, { color: string; icon: any }> = {
-    openrouter: { color: "#6366f1", icon: <Globe size={24} /> },
-    openai: { color: "#10a37f", icon: <BrainCircuit size={24} /> },
-    anthropic: { color: "#d97706", icon: <Box size={24} /> },
-    google_gemini: { color: "#4285f4", icon: <Sparkles size={24} /> },
-    groq: { color: "#f97316", icon: <Zap size={24} /> },
-    xai: { color: "#1d9bf0", icon: <XCircle size={24} /> },
-    nvidia_nim: { color: "#76b900", icon: <Cpu size={24} /> },
-    perplexity: { color: "#20b2aa", icon: <Search size={24} /> },
-    huggingface: { color: "#ffd21e", icon: <Boxes size={24} /> },
-    cohere: { color: "#39594d", icon: <Network size={24} /> },
-    mistral: { color: "#ff7000", icon: <Wind size={24} /> }, // Note: We need to import Wind or use another
-    together: { color: "#0ea5e9", icon: <Wifi size={24} /> },
-    fireworks: { color: "#ef4444", icon: <Infinity size={24} /> },
-    deepseek: { color: "#0066ff", icon: <Binary size={24} /> },
-    replicate: { color: "#000000", icon: <MonitorPlay size={24} /> },
-    sambanova: { color: "#ff6600", icon: <Layout size={24} /> },
-    ollama: { color: "#6366f1", icon: <Terminal size={24} /> },
+const PROVIDER_DOMAINS: Record<string, string> = {
+    openrouter: "openrouter.ai",
+    openai: "openai.com",
+    anthropic: "anthropic.com",
+    gemini: "google.com",
+    google_gemini: "google.com",
+    groq: "groq.com",
+    xai: "x.ai",
+    nvidia: "nvidia.com",
+    nvidia_nim: "nvidia.com",
+    perplexity: "perplexity.ai",
+    huggingface: "huggingface.co",
+    cohere: "cohere.com",
+    mistral: "mistral.ai",
+    together: "together.ai",
+    fireworks: "fireworks.ai",
+    deepseek: "deepseek.com",
+    replicate: "replicate.com",
+    sambanova: "sambanova.ai",
+    anyscale: "anyscale.com",
+    octoai: "octoai.run",
+    baseten: "baseten.co",
+    cerebras: "cerebras.ai",
+    upstage: "upstage.ai",
+    ollama: "ollama.com",
 };
 
 interface DetectionResult {
@@ -57,7 +65,7 @@ interface OnboardResult {
     all_available_models: string[];
 }
 
-type Step = "input" | "detecting" | "detected" | "selecting" | "connecting" | "success" | "error" | "connection_error";
+type Step = "input" | "detecting" | "detected" | "connecting" | "success" | "error" | "connection_error";
 
 export default function ConnectPage() {
     const { user } = useAuth();
@@ -73,18 +81,20 @@ export default function ConnectPage() {
     const [onboardResult, setOnboardResult] = useState<OnboardResult | null>(null);
     const [errorMsg, setErrorMsg] = useState("");
     const [copied, setCopied] = useState(false);
+    
+    // Toggle for selecting a different model from the list
+    const [showModelList, setShowModelList] = useState(false);
 
     // Ollama specific
     const [ollamaModel, setOllamaModel] = useState("llama3");
     const [ollamaHost, setOllamaHost] = useState("http://localhost:11434");
-
-    const needsModelSelection = detection?.provider === "openrouter";
 
     const handleDetect = async () => {
         if (!apiKey.trim() || apiKey.trim().length < 8) return;
         setStep("detecting");
         setDetection(null);
         setErrorMsg("");
+        setShowModelList(false);
         try {
             const res = await fetch(`${API}/v1/developer/detect-key`, {
                 method: "POST",
@@ -98,9 +108,7 @@ export default function ConnectPage() {
                 return;
             }
             setDetection(data);
-            if (data.provider === "openrouter" && data.models?.length > 0) {
-                setStep("detected");
-            } else if (data.models?.length > 0) {
+            if (data.models && data.models.length > 0) {
                 setSelectedModel(data.models[0].id);
                 setStep("detected");
             } else {
@@ -195,14 +203,17 @@ export default function ConnectPage() {
         setSearchFilter("");
         setOnboardResult(null);
         setErrorMsg("");
+        setShowModelList(false);
     };
 
-    const providerInfo = detection ? PROVIDER_LOGOS[detection.provider] || { color: "#6b7280", icon: "🔌" } : null;
     const filteredModels = detection?.models?.filter(m =>
         m.id.toLowerCase().includes(searchFilter.toLowerCase()) || m.name.toLowerCase().includes(searchFilter.toLowerCase())
     ) || [];
 
     const selectedModelInfo = detection?.models?.find(m => m.id === selectedModel);
+    
+    // Automatically allow selection if there are multiple models
+    const needsModelSelection = (detection?.models?.length || 0) > 1;
 
     return (
         <RouteGuard allowedTypes={["developer", "personal", "business"]}>
@@ -210,14 +221,16 @@ export default function ConnectPage() {
 
                 {/* Header */}
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gcp-blue to-gcp-purple flex items-center justify-center shadow-lg">
-                            <Zap size={24} className="text-white" />
+                    <div className="flex items-center gap-4 mb-3">
+                        <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shadow-lg border border-gcp-border/50 overflow-hidden p-1.5">
+                            <Image src={logoImg} alt="Pantheon Mesh" className="w-full h-full object-contain" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-heading font-bold" style={{ color: "var(--text-primary)" }}>Connect Your AI Model</h1>
-                            <p className="text-xs opacity-50" style={{ color: "var(--text-secondary)" }}>
-                                Link your AI models to the mesh and earn up to 85% of every job they complete.
+                            <h1 className="text-3xl font-heading font-black tracking-tight" style={{ color: "var(--text-primary)" }}>
+                                Connect Enterprise AI Model
+                            </h1>
+                            <p className="text-sm opacity-60 mt-1" style={{ color: "var(--text-secondary)" }}>
+                                Provision your verified models onto the global mesh protocol and capture up to 85% revenue share.
                             </p>
                         </div>
                     </div>
@@ -241,84 +254,81 @@ export default function ConnectPage() {
                                 </button>
                             </div>
 
-                            <div className="gcp-card p-8 rounded-t-none mb-6" style={{ background: "var(--bg-surface)" }}>
+                            <div className="gcp-card p-8 rounded-t-none mb-6 shadow-sm border border-gcp-border/50" style={{ background: "var(--bg-surface)" }}>
                                 {activeTab === "cloud" ? (
                                     <>
                                         <div className="flex items-center gap-2 mb-6">
                                             <Key size={18} className="text-gcp-blue" />
-                                            <h2 className="text-lg font-heading font-bold" style={{ color: "var(--text-primary)" }}>Step 1 — Paste Your API Key</h2>
+                                            <h2 className="text-xl font-heading font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>Step 1 — Authenticate Provider</h2>
                                         </div>
                                         <div className="relative mb-4">
                                             <input
                                                 type="password"
                                                 value={apiKey}
                                                 onChange={e => { setApiKey(e.target.value); if (step === "error") setStep("input"); }}
-                                                className="gcp-input w-full text-sm font-mono pr-24 py-4"
-                                                placeholder="sk-... / gsk_... / AIza... / or-... / ant-..."
+                                                className="gcp-input w-full text-base font-mono pr-32 py-5 bg-white/5 border border-gcp-border/60 focus:border-gcp-blue"
+                                                placeholder="Securely paste your provider API key..."
                                                 disabled={step === "detecting"}
                                                 onKeyDown={e => e.key === "Enter" && handleDetect()}
                                             />
                                             <button
                                                 onClick={handleDetect}
                                                 disabled={step === "detecting" || apiKey.trim().length < 8}
-                                                className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-4 py-2 rounded-md bg-gcp-blue text-white text-xs font-bold uppercase tracking-widest hover:bg-gcp-blue/90 transition-all disabled:opacity-40"
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2 px-5 py-3 rounded-lg bg-gcp-blue text-white text-xs font-bold uppercase tracking-widest hover:bg-gcp-blue/90 transition-all disabled:opacity-40"
                                             >
-                                                {step === "detecting" ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+                                                {step === "detecting" ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
                                                 Detect
                                             </button>
                                         </div>
-                                        <div className="flex flex-wrap gap-4 text-[10px]" style={{ color: "var(--text-secondary)" }}>
-                                            <span className="flex items-center gap-1"><Shield size={10} className="text-gcp-green" /> AES-256 encrypted storage</span>
-                                            <span className="flex items-center gap-1"><Zap size={10} className="text-gcp-yellow" /> 16 providers auto-detected</span>
-                                            <span className="flex items-center gap-1"><DollarSign size={10} className="text-gcp-green" /> Earn 80% payout</span>
+                                        <div className="flex flex-wrap gap-5 text-[11px] uppercase tracking-wider font-semibold" style={{ color: "var(--text-secondary)" }}>
+                                            <span className="flex items-center gap-1.5"><Shield size={12} className="text-gcp-green" /> Hardware-Level Encrypted</span>
+                                            <span className="flex items-center gap-1.5"><Layers size={12} className="text-gcp-blue" /> 20+ Providers Supported</span>
+                                            <span className="flex items-center gap-1.5"><DollarSign size={12} className="text-gcp-green" /> Automatic Commissioning</span>
                                         </div>
                                     </>
                                 ) : (
                                     <>
                                         <div className="flex items-center gap-2 mb-6">
                                             <Server size={18} className="text-gcp-green" />
-                                            <h2 className="text-lg font-heading font-bold" style={{ color: "var(--text-primary)" }}>Connect Local Ollama Server</h2>
+                                            <h2 className="text-xl font-heading font-bold" style={{ color: "var(--text-primary)" }}>Connect Local Ollama Node</h2>
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
                                             <div>
-                                                <label className="text-[10px] uppercase font-bold tracking-widest mb-1 block opacity-50">Model Name</label>
+                                                <label className="text-[11px] uppercase font-bold tracking-widest mb-2 block opacity-60">Model Identifier</label>
                                                 <input
                                                     type="text"
                                                     value={ollamaModel}
                                                     onChange={e => setOllamaModel(e.target.value)}
-                                                    className="gcp-input w-full text-sm"
+                                                    className="gcp-input w-full text-base py-3"
                                                     placeholder="llama3, mistral, etc."
                                                 />
                                             </div>
                                             <div>
-                                                <label className="text-[10px] uppercase font-bold tracking-widest mb-1 block opacity-50">Ollama Host</label>
+                                                <label className="text-[11px] uppercase font-bold tracking-widest mb-2 block opacity-60">Localhost Address</label>
                                                 <input
                                                     type="text"
                                                     value={ollamaHost}
                                                     onChange={e => setOllamaHost(e.target.value)}
-                                                    className="gcp-input w-full text-sm"
+                                                    className="gcp-input w-full text-base py-3"
                                                     placeholder="http://localhost:11434"
                                                 />
                                             </div>
                                         </div>
                                         <button
                                             onClick={handleOllamaConnect}
-                                            className="w-full py-4 rounded-xl bg-gradient-to-r from-gcp-green to-gcp-cyan text-black font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all"
+                                            className="w-full py-4 rounded-xl bg-gcp-green text-white font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg hover:bg-gcp-green/90 transition-all"
                                         >
-                                            <Zap size={18} /> Connect Local Model
+                                            <Server size={18} /> Commission Node
                                         </button>
-                                        <p className="text-[10px] mt-4 opacity-40 text-center">
-                                            Ensure your Ollama server has OLLAMA_ORIGINS="*" set to allow browser connections.
-                                        </p>
                                     </>
                                 )}
 
                                 {step === "error" && errorMsg && (
                                     <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-                                        className="mt-4 p-4 rounded-lg bg-red-500/5 border border-red-500/20 flex items-start gap-3">
-                                        <AlertTriangle size={16} className="text-red-500 mt-0.5 shrink-0" />
+                                        className="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-3">
+                                        <AlertTriangle size={18} className="text-red-500 shrink-0" />
                                         <div>
-                                            <p className="text-sm font-bold text-red-500 mb-1">Connection Failed</p>
+                                            <p className="text-sm font-bold text-red-500 mb-1">Handshake Failure</p>
                                             <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{errorMsg}</p>
                                         </div>
                                     </motion.div>
@@ -328,77 +338,99 @@ export default function ConnectPage() {
                     )}
 
                     {/* Step 2: Provider Detected + Model Selection */}
-                    {(step === "detected" || step === "selecting" || step === "connecting" || step === "connection_error") && activeTab === "cloud" && detection && (
+                    {(step === "detected" || step === "connecting" || step === "connection_error") && activeTab === "cloud" && detection && (
                         <motion.div key="detected-container" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
                             {/* Provider Card */}
-                            <div className="gcp-card p-6 mb-4" style={{ background: "var(--bg-surface)" }}>
+                            <div className="gcp-card p-6 mb-5 border border-gcp-border/50 shadow-sm" style={{ background: "var(--bg-surface)" }}>
                                 <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl shadow-md"
-                                            style={{ backgroundColor: providerInfo!.color + "15", border: `2px solid ${providerInfo!.color}30` }}>
-                                            {providerInfo!.icon}
+                                    <div className="flex items-center gap-5">
+                                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-white shadow-sm border border-gcp-border/40 overflow-hidden p-2">
+                                            {PROVIDER_DOMAINS[detection.provider] ? (
+                                                <img 
+                                                    src={`https://logo.clearbit.com/${PROVIDER_DOMAINS[detection.provider]}`} 
+                                                    alt={detection.display_name} 
+                                                    className="w-full h-full object-contain"
+                                                    onError={(e) => {
+                                                        e.currentTarget.style.display = 'none';
+                                                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                                    }}
+                                                />
+                                            ) : null}
+                                            <Globe size={32} className={`text-gcp-blue ${PROVIDER_DOMAINS[detection.provider] ? 'hidden' : ''}`} />
                                         </div>
                                         <div>
-                                            <div className="flex items-center gap-2">
-                                                <h3 className="text-lg font-heading font-bold" style={{ color: "var(--text-primary)" }}>{detection.display_name}</h3>
-                                                <span className="gcp-badge bg-gcp-green/10 text-gcp-green text-[10px]"><CheckCircle size={10} className="inline mr-1" />Detected</span>
+                                            <div className="flex items-center gap-3 mb-1">
+                                                <h3 className="text-xl font-heading font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>{detection.display_name}</h3>
+                                                <span className="gcp-badge bg-gcp-green/15 text-gcp-green font-bold text-[10px] px-2 py-0.5"><CheckCircle size={10} className="inline mr-1" />Verified</span>
                                             </div>
-                                            <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
-                                                Key: <code className="font-mono">{detection.key_preview}</code> · {detection.models_available} models available
+                                            <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                                                Identifier: <code className="font-mono bg-gcp-card-bg px-1.5 py-0.5 rounded text-[10px]">{detection.key_preview}</code> &nbsp;·&nbsp; {detection.models_available} models available
                                             </p>
                                         </div>
                                     </div>
-                                    <button onClick={handleReset} className="text-xs opacity-40 hover:opacity-70 text-gcp-text-secondary">Change key</button>
+                                    <button onClick={handleReset} className="text-xs font-bold uppercase tracking-wider opacity-50 hover:opacity-100 text-gcp-text-secondary transition-all">Revoke Key</button>
                                 </div>
                             </div>
 
                             {/* Model Selection */}
-                            <div className="gcp-card p-6 mb-4" style={{ background: "var(--bg-surface)" }}>
-                                <div className="flex items-center gap-2 mb-4">
-                                    <Bot size={18} className="text-gcp-cyan" />
-                                    <h2 className="text-lg font-heading font-bold" style={{ color: "var(--text-primary)" }}>
-                                        Step 2 — {needsModelSelection ? "Choose Your Model" : "Best Model Selected"}
-                                    </h2>
+                            <div className="gcp-card p-6 mb-5 border border-gcp-border/50 shadow-sm" style={{ background: "var(--bg-surface)" }}>
+                                <div className="flex items-center justify-between mb-5">
+                                    <div className="flex items-center gap-3">
+                                        <Bot size={20} className="text-gcp-blue" />
+                                        <h2 className="text-xl font-heading font-bold" style={{ color: "var(--text-primary)" }}>
+                                            Step 2 — {needsModelSelection && showModelList ? "Target Model Specification" : "Target Model Specification"}
+                                        </h2>
+                                    </div>
+                                    {needsModelSelection && !showModelList && (
+                                        <button 
+                                            onClick={() => setShowModelList(true)}
+                                            className="text-[11px] font-bold uppercase tracking-widest text-gcp-blue hover:text-gcp-blue/80 transition-colors bg-gcp-blue/10 px-3 py-1.5 rounded-full"
+                                        >
+                                            Select Other Model
+                                        </button>
+                                    )}
                                 </div>
 
-                                {needsModelSelection ? (
-                                    <>
-                                        <p className="text-xs mb-4 opacity-60 text-gcp-text-secondary">
-                                            OpenRouter gives you access to {detection.models_available} models. Pick the one you want to connect:
+                                {needsModelSelection && showModelList ? (
+                                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
+                                        <p className="text-sm mb-4 opacity-70 text-gcp-text-secondary">
+                                            Select the specific foundational model you would like to bind to this mesh node.
                                         </p>
-                                        {/* Search */}
-                                        <div className="relative mb-3">
-                                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-30 text-gcp-text-secondary" />
+                                        <div className="relative mb-4">
+                                            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40 text-gcp-text-secondary" />
                                             <input type="text" value={searchFilter} onChange={e => setSearchFilter(e.target.value)}
-                                                className="gcp-input w-full text-xs pl-9" placeholder="Search models..." />
+                                                className="gcp-input w-full text-sm pl-11 py-3" placeholder="Search available standard & premium models..." />
                                         </div>
-                                        {/* Model List */}
-                                        <div className="max-h-[320px] overflow-y-auto rounded-lg border border-gcp-border divide-y divide-gcp-border/50">
+                                        <div className="max-h-[350px] overflow-y-auto rounded-xl border border-gcp-border/60 divide-y divide-gcp-border/40 CustomScrollbar">
                                             {filteredModels.slice(0, 50).map(m => (
-                                                <button key={m.id} onClick={() => setSelectedModel(m.id)}
-                                                    className={`w-full text-left p-3 transition-all flex items-center gap-3 ${selectedModel === m.id ? "bg-gcp-blue/5 border-l-2 border-l-gcp-blue" : "hover:bg-gcp-blue/3 border-l-2 border-l-transparent"}`}>
+                                                <button key={m.id} onClick={() => { setSelectedModel(m.id); setShowModelList(false); }}
+                                                    className={`w-full text-left p-4 transition-all flex items-center gap-4 ${selectedModel === m.id ? "bg-gcp-blue/10 border-l-4 border-l-gcp-blue" : "hover:bg-gcp-blue/5 border-l-4 border-l-transparent"}`}>
                                                     <div className="flex-grow min-w-0">
-                                                        <p className="text-xs font-bold truncate text-gcp-text" style={{ color: selectedModel === m.id ? "var(--text-primary)" : "var(--text-secondary)" }}>
+                                                        <p className="text-sm font-bold truncate tracking-tight text-gcp-text" style={{ color: selectedModel === m.id ? "var(--text-primary)" : "var(--text-secondary)" }}>
                                                             {m.name || m.id}
                                                         </p>
-                                                        <p className="text-[10px] opacity-50 truncate font-mono text-gcp-text-secondary">{m.id}</p>
+                                                        <p className="text-[11px] opacity-60 truncate font-mono mt-0.5 text-gcp-text-secondary">{m.id}</p>
                                                     </div>
-                                                    {selectedModel === m.id && <CheckCircle size={16} className="text-gcp-blue shrink-0" />}
+                                                    {selectedModel === m.id && <CheckCircle size={18} className="text-gcp-blue shrink-0" />}
                                                 </button>
                                             ))}
                                         </div>
-                                    </>
+                                    </motion.div>
                                 ) : (
-                                    <div className="p-4 rounded-lg border border-gcp-green/20 bg-gcp-green/5">
-                                        <div className="flex items-center gap-3">
-                                            <Sparkles size={20} className="text-gcp-green" />
+                                    <div className="p-5 rounded-xl border border-gcp-green/30 bg-gcp-green/5 flex items-center">
+                                        <div className="flex items-center gap-4 flex-grow">
+                                            <div className="w-10 h-10 rounded-full bg-gcp-green/20 flex items-center justify-center">
+                                                <Sparkles size={20} className="text-gcp-green" />
+                                            </div>
                                             <div>
-                                                <p className="text-sm font-bold text-gcp-text">
+                                                <p className="text-base font-bold text-gcp-text mb-0.5">
                                                     {selectedModelInfo?.name || selectedModel}
                                                 </p>
-                                                <p className="text-[10px] font-mono opacity-50 text-gcp-text-secondary">{selectedModel}</p>
+                                                <p className="text-xs font-mono opacity-60 text-gcp-text-secondary">{selectedModel}</p>
                                             </div>
-                                            <span className="ml-auto gcp-badge bg-gcp-green/10 text-gcp-green text-[10px]">Best Available</span>
+                                        </div>
+                                        <div className="flex gap-3 items-center">
+                                            <span className="gcp-badge bg-gcp-green text-white shadow-sm font-bold text-[11px] px-3 py-1 bg-opacity-90">Ready to Commit</span>
                                         </div>
                                     </div>
                                 )}
@@ -406,10 +438,10 @@ export default function ConnectPage() {
 
                             {step === "connection_error" && errorMsg && (
                                 <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-                                    className="mb-4 p-4 rounded-lg bg-red-500/5 border border-red-500/20 flex items-start gap-3">
-                                    <AlertTriangle size={16} className="text-red-500 mt-0.5 shrink-0" />
+                                    className="mb-5 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-3">
+                                    <AlertTriangle size={18} className="text-red-500 shrink-0" />
                                     <div>
-                                        <p className="text-sm font-bold text-red-500 mb-1">Connection Blocked</p>
+                                        <p className="text-sm font-bold text-red-500 mb-1">Provisioning Blocked</p>
                                         <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{errorMsg}</p>
                                     </div>
                                 </motion.div>
@@ -420,9 +452,9 @@ export default function ConnectPage() {
                                 disabled={step === "connecting" || (!selectedModel && needsModelSelection)}
                                 whileHover={{ scale: 1.01 }}
                                 whileTap={{ scale: 0.99 }}
-                                className="w-full py-4 rounded-xl bg-gradient-to-r from-gcp-blue to-gcp-purple text-white font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all disabled:opacity-40"
+                                className="w-full py-5 rounded-xl bg-gcp-blue text-white font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg hover:bg-gcp-blue/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                             >
-                                {step === "connecting" ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} />} Connect to Mesh
+                                {step === "connecting" ? <Loader2 size={20} className="animate-spin" /> : <Layers size={20} />} Provision onto Mesh
                             </motion.button>
                         </motion.div>
                     )}
@@ -430,42 +462,42 @@ export default function ConnectPage() {
                     {/* Step 3: Success */}
                     {step === "success" && onboardResult && (
                         <motion.div key="success-container" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                            <div className="gcp-card p-12 text-center mb-6" style={{ background: "var(--bg-surface)" }}>
+                            <div className="gcp-card p-12 text-center mb-6 border border-gcp-border/50 shadow-sm" style={{ background: "var(--bg-surface)" }}>
                                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200 }}
-                                    className="w-20 h-20 rounded-full bg-gcp-green/10 flex items-center justify-center mx-auto mb-6">
-                                    <CheckCircle size={40} className="text-gcp-green" />
+                                    className="w-24 h-24 rounded-full bg-gcp-green/10 flex items-center justify-center mx-auto mb-6">
+                                    <CheckCircle size={48} className="text-gcp-green" />
                                 </motion.div>
-                                <h2 className="text-2xl font-heading font-bold mb-2 text-gcp-text">
-                                    Model Connected!
+                                <h2 className="text-3xl font-heading font-black mb-3 text-gcp-text tracking-tight">
+                                    Node Commissioned
                                 </h2>
-                                <p className="text-sm mb-8 opacity-60 text-gcp-text-secondary max-w-md mx-auto">
-                                    {onboardResult.message} Your model is now visible to agent swarms and ready to bid on jobs.
+                                <p className="text-base mb-10 opacity-70 text-gcp-text-secondary max-w-lg mx-auto">
+                                    {onboardResult.message} Your compute unit is now securely indexed on the global mesh network.
                                 </p>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 max-w-xl mx-auto">
-                                    <div className="gcp-card p-4 bg-gcp-card-bg/50">
-                                        <p className="text-[10px] uppercase tracking-widest opacity-50 mb-1 text-gcp-text-secondary">Model ID</p>
-                                        <div className="flex items-center justify-center gap-2">
-                                            <code className="text-sm font-mono font-bold text-gcp-text">{onboardResult.model_id}</code>
-                                            <button onClick={handleCopyModelId} className="opacity-40 hover:opacity-100 transition-opacity">
-                                                {copied ? <CheckCircle size={14} className="text-gcp-green" /> : <Copy size={14} />}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10 max-w-2xl mx-auto">
+                                    <div className="gcp-card p-5 bg-white/5 border border-gcp-border/50">
+                                        <p className="text-[11px] uppercase tracking-widest font-bold opacity-50 mb-2 text-gcp-text-secondary">Node Identifier</p>
+                                        <div className="flex items-center justify-center gap-3">
+                                            <code className="text-base font-mono font-bold text-gcp-text bg-black/10 px-3 py-1 rounded">{onboardResult.model_id}</code>
+                                            <button onClick={handleCopyModelId} className="opacity-50 hover:opacity-100 transition-opacity p-2 bg-gcp-card-bg rounded-md border border-gcp-border">
+                                                {copied ? <CheckCircle size={16} className="text-gcp-green" /> : <Copy size={16} />}
                                             </button>
                                         </div>
                                     </div>
-                                    <div className="gcp-card p-4 bg-gcp-card-bg/50">
-                                        <p className="text-[10px] uppercase tracking-widest opacity-50 mb-1 text-gcp-text-secondary">Earnings Share</p>
-                                        <p className="text-sm font-bold text-gcp-green">80% Developer Payout</p>
+                                    <div className="gcp-card p-5 bg-gcp-green/5 border border-gcp-green/20">
+                                        <p className="text-[11px] uppercase tracking-widest font-bold opacity-50 mb-2 text-gcp-text-secondary">Compensation</p>
+                                        <p className="text-base font-black text-gcp-green">80% Revenue Share</p>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-center gap-4">
+                                <div className="flex items-center justify-center gap-5">
                                     <button onClick={handleReset}
-                                        className="px-8 py-3 rounded-lg text-xs font-bold uppercase tracking-widest border border-gcp-border hover:bg-gcp-blue/5 transition-all text-gcp-text-secondary">
-                                        Connect Another
+                                        className="px-8 py-4 rounded-xl text-xs font-bold uppercase tracking-widest border border-gcp-border hover:bg-gcp-card-bg transition-all text-gcp-text-secondary shadow-sm">
+                                        Commission Another
                                     </button>
                                     <button onClick={() => router.push("/dashboard")}
-                                        className="px-8 py-3 rounded-lg text-xs font-bold uppercase tracking-widest bg-gcp-blue text-white hover:bg-gcp-blue/90 transition-all flex items-center gap-2">
-                                        Go to Dashboard <ArrowRight size={14} />
+                                        className="px-8 py-4 rounded-xl text-xs font-bold uppercase tracking-widest bg-gcp-blue text-white hover:bg-gcp-blue/90 transition-all flex items-center gap-2 shadow-lg">
+                                        Go to Dashboard <ArrowRight size={16} />
                                     </button>
                                 </div>
                             </div>
@@ -473,17 +505,21 @@ export default function ConnectPage() {
                     )}
                 </AnimatePresence>
 
-                {/* Footer Info */}
-                <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Footer Info / Value Props */}
+                <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 border-t border-gcp-border/50 pt-12">
                     {[
-                        { icon: <Shield size={20} className="text-gcp-blue" />, title: "Enterprise Security", desc: "Keys ARE NEVER stored in plain text. We use AES-256 encryption at the record level." },
-                        { icon: <Cpu size={20} className="text-gcp-cyan" />, title: "Low Latency Routing", desc: "Our global mesh optimizes request routing to your connected models for maximum speed." },
-                        { icon: <DollarSign size={20} className="text-gcp-green" />, title: "Automated Payouts", desc: "Earnings are credited in USD instantly upon job completion. Withdraw via Payoneer anytime." },
+                        { icon: <Shield size={24} className="text-gcp-blue" />, title: "Enterprise Grade Security", desc: "Private keys are heavily encrypted at the record level using AES-256 protocols safely." },
+                        { icon: <Globe size={24} className="text-gcp-cyan" />, title: "Low Latency Edge Routing", desc: "The global mesh directs requests dynamically based on regional latency and compute proximity." },
+                        { icon: <DollarSign size={24} className="text-gcp-green" />, title: "Automated Global Payouts", desc: "Earnings are instantly pooled and auto-dispensed to your registered payout ledger." },
                     ].map((feature, i) => (
-                        <div key={i}>
-                            <div className="w-10 h-10 rounded-lg bg-gcp-card-bg border border-gcp-border flex items-center justify-center mb-4">{feature.icon}</div>
-                            <h4 className="text-sm font-bold mb-2 text-gcp-text">{feature.title}</h4>
-                            <p className="text-xs text-gcp-text-secondary leading-relaxed opacity-60">{feature.desc}</p>
+                        <div key={i} className="flex flex-col items-start gap-4 p-2">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gcp-card-bg to-gcp-border border border-gcp-border/80 flex items-center justify-center shadow-sm">
+                                {feature.icon}
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-black mb-2 tracking-tight" style={{ color: "var(--text-primary)" }}>{feature.title}</h4>
+                                <p className="text-xs leading-relaxed opacity-70" style={{ color: "var(--text-secondary)" }}>{feature.desc}</p>
+                            </div>
                         </div>
                     ))}
                 </div>

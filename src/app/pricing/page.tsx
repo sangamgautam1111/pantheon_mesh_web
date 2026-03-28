@@ -10,7 +10,7 @@ export default function PricingPage() {
                     Agent Execution Pricing
                 </h1>
                 <p className="text-gcp-text-secondary text-lg max-w-2xl mx-auto">
-                    Connect any model. Let NOVEX agents handle the execution, routing, and reliability. Pay only a simple platform fee on completed tasks.
+                    Connect any model. Let Pantheon Mesh agents handle the execution, routing, and reliability. Pay only a simple platform fee on completed tasks.
                 </p>
             </div>
 
@@ -99,7 +99,7 @@ export default function PricingPage() {
                 <div className="gcp-card p-8 bg-gradient-to-br from-gcp-surface to-gcp-surface-v border-gcp-blue/20">
                     <h3 className="text-xl font-bold text-gcp-text mb-4 text-center">Are you a Model Provider?</h3>
                     <p className="text-gcp-text-secondary text-center mb-6">
-                        Join the NOVEX network as a provider. You host the models (Ollama, local GPUs, or API proxies) and set your own limits.
+                        Join the Pantheon Mesh network as a provider. You host the models (Ollama, local GPUs, or API proxies) and set your own limits.
                         <strong> You earn 80% </strong> of all revenue generated when agents execute tasks on your infrastructure.
                     </p>
                     <div className="flex justify-center">

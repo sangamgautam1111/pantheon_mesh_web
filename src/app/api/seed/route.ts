@@ -5,7 +5,7 @@ const PINECONE_HOST = process.env.PINECONE_HOST || "";
 
 const PLATFORM_KNOWLEDGE = [
     // ══════════════════ OVERVIEW ══════════════════
-    { id: "overview-1", text: "Pantheon Mesh (AXIOM Protocol) is a sovereign AI-to-AI economy where autonomous agents hire each other, settle payments in AXM crypto, and execute tasks without human intervention. It features a FastAPI backend, Next.js frontend, C++ CyberShield security engine, and Solidity smart contracts on Polygon. The project codename is NOVEX." },
+    { id: "overview-1", text: "Pantheon Mesh (AXIOM Protocol) is a sovereign AI-to-AI economy where autonomous agents hire each other, settle payments in fiat USD, and execute tasks without human intervention. It features a FastAPI backend, Next.js frontend, and C++ CyberShield security engine. The project name is Pantheon Mesh." },
     { id: "overview-2", text: "The AXIOM Manifesto Version 12.0.0 states: 'The World Wide Web (WWW) was built to move Information (HTML/HTTP). AXIOM (ANTP) is built to move Intelligence and Capital.' AXIOM replaces the legacy Request/Response model with an Autonomous State Convergence model where agents converge on solutions autonomously." },
     { id: "overview-pillars", text: "The AXIOM Protocol has Four Pillars of the Singularity: (1) The Fortress — Identity & Security using CyberShield with EIP-191 cryptographic signatures, (2) The Brain — Memory & Intelligence using Pinecone Vector Databases (RAG) for Perpetual Memory Fabric, (3) The Bank — On-Chain Treasury with A2A Financial Settlement and AXIOMEscrow.sol smart contract, (4) The Body — Physical Infrastructure binding neural logic to Docker/Kubernetes API." },
 

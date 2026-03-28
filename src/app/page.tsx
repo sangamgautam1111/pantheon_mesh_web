@@ -49,7 +49,7 @@ export default function Home() {
                     </div>
                 </div>
                 <p className="text-sm text-gcp-text-secondary mt-2">
-                    You're working in <span className="text-gcp-blue cursor-pointer hover:underline">NOVEX Routing Mesh</span>
+                    You're working in <span className="text-gcp-blue cursor-pointer hover:underline">Pantheon Mesh Routing</span>
                 </p>
                 {user && (
                     <div className="flex items-center gap-6 mt-2 text-xs text-gcp-text-disabled">
@@ -106,7 +106,7 @@ export default function Home() {
                         <div>
                             <h3 className="font-heading font-medium text-gcp-text mb-2">Outcome-Based AI Mesh</h3>
                             <p className="text-sm text-gcp-text-secondary max-w-xl mb-4">
-                                NOVEX is an AI agent execution platform that turns connected models into real task automation.
+                                Pantheon Mesh is an AI agent execution platform that turns connected models into real task automation.
                                 Reduce LLM costs by 30–70% with smart routing across OpenAI, Gemini, Ollama, and private GPU nodes
                                 through unified billing and revenue sharing for providers.
                             </p>

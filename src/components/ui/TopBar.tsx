@@ -7,6 +7,8 @@ import { useTheme } from "@/context/ThemeProvider";
 import { useGuide } from "@/context/GuideProvider";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import logoImg from "@/app/logo.png";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -190,9 +192,11 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                 </button>
 
                 <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                    <Hexagon size={22} style={{ color: "var(--gcp-blue)" }} />
-                    <span className="text-base font-heading font-medium" style={{ color: "var(--text-primary)" }}>
-                        NOVEX
+                    <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center p-0.5 overflow-hidden shadow-sm border border-gcp-border/20">
+                        <Image src={logoImg} alt="Pantheon Mesh" className="w-full h-full object-contain" />
+                    </div>
+                    <span className="text-base font-heading font-black tracking-tight" style={{ color: "var(--text-primary)" }}>
+                        Pantheon Mesh
                     </span>
                 </Link>
             </div>
