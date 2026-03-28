@@ -2,7 +2,7 @@ node_modules
 .next
 out
 .DS_Store
-*.local
+# *.local removed to allow .env.local
 .env
 .env.development.local
 .env.test.local
