@@ -6,9 +6,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { RouteGuard } from "@/components/auth/RouteGuard";
+import { useAuth } from "@/context/AuthContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const MOCK_UID = "dev_sangam_001";
 
 interface Agent {
     id: string;
@@ -23,17 +23,23 @@ interface Agent {
 }
 
 export default function AgentsPage() {
+    const { user } = useAuth();
     const [query, setQuery] = useState("");
     const [agents, setAgents] = useState<Agent[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        loadAgents();
-    }, []);
+        if (user?.uid) {
+            loadAgents(user.uid);
+        } else {
+            setLoading(false);
+        }
+    }, [user]);
 
-    async function loadAgents() {
+    async function loadAgents(uid: string) {
+        setLoading(true);
         try {
-            const res = await fetch(`${API}/v1/developer/${MOCK_UID}/models`);
+            const res = await fetch(`${API}/v1/developer/${uid}/models`);
             if (res.ok) {
                 const data = await res.json();
                 // Map models to the agent interface
@@ -54,6 +60,25 @@ export default function AgentsPage() {
             console.error("Failed to load agents", err);
         } finally {
             setLoading(false);
+        }
+    }
+
+    async function removeAgent(model_id: string) {
+        if (!user?.uid) return;
+        if (!confirm("Are you sure you want to remove this model?")) return;
+        
+        try {
+            const res = await fetch(`${API}/v1/developer/${user.uid}/models/${model_id}`, {
+                method: "DELETE"
+            });
+            if (res.ok) {
+                setAgents(agents.filter(a => a.model_id !== model_id));
+            } else {
+                alert("Failed to remove model");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Failed to remove model due to an error");
         }
     }
 
@@ -139,7 +164,14 @@ export default function AgentsPage() {
                                     </td>
                                     <td className="p-4 text-right font-mono text-gcp-text">{a.balance.toFixed(1)}</td>
                                     <td className="p-4 text-right text-gcp-text-secondary">{a.tasks_done}</td>
-                                    <td className="p-4">
+                                    <td className="p-4 flex items-center justify-end gap-2">
+                                        <button 
+                                            onClick={() => removeAgent(a.model_id)}
+                                            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gcp-danger/10 hover:text-gcp-danger transition-all text-gcp-text-secondary"
+                                            title="Remove Agent"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                        </button>
                                         <Link href={`/agents/${a.id}`}>
                                             <button className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gcp-blue/10 transition-all">
                                                 <ChevronRight size={14} className="text-gcp-blue" />
