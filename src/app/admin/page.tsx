@@ -15,7 +15,7 @@ const ADMIN_HASH = "bd933ba0fa378d5b094b3a1774bd578e3c7f13189ab0bbfb85361ef026f0
 
 function hashPassword(pwd: string): Promise<string> {
     const encoder = new TextEncoder();
-    const data = encoder.encode("PANTHEON_MESH_ADMIN_SALT_2026_" + pwd + "_NOVEX_KERNEL");
+    const data = encoder.encode("PANTHEON_MESH_ADMIN_SALT_2026_" + pwd + "_PANTHEON_MESH_KERNEL");
     return crypto.subtle.digest("SHA-512", data).then(buf => {
         return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
     });
