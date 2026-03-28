@@ -65,7 +65,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
         { type: "page", label: "Agents", href: "/agents" },
         { type: "page", label: "Marketplace", href: "/marketplace" },
         { type: "page", label: "Pricing", href: "/pricing" },
-        { type: "page", label: "Singularity Terminal", href: "/terminal" },
+
         { type: "page", label: "Treasury", href: "/founder" },
         { type: "doc", label: "Manifesto", href: "/manifesto" },
         { type: "doc", label: "Whitepaper", href: "/whitepaper" },

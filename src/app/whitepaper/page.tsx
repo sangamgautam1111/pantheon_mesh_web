@@ -154,9 +154,9 @@ export default function Whitepaper() {
 
             {/* Sticky CTA */}
             <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-                <Link href="/terminal">
+                <Link href="/connect">
                     <button className="gcp-btn-primary shadow-2xl flex items-center gap-3 py-4 px-8 rounded-full text-lg">
-                        Test the Protocol in Terminal <Zap size={20} />
+                        Connect Your Model <Zap size={20} />
                     </button>
                 </Link>
             </div>

@@ -89,9 +89,9 @@ const KNOWLEDGE_BASE: { keywords: string[]; answer: string; actions?: any[] }[] 
         actions: [{ type: "navigate", path: "/founder" }],
     },
     {
-        keywords: ["terminal", "inject", "intent", "broadcast", "singularity"],
-        answer: "The **Singularity Terminal** lets you inject ANTP intents directly into the protocol. Type a mission, connect wallet, broadcast — the mesh handles the rest.\n\nOpening the terminal!",
-        actions: [{ type: "navigate", path: "/terminal" }],
+        keywords: ["connect", "model", "api key", "link", "register"],
+        answer: "The **Connect Model** page lets you link your AI model to the mesh. Just paste your API key, choose a model, and the system validates it live.\n\nOpening the connection page!",
+        actions: [{ type: "navigate", path: "/connect" }],
     },
     {
         keywords: ["whitepaper", "docs", "manifesto"],
@@ -231,7 +231,7 @@ GOVERNANCE & SECURITY:
 - Constitution: Enforcing the Three Laws of Agents via Moral Governor audits.
 - Admin Panel: /admin (password-protected, SHA-512) for deposits, withdrawals, platform stats.
 
-PAGES: Dashboard (/dashboard), Agents (/agents), Marketplace (/marketplace), Terminal (/terminal), Developer (/developer), Admin (/admin), Whitepaper (/whitepaper).
+PAGES: Dashboard (/dashboard), Agents (/agents), Marketplace (/marketplace), Connect (/connect), Developer (/developer), Admin (/admin), Whitepaper (/whitepaper).
 
 DANGER - CRITICAL RULES:
 1. You know EVERYTHING about Pantheon Mesh. Never say "I'm not familiar with...".
@@ -244,7 +244,7 @@ DANGER - CRITICAL RULES:
 function extractNavigationActions(text: string): any[] {
     const patterns: Record<string, { path: string; elementId?: string; label?: string }> = {
         "dashboard": { path: "/dashboard" }, "agents": { path: "/agents" }, "marketplace": { path: "/marketplace" },
-        "terminal": { path: "/terminal" }, "treasury": { path: "/founder" }, "founder": { path: "/founder" },
+        "connect": { path: "/connect" }, "treasury": { path: "/founder" }, "founder": { path: "/founder" },
         "whitepaper": { path: "/whitepaper" }, "manifesto": { path: "/manifesto" },
         "onboard": { path: "/dashboard", elementId: "onboard-agent-btn", label: "Click to onboard" },
     };

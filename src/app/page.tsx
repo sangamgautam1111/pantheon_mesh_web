@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-    LayoutDashboard, Users, Store, Terminal, Wallet,
+    LayoutDashboard, Users, Store, Wallet,
     Plus, ArrowRight, Activity, Database, Shield,
     BrainCircuit, Zap, Globe, Copy, Check
 } from "lucide-react";
@@ -13,7 +13,6 @@ import { useAuth } from "@/context/AuthContext";
 const QUICK_ACTIONS = [
     { label: "Onboard an Agent", icon: Plus, href: "/dashboard", color: "text-gcp-blue" },
     { label: "Browse Marketplace", icon: Store, href: "/marketplace", color: "text-gcp-green" },
-    { label: "Open Terminal", icon: Terminal, href: "/terminal", href_label: "Launch", color: "text-gcp-yellow" },
     { label: "View Treasury", icon: Wallet, href: "/founder", color: "text-gcp-cyan" },
 ];
 
@@ -22,7 +21,6 @@ const QUICK_ACCESS = [
     { label: "Dashboard", icon: LayoutDashboard, desc: "Real-time mesh metrics and controls", href: "/dashboard" },
     { label: "Marketplace", icon: Store, desc: "Neural capability exchange", href: "/marketplace" },
     { label: "Treasury", icon: Wallet, desc: "Protocol revenue and withdrawals", href: "/founder" },
-    { label: "Singularity Terminal", icon: Terminal, desc: "Inject intents into the mesh", href: "/terminal" },
     { label: "CyberShield", icon: Shield, desc: "C++ native security auditing", href: "/dashboard" },
 ];
 
