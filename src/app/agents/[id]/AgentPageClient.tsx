@@ -1,22 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     BrainCircuit, ChevronLeft, Wallet, Activity,
-    Shield, Target, RefreshCw, CheckCircle, AlertTriangle, Copy, Check
+    Shield, Target, RefreshCw, CheckCircle, AlertTriangle, Copy, Check, Loader2
 } from "lucide-react";
 import Link from "next/link";
 import { use } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-const AGENTS: Record<string, any> = {
-    "A-0001": { id: "A-0001", name: "Curie-AI", wallet: "0xabcd1234ef015678abcd1234ef015678abcd1234", reputation: 9.8, balance: 412.5, role: "Researcher", tasks_done: 142, skills: ["science", "biotech", "carbon-physics"] },
-    "A-0002": { id: "A-0002", name: "Soros-AI", wallet: "0x1234abcd5678ef011234abcd5678ef011234abcd", reputation: 8.1, balance: 204.0, role: "Trader", tasks_done: 87, skills: ["arbitrage", "liquidity", "p2p-settlement"] },
-    "A-0003": { id: "A-0003", name: "Sentinel", wallet: "0xf9e8a7b6f9e8a7b6f9e8a7b6f9e8a7b6f9e8a7b6", reputation: 9.5, balance: 88.3, role: "Security", tasks_done: 231, skills: ["cyber-security", "neural-auditing", "firewall"] },
-    "A-0004": { id: "A-0004", name: "Gaia-Index", wallet: "0xa1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4", reputation: 7.4, balance: 54.1, role: "Oracle", tasks_done: 56, skills: ["biosphere", "ecology", "carbon-tracking"] },
-    "A-0005": { id: "A-0005", name: "TaskMaster", wallet: "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef", reputation: 8.9, balance: 320.0, role: "Executor", tasks_done: 188, skills: ["infrastructure", "automation", "k8s"] },
-};
 
 const HISTORY = [
     { id: "TASK-A01", desc: "Audit carbon footprint model", reward: 80, status: "completed" },
@@ -26,11 +19,50 @@ const HISTORY = [
 
 export default function AgentPageClient({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
-    const agent = AGENTS[id];
+    const { user } = useAuth();
+    const [agent, setAgent] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
     const [bidComplexity, setBidComplexity] = useState("50");
     const [bidResult, setBidResult] = useState<any>(null);
     const [bidding, setBidding] = useState(false);
     const [copied, setCopied] = useState(false);
+
+    useEffect(() => {
+        if (user?.uid) {
+            loadAgent(user.uid);
+        } else {
+            setLoading(false);
+        }
+    }, [user, id]);
+
+    async function loadAgent(uid: string) {
+        setLoading(true);
+        try {
+            const res = await fetch(`${API}/v1/developer/${uid}/models`);
+            if (res.ok) {
+                const data = await res.json();
+                const found = (data.models || []).find((m: any) => m.model_id.slice(0, 8) === id);
+                if (found) {
+                    setAgent({
+                        id: found.model_id.slice(0, 8),
+                        model_id: found.model_id,
+                        name: found.model_name,
+                        wallet: "0x" + found.model_id.slice(-8),
+                        reputation: found.health_score ? parseFloat((found.health_score * 10).toFixed(1)) : 9.0,
+                        balance: found.total_earnings || 0,
+                        role: found.provider.toUpperCase(),
+                        tasks_done: found.total_requests || 0,
+                        status: found.status,
+                        skills: [found.provider.toLowerCase(), "inference", "api"]
+                    });
+                }
+            }
+        } catch (err) {
+            console.error("Failed to load agent", err);
+        } finally {
+            setLoading(false);
+        }
+    }
 
     const handleBid = async () => {
         setBidding(true);
@@ -54,6 +86,13 @@ export default function AgentPageClient({ params }: { params: Promise<{ id: stri
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
+
+    if (loading) return (
+        <div className="p-12 flex flex-col items-center justify-center h-full">
+            <Loader2 size={32} className="text-gcp-blue animate-spin mb-4" />
+            <p className="text-gcp-text-secondary text-sm">Syncing agent data...</p>
+        </div>
+    );
 
     if (!agent) return (
         <div className="p-8">
