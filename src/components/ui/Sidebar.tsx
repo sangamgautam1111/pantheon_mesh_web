@@ -78,7 +78,7 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                                 }}
                                 className="flex items-center gap-2 px-2 py-1.5 rounded transition-colors text-left flex-1 hover:bg-sidebar-hover"
                                 style={{ color: "var(--text-primary)" }}>
-                                <div className="w-5 h-5 bg-white rounded-md flex items-center justify-center p-0.5 overflow-hidden shadow-sm border border-gcp-border/10">
+                                <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center p-0.5 overflow-hidden shadow-sm border border-gcp-border/10">
                                     <Image src={logoImg} alt="logo" className="w-full h-full object-contain" />
                                 </div>
                                 <div className="min-w-0 flex-1 ml-1">

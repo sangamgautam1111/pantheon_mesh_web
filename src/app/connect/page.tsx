@@ -222,15 +222,15 @@ export default function ConnectPage() {
                 {/* Header */}
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
                     <div className="flex items-center gap-4 mb-3">
-                        <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shadow-lg border border-gcp-border/50 overflow-hidden p-1.5">
+                        <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-lg border border-gcp-border/50 overflow-hidden p-1.5">
                             <Image src={logoImg} alt="Pantheon Mesh" className="w-full h-full object-contain" />
                         </div>
                         <div>
                             <h1 className="text-3xl font-heading font-black tracking-tight" style={{ color: "var(--text-primary)" }}>
-                                Connect Enterprise AI Model
+                                Add Your AI Model
                             </h1>
                             <p className="text-sm opacity-60 mt-1" style={{ color: "var(--text-secondary)" }}>
-                                Provision your verified models onto the global mesh protocol and capture up to 85% revenue share.
+                                Link your AI keys here. Once added, your models will automatically start earning you money.
                             </p>
                         </div>
                     </div>
@@ -259,7 +259,7 @@ export default function ConnectPage() {
                                     <>
                                         <div className="flex items-center gap-2 mb-6">
                                             <Key size={18} className="text-gcp-blue" />
-                                            <h2 className="text-xl font-heading font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>Step 1 — Authenticate Provider</h2>
+                                            <h2 className="text-xl font-heading font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>Step 1 — Paste your API Key</h2>
                                         </div>
                                         <div className="relative mb-4">
                                             <input
@@ -318,7 +318,7 @@ export default function ConnectPage() {
                                             onClick={handleOllamaConnect}
                                             className="w-full py-4 rounded-xl bg-gcp-green text-white font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg hover:bg-gcp-green/90 transition-all"
                                         >
-                                            <Server size={18} /> Commission Node
+                                            <Server size={18} /> Add Local Model
                                         </button>
                                     </>
                                 )}
@@ -328,7 +328,7 @@ export default function ConnectPage() {
                                         className="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-3">
                                         <AlertTriangle size={18} className="text-red-500 shrink-0" />
                                         <div>
-                                            <p className="text-sm font-bold text-red-500 mb-1">Handshake Failure</p>
+                                            <p className="text-sm font-bold text-red-500 mb-1">Check Failed</p>
                                             <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{errorMsg}</p>
                                         </div>
                                     </motion.div>
@@ -378,7 +378,7 @@ export default function ConnectPage() {
                                     <div className="flex items-center gap-3">
                                         <Bot size={20} className="text-gcp-blue" />
                                         <h2 className="text-xl font-heading font-bold" style={{ color: "var(--text-primary)" }}>
-                                            Step 2 — {needsModelSelection && showModelList ? "Target Model Specification" : "Target Model Specification"}
+                                            Step 2 — Pick a Model to Add
                                         </h2>
                                     </div>
                                     {needsModelSelection && !showModelList && (
@@ -454,7 +454,7 @@ export default function ConnectPage() {
                                 whileTap={{ scale: 0.99 }}
                                 className="w-full py-5 rounded-xl bg-gcp-blue text-white font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg hover:bg-gcp-blue/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                             >
-                                {step === "connecting" ? <Loader2 size={20} className="animate-spin" /> : <Layers size={20} />} Provision onto Mesh
+                                {step === "connecting" ? <Loader2 size={20} className="animate-spin" /> : <Layers size={20} />} Start Earning Now
                             </motion.button>
                         </motion.div>
                     )}
@@ -468,10 +468,10 @@ export default function ConnectPage() {
                                     <CheckCircle size={48} className="text-gcp-green" />
                                 </motion.div>
                                 <h2 className="text-3xl font-heading font-black mb-3 text-gcp-text tracking-tight">
-                                    Node Commissioned
+                                    Success! Your Model is Added
                                 </h2>
                                 <p className="text-base mb-10 opacity-70 text-gcp-text-secondary max-w-lg mx-auto">
-                                    {onboardResult.message} Your compute unit is now securely indexed on the global mesh network.
+                                    {onboardResult.message} Your AI model is now working on the network and making money for you.
                                 </p>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10 max-w-2xl mx-auto">

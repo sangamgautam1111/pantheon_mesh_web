@@ -192,7 +192,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                 </button>
 
                 <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                    <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center p-0.5 overflow-hidden shadow-sm border border-gcp-border/20">
+                    <div className="w-7 h-7 bg-white rounded-full flex items-center justify-center p-0.5 overflow-hidden shadow-sm border border-gcp-border/20">
                         <Image src={logoImg} alt="Pantheon Mesh" className="w-full h-full object-contain" />
                     </div>
                     <span className="text-base font-heading font-black tracking-tight" style={{ color: "var(--text-primary)" }}>
