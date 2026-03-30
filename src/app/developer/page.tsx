@@ -43,6 +43,15 @@ interface Profile {
     total_tokens_consumed: number;
 }
 
+interface AuditRecord {
+    id: number;
+    provider: string;
+    model_name: string;
+    status: string;
+    error: string | null;
+    timestamp: string;
+}
+
 interface CreditSummary {
     total_tokens_consumed: number;
     total_gross_revenue: number;
@@ -75,6 +84,7 @@ export default function DeveloperPage() {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [models, setModels] = useState<ModelCard[]>([]);
     const [earnings, setEarnings] = useState<EarningRecord[]>([]);
+    const [audits, setAudits] = useState<AuditRecord[]>([]);
     const [creditSummary, setCreditSummary] = useState<CreditSummary | null>(null);
     const [activeTab, setActiveTab] = useState<"cloud" | "ollama">("cloud");
     const [showConnect, setShowConnect] = useState(false);
@@ -95,6 +105,7 @@ export default function DeveloperPage() {
         loadModels();
         loadEarnings();
         loadSavings();
+        loadAudits();
     }, [uid]);
 
     async function loadProfile() {
@@ -131,6 +142,17 @@ export default function DeveloperPage() {
             const res = await fetch(`${API}/v1/analytics/savings/${uid}`);
             if (res.ok) {
                 setSavings(await res.json());
+            }
+        } catch { }
+    }
+
+    async function loadAudits() {
+        if (!uid) return;
+        try {
+            const res = await fetch(`${API}/v1/developer/${uid}/audit-trail`);
+            if (res.ok) {
+                const data = await res.json();
+                setAudits(data.history || []);
             }
         } catch { }
     }
@@ -665,6 +687,84 @@ export default function DeveloperPage() {
                         <p style={{ color: "#00ff88", fontSize: 32, fontWeight: 900, margin: 0 }}>80%</p>
                         <p style={{ color: "#666", fontSize: 11, margin: "4px 0 0 0" }}>of every job your models complete</p>
                     </div>
+                </div>
+            </div>
+
+            {/* Registration Audit Trail */}
+            <div style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 16, padding: 32, marginTop: 40
+            }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+                    <div>
+                        <h3 style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: 0 }}>
+                            Registration History
+                        </h3>
+                        <p style={{ color: "#666", fontSize: 14, margin: "4px 0 0 0" }}>
+                            Audit trail of all model connection attempts on the Pantheon Mesh.
+                        </p>
+                    </div>
+                </div>
+
+                <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                        <thead>
+                            <tr style={{ background: "rgba(255,255,255,0.02)" }}>
+                                {["Provider", "Model Name", "Status", "Outcome / Error Message", "Attempt Time"].map(h => (
+                                    <th key={h} style={{
+                                        color: "#888", fontSize: 12, fontWeight: 700, textTransform: "uppercase",
+                                        letterSpacing: 1.5, padding: "16px 20px", textAlign: "left",
+                                        borderBottom: "2px solid rgba(255,255,255,0.05)"
+                                    }}>
+                                        {h}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {audits.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} style={{ padding: "48px", textAlign: "center", color: "#444", fontSize: 15, fontWeight: 500 }}>
+                                        No registration attempts logged.
+                                    </td>
+                                </tr>
+                            ) : audits.map((a, i) => (
+                                <tr key={a.id || i} style={{
+                                    borderBottom: "1px solid rgba(255,255,255,0.03)",
+                                    background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)"
+                                }}>
+                                    <td style={{ padding: "20px", color: "#fff", fontSize: 14, fontWeight: 700 }}>
+                                        {a.provider.toUpperCase()}
+                                    </td>
+                                    <td style={{ padding: "20px", color: "#aaa", fontSize: 14 }}>
+                                        {a.model_name}
+                                    </td>
+                                    <td style={{ padding: "20px" }}>
+                                        <div style={{
+                                            display: "inline-flex", alignItems: "center", gap: 6,
+                                            padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 900,
+                                            background: a.status === "success" ? "rgba(0,255,136,0.12)" : "rgba(255,68,68,0.12)",
+                                            color: a.status === "success" ? "#00ff88" : "#ff4444",
+                                            textTransform: "uppercase", border: `1px solid ${a.status === "success" ? "rgba(0,255,136,0.2)" : "rgba(255,68,68,0.2)"}`
+                                        }}>
+                                            <Activity size={14} />
+                                            {a.status}
+                                        </div>
+                                    </td>
+                                    <td style={{
+                                        padding: "20px", color: a.status === "success" ? "#00ff88" : "#ff9e9e",
+                                        fontSize: 14, maxWidth: 400, overflow: "hidden", textOverflow: "ellipsis"
+                                    }}>
+                                        {a.status === "success" ? "Validated & Online" : a.error}
+                                    </td>
+                                    <td style={{ padding: "20px", color: "#555", fontSize: 13, fontFamily: "monospace" }}>
+                                        {new Date(a.timestamp).toLocaleString()}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
