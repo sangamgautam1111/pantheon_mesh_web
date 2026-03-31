@@ -133,7 +133,7 @@ export default function ConnectPage() {
         setStep("connecting");
         try {
             const body: any = { api_key: apiKey.trim() };
-            if (selectedModel) body.model_id = selectedModel;
+            if (selectedModel) body.model_id = typeof selectedModel === 'string' ? selectedModel : selectedModel.id;
             const res = await fetch(`${API}/v1/developer/${uid}/models/smart-connect`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -265,12 +265,18 @@ export default function ConnectPage() {
 
                                 {activeTab === "cloud" ? (
                                     <>
-                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-                                            <div>
-                                                <h2 className="text-2xl font-heading font-black text-black mb-1">Provision API Core</h2>
-                                                <p className="text-xs font-medium opacity-40">Zero-knowledge key sealing & distributed auth</p>
+                                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                                                <div>
+                                                    <h2 className="text-2xl font-heading font-black text-black mb-1">Provision API Core</h2>
+                                                    <p className="text-xs font-medium opacity-40">Zero-knowledge key sealing & distributed auth</p>
+                                                </div>
+                                                <button 
+                                                    onClick={() => { setWhitepaperTarget("cloud"); setShowWhitepaper(true); }}
+                                                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gcp-blue bg-gcp-blue/5 px-4 py-2 rounded-full border border-gcp-blue/10 hover:bg-gcp-blue/10 transition-all"
+                                                >
+                                                    <BookOpen size={12} /> View Guide
+                                                </button>
                                             </div>
-                                        </div>
 
                                         <div className="relative mb-8 group/input">
                                             <div className="absolute -inset-1 bg-gradient-to-r from-gcp-blue/20 to-purple-500/20 rounded-2xl blur opacity-0 group-hover/input:opacity-100 transition duration-500"></div>
@@ -358,7 +364,9 @@ export default function ConnectPage() {
                                         </div>
                                         <div>
                                             <p className="text-sm font-black text-red-600 mb-1 tracking-tight">Provisioning Blocked</p>
-                                            <p className="text-xs font-medium text-red-500/70 leading-relaxed">{errorMsg}</p>
+                                            <p className="text-xs font-medium text-red-500/70 leading-relaxed">
+                                                {typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg)}
+                                            </p>
                                         </div>
                                     </motion.div>
                                 )}
@@ -479,7 +487,9 @@ export default function ConnectPage() {
                                     <AlertTriangle size={18} className="text-red-500 shrink-0" />
                                     <div>
                                         <p className="text-sm font-black text-red-500 mb-1 uppercase tracking-tight">Provisioning Blocked</p>
-                                        <p className="text-xs opacity-60 text-red-600/80 leading-relaxed">{errorMsg}</p>
+                                        <p className="text-xs opacity-60 text-red-600/80 leading-relaxed">
+                                            {typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg)}
+                                        </p>
                                     </div>
                                 </motion.div>
                             )}
