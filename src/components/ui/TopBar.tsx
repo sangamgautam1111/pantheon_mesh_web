@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import logoImg from "@/app/logo.png";
+import { RevenueCounter } from "./RevenueCounter";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -339,13 +340,10 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                 )}
             </div>
 
-            <div className="flex items-center gap-1">
-                <button onClick={toggleTheme}
-                    className="p-2 rounded-full transition-colors"
-                    style={{ color: "var(--text-secondary)" }}
-                    title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}>
-                    {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-                </button>
+            <div className="flex items-center gap-2">
+                <div className="desktop-only mr-2">
+                    <RevenueCounter />
+                </div>
                 <button onClick={() => setChatOpen(true)}
                     className="px-4 py-1.5 rounded-full transition-all desktop-only flex items-center gap-2 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
                     title="Mesh Assistant"

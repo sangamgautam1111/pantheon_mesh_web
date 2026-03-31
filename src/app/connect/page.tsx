@@ -588,21 +588,25 @@ export default function ConnectPage() {
                                     </p>
                                     
                                     <div className="space-y-4 flex-grow">
-                                        <button 
-                                            onClick={() => setWhitepaperTarget("ollama")}
+                                        <a 
+                                            href="/docs/ollama-provisioning.md"
+                                            target="_blank"
+                                            onClick={(e) => { e.stopPropagation(); setWhitepaperTarget("ollama"); }}
                                             className={`w-full group p-5 rounded-2xl flex items-center justify-between transition-all border ${whitepaperTarget === "ollama" ? "bg-white/10 border-white/20" : "bg-transparent border-white/5 hover:bg-white/5"}`}
                                         >
                                             <span className="text-[10px] font-bold uppercase tracking-widest text-left">Local<br/>Ollama<br/>Guide</span>
                                             <ArrowRight size={14} className={`transition-transform ${whitepaperTarget === "ollama" ? "translate-x-1" : "opacity-20"}`} />
-                                        </button>
+                                        </a>
                                         
-                                        <button 
-                                            onClick={() => setWhitepaperTarget("cloud")}
+                                        <a 
+                                            href="/docs/cloud-provisioning.md"
+                                            target="_blank"
+                                            onClick={(e) => { e.stopPropagation(); setWhitepaperTarget("cloud"); }}
                                             className={`w-full group p-5 rounded-2xl flex items-center justify-between transition-all border ${whitepaperTarget === "cloud" ? "bg-white/10 border-white/20" : "bg-transparent border-white/5 hover:bg-white/5"}`}
                                         >
                                             <span className="text-[10px] font-bold uppercase tracking-widest text-left">Cloud API<br/>Guide</span>
                                             <ArrowRight size={14} className={`transition-transform ${whitepaperTarget === "cloud" ? "translate-x-1" : "opacity-20"}`} />
-                                        </button>
+                                        </a>
                                     </div>
                                 </div>
 

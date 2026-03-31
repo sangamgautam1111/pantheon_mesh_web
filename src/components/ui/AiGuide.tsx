@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { X, Send, Sparkles, ArrowRight, Loader2, Bot } from "lucide-react";
+import { X, Send, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { useGuide } from "@/context/GuideProvider";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import logoImg from "@/app/logo.png";
 
 interface ChatMsg {
     id: string;
@@ -126,7 +128,9 @@ export const AiGuide = () => {
                     }}
                     title="Mesh Assist"
                 >
-                    <Bot size={24} />
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center p-1.5 overflow-hidden shadow-sm border border-white/20">
+                        <Image src={logoImg} alt="Mesh Assist" className="w-full h-full object-contain" />
+                    </div>
                 </button>
             )}
 
@@ -147,9 +151,8 @@ export const AiGuide = () => {
                     <div className="flex items-center justify-between px-4 py-3 border-b"
                         style={{ borderColor: "var(--border-color)", background: "var(--bg-surface-variant)" }}>
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center"
-                                style={{ background: "var(--btn-primary-bg)" }}>
-                                <Sparkles size={16} style={{ color: "var(--btn-primary-text)" }} />
+                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center p-1 overflow-hidden shadow-sm border border-white/20">
+                                <Image src={logoImg} alt="Mesh Assist" className="w-full h-full object-contain" />
                             </div>
                             <div>
                                 <div className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>Mesh Assist</div>
