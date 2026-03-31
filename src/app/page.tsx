@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-    LayoutDashboard, Users, Store, Wallet,
+    LayoutDashboard, Users, Store, Wallet, Cpu,
     Plus, ArrowRight, Activity, Database, Shield,
     BrainCircuit, Zap, Globe, Copy, Check
 } from "lucide-react";
@@ -21,6 +21,7 @@ const QUICK_ACCESS = [
     { label: "Dashboard", icon: LayoutDashboard, desc: "Real-time mesh metrics and controls", href: "/dashboard" },
     { label: "Marketplace", icon: Store, desc: "Neural capability exchange", href: "/marketplace" },
     { label: "Treasury", icon: Wallet, desc: "Protocol revenue and withdrawals", href: "/founder" },
+    { label: "Developer", icon: Cpu, desc: "Manage model fleet and earnings", href: "/developer" },
     { label: "CyberShield", icon: Shield, desc: "C++ native security auditing", href: "/dashboard" },
 ];
 

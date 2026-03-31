@@ -56,8 +56,12 @@ export default function AgentsPage() {
                 }));
                 setAgents(mapped);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error("Failed to load agents", err);
+            // If it's a TypeError: Failed to fetch, it's usually a connection issue
+            if (err instanceof TypeError && err.message === "Failed to fetch") {
+                alert("Neural Mesh API is unreachable. Please ensure the backend is running at " + API);
+            }
         } finally {
             setLoading(false);
         }

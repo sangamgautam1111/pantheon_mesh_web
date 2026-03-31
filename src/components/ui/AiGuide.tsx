@@ -5,7 +5,7 @@ import { X, Send, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { useGuide } from "@/context/GuideProvider";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import logoImg from "@/app/logo.png";
+import chatIcon from "@/app/chat_icon.png";
 
 interface ChatMsg {
     id: string;
@@ -117,26 +117,24 @@ export const AiGuide = () => {
             {!open && (
                 <button
                     onClick={() => setOpen(true)}
-                    className="fixed z-50 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105"
+                    className="fixed z-50 flex items-center justify-center transition-all hover:scale-110 active:scale-95 group"
                     style={{
-                        background: "var(--btn-primary-bg)",
-                        color: "var(--btn-primary-text)",
                         bottom: isMobile ? 16 : 24,
                         right: isMobile ? 16 : 24,
-                        width: isMobile ? 52 : 56,
-                        height: isMobile ? 52 : 56,
+                        width: isMobile ? 52 : 64,
+                        height: isMobile ? 52 : 64,
                     }}
                     title="Mesh Assist"
                 >
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center p-1.5 overflow-hidden shadow-sm border border-white/20">
-                        <Image src={logoImg} alt="Mesh Assist" className="w-full h-full object-contain" />
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center p-1.5 shadow-xl border border-white/20">
+                        <Image src={chatIcon} alt="Mesh Assist" className="w-full h-full object-contain" />
                     </div>
                 </button>
             )}
 
             {/* Chat Panel */}
             {open && (
-                <div className="fixed z-50 flex flex-col overflow-hidden shadow-2xl border"
+                <div className="fixed z-50 flex flex-col overflow-hidden shadow-2xl border backdrop-blur-xl"
                     style={{
                         background: "var(--bg-surface)",
                         borderColor: isMobile ? "transparent" : "var(--border-color)",
@@ -150,9 +148,9 @@ export const AiGuide = () => {
                     {/* Header */}
                     <div className="flex items-center justify-between px-4 py-3 border-b"
                         style={{ borderColor: "var(--border-color)", background: "var(--bg-surface-variant)" }}>
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center p-1 overflow-hidden shadow-sm border border-white/20">
-                                <Image src={logoImg} alt="Mesh Assist" className="w-full h-full object-contain" />
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center p-0.5 overflow-hidden shadow-sm border border-white/20">
+                                <Image src={chatIcon} alt="Assistant" className="w-full h-full object-contain" />
                             </div>
                             <div>
                                 <div className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>Mesh Assist</div>

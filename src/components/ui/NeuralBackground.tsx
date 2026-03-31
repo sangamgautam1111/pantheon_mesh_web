@@ -4,40 +4,59 @@ import { motion } from "framer-motion";
 
 export const NeuralBackground = () => {
     return (
-        <div className="fixed inset-0 z-[-1] bg-transparent overflow-hidden">
-            { }
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-neural/5 rounded-full blur-[120px]" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-gold/5 rounded-full blur-[120px]" />
-
-            { }
-            <div
+        <div className="fixed inset-0 z-[-1] bg-[#050505] overflow-hidden">
+            {/* Base Grid */}
+            <div 
                 className="absolute inset-0 opacity-[0.03]"
                 style={{
-                    backgroundImage: `radial-gradient(var(--neural) 0.5px, transparent 0.5px)`,
-                    backgroundSize: '30px 30px'
+                    backgroundImage: `linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px), 
+                                      linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+                    backgroundSize: '40px 40px'
                 }}
             />
 
-            { }
-            {[...Array(6)].map((_, i) => (
+            {/* Subtle Horizontal Beams (Linear, not circular) */}
+            <div className="absolute inset-0">
+                {[...Array(3)].map((_, i) => (
+                    <motion.div
+                        key={`h-${i}`}
+                        initial={{ opacity: 0, scaleY: 0 }}
+                        animate={{ 
+                            opacity: [0, 0.05, 0],
+                            scaleY: [1, 1.5, 1],
+                            top: `${i * 30 + 10}%`
+                        }}
+                        transition={{
+                            duration: 15 + i * 5,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                        }}
+                        className="absolute left-0 right-0 h-[300px] bg-gradient-to-b from-blue-500/10 via-transparent to-transparent pointer-events-none"
+                    />
+                ))}
+            </div>
+
+            {/* Floating Data Points */}
+            {[...Array(12)].map((_, i) => (
                 <motion.div
-                    key={i}
-                    initial={{ opacity: 0, scale: 0 }}
+                    key={`p-${i}`}
+                    initial={{ opacity: 0 }}
                     animate={{
-                        opacity: [0, 0.2, 0],
-                        scale: [0.5, 1.5, 0.5],
-                        x: [Math.random() * 100 + "%", Math.random() * 100 + "%"],
-                        y: [Math.random() * 100 + "%", Math.random() * 100 + "%"]
+                        opacity: [0, 0.3, 0],
+                        x: [Math.random() * 100 + "vw", Math.random() * 100 + "vw"],
+                        y: [Math.random() * 100 + "vh", Math.random() * 100 + "vh"]
                     }}
                     transition={{
-                        duration: 10 + Math.random() * 20,
+                        duration: 20 + Math.random() * 40,
                         repeat: Infinity,
                         ease: "linear"
                     }}
-                    className="absolute w-1 h-1 bg-neural rounded-full blur-[2px]"
+                    className="absolute w-[1px] h-[1px] bg-white/40 shadow-[0_0_8px_rgba(255,255,255,0.5)]"
                 />
             ))}
+
+            {/* Subtle Vignette */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-[#050505] opacity-60 pointer-events-none" />
         </div>
     );
 };
-

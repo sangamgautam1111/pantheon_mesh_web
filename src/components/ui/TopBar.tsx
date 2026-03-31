@@ -8,6 +8,7 @@ import { useGuide } from "@/context/GuideProvider";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import chatIcon from "@/app/chat_icon.png";
 import logoImg from "@/app/logo.png";
 import { RevenueCounter } from "./RevenueCounter";
 
@@ -192,11 +193,11 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                     <Menu size={20} />
                 </button>
 
-                <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                    <div className="w-7 h-7 bg-white rounded-full flex items-center justify-center p-0.5 overflow-hidden shadow-sm border border-gcp-border/20">
-                        <Image src={logoImg} alt="Pantheon Mesh" className="w-full h-full object-contain" />
+                <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm border border-black/10">
+                        <Image src={logoImg} alt="Pantheon Mesh" width={32} height={32} className="w-full h-full object-cover rounded-full" />
                     </div>
-                    <span className="text-base font-heading font-black tracking-tight" style={{ color: "var(--text-primary)" }}>
+                    <span className="text-sm font-semibold tracking-tight truncate" style={{ color: "var(--text-primary)" }}>
                         Pantheon Mesh
                     </span>
                 </Link>

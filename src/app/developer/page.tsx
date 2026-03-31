@@ -1,12 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
 import {
-    Cpu, Plus, Trash2, Activity, DollarSign, Zap,
-    Server, Cloud, RefreshCw, ArrowUpRight, BarChart3,
-    Wallet, Clock, Shield, ChevronDown, Globe, Terminal
+    Plus, Trash2, Activity, Wallet,
+    Server, RefreshCw, BarChart3,
+    Clock, Shield, ChevronDown, Globe, Terminal
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import Link from "next/link";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -62,20 +63,6 @@ interface CreditSummary {
 }
 
 // UID now comes from Firebase Auth via useAuth() hook
-
-const PROVIDER_ICONS: Record<string, any> = {
-    ollama: Terminal,
-    openrouter: Globe,
-    vertex: Cloud,
-    custom_api: Server
-};
-
-const STATUS_COLORS: Record<string, string> = {
-    active: "#00ff88",
-    offline: "#ff4444",
-    quarantined: "#ffaa00",
-    pending_validation: "#8888ff"
-};
 
 export default function DeveloperPage() {
     const router = useRouter();
@@ -167,7 +154,7 @@ export default function DeveloperPage() {
                 model_name: apiModelName,
                 api_key: apiKey,
                 endpoint: apiEndpoint
-            })
+              })
         });
         if (res.ok) {
             setApiModelName("");
@@ -206,565 +193,217 @@ export default function DeveloperPage() {
     }
 
     return (
-        <div style={{ padding: "32px", maxWidth: 1400, margin: "0 auto" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32 }}>
-                <div style={{
-                    width: 48, height: 48, borderRadius: 12,
-                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                    display: "flex", alignItems: "center", justifyContent: "center"
-                }}>
-                    <Cpu size={24} color="#fff" />
-                </div>
+        <div className="p-8 max-w-[1440px] mx-auto min-h-screen space-y-8 pb-20" style={{ color: "var(--text-primary)" }}>
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b" style={{ borderColor: "var(--border-subtle)" }}>
                 <div>
-                    <h1 style={{ fontSize: 28, fontWeight: 800, color: "#fff", margin: 0 }}>
-                        Developer Console
-                    </h1>
-                    <p style={{ color: "#888", margin: 0, fontSize: 14 }}>
-                        Connect models, track earnings, manage your fleet
+                    <h1 className="text-3xl font-bold tracking-tight mb-1" style={{ color: "var(--text-primary)" }}>Developer Console</h1>
+                    <p className="text-sm opacity-60">
+                        Manage your model cluster and monitor decentralized earnings
                     </p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => router.push("/connect")}
+                        className="px-6 py-2.5 bg-black hover:bg-zinc-800 text-white rounded-lg font-semibold transition-all active:scale-95 text-sm"
+                    >
+                        Connect Model
+                    </button>
                 </div>
             </div>
 
-            {/* Stats Bar */}
-            <div style={{
-                display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 16, marginBottom: 32
-            }}>
+            {/* Top Metrics Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                 {[
-                    {
-                        label: "Total Savings",
-                        value: `$${(savings?.total_savings_usd || 0).toFixed(2)}`,
-                        icon: Zap, color: "#00ff88"
-                    },
-                    {
-                        label: "Cost Reduction",
-                        value: savings?.cost_reduction_percent || "0%",
-                        icon: Shield, color: "#6366f1"
-                    },
-                    {
-                        label: "Active Payout",
-                        value: `$${(profile?.pending_payout || 0).toFixed(2)}`,
-                        icon: Wallet, color: "#ffaa00"
-                    },
-                    {
-                        label: "Models Active",
-                        value: String(profile?.models_registered || models.length || 0),
-                        icon: Server, color: "#00ccff"
-                    },
-                    {
-                        label: "Jobs Completed",
-                        value: String(profile?.total_jobs_completed || 0),
-                        icon: Activity, color: "#ff66cc"
-                    },
-                    {
-                        label: "Mesh Efficiency",
-                        value: `${((savings?.efficiency_score || 0.94) * 100).toFixed(0)}%`,
-                        icon: BarChart3, color: "#00ff88"
-                    }
+                    { label: "Total Savings", value: `$${(savings?.total_savings_usd || 0).toFixed(2)}` },
+                    { label: "Cost Reduction", value: savings?.cost_reduction_percent || "0%" },
+                    { label: "Active Payout", value: `$${(profile?.pending_payout || 0).toFixed(2)}` },
+                    { label: "Models Active", value: String(profile?.models_registered || models.length || 0) },
+                    { label: "Jobs Completed", value: String(profile?.total_jobs_completed || 0) },
+                    { label: "Mesh Efficiency", value: `${((savings?.efficiency_score || 0.94) * 100).toFixed(0)}%` }
                 ].map((stat, i) => (
-                    <div key={i} style={{
-                        background: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(255,255,255,0.06)",
-                        borderRadius: 16, padding: 16
-                    }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                            <stat.icon size={14} color={stat.color} />
-                            <span style={{ color: "#666", fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>
-                                {stat.label}
-                            </span>
+                    <div key={i} className="rounded-xl border p-5 shadow-sm transition-all hover:shadow-md h-full flex flex-col justify-between"
+                        style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>
+                        <div className="text-[11px] font-bold uppercase tracking-wider opacity-40 mb-2">
+                            {stat.label}
                         </div>
-                        <div style={{ fontSize: 24, fontWeight: 800, color: stat.color }}>
+                        <div className="text-2xl font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>
                             {stat.value}
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* Connect Model Button */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-                <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0 }}>
-                    Model Fleet ({models.length})
-                </h2>
-                <button
-                    onClick={() => router.push("/connect")}
-                    style={{
-                        background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                        color: "#fff", border: "none", borderRadius: 12,
-                        padding: "12px 24px", cursor: "pointer", fontWeight: 700,
-                        display: "flex", alignItems: "center", gap: 8, fontSize: 14
-                    }}
-                >
-                    <Plus size={16} /> Connect Model
-                </button>
-            </div>
-
-            {/* Connect Panel */}
-            {showConnect && (
-                <div style={{
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: 16, padding: 24, marginBottom: 24
-                }}>
-                    <div style={{ display: "flex", gap: 0, marginBottom: 24 }}>
-                        {(["cloud", "ollama"] as const).map(tab => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                style={{
-                                    background: activeTab === tab ? "rgba(99,102,241,0.2)" : "transparent",
-                                    color: activeTab === tab ? "#818cf8" : "#666",
-                                    border: "1px solid",
-                                    borderColor: activeTab === tab ? "rgba(99,102,241,0.3)" : "rgba(255,255,255,0.06)",
-                                    borderRadius: tab === "cloud" ? "12px 0 0 12px" : "0 12px 12px 0",
-                                    padding: "12px 32px", cursor: "pointer", fontWeight: 700, fontSize: 14
-                                }}
-                            >
-                                {tab === "cloud" ? (
-                                    <><Cloud size={14} style={{ marginRight: 8, verticalAlign: "middle" }} />Cloud API</>
-                                ) : (
-                                    <><Terminal size={14} style={{ marginRight: 8, verticalAlign: "middle" }} />Local Ollama</>
-                                )}
-                            </button>
-                        ))}
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+                {/* Left Column: Fleet Management (8 cols) */}
+                <div className="xl:col-span-8 space-y-6">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-bold">
+                            Model Fleet <span className="text-sm opacity-40 ml-2">({models.length})</span>
+                        </h2>
                     </div>
 
-                    {activeTab === "cloud" ? (
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                            <div>
-                                <label style={{ color: "#888", fontSize: 12, marginBottom: 6, display: "block" }}>Provider</label>
-                                <select
-                                    value={apiProvider}
-                                    onChange={e => setApiProvider(e.target.value)}
-                                    style={{
-                                        width: "100%", background: "rgba(0,0,0,0.3)", color: "#fff",
-                                        border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8,
-                                        padding: "12px 16px", fontSize: 14
-                                    }}
-                                >
-                                    <option value="openrouter">OpenRouter</option>
-                                    <option value="vertex">Google Vertex AI</option>
-                                    <option value="custom_api">Custom API</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style={{ color: "#888", fontSize: 12, marginBottom: 6, display: "block" }}>Model Name</label>
-                                <input
-                                    value={apiModelName}
-                                    onChange={e => setApiModelName(e.target.value)}
-                                    placeholder="deepseek/deepseek-chat-v3"
-                                    style={{
-                                        width: "100%", background: "rgba(0,0,0,0.3)", color: "#fff",
-                                        border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8,
-                                        padding: "12px 16px", fontSize: 14
-                                    }}
-                                />
-                            </div>
-                            <div>
-                                <label style={{ color: "#888", fontSize: 12, marginBottom: 6, display: "block" }}>API Key</label>
-                                <input
-                                    type="password"
-                                    value={apiKey}
-                                    onChange={e => setApiKey(e.target.value)}
-                                    placeholder="sk-or-v1-..."
-                                    style={{
-                                        width: "100%", background: "rgba(0,0,0,0.3)", color: "#fff",
-                                        border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8,
-                                        padding: "12px 16px", fontSize: 14
-                                    }}
-                                />
-                            </div>
-                            <div>
-                                <label style={{ color: "#888", fontSize: 12, marginBottom: 6, display: "block" }}>Endpoint URL (optional)</label>
-                                <input
-                                    value={apiEndpoint}
-                                    onChange={e => setApiEndpoint(e.target.value)}
-                                    placeholder="https://openrouter.ai/api/v1"
-                                    style={{
-                                        width: "100%", background: "rgba(0,0,0,0.3)", color: "#fff",
-                                        border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8,
-                                        padding: "12px 16px", fontSize: 14
-                                    }}
-                                />
-                            </div>
-                            <div style={{ gridColumn: "1 / -1" }}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {models.length === 0 ? (
+                            <div className="col-span-full py-16 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center text-center space-y-4"
+                                style={{ background: "var(--bg-surface-variant)", borderColor: "var(--border-subtle)" }}>
+                                <div className="max-w-xs">
+                                    <p className="font-semibold opacity-60 text-lg">No Models Online</p>
+                                    <p className="text-sm opacity-40 mt-1">Connect your first model to start processing jobs and earning revenue.</p>
+                                </div>
                                 <button
-                                    onClick={connectCloudModel}
-                                    style={{
-                                        background: "linear-gradient(135deg, #00ff88, #00ccaa)",
-                                        color: "#000", border: "none", borderRadius: 12,
-                                        padding: "14px 32px", cursor: "pointer", fontWeight: 800, fontSize: 14,
-                                        width: "100%"
-                                    }}
+                                    onClick={() => router.push("/connect")}
+                                    className="text-sm font-bold hover:underline" style={{ color: "var(--text-primary)" }}
                                 >
-                                    Connect Cloud Model →
+                                    Get Started →
                                 </button>
                             </div>
-                        </div>
-                    ) : (
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                            <div>
-                                <label style={{ color: "#888", fontSize: 12, marginBottom: 6, display: "block" }}>Model Name</label>
-                                <input
-                                    value={ollamaModel}
-                                    onChange={e => setOllamaModel(e.target.value)}
-                                    placeholder="llama3, mistral, codellama..."
-                                    style={{
-                                        width: "100%", background: "rgba(0,0,0,0.3)", color: "#fff",
-                                        border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8,
-                                        padding: "12px 16px", fontSize: 14
-                                    }}
-                                />
-                            </div>
-                            <div>
-                                <label style={{ color: "#888", fontSize: 12, marginBottom: 6, display: "block" }}>Ollama Host</label>
-                                <input
-                                    value={ollamaHost}
-                                    onChange={e => setOllamaHost(e.target.value)}
-                                    placeholder="http://localhost:11434"
-                                    style={{
-                                        width: "100%", background: "rgba(0,0,0,0.3)", color: "#fff",
-                                        border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8,
-                                        padding: "12px 16px", fontSize: 14
-                                    }}
-                                />
-                            </div>
-                            <div style={{ gridColumn: "1 / -1" }}>
-                                <button
-                                    onClick={connectOllama}
-                                    style={{
-                                        background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                                        color: "#fff", border: "none", borderRadius: 12,
-                                        padding: "14px 32px", cursor: "pointer", fontWeight: 800, fontSize: 14,
-                                        width: "100%"
-                                    }}
-                                >
-                                    Connect Ollama Model →
-                                </button>
-                            </div>
-                            <div style={{
-                                gridColumn: "1 / -1",
-                                background: "rgba(99,102,241,0.08)",
-                                border: "1px solid rgba(99,102,241,0.15)",
-                                borderRadius: 12, padding: 16
-                            }}>
-                                <p style={{ color: "#818cf8", fontSize: 13, margin: 0, fontWeight: 600, marginBottom: 8 }}>
-                                    CLI Alternative
-                                </p>
-                                <code style={{
-                                    color: "#00ff88", fontSize: 13, fontFamily: "JetBrains Mono, monospace",
-                                    background: "rgba(0,0,0,0.4)", padding: "8px 12px", borderRadius: 8, display: "block"
-                                }}>
-                                    python scripts/developer_cli.py connect-ollama --model llama3 --host http://localhost:11434
-                                </code>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
+                        ) : (
+                            models.map((m, i) => {
+                                const statusColor = m.status === 'active' ? 'var(--text-primary)' : 'var(--text-secondary)';
+                                return (
+                                    <div key={m.model_id || i} className="rounded-xl border shadow-sm p-5 hover:shadow-md transition-all flex flex-col h-full relative group"
+                                        style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="min-w-0">
+                                                <div className="text-base font-bold truncate">{m.model_name}</div>
+                                                <div className="text-[10px] uppercase opacity-40 font-bold">{m.provider} • ID {m.model_id?.slice(0, 4)}</div>
+                                            </div>
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => healthCheck(m.model_id)} className="p-2 hover:bg-black/5 rounded-lg transition-colors">
+                                                    <RefreshCw size={14} className="opacity-40" />
+                                                </button>
+                                                <button onClick={() => disconnectModel(m.model_id)} className="p-2 hover:bg-black/5 rounded-lg transition-colors">
+                                                    <Trash2 size={14} className="opacity-40" />
+                                                </button>
+                                            </div>
+                                        </div>
 
-            {/* Model Fleet Grid */}
-            <div style={{
-                display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(380, 1fr))", gap: 16, marginBottom: 40
-            }}>
-                {models.length === 0 ? (
-                    <div style={{
-                        gridColumn: "1 / -1",
-                        background: "rgba(255,255,255,0.02)",
-                        border: "1px dashed rgba(255,255,255,0.08)",
-                        borderRadius: 16, padding: 48, textAlign: "center"
-                    }}>
-                        <Server size={40} color="#333" style={{ marginBottom: 16 }} />
-                        <p style={{ color: "#555", fontSize: 16, margin: 0 }}>
-                            No models connected yet. Click "Connect Model" to start earning.
-                        </p>
+                                        <div className="space-y-2 mb-4">
+                                            <div className="flex items-center justify-between text-[10px] font-bold uppercase">
+                                                <span className="opacity-60">{m.status.replace('_', ' ')}</span>
+                                                <span className="opacity-40">{((m.health_score || 0) * 100).toFixed(0)}% Health</span>
+                                            </div>
+                                            <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
+                                                <div className="h-full rounded-full transition-all duration-1000 bg-black" style={{ width: `${(m.health_score || 0) * 100}%` }} />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-2 mt-auto pt-3 border-t" style={{ borderColor: "var(--border-subtle)" }}>
+                                            {[
+                                                { label: "Earnings", value: `$${(m.total_earnings || 0).toFixed(2)}` },
+                                                { label: "Requests", value: String(m.total_requests || 0) },
+                                                { label: "Latency", value: `${(m.average_latency_ms || 0).toFixed(0)}ms` }
+                                            ].map((s, j) => (
+                                                <div key={j} className="text-center">
+                                                    <div className="text-[9px] uppercase opacity-40 font-bold mb-0.5">{s.label}</div>
+                                                    <div className="text-xs font-bold">{s.value}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
                     </div>
-                ) : models.map((m, i) => {
-                    const ProvIcon = PROVIDER_ICONS[m.provider] || Server;
-                    const statusColor = STATUS_COLORS[m.status] || "#888";
-                    return (
-                        <div key={m.model_id || i} style={{
-                            background: "rgba(255,255,255,0.03)",
-                            border: `1px solid rgba(255,255,255,0.06)`,
-                            borderRadius: 16, padding: 20, position: "relative",
-                            transition: "border-color 0.3s",
-                        }}>
-                            <div style={{
-                                position: "absolute", top: 16, right: 16,
-                                display: "flex", gap: 8
-                            }}>
-                                <button
-                                    onClick={() => alert("Model is in testing & deploying phase.")}
-                                    style={{
-                                        background: "rgba(99,102,241,0.1)", border: "none",
-                                        borderRadius: 8, padding: "8px 12px", cursor: "pointer",
-                                        color: "#818cf8", fontSize: 12, fontWeight: 700
-                                    }}
-                                    title="Send to Work"
-                                >
-                                    Send to Work
-                                </button>
-                                <button
-                                    onClick={() => healthCheck(m.model_id)}
-                                    style={{
-                                        background: "rgba(255,255,255,0.05)", border: "none",
-                                        borderRadius: 8, padding: 8, cursor: "pointer"
-                                    }}
-                                    title="Health Check"
-                                >
-                                    <RefreshCw size={14} color="#888" />
-                                </button>
-                                <button
-                                    onClick={() => disconnectModel(m.model_id)}
-                                    style={{
-                                        background: "rgba(255,68,68,0.1)", border: "none",
-                                        borderRadius: 8, padding: 8, cursor: "pointer"
-                                    }}
-                                    title="Disconnect"
-                                >
-                                    <Trash2 size={14} color="#ff4444" />
-                                </button>
-                            </div>
 
-                            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                                <div style={{
-                                    width: 40, height: 40, borderRadius: 10,
-                                    background: `${statusColor}15`,
-                                    display: "flex", alignItems: "center", justifyContent: "center"
-                                }}>
-                                    <ProvIcon size={20} color={statusColor} />
-                                </div>
-                                <div>
-                                    <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>
-                                        {m.model_name}
-                                    </div>
-                                    <div style={{ color: "#666", fontSize: 12 }}>
-                                        {m.provider.toUpperCase()} • {m.model_id?.slice(0, 8)}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style={{
-                                display: "flex", alignItems: "center", gap: 8, marginBottom: 16
-                            }}>
-                                <div style={{
-                                    width: 8, height: 8, borderRadius: "50%",
-                                    background: statusColor,
-                                    boxShadow: `0 0 8px ${statusColor}60`
-                                }} />
-                                <span style={{ color: statusColor, fontSize: 12, fontWeight: 700, textTransform: "uppercase" }}>
-                                    {m.status}
-                                </span>
-                                <div style={{
-                                    flex: 1, height: 4, background: "rgba(255,255,255,0.05)",
-                                    borderRadius: 2, marginLeft: 8
-                                }}>
-                                    <div style={{
-                                        width: `${(m.health_score || 0) * 100}%`,
-                                        height: "100%", borderRadius: 2,
-                                        background: statusColor,
-                                        transition: "width 0.5s"
-                                    }} />
-                                </div>
-                                <span style={{ color: "#666", fontSize: 11 }}>
-                                    {((m.health_score || 0) * 100).toFixed(0)}%
-                                </span>
-                            </div>
-
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                                {[
-                                    { label: "Earnings", value: `$${(m.total_earnings || 0).toFixed(2)}`, color: "#00ff88" },
-                                    { label: "Requests", value: String(m.total_requests || 0), color: "#00ccff" },
-                                    { label: "Latency", value: `${(m.average_latency_ms || 0).toFixed(0)}ms`, color: "#ffaa00" }
-                                ].map((s, j) => (
-                                    <div key={j} style={{
-                                        background: "rgba(0,0,0,0.2)", borderRadius: 8, padding: "8px 12px", textAlign: "center"
-                                    }}>
-                                        <div style={{ color: "#555", fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                                            {s.label}
-                                        </div>
-                                        <div style={{ color: s.color, fontSize: 16, fontWeight: 800 }}>
-                                            {s.value}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                    <div className="rounded-xl border shadow-sm overflow-hidden" style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>
+                        <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: "var(--border-subtle)" }}>
+                            <h3 className="font-bold text-sm">Cluster Event Log</h3>
                         </div>
-                    );
-                })}
-            </div>
-
-            {/* Earnings & Credit Section */}
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24, marginBottom: 32 }}>
-                {/* Earnings Table */}
-                <div style={{
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.06)",
-                    borderRadius: 16, padding: 24
-                }}>
-                    <h3 style={{ color: "#fff", fontSize: 18, fontWeight: 700, margin: "0 0 20px 0" }}>
-                        Earnings History
-                    </h3>
-                    <div style={{ overflowX: "auto" }}>
-                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                            <thead>
-                                <tr>
-                                    {["Job ID", "Gross", "Your 80%", "Platform 20%", "Tokens", "Time"].map(h => (
-                                        <th key={h} style={{
-                                            color: "#555", fontSize: 11, fontWeight: 700, textTransform: "uppercase",
-                                            letterSpacing: 1, padding: "8px 12px", textAlign: "left",
-                                            borderBottom: "1px solid rgba(255,255,255,0.06)"
-                                        }}>
-                                            {h}
-                                        </th>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs">
+                                <thead>
+                                    <tr className="bg-zinc-50/50 opacity-50 font-bold uppercase text-[10px]" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                                        <th className="px-5 py-3">Model Details</th>
+                                        <th className="px-5 py-3 text-center">Status</th>
+                                        <th className="px-5 py-3 text-right">Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
+                                    {audits.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={3} className="px-5 py-10 text-center opacity-30 italic">No events recorded.</td>
+                                        </tr>
+                                    ) : audits.slice(0, 10).map((a, i) => (
+                                        <tr key={i} className="hover:bg-black/[0.01] transition-colors">
+                                            <td className="px-5 py-3">
+                                                <div className="font-bold">{a.model_name}</div>
+                                                <div className="text-[9px] opacity-40 font-bold uppercase">{a.provider}</div>
+                                            </td>
+                                            <td className="px-5 py-3 text-center">
+                                                <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] uppercase ${a.status === "success" ? "bg-black/5 text-black" : "bg-black/5 text-zinc-400"}`}>
+                                                    {a.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-5 py-3 text-right font-mono opacity-40 text-[10px]">
+                                                {new Date(a.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </td>
+                                        </tr>
                                     ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {earnings.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={6} style={{ color: "#444", padding: 24, textAlign: "center" }}>
-                                            No earnings recorded yet. Connect a model and start processing jobs.
-                                        </td>
-                                    </tr>
-                                ) : earnings.map((e, i) => (
-                                    <tr key={e.id || i} style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
-                                        <td style={{ color: "#888", fontSize: 13, padding: "12px" }}>
-                                            {e.job_id?.slice(0, 8)}...
-                                        </td>
-                                        <td style={{ color: "#fff", fontSize: 13, padding: "12px", fontWeight: 600 }}>
-                                            ${e.gross_amount.toFixed(2)}
-                                        </td>
-                                        <td style={{ color: "#00ff88", fontSize: 13, padding: "12px", fontWeight: 700 }}>
-                                            +${e.developer_share.toFixed(2)}
-                                        </td>
-                                        <td style={{ color: "#666", fontSize: 13, padding: "12px" }}>
-                                            ${e.platform_share.toFixed(2)}
-                                        </td>
-                                        <td style={{ color: "#00ccff", fontSize: 13, padding: "12px" }}>
-                                            {e.tokens_used.toLocaleString()}
-                                        </td>
-                                        <td style={{ color: "#555", fontSize: 12, padding: "12px" }}>
-                                            {e.timestamp?.slice(0, 16)}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {/* Credit Summary Panel */}
-                <div style={{
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.06)",
-                    borderRadius: 16, padding: 24
-                }}>
-                    <h3 style={{ color: "#fff", fontSize: 18, fontWeight: 700, margin: "0 0 20px 0" }}>
-                        Credit Summary
-                    </h3>
-                    {[
-                        { label: "Total Tokens Used", value: (creditSummary?.total_tokens_consumed || 0).toLocaleString(), color: "#00ccff" },
-                        { label: "Gross Revenue Generated", value: `$${(creditSummary?.total_gross_revenue || 0).toFixed(2)}`, color: "#fff" },
-                        { label: "Your Earnings (80%)", value: `$${(creditSummary?.total_developer_earnings || 0).toFixed(2)}`, color: "#00ff88" },
-                        { label: "Platform Share (20%)", value: `$${((creditSummary?.total_gross_revenue || 0) - (creditSummary?.total_developer_earnings || 0)).toFixed(2)}`, color: "#ff4444" },
-                        { label: "Jobs Processed", value: String(creditSummary?.total_jobs_processed || 0), color: "#ffaa00" }
-                    ].map((item, i) => (
-                        <div key={i} style={{
-                            display: "flex", justifyContent: "space-between", alignItems: "center",
-                            padding: "14px 0",
-                            borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.04)" : "none"
-                        }}>
-                            <span style={{ color: "#666", fontSize: 13 }}>{item.label}</span>
-                            <span style={{ color: item.color, fontSize: 16, fontWeight: 800 }}>{item.value}</span>
+                                </tbody>
+                            </table>
                         </div>
-                    ))}
-
-                    <div style={{
-                        background: "linear-gradient(135deg, rgba(0,255,136,0.08), rgba(0,204,170,0.08))",
-                        border: "1px solid rgba(0,255,136,0.15)",
-                        borderRadius: 12, padding: 16, marginTop: 20, textAlign: "center"
-                    }}>
-                        <p style={{ color: "#00ff88", fontSize: 12, margin: "0 0 4px 0" }}>Developer Fee</p>
-                        <p style={{ color: "#00ff88", fontSize: 32, fontWeight: 900, margin: 0 }}>80%</p>
-                        <p style={{ color: "#666", fontSize: 11, margin: "4px 0 0 0" }}>of every job your models complete</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Registration Audit Trail */}
-            <div style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: 16, padding: 32, marginTop: 40
-            }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-                    <div>
-                        <h3 style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: 0 }}>
-                            Registration History
-                        </h3>
-                        <p style={{ color: "#666", fontSize: 14, margin: "4px 0 0 0" }}>
-                            Audit trail of all model connection attempts on the Pantheon Mesh.
-                        </p>
                     </div>
                 </div>
 
-                <div style={{ overflowX: "auto" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                        <thead>
-                            <tr style={{ background: "rgba(255,255,255,0.02)" }}>
-                                {["Provider", "Model Name", "Status", "Outcome / Error Message", "Attempt Time"].map(h => (
-                                    <th key={h} style={{
-                                        color: "#888", fontSize: 12, fontWeight: 700, textTransform: "uppercase",
-                                        letterSpacing: 1.5, padding: "16px 20px", textAlign: "left",
-                                        borderBottom: "2px solid rgba(255,255,255,0.05)"
-                                    }}>
-                                        {h}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {audits.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} style={{ padding: "48px", textAlign: "center", color: "#444", fontSize: 15, fontWeight: 500 }}>
-                                        No registration attempts logged.
-                                    </td>
-                                </tr>
-                            ) : audits.map((a, i) => (
-                                <tr key={a.id || i} style={{
-                                    borderBottom: "1px solid rgba(255,255,255,0.03)",
-                                    background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)"
-                                }}>
-                                    <td style={{ padding: "20px", color: "#fff", fontSize: 14, fontWeight: 700 }}>
-                                        {a.provider.toUpperCase()}
-                                    </td>
-                                    <td style={{ padding: "20px", color: "#aaa", fontSize: 14 }}>
-                                        {a.model_name}
-                                    </td>
-                                    <td style={{ padding: "20px" }}>
-                                        <div style={{
-                                            display: "inline-flex", alignItems: "center", gap: 6,
-                                            padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 900,
-                                            background: a.status === "success" ? "rgba(0,255,136,0.12)" : "rgba(255,68,68,0.12)",
-                                            color: a.status === "success" ? "#00ff88" : "#ff4444",
-                                            textTransform: "uppercase", border: `1px solid ${a.status === "success" ? "rgba(0,255,136,0.2)" : "rgba(255,68,68,0.2)"}`
-                                        }}>
-                                            <Activity size={14} />
-                                            {a.status}
-                                        </div>
-                                    </td>
-                                    <td style={{
-                                        padding: "20px", color: a.status === "success" ? "#00ff88" : "#ff9e9e",
-                                        fontSize: 14, maxWidth: 400, overflow: "hidden", textOverflow: "ellipsis"
-                                    }}>
-                                        {a.status === "success" ? "Validated & Online" : a.error}
-                                    </td>
-                                    <td style={{ padding: "20px", color: "#555", fontSize: 13, fontFamily: "monospace" }}>
-                                        {new Date(a.timestamp).toLocaleString()}
-                                    </td>
-                                </tr>
+                {/* Right Column: Payout Overview (4 cols) */}
+                <div className="xl:col-span-4 space-y-6">
+                    <div className="rounded-2xl border shadow-lg p-6 space-y-8" style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>
+                        <div>
+                            <h3 className="text-xs font-bold opacity-40 uppercase tracking-widest mb-6">Payout Overview</h3>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-3xl font-black opacity-30">$</span>
+                                <span className="text-6xl font-black tracking-tighter">
+                                    {(creditSummary?.total_developer_earnings || 0).toFixed(2)}
+                                </span>
+                            </div>
+                            <div className="mt-4">
+                                <span className="text-[10px] font-bold opacity-40 uppercase tracking-tight">Lifetime Net Revenue</span>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 pt-4 border-t" style={{ borderColor: "var(--border-subtle)" }}>
+                            {[
+                                { label: "Jobs Processed", value: String(creditSummary?.total_jobs_processed || 0) },
+                                { label: "Platform Fee", value: "20%" },
+                                { label: "Pending Payout", value: `$${(profile?.pending_payout || 0).toFixed(2)}`, highlight: true }
+                            ].map((row, i) => (
+                                <div key={i} className="flex items-center justify-between text-xs">
+                                    <div className="opacity-40 font-bold uppercase text-[10px]">{row.label}</div>
+                                    <div className={`font-bold ${row.highlight ? 'text-lg' : ''}`}>{row.value}</div>
+                                </div>
                             ))}
-                        </tbody>
-                    </table>
+                        </div>
+
+                        <button className="w-full py-4 bg-black text-white hover:bg-zinc-800 rounded-xl font-bold text-sm transition-all active:scale-95"
+                            onClick={() => router.push("/withdraw")}>
+                            Withdraw Funds
+                        </button>
+                    </div>
+
+                    <div className="rounded-xl border shadow-sm" style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>
+                        <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: "var(--border-subtle)" }}>
+                            <h3 className="font-bold text-sm">Recent Ledger</h3>
+                            <Link href="/withdraw" className="text-[10px] font-bold opacity-40 uppercase hover:text-black">View All</Link>
+                        </div>
+                        <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
+                            {earnings.length === 0 ? (
+                                <div className="p-10 text-center text-xs opacity-20 italic">No records.</div>
+                            ) : earnings.slice(0, 5).map((e, i) => (
+                                <div key={i} className="p-4 flex items-center justify-between hover:bg-black/[0.01] transition-all">
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] font-mono opacity-30">#ID-{e.job_id?.slice(0, 4)}</span>
+                                        <span className="text-xs font-bold">{e.tokens_used.toLocaleString()} Tokens</span>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-sm font-black text-black">+${e.developer_share.toFixed(2)}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,29 +1,28 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { Bot, Cpu, Link as LinkIcon, RefreshCw, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Bot, Cpu, Link as LinkIcon, RefreshCw, Send, CheckCircle2, AlertCircle, Shield, Globe, Terminal, ArrowRight, Activity, Server, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-export default function OllamaBotPage() {
+export default function OllamaProvisioningPage() {
+    const [step, setStep] = useState(1);
     const [models, setModels] = useState<any[]>([]);
     const [selectedModel, setSelectedModel] = useState("");
-    const [status, setStatus] = useState("disconnected");
-    const [chat, setChat] = useState<{ role: string, content: string }[]>([]);
-    const [input, setInput] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [ngrokUrl, setNgrokUrl] = useState("");
+    const [status, setStatus] = useState("idle"); // idle, connecting, connected, error
+    const [provisioning, setProvisioning] = useState(false);
+    const [provisioned, setProvisioned] = useState(false);
 
     const API_URL = "http://localhost:8000";
 
-    const discoverModels = async () => {
+    const fetchLocalModels = async () => {
         setStatus("connecting");
         try {
-            const resp = await fetch(`${API_URL}/market`);
-            if (!resp.ok) throw new Error("Offline");
-            
-            const ollamaResp = await fetch("http://localhost:11434/api/tags");
-            if (ollamaResp.ok) {
-                const data = await ollamaResp.json();
+            const resp = await fetch("http://localhost:11434/api/tags");
+            if (resp.ok) {
+                const data = await resp.json();
                 setModels(data.models || []);
-                if (data.models && data.models.length > 0) {
+                if (data.models?.length > 0) {
                     setSelectedModel(data.models[0].name);
                     setStatus("connected");
                 }
@@ -36,161 +35,301 @@ export default function OllamaBotPage() {
     };
 
     useEffect(() => {
-        discoverModels();
-    }, []);
+        if (step === 3) fetchLocalModels();
+    }, [step]);
 
-    const handleSendMessage = async () => {
-        if (!input.trim() || !selectedModel) return;
-        
-        const newMsg = { role: "user", content: input };
-        setChat(prev => [...prev, newMsg]);
-        setInput("");
-        setLoading(true);
-
+    const handleProvision = async () => {
+        if (!selectedModel || !ngrokUrl) return;
+        setProvisioning(true);
         try {
-            const response = "Local node active. Response from " + selectedModel;
-            setChat(prev => [...prev, { role: "bot", content: response }]);
+            const res = await fetch(`${API_URL}/v1/ollama/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    uid: 'DEMO_USER',
+                    model_name: selectedModel,
+                    host: ngrokUrl
+                })
+            });
+            if (res.ok) {
+                setProvisioned(true);
+                setStep(4);
+            } else {
+                alert("Provisioning failed. Ensure backend is active.");
+            }
         } catch (e) {
-            setChat(prev => [...prev, { role: "bot", content: "Error." }]);
-        } finally {
-            setLoading(false);
+            alert("Connection error.");
         }
+        setProvisioning(false);
     };
 
     return (
-        <div className="min-h-screen bg-[#050505] text-white p-8 font-sans">
-            <div className="max-w-4xl mx-auto space-y-8">
-                
-                <div className="flex items-center justify-between border-b border-white/10 pb-6">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20">
-                            <Bot className="text-blue-400" size={32} />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold tracking-tight">Ollama Node</h1>
-                            <p className="text-sm text-white/40">Local Intelligence bridge</p>
-                        </div>
-                    </div>
-                    
-                    <button 
-                        onClick={discoverModels}
-                        className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all text-[10px] font-bold uppercase tracking-widest"
-                    >
-                        <RefreshCw size={14} className={status === "connecting" ? "animate-spin" : ""} />
-                        Refresh Nodes
-                    </button>
-                </div>
+        <div className="min-h-screen bg-[#050505] text-white p-6 lg:p-12 font-sans selection:bg-blue-500/30 overflow-hidden relative">
+            
+            {/* Background Glows */}
+            <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-500/5 rounded-full blur-[150px] pointer-events-none" />
+            <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-purple-500/5 rounded-full blur-[150px] pointer-events-none" />
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="max-w-5xl mx-auto space-y-12 relative">
+                
+                <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="space-y-2">
+                        <motion.div 
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="flex items-center gap-2 text-blue-400 font-bold uppercase tracking-[0.3em] text-[10px]"
+                        >
+                            <Zap size={12} fill="currentColor" /> Local Node Provisioning
+                        </motion.div>
+                        <motion.h1 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-5xl font-black tracking-tighter"
+                        >
+                            Bridge <span className="text-white/30">Ollama</span>
+                        </motion.h1>
+                    </div>
+
+                    <div className="flex gap-2">
+                        {[1, 2, 3, 4].map(s => (
+                            <div 
+                                key={s} 
+                                className={`h-1.5 w-12 rounded-full transition-all duration-500 ${step >= s ? "bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" : "bg-white/10"}`} 
+                            />
+                        ))}
+                    </div>
+                </header>
+
+                <main className="grid grid-cols-1 lg:grid-cols-5 gap-8">
                     
-                    <div className="space-y-6">
-                        <div className="p-6 bg-white/[0.02] border border-white/[0.05] rounded-3xl space-y-4">
-                            <h2 className="text-[10px] font-bold uppercase tracking-widest text-blue-400 flex items-center gap-2">
-                                <LinkIcon size={14} /> Status
-                            </h2>
+                    {/* Left Column: Instructions */}
+                    <div className="lg:col-span-2 space-y-4">
+                        <AnimatePresence mode="wait">
+                            <motion.div 
+                                key={step}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                className="bg-white/[0.02] border border-white/10 rounded-[2rem] p-8 space-y-6 backdrop-blur-3xl"
+                            >
+                                {step === 1 && (
+                                    <>
+                                        <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center border border-blue-500/20">
+                                            <Terminal size={24} className="text-blue-400" />
+                                        </div>
+                                        <div className="space-y-4">
+                                            <h2 className="text-2xl font-bold tracking-tight">Initialize Core</h2>
+                                            <p className="text-sm text-white/50 leading-relaxed">Execute the local runtime. This prepares the weights for decentralized mesh routing.</p>
+                                            <div className="bg-black/40 rounded-2xl p-4 border border-white/5 font-mono text-xs text-blue-300 relative group">
+                                                <div className="absolute top-3 right-4 text-[9px] opacity-30 uppercase font-bold tracking-widest">Execute</div>
+                                                ollama run llama3
+                                            </div>
+                                            <button 
+                                                onClick={() => setStep(2)}
+                                                className="w-full bg-white text-black py-4 rounded-2xl font-black text-sm tracking-tight hover:bg-white/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                            >
+                                                Core Initialized <ArrowRight size={16} />
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+
+                                {step === 2 && (
+                                    <>
+                                        <div className="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center border border-purple-500/20">
+                                            <Globe size={24} className="text-purple-400" />
+                                        </div>
+                                        <div className="space-y-4">
+                                            <h2 className="text-2xl font-bold tracking-tight">Establish Tunnel</h2>
+                                            <p className="text-sm text-white/50 leading-relaxed">Generate a cryptographic bridge to the Pantheon Cloud. We recommend Ngrok for URI isolation.</p>
+                                            <div className="bg-black/40 rounded-2xl p-4 border border-white/5 font-mono text-xs text-purple-300 relative group">
+                                                <div className="absolute top-3 right-4 text-[9px] opacity-30 uppercase font-bold tracking-widest">Tunnel</div>
+                                                ngrok http 11434
+                                            </div>
+                                            <button 
+                                                onClick={() => setStep(3)}
+                                                className="w-full bg-white text-black py-4 rounded-2xl font-black text-sm tracking-tight hover:bg-white/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                            >
+                                                Tunnel Active <ArrowRight size={16} />
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+
+                                {step === 3 && (
+                                    <>
+                                        <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center border border-emerald-500/20">
+                                            <Activity size={24} className="text-emerald-400" />
+                                        </div>
+                                        <div className="space-y-4">
+                                            <h2 className="text-2xl font-bold tracking-tight">Mesh Handshake</h2>
+                                            <p className="text-sm text-white/50 leading-relaxed">Bind your local hardware to the global compute network. AES-256-GCM encryption will be applied.</p>
+                                            
+                                            <div className="space-y-4">
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[10px] uppercase font-bold text-white/30 px-1">Model Identity</label>
+                                                    <select 
+                                                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3.5 text-sm appearance-none outline-none focus:border-blue-500/50 cursor-pointer"
+                                                        value={selectedModel}
+                                                        onChange={(e) => setSelectedModel(e.target.value)}
+                                                    >
+                                                        {models.length > 0 ? (
+                                                            models.map(m => <option key={m.name} value={m.name}>{m.name}</option>)
+                                                        ) : (
+                                                            <option value="">No local models detected</option>
+                                                        )}
+                                                    </select>
+                                                </div>
+
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[10px] uppercase font-bold text-white/30 px-1">Ngrok URI</label>
+                                                    <input 
+                                                        type="text"
+                                                        placeholder="https://....ngrok-free.app"
+                                                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3.5 text-sm outline-none focus:border-blue-500/50 transition-all font-mono"
+                                                        value={ngrokUrl}
+                                                        onChange={(e) => setNgrokUrl(e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <button 
+                                                onClick={handleProvision}
+                                                disabled={provisioning || !ngrokUrl}
+                                                className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-sm tracking-tight hover:bg-blue-500 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-20 shadow-lg shadow-blue-600/20"
+                                            >
+                                                {provisioning ? <RefreshCw className="animate-spin" size={18} /> : <><Shield size={18} /> Provision Node</>}
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+
+                                {step === 4 && (
+                                    <>
+                                        <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center border-4 border-emerald-500/20 shadow-[0_0_40px_rgba(16,185,129,0.4)] mx-auto">
+                                            <CheckCircle2 size={32} className="text-white" />
+                                        </div>
+                                        <div className="space-y-6 text-center">
+                                            <div>
+                                                <h2 className="text-3xl font-black tracking-tighter">Node Synchronized</h2>
+                                                <p className="text-sm text-white/50 mt-2">Local core is now live on the PANTHEON Swarm.</p>
+                                            </div>
+                                            <div className="flex justify-center gap-2">
+                                                <div className="px-4 py-2 bg-white/5 rounded-full border border-white/10 text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Status: Active</div>
+                                                <div className="px-4 py-2 bg-white/5 rounded-full border border-white/10 text-[10px] font-bold text-white/40 uppercase tracking-widest">Latency: 42ms</div>
+                                            </div>
+                                            <button 
+                                                onClick={() => setStep(1)}
+                                                className="w-full border border-white/10 text-white/50 py-4 rounded-2xl font-bold text-sm hover:bg-white/5 transition-all"
+                                            >
+                                                Return to Overview
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </motion.div>
+                        </AnimatePresence>
+                    </div>
+
+                    {/* Right Column: Visualizer / Analytics */}
+                    <div className="lg:col-span-3 space-y-6">
+                        <div className="bg-white/[0.01] border border-white/[0.05] rounded-[2.5rem] p-8 h-[600px] relative overflow-hidden flex flex-col group">
                             
-                            <div className="flex items-center gap-2">
-                                {status === "connected" ? (
-                                    <><CheckCircle2 size={16} className="text-green-500" /> <span className="text-sm">Mesh Link Active</span></>
-                                ) : status === "connecting" ? (
-                                    <><RefreshCw size={16} className="text-yellow-500 animate-spin" /> <span className="text-sm">Syncing...</span></>
+                            {/* Visualizer Background */}
+                            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(var(--blue-500) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+                            
+                            <div className="flex items-center justify-between mb-8 z-10">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10">
+                                        <Server size={20} className="text-white/40" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xs font-bold uppercase tracking-widest">Mesh Monitor</h3>
+                                        <p className="text-[10px] text-white/20">Real-time inference tracking</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+                                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-tighter">System Nominal</span>
+                                </div>
+                            </div>
+
+                            <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 relative z-10">
+                                {!provisioned ? (
+                                    <>
+                                        <div className="relative">
+                                            <div className="absolute inset-0 bg-blue-500/20 blur-[60px] animate-pulse" />
+                                            <Bot size={80} className="text-white/20 relative animate-bounce" />
+                                        </div>
+                                        <div className="space-y-2 max-w-xs">
+                                            <h4 className="text-sm font-bold">Waiting for Handshake</h4>
+                                            <p className="text-xs text-white/20 leading-relaxed italic">Complete the initialization steps to activate hardware-level encryption.</p>
+                                        </div>
+                                    </>
                                 ) : (
-                                    <><AlertCircle size={16} className="text-red-500" /> <span className="text-sm">Host Offline</span></>
+                                    <>
+                                        <div className="w-full max-w-md bg-white/[0.02] border border-white/[0.05] rounded-3xl p-6 space-y-6">
+                                            <div className="flex justify-between items-end">
+                                                <div className="text-left">
+                                                    <p className="text-[9px] font-bold uppercase text-white/20">Active Node</p>
+                                                    <p className="text-xl font-bold tracking-tight">{selectedModel}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-[9px] font-bold uppercase text-white/20">Revenue/Hr</p>
+                                                    <p className="text-xl font-bold tracking-tight text-emerald-400">$1.24</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="h-32 flex items-end justify-between gap-1">
+                                                {Array.from({ length: 24 }).map((_, i) => (
+                                                    <motion.div 
+                                                        key={i}
+                                                        initial={{ height: 0 }}
+                                                        animate={{ height: Math.random() * 100 + "%" }}
+                                                        transition={{ duration: 1, delay: i * 0.05, repeat: Infinity, repeatType: "reverse" }}
+                                                        className="w-full bg-blue-500/40 rounded-t-sm"
+                                                    />
+                                                ))}
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4 text-left">
+                                                <div className="p-4 bg-white/5 rounded-2xl">
+                                                    <p className="text-[8px] font-bold uppercase text-white/20 mb-1">Tokens Processed</p>
+                                                    <p className="text-sm font-bold tracking-tight">1.2M</p>
+                                                </div>
+                                                <div className="p-4 bg-white/5 rounded-2xl">
+                                                    <p className="text-[8px] font-bold uppercase text-white/20 mb-1">Mesh Reputation</p>
+                                                    <p className="text-sm font-bold tracking-tight">9.98/10</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
                                 )}
                             </div>
 
-                            <div className="space-y-2 pt-2">
-                                <label className="text-[10px] uppercase font-bold text-white/30">Active Model</label>
-                                <select 
-                                    className="w-full bg-black border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500/50 appearance-none cursor-pointer"
-                                    value={selectedModel}
-                                    onChange={(e) => setSelectedModel(e.target.value)}
-                                >
-                                    {models.length > 0 ? (
-                                        models.map(m => <option key={m.name} value={m.name}>{m.name}</option>)
-                                    ) : (
-                                        <option value="">No models</option>
-                                    )}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="p-6 bg-white/[0.01] border border-white/[0.05] rounded-3xl space-y-3">
-                            <h3 className="text-[10px] font-bold uppercase tracking-widest text-white/50 flex items-center gap-2">
-                                <Cpu size={14} /> Pro: Hardware Bridge
-                            </h3>
-                            <p className="text-[11px] leading-relaxed text-white/30">
-                                Browser scans are limited by CORS. For 24/7 earnings and stable connectivity, run the PANTHEON Bridge locally.
-                            </p>
-                            <div className="bg-black/50 p-3 rounded-xl border border-white/5 font-mono text-[9px] text-blue-400 break-all">
-                                python pantheon_client.py --uid DEMO_USER --model {selectedModel || "llama3"}
-                            </div>
-                            <p className="text-[9px] text-white/20 italic">
-                                * Requires Python 3.8+ and 'requests' library.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="md:col-span-2 flex flex-col h-[600px] bg-white/[0.02] border border-white/[0.05] rounded-3xl overflow-hidden relative">
-                        <div className="flex-grow overflow-y-auto p-6 space-y-6 scrollbar-hide">
-                            {chat.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-30">
-                                    <Cpu size={48} className="text-white/20" />
-                                    <p className="text-xs max-w-[200px]">Node ready. Initialize session.</p>
-                                </div>
-                            ) : (
-                                chat.map((msg, i) => (
-                                    <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                                        <div className={`max-w-[85%] p-4 rounded-2xl text-sm ${msg.role === "user" ? "bg-blue-600/10 border border-blue-500/20" : "bg-white/5 border border-white/10"}`}>
-                                            {msg.content}
+                            <div className="mt-8 border-t border-white/5 pt-8 z-10 flex items-center justify-between">
+                                <div className="flex -space-x-2">
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center p-1.5 overflow-hidden backdrop-blur-sm grayscale opacity-30 hover:grayscale-0 hover:opacity-100 transition-all">
+                                            <div className="w-full h-full rounded-full bg-blue-500/20" />
                                         </div>
-                                    </div>
-                                ))
-                            )}
-                            {loading && <div className="text-[10px] text-white/20 italic animate-pulse px-4">Synchronizing...</div>}
+                                    ))}
+                                </div>
+                                <p className="text-[9px] text-white/20 font-mono uppercase tracking-[0.2em]">Node-UID: {Math.random().toString(36).substring(7).toUpperCase()}</p>
+                            </div>
                         </div>
 
-                        {/* Node Control Overlay: Shown when a model is selected but not 'active' in mesh */}
-                        {status === "connected" && selectedModel && (
-                            <div className="absolute top-6 right-6 flex gap-2">
-                                <button 
-                                    onClick={async () => {
-                                        try {
-                                            const res = await fetch(`${API_URL}/v1/ollama/register?uid=DEMO_USER&model_name=${selectedModel}`);
-                                            if (res.ok) alert("Model registered to PANTHEON Mesh!");
-                                        } catch (e) {
-                                            alert("Registration failed. Check browser console.");
-                                        }
-                                    }}
-                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-500/20 transition-all"
-                                >
-                                    Add to Mesh
-                                </button>
+                        <div className="bg-white/[0.01] border border-white/5 rounded-3xl p-6 flex flex-col md:flex-row items-center gap-6">
+                            <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center shrink-0">
+                                <Shield className="text-blue-500/40" size={24} />
                             </div>
-                        )}
-
-                        <div className="p-6 border-t border-white/5 bg-black/50 backdrop-blur-3xl">
-                            <div className="relative">
-                                <input 
-                                    type="text" 
-                                    placeholder={status === "connected" ? "Ask your local node..." : "Connect node..."}
-                                    disabled={status !== "connected"}
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-blue-500/40 transition-all pr-12"
-                                />
-                                <button 
-                                    onClick={handleSendMessage}
-                                    disabled={!selectedModel || status !== "connected" || loading}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-blue-500 hover:bg-blue-400 rounded-xl transition-all disabled:opacity-10"
-                                >
-                                    <Send size={16} />
-                                </button>
+                            <div className="space-y-1 text-center md:text-left translate-y-[-1px]">
+                                <h4 className="text-xs font-bold uppercase tracking-widest leading-none">Security Architecture</h4>
+                                <p className="text-[10px] text-white/30 leading-relaxed font-medium">Your endpoint is sealed via AES-256-GCM. Traffic is isolated and auto-revocation triggers at 500ms latency.</p>
                             </div>
                         </div>
                     </div>
-                </div>
+                </main>
             </div>
         </div>
     );

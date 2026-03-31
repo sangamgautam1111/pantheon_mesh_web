@@ -9,17 +9,17 @@ import {
     BookOpen, ChevronDown, ChevronRight, X, Hexagon, Activity, Code
 } from "lucide-react";
 import Image from "next/image";
+import chatIcon from "@/app/chat_icon.png";
 import logoImg from "@/app/logo.png";
 
 const NAV_ITEMS = [
     { label: "Welcome", href: "/", icon: LayoutDashboard },
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Swarm Center", href: "/swarm", icon: Activity },
+    { label: "Swarm Center", href: "/swarm", icon: Activity, allowedTypes: ["client", "founder", "business", "admin"] },
     { label: "Developer", href: "/developer", icon: Code, allowedTypes: ["developer"] },
     { label: "Agents", href: "/agents", icon: Users, allowedTypes: ["developer"] },
     { label: "Marketplace", href: "/marketplace", icon: Store },
-    { label: "Pricing", href: "/pricing", icon: FileText },
-    { label: "Treasury", href: "/founder", icon: Wallet, allowedTypes: ["developer", "business"] },
+    { label: "Withdraw", href: "/withdraw", icon: Wallet, allowedTypes: ["developer", "business"] },
 ];
 
 const DOCS_ITEMS = [
@@ -67,31 +67,22 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                     }`}
                 style={{ background: "var(--sidebar-bg)", borderColor: "var(--border-color)" }}
             >
-                {/* Project Selector */}
+                {/* Refined Project Selector as per screenshot */}
                 {(!collapsed || isMobile) && (
                     <div className="px-4 py-3 border-b" style={{ borderColor: "var(--border-color)" }}>
-                        <div className="flex items-center justify-between">
-                            <button
-                                onClick={() => {
-                                    navigator.clipboard.writeText("pantheon-mesh-488206");
-                                    alert("Project ID copied to clipboard!");
-                                }}
-                                className="flex items-center gap-2 px-2 py-1.5 rounded transition-colors text-left flex-1 hover:bg-sidebar-hover"
-                                style={{ color: "var(--text-primary)" }}>
-                                <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center p-0.5 overflow-hidden shadow-sm border border-gcp-border/10">
-                                    <Image src={logoImg} alt="logo" className="w-full h-full object-contain" />
+                        <div className="flex items-center justify-between p-2 rounded-lg hover:bg-white/[0.03] transition-all group cursor-pointer">
+                            <div className="flex items-center gap-3 overflow-hidden">
+                                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-sm border border-black/10 overflow-hidden">
+                                    <Image src={logoImg} alt="Protocol" width={32} height={32} className="w-full h-full object-cover rounded-full" />
                                 </div>
-                                <div className="min-w-0 flex-1 ml-1">
-                                    <div className="text-[13px] font-medium truncate" style={{ color: "var(--text-primary)" }}>Pantheon Mesh</div>
-                                    <div className="text-[11px] truncate opacity-60" style={{ color: "var(--text-secondary)" }}>pantheon-mesh-488206</div>
+                                <div className="flex flex-col min-w-0">
+                                    <div className="text-sm font-semibold truncate flex items-center gap-1 group-hover:text-gcp-blue transition-colors" style={{ color: "var(--text-primary)" }}>
+                                        <span className="text-gcp-blue">P</span>antheon Mesh
+                                    </div>
+                                    <div className="text-[10px] font-mono truncate" style={{ color: "var(--text-secondary)" }}>pantheon-mesh-488206</div>
                                 </div>
-                                <ChevronDown size={14} style={{ color: "var(--text-disabled)" }} />
-                            </button>
-                            {isMobile && (
-                                <button onClick={onClose} className="p-1.5 rounded ml-2" style={{ color: "var(--text-disabled)" }}>
-                                    <X size={16} />
-                                </button>
-                            )}
+                            </div>
+                            <ChevronDown size={14} className="group-hover:text-gcp-blue transition-colors flex-shrink-0" style={{ color: "var(--text-disabled)" }} />
                         </div>
                     </div>
                 )}
