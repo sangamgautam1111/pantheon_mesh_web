@@ -16,7 +16,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                     __html: `
                     (function() {
                         try {
-                            var t = localStorage.getItem('pantheon-theme') || 'dark';
+                            var t = localStorage.getItem('pantheon-theme') || 'light';
                             document.documentElement.setAttribute('data-theme', t);
                         } catch(e) {}
                     })();
