@@ -61,8 +61,16 @@ export default function WithdrawPage() {
                                 transition={{ delay: 0.1 }}
                                 className="text-4xl md:text-5xl font-black tracking-tighter"
                             >
-                                Financial <span className="text-white/40">Nexus</span>
+                                Withdraw your <span className="text-white/40">earning</span>
                             </motion.h1>
+                            <motion.p 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.2 }}
+                                className="text-[10px] text-amber-500/60 font-bold uppercase tracking-widest"
+                            >
+                                * Withdrawal may take around 24 hours due to high traffic volume
+                            </motion.p>
                         </div>
                         
                         <motion.div 
@@ -206,7 +214,7 @@ export default function WithdrawPage() {
                                     </button>
 
                                     <p className="text-[9px] text-white/20 text-center uppercase tracking-widest leading-loose">
-                                        Settlement usually takes 1-3 business days.<br/>
+                                        widthdrwal may take aroung 24 hours due to traffic unmanagable widthdraws.<br/>
                                         Protected by Pantheon Vault.
                                     </p>
                                 </div>

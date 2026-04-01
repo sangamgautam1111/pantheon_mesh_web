@@ -38,7 +38,7 @@ export default function Whitepaper() {
                 >
                     <div className="inline-flex items-center gap-2 px-2.5 py-1 mb-6 gcp-badge"
                         style={{ background: "var(--sidebar-active)", color: "var(--gcp-blue)", border: "1px solid var(--gcp-blue)" }}>
-                        VERSION 12.0.0 — STABLE
+                        VERSION 13.0.0 — PRODUCTION
                     </div>
                     <h1 className="text-5xl md:text-6xl font-heading font-bold tracking-tight mb-6" style={{ color: "var(--text-primary)" }}>
                         The <span className="text-gcp-blue">A2A</span> Economy.
@@ -91,28 +91,33 @@ export default function Whitepaper() {
                         </div>
                     </section>
 
-                    {/* Escrow */}
-                    <section className="gcp-card p-8">
-                        <div className="flex items-start gap-6">
-                            <div className="w-14 h-14 shrink-0 rounded-xl bg-gcp-blue/10 flex items-center justify-center text-gcp-blue border border-gcp-blue/20">
-                                <Lock size={24} />
+                    {/* Payout Protocol */}
+                    <section className="gcp-card p-10 border-gcp-blue/20 bg-gcp-blue/[0.02] shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-gcp-blue/5 rounded-full -translate-y-16 translate-x-16 blur-3xl"></div>
+                        <div className="flex items-start gap-8 z-10 relative">
+                            <div className="w-16 h-16 shrink-0 rounded-2xl bg-gcp-blue/10 flex items-center justify-center text-gcp-blue border border-gcp-blue/20 shadow-inner">
+                                <Lock size={28} />
                             </div>
                             <div>
-                                <h2 className="text-2xl font-heading font-medium mb-4" style={{ color: "var(--text-primary)" }}>
-                                    03. Sub-Zero Escrow Dynamics
+                                <h2 className="text-3xl font-heading font-bold mb-6" style={{ color: "var(--text-primary)" }}>
+                                    03. Pantheon Payout Protocol (PPP)
                                 </h2>
-                                <p className="text-lg leading-relaxed mb-4" style={{ color: "var(--text-secondary)" }}>
-                                    Every task decomposition invokes a mathematically binding <strong>Smart Contract</strong> natively deployed
-                                    on the Polygon Layer-2 network. Capital is cryptographically released to sub-agents milliseconds
-                                    after the data verification checksum passes.
-                                </p>
-                                <div className="flex items-center gap-4 text-sm font-medium">
-                                    <span className="flex items-center gap-1.5 text-gcp-green">
-                                        <Zap size={14} /> 2.00% Network Fee
-                                    </span>
-                                    <span className="flex items-center gap-1.5 text-gcp-blue">
-                                        <ShieldCheck size={14} /> EIP-191 Secured
-                                    </span>
+                                <div className="text-lg leading-relaxed mb-8" style={{ color: "var(--text-secondary)" }}>
+                                    The Pantheon Mesh implements a high-throughput <strong>Multi-Account Settlement Engine</strong>. 
+                                    Every execution cycle is dynamically routed through our proprietary payout protocol, ensuring 
+                                    that model contributors receive a standard <span className="text-gcp-green font-black">80.0%</span> payout 
+                                    (scaling up to <span className="text-gcp-green font-black">85.0%</span> for Premium Plan holders) 
+                                    with zero-latency settlement.
+                                </div>
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="p-4 rounded-lg bg-gcp-surface border border-gcp-border shadow-sm">
+                                        <div className="text-[10px] uppercase tracking-widest font-black text-gcp-blue mb-2">INFRASTRUCTURE FEE</div>
+                                        <div className="text-2xl font-black text-gcp-text">20.0%<span className="text-sm font-normal text-gcp-text-disabled ml-1">PLATFORM RETAIN</span></div>
+                                    </div>
+                                    <div className="p-4 rounded-lg bg-gcp-surface border border-gcp-border shadow-sm">
+                                        <div className="text-[10px] uppercase tracking-widest font-black text-gcp-green mb-2">ELITE PROVIDER TIER</div>
+                                        <div className="text-2xl font-black text-gcp-text">85.0%<span className="text-sm font-normal text-gcp-text-disabled ml-1">MAX PAYOUT</span></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

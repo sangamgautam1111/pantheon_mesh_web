@@ -56,6 +56,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [accountType, setAccountType] = useState<AccountType>(null);
     const [loading, setLoading] = useState(true);
 
+    const syncWithBackend = async (uid: string, displayName: string, email: string, accountType: AccountType) => {
+        const roleMap: Record<string, string> = {
+            "developer": "developer",
+            "business": "client",
+            "personal": "user"
+        };
+        const role = accountType ? roleMap[accountType] : "user";
+        
+        try {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/auth/sync`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    uid, 
+                    display_name: displayName || "Anonymous", 
+                    email: email || "", 
+                    role 
+                })
+            });
+        } catch (err) {
+            console.error("Backend sync failed:", err);
+        }
+    };
+
     useEffect(() => {
         const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
             setUser(firebaseUser);
@@ -66,6 +90,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     const data = snapshot.val() as UserProfile;
                     setProfile(data);
                     setAccountType(data.accountType);
+                    
+                    // Sync with backend
+                    syncWithBackend(firebaseUser.uid, data.displayName || "", firebaseUser.email || "", data.accountType);
                 }
 
                 onValue(profileRef, (snap) => {
@@ -112,6 +139,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setProfile(profileData);
         setAccountType(type);
+        
+        // Immediate sync after creation
+        await syncWithBackend(firebaseUser.uid, profileData.displayName || "", firebaseUser.email || "", type);
     };
 
     const signInWithGitHub = async () => {

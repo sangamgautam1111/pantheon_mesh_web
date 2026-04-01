@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Github, Globe, BrainCircuit, Rocket, LayoutDashboard,
@@ -14,8 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
     const router = useRouter();
-    const { signInWithGitHub, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
-
+    const { user, loading: authLoading, signInWithGitHub, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
     const [emailMode, setEmailMode] = useState<"signin" | "signup" | null>(null);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -24,12 +23,19 @@ export default function LoginPage() {
     const [loading, setLoading] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
+    // Auto-redirect if already logged in
+    useEffect(() => {
+        if (user && !authLoading) {
+            router.push("/");
+        }
+    }, [user, authLoading, router]);
+
     const handleGitHub = async () => {
         setError(null);
         setLoading("github");
         try {
             await signInWithGitHub();
-            router.push("/dashboard");
+            router.push("/");
         } catch (err: any) {
             setError(err.message || "GitHub authentication failed");
         }
@@ -41,7 +47,7 @@ export default function LoginPage() {
         setLoading("google");
         try {
             await signInWithGoogle();
-            router.push("/dashboard");
+            router.push("/");
         } catch (err: any) {
             setError(err.message || "Google authentication failed");
         }
@@ -63,7 +69,7 @@ export default function LoginPage() {
             } else {
                 await signInWithEmail(email, password);
             }
-            router.push("/dashboard");
+            router.push("/");
         } catch (err: any) {
             if (err.code === "auth/user-not-found") {
                 setError("No account found. Sign up first.");
@@ -206,19 +212,19 @@ export default function LoginPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="max-w-7xl w-full grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10 py-8"
+                        className="max-w-[1400px] w-full grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10 py-12"
                     >
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="gcp-card p-8 flex flex-col items-start text-left group h-full border-gcp-blue/10"
+                            className="gcp-card p-10 flex flex-col items-start text-left group h-full border-gcp-blue/10 min-h-[600px] shadow-2xl"
                         >
-                            <div className="w-12 h-12 rounded-lg bg-gcp-blue/10 flex items-center justify-center text-gcp-blue mb-6 group-hover:scale-110 transition-transform">
-                                <Database size={24} />
+                            <div className="w-16 h-16 rounded-xl bg-gcp-blue/10 flex items-center justify-center text-gcp-blue mb-8 group-hover:scale-110 transition-transform">
+                                <Database size={32} />
                             </div>
-                            <h2 className="text-2xl font-heading font-bold mb-3" style={{ color: "var(--text-primary)" }}>Developer</h2>
-                            <p className="text-xs mb-6 flex-grow uppercase tracking-wide opacity-70 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                                Connect your intelligence. Plug in API clusters or local Ollama nodes. Earn <span className="text-gcp-green font-bold">5%</span> of every job your model completes.
+                            <h2 className="text-3xl font-heading font-bold mb-4" style={{ color: "var(--text-primary)" }}>Developer</h2>
+                            <p className="text-sm mb-8 flex-grow uppercase tracking-wide opacity-70 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                                Connect your intelligence. Plug in API clusters or local Ollama nodes. Earn <span className="text-gcp-green font-bold">85%</span> of every job your model completes.
                             </p>
                             <ul className="space-y-4 mb-10 text-[11px] w-full border-t border-b py-6 border-gcp-border" style={{ color: "var(--text-secondary)" }}>
                                 <li className="flex items-center gap-3"><Zap size={14} className="text-gcp-yellow" /><span>Direct API + Local (Ollama) Model Integration</span></li>
@@ -242,14 +248,14 @@ export default function LoginPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 }}
-                            className="gcp-card p-8 flex flex-col items-start text-left bg-gcp-blue/[0.03] border-gcp-blue/30 group h-full shadow-lg"
+                            className="gcp-card p-10 flex flex-col items-start text-left bg-gcp-blue/[0.03] border-gcp-blue/30 group h-full shadow-2xl scale-105 z-20 min-h-[600px]"
                         >
-                            <div className="w-12 h-12 rounded-lg bg-gcp-blue/10 flex items-center justify-center text-gcp-blue mb-6 group-hover:scale-110 transition-transform">
-                                <Users size={24} />
+                            <div className="w-16 h-16 rounded-xl bg-gcp-blue/10 flex items-center justify-center text-gcp-blue mb-8 group-hover:scale-110 transition-transform">
+                                <Users size={32} />
                             </div>
-                            <h2 className="text-2xl font-heading font-bold mb-3" style={{ color: "var(--text-primary)" }}>Individual</h2>
-                            <p className="text-xs mb-6 flex-grow uppercase tracking-wide opacity-70 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                                Add your API models. Your AI agents earn credits and can hire other AI agents autonomously from their token balance.
+                            <h2 className="text-3xl font-heading font-bold mb-4" style={{ color: "var(--text-primary)" }}>Personal</h2>
+                            <p className="text-sm mb-8 flex-grow uppercase tracking-wide opacity-70 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                                Start your own node. Add your API models and contribute compute power to the mesh. Earn recurrent credits for every execution.
                             </p>
                             <ul className="space-y-4 mb-10 text-[11px] w-full border-t border-b py-6 border-gcp-border" style={{ color: "var(--text-secondary)" }}>
                                 <li className="flex items-center gap-3"><Zap size={14} className="text-gcp-yellow" /><span>Connect Any LLM API — Auto-Detect 19 Providers</span></li>
@@ -272,14 +278,14 @@ export default function LoginPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
-                            className="gcp-card p-8 flex flex-col items-start text-left group h-full bg-gcp-yellow/[0.02] border-gcp-yellow/20"
+                            className="gcp-card p-10 flex flex-col items-start text-left group h-full bg-gcp-yellow/[0.02] border-gcp-yellow/20 min-h-[600px] shadow-2xl"
                         >
-                            <div className="w-12 h-12 rounded-lg bg-gcp-yellow/10 flex items-center justify-center text-gcp-yellow mb-6 group-hover:scale-110 transition-transform">
-                                <Rocket size={24} />
+                            <div className="w-16 h-16 rounded-xl bg-gcp-yellow/10 flex items-center justify-center text-gcp-yellow mb-8 group-hover:scale-110 transition-transform">
+                                <Rocket size={32} />
                             </div>
-                            <h2 className="text-2xl font-heading font-bold mb-3" style={{ color: "var(--text-primary)" }}>Business</h2>
-                            <p className="text-xs mb-6 flex-grow uppercase tracking-wide opacity-70 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                                Publish jobs. Let AI agent swarms complete your work. Pay only for results in USD.
+                            <h2 className="text-3xl font-heading font-bold mb-4" style={{ color: "var(--text-primary)" }}>Business</h2>
+                            <p className="text-sm mb-8 flex-grow uppercase tracking-wide opacity-70 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                                Publish jobs. Let AI agent swarms complete your work. Access high-scale intelligence swarms with unified billing.
                             </p>
                             <ul className="space-y-4 mb-10 text-[11px] w-full border-t border-b py-6 border-gcp-border" style={{ color: "var(--text-secondary)" }}>
                                 <li className="flex items-center gap-3"><Zap size={14} className="text-gcp-yellow" /><span>Publish Jobs — AI Swarms Compete</span></li>

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import {
     LayoutDashboard, Users, Store, Terminal, Wallet, FileText,
-    BookOpen, ChevronDown, ChevronRight, X, Hexagon, Activity, Code
+    BookOpen, ChevronDown, ChevronRight, X, Hexagon, Activity, Code, CreditCard
 } from "lucide-react";
 import Image from "next/image";
 import chatIcon from "@/app/chat_icon.png";
@@ -15,11 +15,13 @@ import logoImg from "@/app/logo.png";
 const NAV_ITEMS = [
     { label: "Welcome", href: "/", icon: LayoutDashboard },
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Swarm Center", href: "/swarm", icon: Activity, allowedTypes: ["client", "founder", "business", "admin"] },
-    { label: "Developer", href: "/developer", icon: Code, allowedTypes: ["developer"] },
+    { label: "Pricing", href: "/pricing", icon: CreditCard },
+    { label: "Developer Central", href: "/developer", icon: Code, allowedTypes: ["developer"] },
+    { label: "Client Gigs", href: "/client", icon: FileText, allowedTypes: ["business", "founder"] },
+    { label: "Personal Node", href: "/simple", icon: Terminal, allowedTypes: ["personal"] },
     { label: "Agents", href: "/agents", icon: Users, allowedTypes: ["developer"] },
     { label: "Marketplace", href: "/marketplace", icon: Store },
-    { label: "Withdraw", href: "/withdraw", icon: Wallet, allowedTypes: ["developer", "business"] },
+    { label: "Withdraw", href: "/withdraw", icon: Wallet, allowedTypes: ["developer", "business", "founder"] },
 ];
 
 const DOCS_ITEMS = [
@@ -90,8 +92,9 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                 {/* Nav Links */}
                 <nav className="flex-1 overflow-y-auto py-2 scrollbar-hide">
                     {NAV_ITEMS.map((item) => {
-                        // @ts-ignore - dynamic extension
-                        if (item.allowedTypes && accountType && !item.allowedTypes.includes(accountType)) {
+                        // Strict role-based filtering: 
+                        // If item has allowedTypes, and user is not logged in OR type is not in list, hide it.
+                        if (item.allowedTypes && (!accountType || !item.allowedTypes.includes(accountType))) {
                             return null;
                         }
 

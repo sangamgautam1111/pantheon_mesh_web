@@ -5,24 +5,40 @@ import Link from "next/link";
 import {
     LayoutDashboard, Users, Store, Wallet, Cpu,
     Plus, ArrowRight, Activity, Database, Shield,
-    BrainCircuit, Zap, Globe, Copy, Check
+    BrainCircuit, Zap, Globe, Copy, Check, FileText
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
 
-const QUICK_ACTIONS = [
-    { label: "Onboard an Agent", icon: Plus, href: "/dashboard", color: "text-gcp-blue" },
-    { label: "Browse Marketplace", icon: Store, href: "/marketplace", color: "text-gcp-green" },
-    { label: "View Treasury", icon: Wallet, href: "/founder", color: "text-gcp-cyan" },
-];
+const ACCOUNT_ACTIONS: Record<string, any[]> = {
+    developer: [
+        { label: "Connect Model", icon: Plus, href: "/connect", color: "text-gcp-blue" },
+        { label: "Claim Gigs", icon: FileText, href: "/developer", color: "text-gcp-green" },
+        { label: "View Payouts", icon: Wallet, href: "/withdraw", color: "text-gcp-cyan" },
+    ],
+    business: [
+        { label: "Post a Gig", icon: Plus, href: "/client", color: "text-gcp-blue" },
+        { label: "Fund Wallet", icon: Wallet, href: "/withdraw", color: "text-gcp-cyan" },
+    ],
+    personal: [
+        { label: "Run Node", icon: Zap, href: "/simple", color: "text-gcp-blue" },
+        { label: "Withdrawals", icon: Wallet, href: "/withdraw", color: "text-gcp-green" },
+        { label: "Quick Start", icon: Database, href: "/whitepaper", color: "text-gcp-cyan" },
+    ],
+    founder: [
+        { label: "Admin Console", icon: Shield, href: "/dashboard", color: "text-gcp-blue" },
+        { label: "Mesh Registry", icon: Users, href: "/agents", color: "text-gcp-green" },
+        { label: "Global Treasury", icon: Wallet, href: "/founder", color: "text-gcp-cyan" },
+    ]
+};
 
-const QUICK_ACCESS = [
-    { label: "Agents & Registry", icon: Users, desc: "View and manage onboarded agents", href: "/agents" },
-    { label: "Dashboard", icon: LayoutDashboard, desc: "Real-time mesh metrics and controls", href: "/dashboard" },
-    { label: "Marketplace", icon: Store, desc: "Neural capability exchange", href: "/marketplace" },
-    { label: "Treasury", icon: Wallet, desc: "Protocol revenue and withdrawals", href: "/founder" },
-    { label: "Developer", icon: Cpu, desc: "Manage model fleet and earnings", href: "/developer" },
-    { label: "CyberShield", icon: Shield, desc: "C++ native security auditing", href: "/dashboard" },
+const DEFAULT_ACCESS = [
+    { label: "Agents & Registry", icon: Users, desc: "Global decentralized agent database for high-scale discovery", href: "/agents" },
+    { label: "Developer Central", icon: Cpu, desc: "Connect cloud & local model fleets to the mesh cluster", href: "/developer" },
+    { label: "Business Gigs", icon: FileText, desc: "Post high-level tasks & hire autonomous agent swarms", href: "/client" },
+    { label: "Personal Node", icon: Zap, desc: "One-click compute contribution via local Ollama nodes", href: "/simple" },
+    { label: "Marketplace", icon: Store, desc: "Intelligence capability exchange with unified billing", href: "/marketplace" },
+    { label: "Service Tiers", icon: Wallet, desc: "View pricing plans and automated revenue settlement", href: "/pricing" },
 ];
 
 export default function Home() {
@@ -68,12 +84,12 @@ export default function Home() {
                 )}
             </div>
 
-            {/* Quick Actions */}
+            {/* Dynamic Quick Actions */}
             <div className="flex flex-wrap gap-3 mb-10">
-                {QUICK_ACTIONS.map(a => (
+                {(ACCOUNT_ACTIONS[accountType || 'personal'] || ACCOUNT_ACTIONS.personal).map(a => (
                     <Link key={a.label} href={a.href}>
                         <button className="flex items-center gap-2 px-4 py-2 gcp-card-hover text-sm font-medium text-gcp-blue">
-                            <Plus size={14} />
+                            <a.icon size={14} className={a.color} />
                             {a.label}
                         </button>
                     </Link>
@@ -81,19 +97,22 @@ export default function Home() {
             </div>
 
             {/* Quick Access Grid */}
-            <div className="mb-10">
-                <h2 className="text-base font-heading font-medium text-gcp-text mb-4">Quick access</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {QUICK_ACCESS.map(item => (
+            <div className="mb-16">
+                <h2 className="text-xl font-heading font-bold text-gcp-text mb-8 tracking-tight">Explore the Pantheon Mesh</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {DEFAULT_ACCESS.map(item => (
                         <Link key={item.label} href={item.href}>
-                            <div className="gcp-card-hover p-4 h-full group">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <div className="w-8 h-8 rounded bg-gcp-surface-v flex items-center justify-center group-hover:bg-gcp-blue/10 transition-colors">
-                                        <item.icon size={16} className="text-gcp-text-secondary group-hover:text-gcp-blue transition-colors" />
+                            <div className="gcp-card p-10 h-full group bg-white/50 backdrop-blur-sm border-gcp-border/40 hover:border-gcp-blue/50 hover:shadow-2xl hover:shadow-gcp-blue/5 transition-all duration-300 transform hover:-translate-y-1">
+                                <div className="flex items-center gap-5 mb-6">
+                                    <div className="w-12 h-12 rounded-xl bg-gcp-surface-v flex items-center justify-center group-hover:bg-gcp-blue/10 transition-colors shadow-inner">
+                                        <item.icon size={24} className="text-gcp-text-secondary group-hover:text-gcp-blue transition-colors" />
                                     </div>
-                                    <span className="text-sm font-medium text-gcp-text group-hover:text-gcp-blue transition-colors">{item.label}</span>
+                                    <span className="text-lg font-bold text-gcp-text group-hover:text-gcp-blue transition-colors tracking-tight">{item.label}</span>
                                 </div>
-                                <p className="text-xs text-gcp-text-disabled leading-relaxed">{item.desc}</p>
+                                <p className="text-sm text-gcp-text-secondary leading-relaxed opacity-70 group-hover:opacity-100 transition-opacity">{item.desc}</p>
+                                <div className="mt-8 flex items-center gap-2 text-xs font-bold text-gcp-blue uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0">
+                                    Enter Dashboard <ArrowRight size={14} />
+                                </div>
                             </div>
                         </Link>
                     ))}

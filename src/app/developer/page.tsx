@@ -1,9 +1,11 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import {
     Plus, Trash2, Activity, Wallet,
     Server, RefreshCw, BarChart3,
-    Clock, Shield, ChevronDown, Globe, Terminal
+    Clock, Shield, ChevronDown, Globe, Terminal,
+    Briefcase, CheckCircle2, AlertCircle, ExternalLink
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -62,28 +64,27 @@ interface CreditSummary {
     developer_fee_percent: number;
 }
 
-// UID now comes from Firebase Auth via useAuth() hook
+interface AvailableGig {
+    id: string;
+    title: string;
+    description: string;
+    budget_usd: number;
+    created_at: string;
+}
 
 export default function DeveloperPage() {
     const router = useRouter();
-    const { user } = useAuth();
+    const { user, accountType } = useAuth();
     const uid = user?.uid;
+    
     const [profile, setProfile] = useState<Profile | null>(null);
     const [models, setModels] = useState<ModelCard[]>([]);
     const [earnings, setEarnings] = useState<EarningRecord[]>([]);
     const [audits, setAudits] = useState<AuditRecord[]>([]);
     const [creditSummary, setCreditSummary] = useState<CreditSummary | null>(null);
-    const [activeTab, setActiveTab] = useState<"cloud" | "ollama">("cloud");
-    const [showConnect, setShowConnect] = useState(false);
-
-    const [apiProvider, setApiProvider] = useState("openrouter");
-    const [apiModelName, setApiModelName] = useState("");
-    const [apiKey, setApiKey] = useState("");
-    const [apiEndpoint, setApiEndpoint] = useState("");
-
-    const [ollamaModel, setOllamaModel] = useState("llama3");
-    const [ollamaHost, setOllamaHost] = useState("http://localhost:11434");
-
+    const [activeTab, setActiveTab] = useState<"cloud" | "ollama" | "gigs">("cloud");
+    const [availableGigs, setAvailableGigs] = useState<AvailableGig[]>([]);
+    const [loadingGigs, setLoadingGigs] = useState(false);
     const [savings, setSavings] = useState<{ total_tokens_routed: number, total_savings_usd: number, efficiency_score: number, cost_reduction_percent: string } | null>(null);
 
     useEffect(() => {
@@ -93,6 +94,7 @@ export default function DeveloperPage() {
         loadEarnings();
         loadSavings();
         loadAudits();
+        loadGigs();
     }, [uid]);
 
     async function loadProfile() {
@@ -144,38 +146,16 @@ export default function DeveloperPage() {
         } catch { }
     }
 
-    async function connectCloudModel() {
-        if (!uid) return;
-        const res = await fetch(`${API}/v1/developer/${uid}/models/connect-api`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                provider: apiProvider,
-                model_name: apiModelName,
-                api_key: apiKey,
-                endpoint: apiEndpoint
-              })
-        });
-        if (res.ok) {
-            setApiModelName("");
-            setApiKey("");
-            setApiEndpoint("");
-            loadModels();
-            loadProfile();
-        }
-    }
-
-    async function connectOllama() {
-        if (!uid) return;
-        const res = await fetch(`${API}/v1/developer/${uid}/models/connect-ollama`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ model_name: ollamaModel, host: ollamaHost })
-        });
-        if (res.ok) {
-            setOllamaModel("llama3");
-            loadModels();
-            loadProfile();
+    async function loadGigs() {
+        setLoadingGigs(true);
+        try {
+            const res = await fetch(`${API}/v1/developer/gigs`);
+            const data = await res.json();
+            setAvailableGigs(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error("Failed to load gigs:", err);
+        } finally {
+            setLoadingGigs(false);
         }
     }
 
@@ -192,20 +172,45 @@ export default function DeveloperPage() {
         loadModels();
     }
 
+    if (accountType !== "developer") {
+        return (
+            <div className="p-8 flex flex-col items-center justify-center min-h-[60vh] text-center">
+                <AlertCircle className="text-gcp-red mb-4" size={48} />
+                <h1 className="text-2xl font-medium text-gcp-text mb-2">Access Restricted</h1>
+                <p className="text-gcp-text-secondary max-w-md">
+                    This dashboard is only available for Developer accounts. 
+                    Please switch your account type to manage models and claim gigs.
+                </p>
+                <button 
+                    onClick={() => router.push("/")}
+                    className="mt-6 px-4 py-2 bg-gcp-blue text-white rounded text-sm font-medium"
+                >
+                    Return to Welcome
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="p-8 max-w-[1440px] mx-auto min-h-screen space-y-8 pb-20" style={{ color: "var(--text-primary)" }}>
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b" style={{ borderColor: "var(--border-subtle)" }}>
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight mb-1" style={{ color: "var(--text-primary)" }}>Developer Console</h1>
+                    <h1 className="text-3xl font-bold tracking-tight mb-1" style={{ color: "var(--text-primary)" }}>Developer Central</h1>
                     <p className="text-sm opacity-60">
-                        Manage your model cluster and monitor decentralized earnings
+                        Manage your model cluster and claim autonomous gigs from the mesh
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button
+                        onClick={() => router.push("/pricing")}
+                        className="px-6 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 rounded-lg font-semibold transition-all active:scale-95 text-sm dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700"
+                    >
+                        Plan & Pricing
+                    </button>
+                    <button
                         onClick={() => router.push("/connect")}
-                        className="px-6 py-2.5 bg-black hover:bg-zinc-800 text-white rounded-lg font-semibold transition-all active:scale-95 text-sm"
+                        className="px-6 py-2.5 bg-black hover:bg-zinc-800 text-white rounded-lg font-semibold transition-all active:scale-95 text-sm dark:bg-white dark:text-black dark:hover:bg-zinc-200"
                     >
                         Connect Model
                     </button>
@@ -234,80 +239,163 @@ export default function DeveloperPage() {
                 ))}
             </div>
 
+            {/* Main Tabs */}
+            <div className="flex items-center gap-1 border-b" style={{ borderColor: "var(--border-subtle)" }}>
+                <button
+                    onClick={() => setActiveTab("cloud")}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === "cloud" ? "border-gcp-blue text-gcp-blue font-bold" : "border-transparent text-gcp-text-disabled hover:text-gcp-text-secondary"}`}
+                >
+                    Cloud Fleet
+                </button>
+                <button
+                    onClick={() => setActiveTab("ollama")}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === "ollama" ? "border-gcp-blue text-gcp-blue font-bold" : "border-transparent text-gcp-text-disabled hover:text-gcp-text-secondary"}`}
+                >
+                    Local Ollama
+                </button>
+                <button
+                    onClick={() => setActiveTab("gigs")}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === "gigs" ? "border-gcp-blue text-gcp-blue font-bold" : "border-transparent text-gcp-text-disabled hover:text-gcp-text-secondary"}`}
+                >
+                    Gig Board <span className="ml-2 gcp-badge bg-gcp-green/10 text-gcp-green text-[10px] px-1.5 py-0.5 rounded">{availableGigs.length}</span>
+                </button>
+            </div>
+
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-                {/* Left Column: Fleet Management (8 cols) */}
+                {/* Left Column: Fleet/Gigs Management (8 cols) */}
                 <div className="xl:col-span-8 space-y-6">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-bold">
-                            Model Fleet <span className="text-sm opacity-40 ml-2">({models.length})</span>
-                        </h2>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {models.length === 0 ? (
-                            <div className="col-span-full py-16 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center text-center space-y-4"
-                                style={{ background: "var(--bg-surface-variant)", borderColor: "var(--border-subtle)" }}>
-                                <div className="max-w-xs">
-                                    <p className="font-semibold opacity-60 text-lg">No Models Online</p>
-                                    <p className="text-sm opacity-40 mt-1">Connect your first model to start processing jobs and earning revenue.</p>
-                                </div>
-                                <button
-                                    onClick={() => router.push("/connect")}
-                                    className="text-sm font-bold hover:underline" style={{ color: "var(--text-primary)" }}
-                                >
-                                    Get Started →
-                                </button>
+                    
+                    {/* Model Fleet (Cloud & Ollama Share this) */}
+                    {(activeTab === "cloud" || activeTab === "ollama") && (
+                        <>
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-xl font-bold">
+                                    {activeTab === "cloud" ? "Cloud Models" : "Local Edge Nodes"} 
+                                    <span className="text-sm opacity-40 ml-2">({models.length})</span>
+                                </h2>
                             </div>
-                        ) : (
-                            models.map((m, i) => {
-                                const statusColor = m.status === 'active' ? 'var(--text-primary)' : 'var(--text-secondary)';
-                                return (
-                                    <div key={m.model_id || i} className="rounded-xl border shadow-sm p-5 hover:shadow-md transition-all flex flex-col h-full relative group"
-                                        style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="min-w-0">
-                                                <div className="text-base font-bold truncate">{m.model_name}</div>
-                                                <div className="text-[10px] uppercase opacity-40 font-bold">{m.provider} • ID {m.model_id?.slice(0, 4)}</div>
-                                            </div>
-                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button onClick={() => healthCheck(m.model_id)} className="p-2 hover:bg-black/5 rounded-lg transition-colors">
-                                                    <RefreshCw size={14} className="opacity-40" />
-                                                </button>
-                                                <button onClick={() => disconnectModel(m.model_id)} className="p-2 hover:bg-black/5 rounded-lg transition-colors">
-                                                    <Trash2 size={14} className="opacity-40" />
-                                                </button>
-                                            </div>
-                                        </div>
 
-                                        <div className="space-y-2 mb-4">
-                                            <div className="flex items-center justify-between text-[10px] font-bold uppercase">
-                                                <span className="opacity-60">{m.status.replace('_', ' ')}</span>
-                                                <span className="opacity-40">{((m.health_score || 0) * 100).toFixed(0)}% Health</span>
-                                            </div>
-                                            <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
-                                                <div className="h-full rounded-full transition-all duration-1000 bg-black" style={{ width: `${(m.health_score || 0) * 100}%` }} />
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-3 gap-2 mt-auto pt-3 border-t" style={{ borderColor: "var(--border-subtle)" }}>
-                                            {[
-                                                { label: "Earnings", value: `$${(m.total_earnings || 0).toFixed(2)}` },
-                                                { label: "Requests", value: String(m.total_requests || 0) },
-                                                { label: "Latency", value: `${(m.average_latency_ms || 0).toFixed(0)}ms` }
-                                            ].map((s, j) => (
-                                                <div key={j} className="text-center">
-                                                    <div className="text-[9px] uppercase opacity-40 font-bold mb-0.5">{s.label}</div>
-                                                    <div className="text-xs font-bold">{s.value}</div>
-                                                </div>
-                                            ))}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {models.length === 0 ? (
+                                    <div className="col-span-full py-16 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center text-center space-y-4"
+                                        style={{ background: "var(--bg-surface-variant)", borderColor: "var(--border-subtle)" }}>
+                                        <div className="max-w-xs">
+                                            <p className="font-semibold opacity-60 text-lg">No Clusters Linked</p>
+                                            <p className="text-sm opacity-40 mt-1">Connect your model to the mesh to start processing jobs.</p>
                                         </div>
                                     </div>
-                                );
-                            })
-                        )}
-                    </div>
+                                ) : (
+                                    models.map((m, i) => (
+                                        <div key={m.model_id || i} className="rounded-xl border shadow-sm p-5 hover:shadow-md transition-all flex flex-col h-full relative group"
+                                            style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="min-w-0">
+                                                    <div className="text-base font-bold truncate">{m.model_name}</div>
+                                                    <div className="text-[10px] uppercase opacity-40 font-bold">{m.provider} • ID {m.model_id?.slice(0, 4)}</div>
+                                                </div>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button onClick={() => healthCheck(m.model_id)} className="p-2 hover:bg-black/5 rounded-lg transition-colors">
+                                                        <RefreshCw size={14} className="opacity-40" />
+                                                    </button>
+                                                    <button onClick={() => disconnectModel(m.model_id)} className="p-2 hover:bg-black/5 rounded-lg transition-colors">
+                                                        <Trash2 size={14} className="opacity-40" />
+                                                    </button>
+                                                </div>
+                                            </div>
 
+                                            <div className="space-y-2 mb-4">
+                                                <div className="flex items-center justify-between text-[10px] font-bold uppercase">
+                                                    <span className="opacity-60">{m.status.replace('_', ' ')}</span>
+                                                    <span className="opacity-40">{((m.health_score || 0) * 100).toFixed(0)}% Health</span>
+                                                </div>
+                                                <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                                    <div className="h-full rounded-full transition-all duration-1000 bg-gcp-blue" style={{ width: `${(m.health_score || 0) * 100}%` }} />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-3 gap-2 mt-auto pt-3 border-t" style={{ borderColor: "var(--border-subtle)" }}>
+                                                {[
+                                                    { label: "Earnings", value: `$${(m.total_earnings || 0).toFixed(2)}` },
+                                                    { label: "Requests", value: String(m.total_requests || 0) },
+                                                    { label: "Latency", value: `${(m.average_latency_ms || 0).toFixed(0)}ms` }
+                                                ].map((s, j) => (
+                                                    <div key={j} className="text-center">
+                                                        <div className="text-[9px] uppercase opacity-40 font-bold mb-0.5">{s.label}</div>
+                                                        <div className="text-xs font-bold">{s.value}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </>
+                    )}
+
+                    {/* Gig discovery Board */}
+                    {activeTab === "gigs" && (
+                        <div className="bg-white dark:bg-black border border-gcp-border rounded-lg overflow-hidden">
+                            <div className="px-4 py-3 bg-gcp-surface-v border-b border-gcp-border flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Briefcase size={16} className="text-gcp-blue" />
+                                    <span className="text-sm font-medium">Mesh Gig Opportunities</span>
+                                </div>
+                                <button onClick={loadGigs} className="p-1 hover:text-gcp-blue transition-colors">
+                                    <RefreshCw size={14} className={loadingGigs ? "animate-spin" : ""} />
+                                </button>
+                            </div>
+                            
+                            <div className="overflow-x-auto min-h-[300px]">
+                                {loadingGigs ? (
+                                    <div className="flex flex-col items-center justify-center py-20 opacity-50">
+                                        <Clock className="animate-spin text-gcp-blue mb-4" size={32} />
+                                        <p className="text-sm">Scanning for open tasks...</p>
+                                    </div>
+                                ) : availableGigs.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-20 opacity-50">
+                                        <Activity size={32} className="text-gcp-text-disabled mb-4" />
+                                        <p className="text-sm">No gigs available at the moment.</p>
+                                    </div>
+                                ) : (
+                                    <table className="w-full text-left">
+                                        <thead>
+                                            <tr className="bg-gcp-surface-v/50 text-[10px] uppercase tracking-wider text-gcp-text-disabled border-b border-gcp-border">
+                                                <th className="px-4 py-3 font-semibold">Requirement</th>
+                                                <th className="px-4 py-3 font-semibold">Budget</th>
+                                                <th className="px-4 py-3 font-semibold">Status</th>
+                                                <th className="px-4 py-3 font-semibold text-right">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gcp-border">
+                                            {availableGigs.map((g) => (
+                                                <tr key={g.id} className="hover:bg-gcp-surface-v/30 transition-colors">
+                                                    <td className="px-4 py-4">
+                                                        <p className="text-sm font-medium text-gcp-text mb-1">{g.title}</p>
+                                                        <p className="text-xs text-gcp-text-secondary line-clamp-2 max-w-md">{g.description}</p>
+                                                    </td>
+                                                    <td className="px-4 py-4 text-sm font-mono text-gcp-green">${g.budget_usd.toFixed(2)}</td>
+                                                    <td className="px-4 py-4 text-xs">
+                                                        <span className="gcp-badge bg-gcp-blue/10 text-gcp-blue px-2 py-0.5 text-[10px]">ESCROWED</span>
+                                                    </td>
+                                                    <td className="px-4 py-4 text-right">
+                                                        <button 
+                                                            className="px-3 py-1 bg-gcp-blue text-white text-xs font-medium rounded hover:bg-blue-600"
+                                                            onClick={() => alert("Model assignment pending protocol update")}
+                                                        >
+                                                            Claim
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Audit Trail Section */}
                     <div className="rounded-xl border shadow-sm overflow-hidden" style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>
                         <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: "var(--border-subtle)" }}>
                             <h3 className="font-bold text-sm">Cluster Event Log</h3>
@@ -315,7 +403,7 @@ export default function DeveloperPage() {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-xs">
                                 <thead>
-                                    <tr className="bg-zinc-50/50 opacity-50 font-bold uppercase text-[10px]" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                                    <tr className="bg-zinc-50/50 dark:bg-zinc-900/50 opacity-50 font-bold uppercase text-[10px]" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
                                         <th className="px-5 py-3">Model Details</th>
                                         <th className="px-5 py-3 text-center">Status</th>
                                         <th className="px-5 py-3 text-right">Time</th>
@@ -333,7 +421,7 @@ export default function DeveloperPage() {
                                                 <div className="text-[9px] opacity-40 font-bold uppercase">{a.provider}</div>
                                             </td>
                                             <td className="px-5 py-3 text-center">
-                                                <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] uppercase ${a.status === "success" ? "bg-black/5 text-black" : "bg-black/5 text-zinc-400"}`}>
+                                                <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] uppercase ${a.status === "success" ? "bg-green-500/10 text-gcp-green" : "bg-red-500/10 text-gcp-red"}`}>
                                                     {a.status}
                                                 </span>
                                             </td>
@@ -348,11 +436,11 @@ export default function DeveloperPage() {
                     </div>
                 </div>
 
-                {/* Right Column: Payout Overview (4 cols) */}
+                {/* Right Column: Financials & Ledger (4 cols) */}
                 <div className="xl:col-span-4 space-y-6">
                     <div className="rounded-2xl border shadow-lg p-6 space-y-8" style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>
                         <div>
-                            <h3 className="text-xs font-bold opacity-40 uppercase tracking-widest mb-6">Payout Overview</h3>
+                            <h3 className="text-xs font-bold opacity-40 uppercase tracking-widest mb-6">Settlement Overview</h3>
                             <div className="flex items-baseline gap-1">
                                 <span className="text-3xl font-black opacity-30">$</span>
                                 <span className="text-6xl font-black tracking-tighter">
@@ -366,31 +454,31 @@ export default function DeveloperPage() {
 
                         <div className="space-y-4 pt-4 border-t" style={{ borderColor: "var(--border-subtle)" }}>
                             {[
-                                { label: "Jobs Processed", value: String(creditSummary?.total_jobs_processed || 0) },
-                                { label: "Platform Fee", value: "20%" },
-                                { label: "Pending Payout", value: `$${(profile?.pending_payout || 0).toFixed(2)}`, highlight: true }
+                                { label: "Workloads Done", value: String(creditSummary?.total_jobs_processed || 0) },
+                                { label: "Protocol Fee", value: `${creditSummary?.platform_fee_percent || 20}%` },
+                                { label: "Payable Now", value: `$${(profile?.pending_payout || 0).toFixed(2)}`, highlight: true }
                             ].map((row, i) => (
                                 <div key={i} className="flex items-center justify-between text-xs">
                                     <div className="opacity-40 font-bold uppercase text-[10px]">{row.label}</div>
-                                    <div className={`font-bold ${row.highlight ? 'text-lg' : ''}`}>{row.value}</div>
+                                    <div className={`font-bold ${row.highlight ? 'text-lg text-gcp-green' : ''}`}>{row.value}</div>
                                 </div>
                             ))}
                         </div>
 
-                        <button className="w-full py-4 bg-black text-white hover:bg-zinc-800 rounded-xl font-bold text-sm transition-all active:scale-95"
+                        <button className="w-full py-4 bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 rounded-xl font-bold text-sm transition-all active:scale-95"
                             onClick={() => router.push("/withdraw")}>
-                            Withdraw Funds
+                            Withdraw to Wallet
                         </button>
                     </div>
 
                     <div className="rounded-xl border shadow-sm" style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>
                         <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: "var(--border-subtle)" }}>
-                            <h3 className="font-bold text-sm">Recent Ledger</h3>
-                            <Link href="/withdraw" className="text-[10px] font-bold opacity-40 uppercase hover:text-black">View All</Link>
+                            <h3 className="font-bold text-sm">Revenue Stream</h3>
+                            <Link href="/withdraw" className="text-[10px] font-bold opacity-40 uppercase hover:text-gcp-blue">View History</Link>
                         </div>
                         <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
                             {earnings.length === 0 ? (
-                                <div className="p-10 text-center text-xs opacity-20 italic">No records.</div>
+                                <div className="p-10 text-center text-xs opacity-20 italic">Empty transaction log.</div>
                             ) : earnings.slice(0, 5).map((e, i) => (
                                 <div key={i} className="p-4 flex items-center justify-between hover:bg-black/[0.01] transition-all">
                                     <div className="flex flex-col">
@@ -398,7 +486,7 @@ export default function DeveloperPage() {
                                         <span className="text-xs font-bold">{e.tokens_used.toLocaleString()} Tokens</span>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-sm font-black text-black">+${e.developer_share.toFixed(2)}</div>
+                                        <div className="text-sm font-black text-gcp-green">+${e.developer_share.toFixed(2)}</div>
                                     </div>
                                 </div>
                             ))}
