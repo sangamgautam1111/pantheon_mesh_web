@@ -49,11 +49,16 @@ export default function PricingPage() {
 
                 {/* Pro Tier */}
                 <div className="gcp-card p-8 border-t-4 border-t-gcp-blue relative scale-105 shadow-2xl z-10 bg-gcp-blue/[0.02]">
-                    <div className="absolute -top-3 right-4 bg-gcp-blue text-white text-[10px] font-black tracking-widest px-4 py-1.5 rounded-full shadow-lg">
-                        POPULAR
+                    <div className="absolute -top-3 right-4 bg-gcp-blue text-white text-[10px] font-black tracking-widest px-4 py-1.5 rounded-full shadow-lg flex items-center gap-2">
+                        <span>POPULAR</span>
+                        <span className="bg-white/20 px-2 py-0.5 rounded text-[8px] animate-pulse">80% OFF</span>
                     </div>
                     <h3 className="text-2xl font-bold text-gcp-blue mb-4">Pro</h3>
-                    <div className="text-4xl font-bold text-gcp-text mb-2">$29<span className="text-sm font-normal text-gcp-text-disabled">/month</span></div>
+                    <div className="flex items-baseline gap-3 mb-2">
+                        <span className="text-lg text-gcp-text-disabled line-through font-bold opacity-50">$149</span>
+                        <div className="text-4xl font-bold text-gcp-text">$29<span className="text-sm font-normal text-gcp-text-disabled">/month</span></div>
+                    </div>
+                    <p className="text-xs text-gcp-blue font-bold mb-4 italic tracking-tight">"Temporary Launch Manipulation" Discount Applied</p>
                     <p className="text-sm text-gcp-text-secondary mb-8 h-12 leading-relaxed">High-performance orchestration for serious mesh participants.</p>
 
                     <button className="gcp-btn-primary w-full mb-10 h-12 shadow-gcp-blue/20">Upgrade to Pro</button>
@@ -83,9 +88,16 @@ export default function PricingPage() {
                 </div>
 
                 {/* Premium Tier */}
-                <div className="gcp-card p-8 border-t-4 border-t-gcp-green shadow-lg">
+                <div className="gcp-card p-8 border-t-4 border-t-gcp-green shadow-lg relative h-fit">
+                    <div className="absolute -top-3 right-4 bg-gcp-green text-white text-[9px] font-black tracking-widest px-3 py-1 rounded-full shadow-lg">
+                        LIMITED SLOTS
+                    </div>
                     <h3 className="text-2xl font-bold text-gcp-text mb-4">Premium</h3>
-                    <div className="text-4xl font-bold text-gcp-text mb-2">$149<span className="text-sm font-normal text-gcp-text-disabled">/month</span></div>
+                    <div className="flex items-baseline gap-3 mb-2">
+                        <span className="text-lg text-gcp-text-disabled line-through font-bold opacity-50">$399</span>
+                        <div className="text-4xl font-bold text-gcp-text">$149<span className="text-sm font-normal text-gcp-text-disabled">/month</span></div>
+                    </div>
+                    <p className="text-xs text-gcp-green font-bold mb-4 italic tracking-tight">Elite Efficiency Discount Activated</p>
                     <p className="text-sm text-gcp-text-secondary mb-8 h-12 leading-relaxed">Enterprise-grade mesh scale for large-scale operations.</p>
 
                     <button className="gcp-btn-secondary w-full mb-10 h-12 font-bold" style={{ color: "var(--gcp-green)", borderColor: "var(--gcp-green)" }}>Elite Enrollment</button>
