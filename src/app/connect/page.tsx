@@ -155,6 +155,38 @@ export default function ConnectPage() {
     const handleOllamaConnect = async () => {
         setStep("connecting");
         try {
+            // Phase 1: Local Hardware Validation Pipeline
+            // Prevent fake model additions by cryptographically/locally verifying it actually exists
+            try {
+                const baseUrl = ollamaHost.replace(/\/$/, "");
+                const verifyRes = await fetch(`${baseUrl}/api/tags`);
+                
+                if (!verifyRes.ok) {
+                    setErrorMsg(`Hardware access denied: ${verifyRes.statusText}`);
+                    setStep("error");
+                    return;
+                }
+                
+                const tagsData = await verifyRes.json();
+                const availableModels = tagsData.models?.map((m: any) => m.name) || [];
+                
+                // Allow exact match or match without :latest tag
+                const isValid = availableModels.some((m: string) => 
+                     m === ollamaModel || m === `${ollamaModel}:latest`
+                );
+
+                if (!isValid) {
+                    setErrorMsg(`Hardware Validation Failed: '${ollamaModel}' not found on local silicon. Detected models: ${availableModels.length > 0 ? availableModels.join(", ") : "None"}.`);
+                    setStep("error");
+                    return;
+                }
+            } catch (err) {
+                setErrorMsg(`Could not ping hardware at ${ollamaHost}. Is Ollama active with OLLAMA_ORIGINS=* ?`);
+                setStep("error");
+                return;
+            }
+
+            // Phase 2: Route to Mesh Backend
             const res = await fetch(`${API}/v1/developer/${uid}/models/connect-ollama`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -175,12 +207,12 @@ export default function ConnectPage() {
                 validation: { status: "valid" },
                 key_preview: "Local Connection",
                 payout_share: "80%",
-                message: "Local Ollama model connected to mesh.",
+                message: "Local Ollama model securely registered to the mesh.",
                 all_available_models: [ollamaModel]
             });
             setStep("success");
         } catch {
-            setErrorMsg("Network error — is Ollama running at the provided host?");
+            setErrorMsg("Mesh API connection failed. Please try again.");
             setStep("error");
         }
     };
