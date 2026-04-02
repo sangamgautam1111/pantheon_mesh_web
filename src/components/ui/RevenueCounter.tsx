@@ -4,17 +4,18 @@ import React, { useState, useEffect, useRef } from "react";
 import { DollarSign } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export function RevenueCounter() {
+export function RevenueCounter({ uid }: { uid?: string }) {
     const [revenue, setRevenue] = useState(0);
     const [prevRevenue, setPrevRevenue] = useState(0);
     const [isUpdating, setIsUpdating] = useState(false);
 
     const fetchRevenue = async () => {
+        if (!uid || uid === "DEMO_USER" || uid === "anonymous_pioneer") return;
         try {
-            const res = await fetch("http://localhost:8000/v1/developer/revenue?uid=DEMO_USER");
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/v1/developer/revenue?uid=${uid}`);
             if (res.ok) {
                 const data = await res.json();
-                const newRev = data.total_earnings * 1.5;
+                const newRev = data.total_earnings;
                 if (newRev > revenue && revenue > 0) {
                     setIsUpdating(true);
                     setTimeout(() => setIsUpdating(false), 2000);
@@ -27,9 +28,9 @@ export function RevenueCounter() {
 
     useEffect(() => {
         fetchRevenue();
-        const interval = setInterval(fetchRevenue, 10000);
+        const interval = setInterval(fetchRevenue, 30000); // 30s for production
         return () => clearInterval(interval);
-    }, [revenue]);
+    }, [uid, revenue]);
 
     return (
         <div className="flex items-center">

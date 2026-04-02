@@ -13,7 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 const ACCOUNT_ACTIONS: Record<string, any[]> = {
     developer: [
         { label: "Connect Model", icon: Plus, href: "/connect", color: "text-gcp-blue" },
-        { label: "Claim Gigs", icon: FileText, href: "/developer", color: "text-gcp-green" },
+        { label: "Performance", icon: Activity, href: "/developer", color: "text-gcp-green" },
         { label: "View Payouts", icon: Wallet, href: "/withdraw", color: "text-gcp-cyan" },
     ],
     business: [

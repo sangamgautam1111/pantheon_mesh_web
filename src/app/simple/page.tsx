@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { 
-    Zap, Terminal, Shield, Wallet, 
+import {
+    Zap, Terminal, Shield, Wallet,
     Play, Power, Settings, HelpCircle,
     Activity, CheckCircle2, Clock, Globe
 } from "lucide-react";
@@ -64,17 +64,16 @@ export default function SimpleNodePage() {
                     </div>
                     <h1 className="text-3xl font-bold dark:text-white">Earn while you sleep.</h1>
                     <p className="text-gcp-text-secondary max-w-md leading-relaxed">
-                        Join the Pantheon Mesh by contributing your idle CPU/GPU. 
+                        Join the Pantheon Mesh by contributing your idle CPU/GPU.
                         Your machine will process secure, encrypted sub-tasks for the global AI swarm.
                     </p>
                     <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
-                        <button 
+                        <button
                             onClick={toggleNode}
-                            className={`px-8 py-3 rounded-lg font-bold flex items-center gap-2 transition-all active:scale-95 ${
-                                running 
-                                ? 'bg-gcp-red text-white hover:bg-red-600' 
-                                : 'bg-gcp-blue text-white hover:bg-blue-600 shadow-lg shadow-gcp-blue/20'
-                            }`}
+                            className={`px-8 py-3 rounded-lg font-bold flex items-center gap-2 transition-all active:scale-95 ${running
+                                    ? 'bg-gcp-red text-white hover:bg-red-600'
+                                    : 'bg-gcp-blue text-white hover:bg-blue-600 shadow-lg shadow-gcp-blue/20'
+                                }`}
                         >
                             {running ? <Power size={18} /> : <Play size={18} />}
                             {running ? 'Stop Node' : 'Start Earning'}
@@ -85,7 +84,7 @@ export default function SimpleNodePage() {
                         </div>
                     </div>
                 </div>
-                
+
                 <div className="w-full max-w-xs aspect-square flex items-center justify-center relative">
                     <div className={`absolute inset-0 rounded-full border-2 border-dashed transition-all duration-[3000ms] ease-linear ${running ? 'animate-spin-slow rotate-180 border-gcp-blue/40' : 'border-gcp-border'}`} />
                     <div className={`absolute inset-4 rounded-full border-2 border-dashed transition-all duration-[5000ms] ease-linear reverse ${running ? 'animate-spin-slow border-gcp-green/30' : 'border-gcp-border'}`} />
@@ -129,7 +128,7 @@ export default function SimpleNodePage() {
                         Mesh Connectivity
                     </h3>
                     <p className="text-xs text-gcp-text-secondary leading-relaxed mb-4">
-                        Your node is automatically fetching small, non-sensitive computation blocks. 
+                        Your node is automatically fetching small, non-sensitive computation blocks.
                         We use end-to-end encryption to ensure your host remains secure and your data private.
                     </p>
                     <div className="flex items-center gap-2 text-[10px] font-mono text-gcp-text-disabled">
@@ -143,7 +142,7 @@ export default function SimpleNodePage() {
                         How Payouts Work
                     </h3>
                     <p className="text-xs text-gcp-text-secondary leading-relaxed mb-4">
-                        Earnings are calculated per token processed. Once you reach $10.00, 
+                        Earnings are calculated per token processed. Once you reach $10.00,
                         you can withdraw directly to your linked wallet address or PayPal.
                     </p>
                     <button className="text-xs text-gcp-blue font-bold hover:underline">

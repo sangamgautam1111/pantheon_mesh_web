@@ -14,7 +14,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
-    const isLogin = pathname === "/login";
+    const isAuthPage = pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password";
 
     useEffect(() => {
         const check = () => setIsMobile(window.innerWidth < 769);
@@ -27,19 +27,19 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         <ThemeProvider>
             <AuthProvider>
                 <GuideProvider>
-                    {!isLogin && <TopBar onMenuToggle={() => setMobileMenuOpen(prev => !prev)} />}
-                    {!isLogin && <Sidebar mobileOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />}
+                    {!isAuthPage && <TopBar onMenuToggle={() => setMobileMenuOpen(prev => !prev)} />}
+                    {!isAuthPage && <Sidebar mobileOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />}
                     <main
-                        className={`${!isLogin ? "mt-12" : ""} min-h-screen transition-all duration-200`}
+                        className={`${!isAuthPage ? "mt-12" : ""} min-h-screen transition-all duration-200`}
                         style={{
-                            marginLeft: !isLogin && !isMobile ? 256 : 0,
+                            marginLeft: !isAuthPage && !isMobile ? 256 : 0,
                             background: "var(--bg-primary)",
                         }}
                     >
                         {children}
                     </main>
-                    <AiGuide />
-                    <GuideOverlay />
+                    {!isAuthPage && <AiGuide />}
+                    {!isAuthPage && <GuideOverlay />}
                 </GuideProvider>
             </AuthProvider>
         </ThemeProvider>

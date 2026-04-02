@@ -215,12 +215,12 @@ export default function ConnectPage() {
                             <h1 className="text-5xl font-bold tracking-tight text-black mb-3">Provision API Core</h1>
                             <p className="text-lg text-black/40 font-medium">Zero-knowledge key sealing & distributed auth</p>
                         </div>
-                        <button 
-                            onClick={() => { setWhitepaperTarget("cloud"); setShowWhitepaper(true); }}
+                        <Link 
+                            href={activeTab === "cloud" ? "/docs/cloud" : "/docs/ollama"}
                             className="flex items-center gap-2.5 px-6 py-3.5 rounded-full border border-black/10 hover:border-black/20 hover:bg-black/[0.02] transition-all text-gcp-blue font-bold text-[11px] tracking-widest uppercase"
                         >
                             <BookOpen size={15} /> VIEW GUIDE
-                        </button>
+                        </Link>
                     </div>
                 </motion.div>
 
@@ -588,25 +588,23 @@ export default function ConnectPage() {
                                     </p>
                                     
                                     <div className="space-y-4 flex-grow">
-                                        <a 
-                                            href="/docs/ollama-provisioning.md"
-                                            target="_blank"
-                                            onClick={(e) => { e.stopPropagation(); setWhitepaperTarget("ollama"); }}
+                                        <Link 
+                                            href="/docs/ollama"
+                                            onClick={(e) => { e.stopPropagation(); }}
                                             className={`w-full group p-5 rounded-2xl flex items-center justify-between transition-all border ${whitepaperTarget === "ollama" ? "bg-white/10 border-white/20" : "bg-transparent border-white/5 hover:bg-white/5"}`}
                                         >
                                             <span className="text-[10px] font-bold uppercase tracking-widest text-left">Local<br/>Ollama<br/>Guide</span>
                                             <ArrowRight size={14} className={`transition-transform ${whitepaperTarget === "ollama" ? "translate-x-1" : "opacity-20"}`} />
-                                        </a>
+                                        </Link>
                                         
-                                        <a 
-                                            href="/docs/cloud-provisioning.md"
-                                            target="_blank"
-                                            onClick={(e) => { e.stopPropagation(); setWhitepaperTarget("cloud"); }}
+                                        <Link 
+                                            href="/docs/cloud"
+                                            onClick={(e) => { e.stopPropagation(); }}
                                             className={`w-full group p-5 rounded-2xl flex items-center justify-between transition-all border ${whitepaperTarget === "cloud" ? "bg-white/10 border-white/20" : "bg-transparent border-white/5 hover:bg-white/5"}`}
                                         >
                                             <span className="text-[10px] font-bold uppercase tracking-widest text-left">Cloud API<br/>Guide</span>
                                             <ArrowRight size={14} className={`transition-transform ${whitepaperTarget === "cloud" ? "translate-x-1" : "opacity-20"}`} />
-                                        </a>
+                                        </Link>
                                     </div>
                                 </div>
 

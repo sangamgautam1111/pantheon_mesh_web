@@ -198,7 +198,7 @@ export default function DeveloperPage() {
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight mb-1" style={{ color: "var(--text-primary)" }}>Developer Central</h1>
                     <p className="text-sm opacity-60">
-                        Manage your model cluster and claim autonomous gigs from the mesh
+                        Manage your model cluster and monitor autonomous performance from the mesh
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -252,12 +252,6 @@ export default function DeveloperPage() {
                     className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === "ollama" ? "border-gcp-blue text-gcp-blue font-bold" : "border-transparent text-gcp-text-disabled hover:text-gcp-text-secondary"}`}
                 >
                     Local Ollama
-                </button>
-                <button
-                    onClick={() => setActiveTab("gigs")}
-                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === "gigs" ? "border-gcp-blue text-gcp-blue font-bold" : "border-transparent text-gcp-text-disabled hover:text-gcp-text-secondary"}`}
-                >
-                    Gig Board <span className="ml-2 gcp-badge bg-gcp-green/10 text-gcp-green text-[10px] px-1.5 py-0.5 rounded">{availableGigs.length}</span>
                 </button>
             </div>
 
@@ -333,67 +327,6 @@ export default function DeveloperPage() {
                         </>
                     )}
 
-                    {/* Gig discovery Board */}
-                    {activeTab === "gigs" && (
-                        <div className="bg-white dark:bg-black border border-gcp-border rounded-lg overflow-hidden">
-                            <div className="px-4 py-3 bg-gcp-surface-v border-b border-gcp-border flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <Briefcase size={16} className="text-gcp-blue" />
-                                    <span className="text-sm font-medium">Mesh Gig Opportunities</span>
-                                </div>
-                                <button onClick={loadGigs} className="p-1 hover:text-gcp-blue transition-colors">
-                                    <RefreshCw size={14} className={loadingGigs ? "animate-spin" : ""} />
-                                </button>
-                            </div>
-                            
-                            <div className="overflow-x-auto min-h-[300px]">
-                                {loadingGigs ? (
-                                    <div className="flex flex-col items-center justify-center py-20 opacity-50">
-                                        <Clock className="animate-spin text-gcp-blue mb-4" size={32} />
-                                        <p className="text-sm">Scanning for open tasks...</p>
-                                    </div>
-                                ) : availableGigs.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-20 opacity-50">
-                                        <Activity size={32} className="text-gcp-text-disabled mb-4" />
-                                        <p className="text-sm">No gigs available at the moment.</p>
-                                    </div>
-                                ) : (
-                                    <table className="w-full text-left">
-                                        <thead>
-                                            <tr className="bg-gcp-surface-v/50 text-[10px] uppercase tracking-wider text-gcp-text-disabled border-b border-gcp-border">
-                                                <th className="px-4 py-3 font-semibold">Requirement</th>
-                                                <th className="px-4 py-3 font-semibold">Budget</th>
-                                                <th className="px-4 py-3 font-semibold">Status</th>
-                                                <th className="px-4 py-3 font-semibold text-right">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gcp-border">
-                                            {availableGigs.map((g) => (
-                                                <tr key={g.id} className="hover:bg-gcp-surface-v/30 transition-colors">
-                                                    <td className="px-4 py-4">
-                                                        <p className="text-sm font-medium text-gcp-text mb-1">{g.title}</p>
-                                                        <p className="text-xs text-gcp-text-secondary line-clamp-2 max-w-md">{g.description}</p>
-                                                    </td>
-                                                    <td className="px-4 py-4 text-sm font-mono text-gcp-green">${g.budget_usd.toFixed(2)}</td>
-                                                    <td className="px-4 py-4 text-xs">
-                                                        <span className="gcp-badge bg-gcp-blue/10 text-gcp-blue px-2 py-0.5 text-[10px]">ESCROWED</span>
-                                                    </td>
-                                                    <td className="px-4 py-4 text-right">
-                                                        <button 
-                                                            className="px-3 py-1 bg-gcp-blue text-white text-xs font-medium rounded hover:bg-blue-600"
-                                                            onClick={() => alert("Model assignment pending protocol update")}
-                                                        >
-                                                            Claim
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                )}
-                            </div>
-                        </div>
-                    )}
 
                     {/* Audit Trail Section */}
                     <div className="rounded-xl border shadow-sm overflow-hidden" style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>

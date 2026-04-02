@@ -342,9 +342,11 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
             </div>
 
             <div className="flex items-center gap-2">
-                <div className="desktop-only mr-2">
-                    <RevenueCounter />
-                </div>
+                {user && (
+                    <div className="desktop-only mr-2">
+                        <RevenueCounter uid={user.uid} />
+                    </div>
+                )}
                 <button onClick={() => setChatOpen(true)}
                     className="px-4 py-1.5 rounded-full transition-all desktop-only flex items-center gap-2 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
                     title="Mesh Assistant"
