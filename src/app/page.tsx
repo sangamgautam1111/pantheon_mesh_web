@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
     LayoutDashboard, Users, Store, Wallet, Cpu,
@@ -10,6 +10,10 @@ import {
 
 import { useAuth } from "@/context/AuthContext";
 
+/* ─────────────────────────────────────────────
+   Quick action buttons shown below the welcome
+   header. Each account type sees its own set.
+   ───────────────────────────────────────────── */
 const ACCOUNT_ACTIONS: Record<string, any[]> = {
     developer: [
         { label: "Connect Model", icon: Plus, href: "/connect", color: "text-gcp-blue" },
@@ -21,9 +25,7 @@ const ACCOUNT_ACTIONS: Record<string, any[]> = {
         { label: "Fund Wallet", icon: Wallet, href: "/withdraw", color: "text-gcp-cyan" },
     ],
     personal: [
-        { label: "Run Node", icon: Zap, href: "/simple", color: "text-gcp-blue" },
-        { label: "Withdrawals", icon: Wallet, href: "/withdraw", color: "text-gcp-green" },
-        { label: "Quick Start", icon: Database, href: "/whitepaper", color: "text-gcp-cyan" },
+        { label: "Upload Agents", icon: Plus, href: "/connect", color: "text-gcp-blue" },
     ],
     founder: [
         { label: "Admin Console", icon: Shield, href: "/dashboard", color: "text-gcp-blue" },
@@ -32,13 +34,53 @@ const ACCOUNT_ACTIONS: Record<string, any[]> = {
     ]
 };
 
-const DEFAULT_ACCESS = [
-    { label: "Agents & Registry", icon: Users, desc: "Global decentralized agent database for high-scale discovery", href: "/agents" },
-    { label: "Developer Central", icon: Cpu, desc: "Connect cloud & local model fleets to the mesh cluster", href: "/developer" },
-    { label: "Business Gigs", icon: FileText, desc: "Post high-level tasks & hire autonomous agent swarms", href: "/client" },
-    { label: "Personal Node", icon: Zap, desc: "One-click compute contribution via local Ollama nodes", href: "/simple" },
-    { label: "Marketplace", icon: Store, desc: "Intelligence capability exchange with unified billing", href: "/marketplace" },
-    { label: "Service Tiers", icon: Wallet, desc: "View pricing plans and automated revenue settlement", href: "/pricing" },
+/* ─────────────────────────────────────────────
+   Dashboard grid cards. We define a full set
+   then filter per-account-type at render time.
+   ───────────────────────────────────────────── */
+const ALL_CARDS = [
+    {
+        label: "Agents & Registry",
+        icon: Users,
+        desc: "Global decentralized agent database for high-scale discovery",
+        href: "/agents",
+        show: ["developer", "personal", "business", "founder"],
+    },
+    {
+        label: "Developer Central",
+        icon: Cpu,
+        desc: "Connect cloud & local model fleets to the mesh cluster",
+        href: "/developer",
+        show: ["developer", "founder"],
+    },
+    {
+        label: "Business Gigs",
+        icon: FileText,
+        desc: "Post high-level tasks & hire autonomous agent swarms",
+        href: "/client",
+        show: ["business", "founder"],
+    },
+    {
+        label: "Personal Node",
+        icon: Zap,
+        desc: "Monitor your contributed models and see real-time mesh performance",
+        href: "/simple",
+        show: ["personal"],
+    },
+    {
+        label: "Marketplace",
+        icon: Store,
+        desc: "Intelligence capability exchange with unified billing",
+        href: "/marketplace",
+        show: ["developer", "personal", "business", "founder"],
+    },
+    {
+        label: "Service Tiers",
+        icon: Wallet,
+        desc: "View pricing plans and automated revenue settlement",
+        href: "/pricing",
+        show: ["developer", "business", "founder"],
+    },
 ];
 
 export default function Home() {
@@ -50,6 +92,10 @@ export default function Home() {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
+
+    // Only show cards relevant to the current account type
+    const currentType = accountType || "personal";
+    const visibleCards = ALL_CARDS.filter(card => card.show.includes(currentType));
 
     return (
         <div className="p-8 max-w-6xl">
@@ -71,7 +117,7 @@ export default function Home() {
                 {user && (
                     <div className="flex items-center gap-6 mt-2 text-xs text-gcp-text-disabled">
                         <span className="flex items-center gap-2">
-                            Account: <span className="gcp-badge bg-gcp-blue/10 text-gcp-blue py-0.5">{accountType?.toUpperCase()}</span>
+                            Account: <span className="gcp-badge bg-gcp-blue/10 text-gcp-blue py-0.5">{currentType.toUpperCase()}</span>
                         </span>
                         <button
                             onClick={() => handleCopy(user.uid)}
@@ -86,7 +132,7 @@ export default function Home() {
 
             {/* Dynamic Quick Actions */}
             <div className="flex flex-wrap gap-3 mb-10">
-                {(ACCOUNT_ACTIONS[accountType || 'personal'] || ACCOUNT_ACTIONS.personal).map(a => (
+                {(ACCOUNT_ACTIONS[currentType] || ACCOUNT_ACTIONS.personal).map(a => (
                     <Link key={a.label} href={a.href}>
                         <button className="flex items-center gap-2 px-4 py-2 gcp-card-hover text-sm font-medium text-gcp-blue">
                             <a.icon size={14} className={a.color} />
@@ -96,11 +142,11 @@ export default function Home() {
                 ))}
             </div>
 
-            {/* Quick Access Grid */}
+            {/* Quick Access Grid — filtered per account type */}
             <div className="mb-16">
                 <h2 className="text-xl font-heading font-bold text-gcp-text mb-8 tracking-tight">Explore the Pantheon Mesh</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {DEFAULT_ACCESS.map(item => (
+                    {visibleCards.map(item => (
                         <Link key={item.label} href={item.href}>
                             <div className="gcp-card p-10 h-full group bg-white/50 backdrop-blur-sm border-gcp-border/40 hover:border-gcp-blue/50 hover:shadow-2xl hover:shadow-gcp-blue/5 transition-all duration-300 transform hover:-translate-y-1">
                                 <div className="flex items-center gap-5 mb-6">
@@ -119,7 +165,7 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* Getting Started - Only show for guests */}
+            {/* Getting Started — shown only for guests */}
             {!user && (
                 <div className="gcp-card p-6">
                     <div className="flex items-start justify-between">

@@ -12,16 +12,22 @@ import Image from "next/image";
 import chatIcon from "@/app/chat_icon.png";
 import logoImg from "@/app/logo.png";
 
+/* ─────────────────────────────────────────────
+   Sidebar navigation items.
+   Each item can optionally have an allowedTypes
+   array — if set, the item is only shown when
+   the logged-in user's account type matches.
+   ───────────────────────────────────────────── */
 const NAV_ITEMS = [
-    { label: "Welcome", href: "/", icon: LayoutDashboard },
-    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Pricing", href: "/pricing", icon: CreditCard },
-    { label: "Developer Central", href: "/developer", icon: Code, allowedTypes: ["developer"] },
-    { label: "Client Gigs", href: "/client", icon: FileText, allowedTypes: ["business", "founder"] },
-    { label: "Personal Node", href: "/simple", icon: Terminal, allowedTypes: ["personal"] },
-    { label: "Agents", href: "/agents", icon: Users, allowedTypes: ["developer"] },
-    { label: "Marketplace", href: "/marketplace", icon: Store },
-    { label: "Withdraw", href: "/withdraw", icon: Wallet, allowedTypes: ["developer", "business", "founder"] },
+    { label: "Welcome",          href: "/",           icon: LayoutDashboard },
+    { label: "Dashboard",        href: "/dashboard",  icon: LayoutDashboard },
+    { label: "Developer Central",href: "/developer",  icon: Code,       allowedTypes: ["developer"] },
+    { label: "Client Gigs",      href: "/client",     icon: FileText,   allowedTypes: ["business", "founder"] },
+    { label: "Personal Node",    href: "/simple",     icon: Terminal,   allowedTypes: ["personal"] },
+    { label: "Agents",           href: "/agents",     icon: Users,      allowedTypes: ["developer", "personal"] },
+    { label: "Marketplace",      href: "/marketplace",icon: Store },
+    { label: "Pricing",          href: "/pricing",    icon: CreditCard, allowedTypes: ["developer", "business", "founder"] },
+    { label: "Withdraw",         href: "/withdraw",   icon: Wallet,     allowedTypes: ["developer", "business", "founder"] },
 ];
 
 const DOCS_ITEMS = [
@@ -69,7 +75,7 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                     }`}
                 style={{ background: "var(--sidebar-bg)", borderColor: "var(--border-color)" }}
             >
-                {/* Refined Project Selector as per screenshot */}
+                {/* Project selector */}
                 {(!collapsed || isMobile) && (
                     <div className="px-4 py-3 border-b" style={{ borderColor: "var(--border-color)" }}>
                         <div className="flex items-center justify-between p-2 rounded-lg hover:bg-white/[0.03] transition-all group cursor-pointer">
@@ -92,8 +98,8 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                 {/* Nav Links */}
                 <nav className="flex-1 overflow-y-auto py-2 scrollbar-hide">
                     {NAV_ITEMS.map((item) => {
-                        // Strict role-based filtering: 
-                        // If item has allowedTypes, and user is not logged in OR type is not in list, hide it.
+                        // Role-based filtering:
+                        // If the item declares allowedTypes, hide it unless current account matches.
                         if (item.allowedTypes && (!accountType || !item.allowedTypes.includes(accountType))) {
                             return null;
                         }

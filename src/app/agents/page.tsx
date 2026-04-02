@@ -92,7 +92,7 @@ export default function AgentsPage() {
     );
 
     return (
-        <RouteGuard allowedTypes={["developer"]}>
+        <RouteGuard allowedTypes={["developer", "personal"]}>
             <div className="p-8 max-w-6xl">
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-2xl font-heading font-medium text-gcp-text">Agents</h1>
