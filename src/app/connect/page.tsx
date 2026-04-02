@@ -709,9 +709,22 @@ export default function ConnectPage() {
                                                 </div>
 
                                                 <div>
-                                                    <h3 className="text-xl font-bold text-black mb-4">Setup Requirements</h3>
-                                                    <p className="text-black/60 leading-relaxed italic">
-                                                        Ensure Ollama is running with `OLLAMA_ORIGINS="*"` and accessible via your network. You can restrict access further by specifying the Pantheon relay IPs if necessary.
+                                                    <h3 className="text-xl font-bold text-black mb-4">Setup & Commands</h3>
+                                                    <p className="text-black/60 leading-relaxed italic mb-4">
+                                                        Ensure Ollama is active with global origins so Pantheon can orchestrate it. You must also supply the <strong>exact model name</strong> you have pulled locally (e.g. <code>llama3</code> or <code>mistral:latest</code>).
+                                                    </p>
+                                                    <div className="bg-black text-white p-5 rounded-2xl font-mono text-sm mb-4 overflow-x-auto shadow-inner">
+                                                        <div className="text-gcp-green/50 text-xs mb-1"># 1. Start Ollama with open CORS (Mac/Linux)</div>
+                                                        <div className="mb-4">OLLAMA_ORIGINS="*" OLLAMA_HOST="0.0.0.0" ollama serve</div>
+                                                        
+                                                        <div className="text-gcp-green/50 text-xs mb-1"># Windows (PowerShell)</div>
+                                                        <div className="mb-4">$env:OLLAMA_ORIGINS="*"; ollama serve</div>
+
+                                                        <div className="text-gcp-green/50 text-xs mb-1"># 2. Pull the model you want to host</div>
+                                                        <div>ollama pull &lt;your_model_name&gt;</div>
+                                                    </div>
+                                                    <p className="text-black/60 leading-relaxed italic text-sm">
+                                                        <strong>Crucial:</strong> When entering the <code>Hardware Model ID</code> in the connect screen, it must exactly match a model listed when you run <code>ollama list</code> on your local machine. The mesh performs pre-flight checks on <code>http://localhost:11434/api/tags</code> to verify you actually possess the model before validating deployment to the mesh network, preventing fake node additions.
                                                     </p>
                                                 </div>
                                             </div>

@@ -117,18 +117,24 @@ export const AiGuide = () => {
             {!open && (
                 <button
                     onClick={() => setOpen(true)}
-                    className="fixed z-50 flex items-center justify-center transition-all hover:scale-110 active:scale-95 group"
+                    className="fixed z-50 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 group"
                     style={{
-                        bottom: isMobile ? 16 : 24,
-                        right: isMobile ? 16 : 24,
-                        width: isMobile ? 52 : 64,
-                        height: isMobile ? 52 : 64,
+                        bottom: isMobile ? 16 : 32,
+                        right: isMobile ? 16 : 32,
+                        width: isMobile ? 56 : 64,
+                        height: isMobile ? 56 : 64,
+                        background: "var(--gcp-blue)",
                     }}
                     title="Mesh Assist"
                 >
-                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center p-1.5 shadow-xl border border-white/20">
-                        <Image src={chatIcon} alt="Mesh Assist" className="w-full h-full object-contain" />
+                    <div className="w-10 h-10 flex items-center justify-center p-1">
+                        <Image src={chatIcon} alt="Mesh Assist" className="w-full h-full object-contain brightness-0 invert" />
                     </div>
+                    {!isMobile && (
+                        <div className="absolute right-20 px-4 py-2 rounded-lg bg-white text-[#0f1114] text-sm font-bold shadow-2xl border border-gray-100 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                            Mesh Assist — Ask me anything
+                        </div>
+                    )}
                 </button>
             )}
 

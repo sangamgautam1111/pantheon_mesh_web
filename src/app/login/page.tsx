@@ -315,14 +315,7 @@ export default function LoginPage() {
                 )}
             </AnimatePresence>
 
-            <div className="fixed bottom-8 right-8 z-50">
-                <button className="w-14 h-14 rounded-full bg-gcp-blue text-white shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all group relative">
-                    <Bot size={28} />
-                    <div className="absolute right-16 px-4 py-2 rounded-lg bg-gcp-surface text-gcp-text text-sm font-bold shadow-xl border border-gcp-border whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                        Mesh Assist — Ask me anything
-                    </div>
-                </button>
-            </div>
+
 
             {!emailMode && (
                 <motion.div

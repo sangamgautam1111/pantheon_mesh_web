@@ -42,11 +42,10 @@ export default function OllamaProvisioningPage() {
         if (!selectedModel || !ngrokUrl) return;
         setProvisioning(true);
         try {
-            const res = await fetch(`${API_URL}/v1/ollama/register`, {
+            const res = await fetch(`${API_URL}/v1/developer/DEMO_USER/models/connect-ollama`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    uid: 'DEMO_USER',
                     model_name: selectedModel,
                     host: ngrokUrl
                 })
@@ -238,21 +237,53 @@ export default function OllamaProvisioningPage() {
                             {/* Visualizer Background */}
                             <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(var(--blue-500) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
                             
-                            <div className="flex items-center justify-between mb-8 z-10">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10">
-                                        <Server size={20} className="text-white/40" />
+                                <div className="bg-black/90 p-6 rounded-xl border border-white/10 font-mono text-sm overflow-hidden group relative">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex gap-1.5">
+                                            <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
+                                            <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
+                                            <div className="w-3 h-3 rounded-full bg-[#27C93F]" />
+                                        </div>
+                                        <span className="text-white/40 text-[10px] uppercase tracking-widest">provision_node.ps1</span>
                                     </div>
-                                    <div>
-                                        <h3 className="text-xs font-bold uppercase tracking-widest">Mesh Monitor</h3>
-                                        <p className="text-[10px] text-white/20">Real-time inference tracking</p>
+                                    <div className="space-y-4 text-emerald-400">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-white/30 text-[10px]"># 1. Allow local hardware to talk to mesh</span>
+                                            <span>$env:OLLAMA_ORIGINS="*" </span>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-white/30 text-[10px]"># 2. Check your local hardware IDs</span>
+                                            <span>ollama list</span>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-white/30 text-[10px]"># 3. Start local compute engine</span>
+                                            <span>ollama serve</span>
+                                        </div>
+                                        <div className="flex flex-col gap-1 mt-2 p-2 bg-white/5 border border-white/10 rounded-lg">
+                                            <span className="text-white/30 text-[10px]"># Mapping Tip</span>
+                                            <span className="text-white/70 italic text-[11px]">
+                                                Use a model from 'ollama list' as your Hardware ID. 
+                                                This ensures the system routes to your physical silicon correctly.
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
-                                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-tighter">System Nominal</span>
+                            
+                                <div className="flex items-center justify-between mt-8 z-10">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10">
+                                            <Server size={20} className="text-white/40" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xs font-bold uppercase tracking-widest">Mesh Monitor</h3>
+                                            <p className="text-[10px] text-white/20">Real-time inference tracking</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+                                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                                        <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-tighter">System Nominal</span>
+                                    </div>
                                 </div>
-                            </div>
 
                             <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 relative z-10">
                                 {!provisioned ? (

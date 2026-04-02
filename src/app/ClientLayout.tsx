@@ -44,8 +44,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     >
                         {children}
                     </main>
-                    {!isAuthPage && <AiGuide />}
-                    {!isAuthPage && <GuideOverlay />}
+                    <AiGuide />
+                    <GuideOverlay />
                 </GuideProvider>
             </AuthProvider>
         </ThemeProvider>
