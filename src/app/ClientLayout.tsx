@@ -14,7 +14,13 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
-    const isAuthPage = pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password";
+    
+    // Improved auth page check to handle trailing slashes and potential case issues
+    const authPaths = ["/login", "/signup", "/forgot-password"];
+    const isAuthPage = authPaths.some(path => {
+        const cleanPath = pathname?.replace(/\/$/, "") || "";
+        return cleanPath === path;
+    });
 
     useEffect(() => {
         const check = () => setIsMobile(window.innerWidth < 769);

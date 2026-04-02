@@ -28,9 +28,9 @@ export function RevenueCounter({ uid }: { uid?: string }) {
 
     useEffect(() => {
         fetchRevenue();
-        const interval = setInterval(fetchRevenue, 30000); // 30s for production
+        const interval = setInterval(fetchRevenue, 30000); 
         return () => clearInterval(interval);
-    }, [uid, revenue]);
+    }, [uid]); // Removed revenue dependency to keep polling stable regardless of value changes
 
     return (
         <div className="flex items-center">
