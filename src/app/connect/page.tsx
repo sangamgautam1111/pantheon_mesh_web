@@ -375,12 +375,21 @@ export default function ConnectPage() {
                                 <div className="absolute top-0 right-0 p-4 opacity-[0.03] translate-x-10 translate-y--10 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform duration-700">
                                     <Globe size={150} />
                                 </div>
-                                
-                                <div className="flex items-center gap-8 relative z-10">
-                                    <div className="w-24 h-24 rounded-3xl bg-white shadow-xl flex items-center justify-center border border-black/5 p-4 overflow-hidden">
+                                                               <div className="flex items-center gap-8 relative z-10">
+                                    <div className="w-24 h-24 rounded-3xl bg-white shadow-2xl flex items-center justify-center border border-black/5 p-4 overflow-hidden group/logo">
                                         {PROVIDER_DOMAINS[detection.provider] ? (
-                                            <img src={`https://logo.clearbit.com/${PROVIDER_DOMAINS[detection.provider]}`} className="w-full h-full object-contain" />
-                                        ) : <Globe size={40} className="text-gcp-blue" />}
+                                            <div className="relative w-full h-full flex items-center justify-center">
+                                                <img 
+                                                    src={`https://www.google.com/s2/favicons?domain=${PROVIDER_DOMAINS[detection.provider]}&sz=128`} 
+                                                    className="w-full h-full object-contain opacity-0 transition-opacity duration-300"
+                                                    onLoad={(e) => (e.currentTarget.style.opacity = '1')}
+                                                    onError={(e) => {
+                                                        e.currentTarget.src = `https://logo.clearbit.com/${PROVIDER_DOMAINS[detection.provider]}`;
+                                                    }}
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-br from-black/[0.02] to-transparent pointer-events-none" />
+                                            </div>
+                                        ) : <Globe size={40} className="text-gcp-blue animate-pulse" />}
                                     </div>
                                     <div className="text-center md:text-left">
                                         <div className="flex items-center gap-3 mb-2 justify-center md:justify-start">
@@ -390,35 +399,37 @@ export default function ConnectPage() {
                                             </span>
                                         </div>
                                         <div className="flex flex-wrap items-center gap-4 text-[11px] font-bold opacity-30 uppercase tracking-[0.1em] justify-center md:justify-start">
-                                            <span>Key Fragment: <code className="font-mono text-black">{detection.key_preview}</code></span>
-                                            <span className="w-1 h-1 rounded-full bg-black"></span>
+                                            <span>Key Fragment: <code className="font-mono text-black bg-black/[0.05] px-1.5 py-0.5 rounded">{detection.key_preview}</code></span>
+                                            <span className="w-1.5 h-1.5 rounded-full bg-gcp-blue/40"></span>
                                             <span>{detection.models_available} Profiles Available</span>
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <button onClick={handleReset} className="relative z-10 group/btn bg-red-500/5 hover:bg-red-500/10 text-red-600 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border border-red-500/10">
-                                    <Trash2 size={14} className="group-hover:rotate-12 transition-transform" /> Revoke Keys
+                                <button onClick={handleReset} className="relative z-10 group/btn bg-red-500/5 hover:bg-red-500/10 text-red-600 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border border-red-500/10">
+                                    <Trash2 size={14} className="group-hover:rotate-12 transition-transform" /> REVOKE KEY IDENTITY
                                 </button>
                             </div>
 
-                            <div className="bg-white rounded-[2.5rem] p-10 md:p-14 shadow-3xl border border-black/[0.02]">
-                                <div className="flex items-center justify-between mb-12">
+                            <div className="bg-white rounded-[2.5rem] p-10 md:p-14 shadow-3xl border border-black/[0.02] relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-gcp-blue/[0.02] to-transparent pointer-events-none" />
+                                
+                                <div className="flex items-center justify-between mb-12 relative z-10">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center">
-                                            <BrainCircuit size={24} className="text-purple-600" />
+                                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/10 to-indigo-500/10 flex items-center justify-center border border-purple-500/10 shadow-lg shadow-purple-500/5">
+                                            <BrainCircuit size={28} className="text-purple-600" />
                                         </div>
                                         <div>
                                             <h2 className="text-2xl font-black text-black tracking-tight">Provision Architecture</h2>
-                                            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-black/30">Node Profile Selection</p>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-black/30">Node Profile Selection & Compliance</p>
                                         </div>
                                     </div>
                                     {(detection?.models?.length || 0) > 1 && !showModelList && (
                                         <button 
                                             onClick={() => setShowModelList(true)}
-                                            className="px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest text-gcp-blue border border-gcp-blue/20 hover:bg-gcp-blue/5 transition-all"
+                                            className="px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest text-gcp-blue border border-gcp-blue/20 hover:bg-gcp-blue/5 transition-all shadow-xl shadow-gcp-blue/5 bg-white"
                                         >
-                                            Switch Profile
+                                            RE-VALIDATE PROFILES
                                         </button>
                                     )}
                                 </div>
@@ -426,49 +437,62 @@ export default function ConnectPage() {
                                 {showModelList ? (
                                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
                                         <div className="relative mb-6">
-                                            <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-black/20" />
+                                            <Search size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20" />
                                             <input 
                                                 value={searchFilter}
                                                 onChange={e => setSearchFilter(e.target.value)}
-                                                className="w-full bg-black/[0.03] border border-black/5 pl-14 pr-6 py-5 rounded-2xl font-bold focus:bg-white focus:ring-4 focus:ring-gcp-blue/5 outline-none transition-all"
-                                                placeholder="Search global models..."
+                                                className="w-full bg-black/[0.02] border border-black/5 pl-14 pr-6 py-6 rounded-2xl font-bold focus:bg-white focus:ring-4 focus:ring-gcp-blue/5 outline-none transition-all shadow-inner"
+                                                placeholder="Search architectural profiles..."
                                             />
                                         </div>
-                                        <div className="max-h-[400px] overflow-y-auto rounded-3xl border border-black/5 divide-y divide-black/5 custom-scrollbar">
+                                        <div className="max-h-[400px] overflow-y-auto rounded-3xl border border-black/[0.05] divide-y divide-black/5 custom-scrollbar bg-black/[0.01]">
                                             {filteredModels.map((m: any) => (
                                                 <button 
                                                     key={m.id}
                                                     onClick={() => { setSelectedModel(m); setShowModelList(false); }}
-                                                    className={`w-full group p-6 flex items-center justify-between transition-all hover:bg-gcp-blue/5 ${selectedModel?.id === m.id ? "bg-gcp-blue/5 border-l-4 border-gcp-blue" : "border-l-4 border-transparent"}`}
+                                                    className={`w-full group p-6 flex items-center justify-between transition-all hover:bg-white ${selectedModel?.id === m.id ? "bg-white border-l-4 border-gcp-blue" : "border-l-4 border-transparent"}`}
                                                 >
                                                     <div className="text-left overflow-hidden">
-                                                        <p className={`text-sm font-black truncate ${selectedModel?.id === m.id ? "text-gcp-blue" : "text-black"}`}>{m.name || m.id}</p>
-                                                        <code className="text-[10px] opacity-40 font-mono mt-1 block truncate">{m.id}</code>
+                                                        <p className={`text-sm font-black truncate transition-colors ${selectedModel?.id === m.id ? "text-gcp-blue" : "text-black/60 group-hover:text-black"}`}>{m.name || m.id}</p>
+                                                        <code className="text-[10px] opacity-30 font-mono mt-1 block truncate tracking-tight">{m.id}</code>
                                                     </div>
-                                                    {selectedModel?.id === m.id && <CheckCircle size={20} className="text-gcp-blue shrink-0" />}
+                                                    {selectedModel?.id === m.id && <CheckCircle size={20} className="text-gcp-blue shrink-0 shadow-lg shadow-gcp-blue/20" />}
                                                 </button>
                                             ))}
                                         </div>
                                     </motion.div>
                                 ) : (
-                                    <div className="p-8 rounded-3xl bg-gcp-green/5 border border-gcp-green/20 flex flex-col md:flex-row items-center justify-between gap-6">
-                                        <div className="flex items-center gap-6">
-                                            <div className="w-16 h-16 rounded-2xl bg-gcp-green/10 flex items-center justify-center p-4">
-                                                <Sparkles size={32} className="text-gcp-green" />
+                                    <div className="p-10 rounded-[2.5rem] bg-gradient-to-br from-gcp-green/[0.04] to-emerald-500/[0.04] border border-gcp-green/15 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden group/card shadow-2xl shadow-gcp-green/5">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-gcp-green/5 blur-3xl rounded-full translate-x-10 translate-y--10 pointer-events-none" />
+                                        
+                                        <div className="flex items-center gap-8 relative z-10">
+                                            <div className="w-20 h-20 rounded-[2rem] bg-white shadow-xl flex items-center justify-center p-5 border border-gcp-green/10 group-hover/card:scale-105 transition-transform duration-500">
+                                                <Sparkles size={40} className="text-gcp-green animate-pulse" />
                                             </div>
                                             <div>
-                                                <h4 className="text-2xl font-black text-black tracking-tight leading-none mb-2">{selectedModel?.name || selectedModel?.id}</h4>
-                                                <code className="text-[11px] font-mono opacity-40 uppercase tracking-widest">{selectedModel?.id}</code>
+                                                <h4 className="text-3xl font-black text-black tracking-tight leading-none mb-3">{selectedModel?.name || selectedModel?.id}</h4>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="px-2 py-0.5 bg-black/5 rounded text-[8px] font-black uppercase tracking-widest text-black/40">ID</div>
+                                                    <code className="text-[11px] font-mono opacity-40 uppercase tracking-widest">{selectedModel?.id}</code>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-4">
+                                        
+                                        <div className="flex items-center gap-6 relative z-10">
                                             <div className="text-right">
-                                                <div className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">Commission</div>
-                                                <div className="text-xl font-black text-black">80%</div>
+                                                <div className="text-[9px] font-black uppercase tracking-[0.2em] text-black/20 mb-1">
+                                                    {useAuth().accountType === "personal" ? "Truth Contribution" : "Commission Share"}
+                                                </div>
+                                                <div className="text-3xl font-black text-black tracking-tighter">
+                                                    {useAuth().accountType === "personal" ? "100%" : "80%"}
+                                                </div>
                                             </div>
-                                            <div className="h-10 w-px bg-black/10"></div>
-                                            <div className="px-6 py-2 rounded-full bg-gcp-green shadow-xl shadow-green-500/20 text-white text-[10px] font-black uppercase tracking-widest">
-                                                Active Profile
+                                            <div className="h-12 w-px bg-black/5"></div>
+                                            <div className="flex flex-col gap-1.5 items-end">
+                                                <div className="px-5 py-2 rounded-full bg-gcp-green shadow-xl shadow-gcp-green/20 text-white text-[9px] font-black uppercase tracking-widest flex items-center gap-2">
+                                                    <CheckCircle2 size={12} /> Active Profile
+                                                </div>
+                                                <span className="text-[8px] font-bold text-black/20 uppercase tracking-widest">Compliant with V3 Mesh Policy</span>
                                             </div>
                                         </div>
                                     </div>
