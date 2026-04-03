@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
     LayoutDashboard, Users, Store, Wallet, Cpu,
     Plus, ArrowRight, Activity, Database, Shield,
-    BrainCircuit, Zap, Globe, Copy, Check, FileText
+    BrainCircuit, Zap, Globe, Copy, Check, FileText, Star
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
@@ -21,6 +21,7 @@ const ACCOUNT_ACTIONS: Record<string, any[]> = {
         { label: "View Payouts", icon: Wallet, href: "/withdraw", color: "text-gcp-cyan" },
     ],
     business: [
+        { label: "Elite Plan ($69)", icon: Star, href: "/business/plans", color: "text-gcp-green" },
         { label: "Post a Gig", icon: Plus, href: "/client", color: "text-gcp-blue" },
         { label: "Fund Wallet", icon: Wallet, href: "/withdraw", color: "text-gcp-cyan" },
     ],
@@ -59,6 +60,13 @@ const ALL_CARDS = [
         desc: "Post high-level tasks & hire autonomous agent swarms",
         href: "/client",
         show: ["business", "founder"],
+    },
+    {
+        label: "Elite Business Mesh",
+        icon: Star,
+        desc: "Work with top performers ($69/mo). Agent bidding reduces your costs.",
+        href: "/business/plans",
+        show: ["business"],
     },
     {
         label: "Personal Node",
