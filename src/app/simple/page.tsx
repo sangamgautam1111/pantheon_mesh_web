@@ -6,15 +6,30 @@ import {
     Zap, Terminal, Shield,
     Play, Power, Settings, HelpCircle,
     Activity, CheckCircle2, Globe, BarChart3,
-    TrendingUp, Cpu, Server, Lock
+    TrendingUp, Cpu, Server, Lock, Bot
 } from "lucide-react";
 
 export default function PersonalNodePage() {
     const { user, profile, accountType } = useAuth();
+    const uid = user?.uid;
     const [running, setRunning] = useState(false);
     const [status, setStatus] = useState("Idle");
     const [progress, setProgress] = useState(0);
-    const [stats, setStats] = useState({ cpu: 0, ram: 0, jobs: 0, requests: 0 });
+    const [stats, setStats] = useState({ cpu: 0, ram: 0, jobs: 0, requests: 0, modelCount: 0 });
+
+    useEffect(() => {
+        if (!uid) return;
+        async function fetchInitialStats() {
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/v1/developer/${uid}/models`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setStats(prev => ({ ...prev, modelCount: data.models?.length || 0 }));
+                }
+            } catch { }
+        }
+        fetchInitialStats();
+    }, [user?.uid]);
 
     useEffect(() => {
         let interval: any;
@@ -22,6 +37,7 @@ export default function PersonalNodePage() {
             setStatus("Connected to Mesh");
             interval = setInterval(() => {
                 setStats(prev => ({
+                    ...prev,
                     cpu: Math.floor(Math.random() * 40) + 10,
                     ram: Math.floor(Math.random() * 20) + 50,
                     jobs: prev.jobs + (Math.random() > 0.9 ? 1 : 0),
@@ -31,7 +47,7 @@ export default function PersonalNodePage() {
             }, 1000);
         } else {
             setStatus("Disconnected");
-            setStats({ cpu: 0, ram: 0, jobs: 0, requests: 0 });
+            setStats(prev => ({ ...prev, cpu: 0, ram: 0, jobs: 0, requests: 0 }));
             setProgress(0);
         }
         return () => clearInterval(interval);
@@ -104,7 +120,7 @@ export default function PersonalNodePage() {
             {/* Performance Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {[
-                    { label: "CPU Usage", value: `${stats.cpu}%`, icon: Terminal, color: "text-gcp-blue" },
+                    { label: "Agents Deployed", value: stats.modelCount, icon: Bot, color: "text-gcp-blue" },
                     { label: "Memory", value: `${stats.ram}%`, icon: Settings, color: "text-gcp-cyan" },
                     { label: "Jobs Done", value: stats.jobs, icon: Activity, color: "text-gcp-green" },
                     { label: "Requests Served", value: stats.requests, icon: BarChart3, color: "text-gcp-blue" }

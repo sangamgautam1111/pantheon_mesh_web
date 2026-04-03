@@ -188,26 +188,49 @@ function DeveloperDashboard() {
 }
 
 function PersonalDashboard() {
-    const { profile, signOut } = useAuth();
+    const { user, profile, signOut } = useAuth();
     const router = useRouter();
+    const uid = user?.uid;
+
+    const [modelCount, setModelCount] = useState(0);
+    const [stats, setStats] = useState({ requests: 0, uptime: "99.9%" });
+
+    useEffect(() => {
+        if (!uid) return;
+        async function fetchData() {
+            try {
+                const res = await fetch(`${API}/v1/developer/${uid}/models`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setModelCount(data.models?.length || 0);
+                }
+            } catch { }
+        }
+        fetchData();
+    }, [uid]);
 
     return (
         <div className="p-8 max-w-7xl">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
                 <div>
                     <h1 className="text-2xl font-heading font-bold text-gcp-text">{profile?.displayName || "Explorer"}</h1>
-                    <p className="text-sm text-gcp-text-secondary">Personal Account — Explore the Mesh</p>
+                    <p className="text-sm text-gcp-text-secondary">Personal Account — Powering the Mesh</p>
                 </div>
-                <button onClick={async () => { await signOut(); router.push("/login"); }} className="gcp-btn-text flex items-center gap-2 text-gcp-text-secondary">
-                    <LogOut size={14} /> Sign Out
-                </button>
+                <div className="flex gap-2">
+                    <button onClick={() => router.push("/connect")} className="gcp-btn-primary flex items-center gap-2">
+                        <Plus size={14} /> Upload Agent
+                    </button>
+                    <button onClick={async () => { await signOut(); router.push("/login"); }} className="gcp-btn-text flex items-center gap-2 text-gcp-text-secondary">
+                        <LogOut size={14} /> Sign Out
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 {[
-                    { label: "Agents Deployed", value: "0", icon: <Bot size={20} className="text-gcp-blue" /> },
-                    { label: "Work Orders", value: "0", icon: <Target size={20} className="text-gcp-green" /> },
-                    { label: "USD Balance", value: "$0.00", icon: <Coins size={20} className="text-gcp-yellow-dark" /> },
+                    { label: "Agents Deployed", value: String(modelCount), icon: <Bot size={20} className="text-gcp-blue" /> },
+                    { label: "Mesh Contribution", value: "Active", icon: <Zap size={20} className="text-gcp-yellow" /> },
+                    { label: "Truth Score", value: "1.0", icon: <Shield size={20} className="text-gcp-cyan" /> },
                 ].map((m, i) => (
                     <motion.div key={m.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
                         className="gcp-card p-5 border-l-4 border-l-gcp-blue">
@@ -220,11 +243,27 @@ function PersonalDashboard() {
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <section className="gcp-card p-8">
+                    <h3 className="text-lg font-heading font-bold text-gcp-text mb-4 flex items-center gap-2">
+                        <Rocket size={20} className="text-gcp-blue" /> Contributor Status
+                    </h3>
+                    <p className="text-sm text-gcp-text-secondary mb-6 leading-relaxed">
+                        Your contributed models (DeepSeek, Llama, etc.) are currently connected to the global mesh.
+                        As a personal contributor, you receive <span className="font-bold text-gcp-blue">unrestricted access</span>
+                        to deploy any model weight, regardless of tier.
+                    </p>
+                    <Link href="/simple">
+                        <button className="w-full p-4 rounded-xl bg-gcp-blue/5 border border-dashed border-gcp-blue/30 text-gcp-blue font-bold hover:bg-gcp-blue/10 transition-all">
+                            Open Personal Node →
+                        </button>
+                    </Link>
+                </section>
+
                 <Link href="/marketplace" className="gcp-card p-8 flex flex-col items-center text-center hover:border-gcp-blue/30 transition-all group">
                     <Store size={40} className="text-gcp-blue mb-4 group-hover:scale-110 transition-transform" />
                     <h3 className="font-bold text-gcp-text mb-2">Explore Marketplace</h3>
-                    <p className="text-xs text-gcp-text-secondary">Find agents, place work orders, bid on tasks</p>
+                    <p className="text-xs text-gcp-text-secondary">Discover how the mesh uses your models to complete tasks.</p>
                 </Link>
             </div>
         </div>
