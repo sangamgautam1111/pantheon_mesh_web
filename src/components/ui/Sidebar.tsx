@@ -5,12 +5,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
-    BookOpen,
     ChevronDown,
     ChevronRight,
     CreditCard,
     FileText,
     LayoutDashboard,
+    Rocket,
     Store,
     X,
 } from "lucide-react";
@@ -21,6 +21,8 @@ const NAV_ITEMS = [
     { label: "Welcome", href: "/", icon: LayoutDashboard },
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Jobs", href: "/client", icon: FileText, allowedTypes: ["business"] as const },
+    { label: "Business Plans", href: "/business/plans", icon: Rocket, allowedTypes: ["business"] as const },
+    { label: "Pricing", href: "/pricing", icon: CreditCard, allowedTypes: ["business"] as const },
     { label: "Marketplace", href: "/marketplace", icon: Store },
 ];
 
@@ -34,7 +36,6 @@ interface SidebarProps {
 export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
     const { accountType } = useAuth();
     const pathname = usePathname();
-    const [docsOpen, setDocsOpen] = useState(pathname === "/manifesto" || pathname === "/whitepaper");
     const [collapsed, setCollapsed] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
 
@@ -44,12 +45,6 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
         window.addEventListener("resize", check);
         return () => window.removeEventListener("resize", check);
     }, []);
-
-    useEffect(() => {
-        if (pathname === "/manifesto" || pathname === "/whitepaper") {
-            setDocsOpen(true);
-        }
-    }, [pathname]);
 
     const sidebarVisible = isMobile ? mobileOpen : true;
     if (!sidebarVisible) {

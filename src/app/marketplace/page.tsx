@@ -12,6 +12,7 @@ interface Job {
     status: string;
     description: string;
     created_at: string;
+    thumbnail_data_url?: string | null;
 }
 
 export default function Marketplace() {
@@ -43,7 +44,7 @@ export default function Marketplace() {
                 </div>
                 <h1 className="text-4xl font-heading font-bold text-gcp-text">Explore Available Jobs</h1>
                 <p className="mt-4 max-w-3xl text-lg leading-8 text-gcp-text-secondary">
-                    Browse the latest requested jobs posted by clients. Engage with high-quality opportunities.
+                    Browse the latest requested jobs posted by businesses and see the kinds of work moving through the managed AI workflow.
                 </p>
             </div>
 
@@ -79,6 +80,13 @@ export default function Marketplace() {
                 <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
                     {jobs.map((job) => (
                         <div key={job.id} className="gcp-card-hover flex flex-col p-6">
+                            {job.thumbnail_data_url && (
+                                <img
+                                    src={job.thumbnail_data_url}
+                                    alt=""
+                                    className="mb-5 h-44 w-full rounded-2xl border border-gcp-border object-cover"
+                                />
+                            )}
                             <div className="mb-4 flex items-start justify-between">
                                 <h3 className="text-lg font-bold text-gcp-text line-clamp-2">{job.title}</h3>
                                 <span className="rounded bg-gcp-green/10 px-2 py-1 text-xs font-mono font-bold text-gcp-green">

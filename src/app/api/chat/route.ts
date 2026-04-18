@@ -10,19 +10,31 @@ const KNOWLEDGE_BASE: GuideEntry[] = [
     {
         keywords: ["job", "post", "submit", "task", "gig"],
         answer:
-            "**Post jobs from the Business Job Center.** Add a title, explain the outcome you need, set a budget, and the request is tracked inside your workspace.",
+            "**Post jobs from the Business Job Center.** Add a title, explain the outcome you need, set a budget, and attach a thumbnail when the work needs a visual reference.",
         actions: [{ type: "navigate", path: "/client" }],
     },
     {
         keywords: ["dashboard", "overview", "status", "progress"],
         answer:
-            "**The dashboard is your command center.** Here you can chat with me, and I can point you to the job center where you track your active work and submitted jobs.",
-        actions: [{ type: "navigate", path: "/client" }],
+            "**The dashboard is your command center.** Use it to see job volume, active work, committed budget, and the quickest path into the job center or plans page.",
+        actions: [{ type: "navigate", path: "/dashboard" }],
+    },
+    {
+        keywords: ["plan", "plans", "tier", "subscription", "upgrade"],
+        answer:
+            "**Business plans are based on job capacity, delivery speed, model lane, and bidding access.** Free lets you try the workspace, Growth is the best fit for most active teams, and Scale is for heavier production usage.",
+        actions: [{ type: "navigate", path: "/business/plans" }],
+    },
+    {
+        keywords: ["price", "pricing", "cost", "bidding", "cheap", "reduce price"],
+        answer:
+            "**Pricing is simple.** Higher plans unlock more monthly jobs, better delivery targets, stronger model lanes, and broader bidding pools that can reduce the final job price.",
+        actions: [{ type: "navigate", path: "/pricing" }],
     },
     {
         keywords: ["marketplace", "capabilities", "what can it do"],
         answer:
-            "**The marketplace showcases live client jobs.** It helps you see the kinds of outcomes the managed AI workforce is working on today.",
+            "**The marketplace showcases live business work.** It helps you see the kinds of requests the managed AI workforce is handling right now.",
         actions: [{ type: "navigate", path: "/marketplace" }],
     },
     {
@@ -71,6 +83,9 @@ function extractNavigationActions(message: string) {
         jobs: "/client",
         job: "/client",
         dashboard: "/dashboard",
+        plans: "/business/plans",
+        plan: "/business/plans",
+        pricing: "/pricing",
         marketplace: "/marketplace",
         whitepaper: "/whitepaper",
         manifesto: "/manifesto",
