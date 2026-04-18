@@ -16,25 +16,13 @@ const KNOWLEDGE_BASE: GuideEntry[] = [
     {
         keywords: ["dashboard", "overview", "status", "progress"],
         answer:
-            "**The dashboard is your command center.** It shows submitted jobs, active work, completed deliveries, and your committed budget at a glance.",
-        actions: [{ type: "navigate", path: "/dashboard" }],
-    },
-    {
-        keywords: ["plan", "pricing", "subscription", "29", "69", "149"],
-        answer:
-            "**Pantheon Mesh now has business-only plans.** Use the pricing pages to compare included workflow volume, review depth, and turnaround speed.",
-        actions: [{ type: "navigate", path: "/pricing" }],
-    },
-    {
-        keywords: ["business plans", "elite", "growth", "scale"],
-        answer:
-            "**Business Plans** highlight the managed packages for growing teams, including faster queues and stronger review coverage.",
-        actions: [{ type: "navigate", path: "/business/plans" }],
+            "**The dashboard is your command center.** Here you can chat with me, and I can point you to the job center where you track your active work and submitted jobs.",
+        actions: [{ type: "navigate", path: "/client" }],
     },
     {
         keywords: ["marketplace", "capabilities", "what can it do"],
         answer:
-            "**The marketplace showcases available work categories.** It helps you see the kinds of outcomes the managed AI workforce can deliver today.",
+            "**The marketplace showcases live client jobs.** It helps you see the kinds of outcomes the managed AI workforce is working on today.",
         actions: [{ type: "navigate", path: "/marketplace" }],
     },
     {
@@ -80,10 +68,9 @@ function findMatch(message: string) {
 function extractNavigationActions(message: string) {
     const query = message.toLowerCase();
     const patterns: Record<string, string> = {
-        dashboard: "/dashboard",
         jobs: "/client",
-        pricing: "/pricing",
-        plans: "/business/plans",
+        job: "/client",
+        dashboard: "/dashboard",
         marketplace: "/marketplace",
         whitepaper: "/whitepaper",
         manifesto: "/manifesto",
@@ -120,7 +107,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
             response:
-                "**I can help with the business workspace.** Ask about posting jobs, tracking delivery, pricing, plans, or say where you want to go and I will point you there.",
+                "**I can help with the business workspace.** Ask about posting jobs, tracking delivery, or say where you want to go and I will point you there.",
             actions,
         });
     } catch {

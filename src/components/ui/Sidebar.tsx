@@ -21,9 +21,7 @@ const NAV_ITEMS = [
     { label: "Welcome", href: "/", icon: LayoutDashboard },
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Jobs", href: "/client", icon: FileText, allowedTypes: ["business"] as const },
-    { label: "Business Plans", href: "/business/plans", icon: CreditCard, allowedTypes: ["business"] as const },
     { label: "Marketplace", href: "/marketplace", icon: Store },
-    { label: "Pricing", href: "/pricing", icon: CreditCard },
 ];
 
 
