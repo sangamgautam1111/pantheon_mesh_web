@@ -22,7 +22,7 @@ interface UserProfile {
     photoURL: string | null;
     accountType: AccountType;
     createdAt: number;
-    companyName?: string;
+    companyName?: string | null;
     totalSpent?: number;
 }
 
@@ -56,6 +56,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [accountType, setAccountType] = useState<AccountType>(null);
     const [loading, setLoading] = useState(true);
 
+    const sanitizeForRealtimeDb = <T,>(value: T): T => {
+        if (Array.isArray(value)) {
+            return value.map((item) => sanitizeForRealtimeDb(item)) as T;
+        }
+
+        if (value && typeof value === "object") {
+            const sanitizedEntries = Object.entries(value as Record<string, unknown>)
+                .filter(([, entryValue]) => entryValue !== undefined)
+                .map(([key, entryValue]) => [key, sanitizeForRealtimeDb(entryValue)]);
+
+            return Object.fromEntries(sanitizedEntries) as T;
+        }
+
+        return value;
+    };
+
     const syncWithBackend = async (uid: string, displayName: string, email: string) => {
         try {
             await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/auth/sync`, {
@@ -87,6 +103,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             firebaseUser.email?.split("@")[0] ||
             "Business User";
 
+        const companyName =
+            (typeof overrides.companyName === "string" && overrides.companyName.trim()) ||
+            (typeof existing.companyName === "string" && existing.companyName.trim()) ||
+            displayName;
+
         if (displayName !== firebaseUser.displayName) {
             try {
                 await updateProfile(firebaseUser, { displayName });
@@ -102,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             photoURL: firebaseUser.photoURL || existing.photoURL || null,
             accountType: "business",
             createdAt: existing.createdAt || Date.now(),
-            companyName: overrides.companyName || existing.companyName,
+            companyName,
             totalSpent:
                 typeof overrides.totalSpent === "number"
                     ? overrides.totalSpent
@@ -111,13 +132,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                       : 0,
         };
 
-        await set(ref(db, `users/${firebaseUser.uid}`), profileData);
-        await set(ref(db, `accounts/business/${firebaseUser.uid}`), {
+        await set(ref(db, `users/${firebaseUser.uid}`), sanitizeForRealtimeDb(profileData));
+        await set(ref(db, `accounts/business/${firebaseUser.uid}`), sanitizeForRealtimeDb({
             uid: firebaseUser.uid,
             email: profileData.email,
             displayName: profileData.displayName,
             joinedAt: profileData.createdAt,
-        });
+            companyName: profileData.companyName,
+        }));
 
         setProfile(profileData);
         setAccountType("business");
@@ -188,7 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const signUpWithEmail = async (email: string, password: string, displayName: string) => {
         const result = await createUserWithEmailAndPassword(auth, email, password);
-        await upsertBusinessProfile(result.user, { displayName });
+        await upsertBusinessProfile(result.user, { displayName, companyName: displayName });
     };
 
     const handleSignOut = async () => {
