@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { X, Send, Sparkles, ArrowRight, Loader2 } from "lucide-react";
+import { X, Send, ArrowRight, Loader2 } from "lucide-react";
 import { useGuide } from "@/context/GuideProvider";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -15,17 +15,21 @@ interface ChatMsg {
 }
 
 const SUGGESTIONS = [
-    "What is ANTP protocol?",
-    "How does the Swarm work?",
-    "Explain knowledge royalties",
-    "Show me the marketplace",
-    "Take me to the dashboard",
+    "How do I post a job?",
+    "Explain the business plans",
+    "Show me pricing",
+    "Open the job center",
+    "How does quality review work?",
 ];
 
 export const AiGuide = () => {
     const { isChatOpen: open, setChatOpen: setOpen, navigateAndHighlight } = useGuide();
     const [messages, setMessages] = useState<ChatMsg[]>([
-        { id: "welcome", role: "assistant", text: "**Hey! I'm Mesh Assist** — your AI guide for Pantheon Mesh.\n\nI know everything about the protocols: ANTP, Swarm orchestration, Prosperity engine, CyberShield, Memory Fabric, and more.\n\nAsk me anything, or say *\"take me to...\"* and I'll navigate you there." },
+        {
+            id: "welcome",
+            role: "assistant",
+            text: "**Hi, I'm Mesh Assist.** I can help you navigate the business workspace, explain pricing, and point you to the right place to post and track jobs.",
+        },
     ]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
@@ -42,68 +46,93 @@ export const AiGuide = () => {
     }, []);
 
     useEffect(() => {
-        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
     }, [messages]);
 
     useEffect(() => {
-        if (open && inputRef.current) inputRef.current.focus();
+        if (open && inputRef.current) {
+            inputRef.current.focus();
+        }
     }, [open]);
 
     const handleSend = async (text?: string) => {
         const userText = text || input.trim();
-        if (!userText || loading) return;
+        if (!userText || loading) {
+            return;
+        }
 
         const userMsg: ChatMsg = { id: crypto.randomUUID(), role: "user", text: userText };
-        setMessages(prev => [...prev, userMsg]);
+        setMessages((prev) => [...prev, userMsg]);
         setInput("");
         setLoading(true);
 
         try {
-            const res = await fetch("/api/chat", {
+            const response = await fetch("/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ message: userText }),
             });
-            if (!res.ok) throw new Error("API error");
-            const data = await res.json();
-            const botMsg: ChatMsg = { id: crypto.randomUUID(), role: "assistant", text: data.response, actions: data.actions || [] };
-            setMessages(prev => [...prev, botMsg]);
+
+            if (!response.ok) {
+                throw new Error("API error");
+            }
+
+            const data = await response.json();
+            const botMsg: ChatMsg = {
+                id: crypto.randomUUID(),
+                role: "assistant",
+                text: data.response,
+                actions: data.actions || [],
+            };
+            setMessages((prev) => [...prev, botMsg]);
 
             if (data.actions?.length > 0) {
                 for (const action of data.actions) {
                     if (action.type === "navigate" && action.path) {
                         setTimeout(() => {
-                            if (action.elementId) navigateAndHighlight(action.path, action.elementId, action.label || "Click here");
-                            else router.push(action.path);
+                            if (action.elementId) {
+                                navigateAndHighlight(action.path, action.elementId, action.label || "Here");
+                            } else {
+                                router.push(action.path);
+                            }
                         }, 800);
                     }
                 }
             }
         } catch {
-            setMessages(prev => [...prev, { id: crypto.randomUUID(), role: "assistant", text: "Connection issue. Please try again." }]);
+            setMessages((prev) => [
+                ...prev,
+                { id: crypto.randomUUID(), role: "assistant", text: "Connection issue. Please try again." },
+            ]);
         }
+
         setLoading(false);
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    const handleKeyDown = (event: React.KeyboardEvent) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            void handleSend();
+        }
     };
 
-    // Simple markdown: **bold** and \n
-    const renderText = (t: string) => {
-        return t.split("\n").map((line, i) => (
-            <span key={i}>
-                {i > 0 && <br />}
-                {line.split(/(\*\*.*?\*\*)/).map((part, j) =>
-                    part.startsWith("**") && part.endsWith("**")
-                        ? <strong key={j}>{part.slice(2, -2)}</strong>
-                        : part.startsWith("*") && part.endsWith("*")
-                            ? <em key={j}>{part.slice(1, -1)}</em>
-                            : <span key={j}>{part}</span>
+    const renderText = (text: string) =>
+        text.split("\n").map((line, index) => (
+            <span key={index}>
+                {index > 0 && <br />}
+                {line.split(/(\*\*.*?\*\*)/).map((part, partIndex) =>
+                    part.startsWith("**") && part.endsWith("**") ? (
+                        <strong key={partIndex}>{part.slice(2, -2)}</strong>
+                    ) : part.startsWith("*") && part.endsWith("*") ? (
+                        <em key={partIndex}>{part.slice(1, -1)}</em>
+                    ) : (
+                        <span key={partIndex}>{part}</span>
+                    ),
                 )}
             </span>
         ));
-    };
 
     const panelWidth = isMobile ? "100vw" : "420px";
     const panelHeight = isMobile ? "100vh" : "600px";
@@ -113,11 +142,10 @@ export const AiGuide = () => {
 
     return (
         <>
-            {/* Floating Chat Button */}
             {!open && (
                 <button
                     onClick={() => setOpen(true)}
-                    className="fixed z-50 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 group"
+                    className="group fixed z-50 flex items-center justify-center rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95"
                     style={{
                         bottom: isMobile ? 16 : 32,
                         right: isMobile ? 16 : 32,
@@ -127,20 +155,20 @@ export const AiGuide = () => {
                     }}
                     title="Mesh Assist"
                 >
-                    <div className="w-10 h-10 flex items-center justify-center p-1">
-                        <Image src={chatIcon} alt="Mesh Assist" className="w-full h-full object-contain brightness-0 invert" />
+                    <div className="flex h-10 w-10 items-center justify-center p-1">
+                        <Image src={chatIcon} alt="Mesh Assist" className="h-full w-full object-contain brightness-0 invert" />
                     </div>
                     {!isMobile && (
-                        <div className="absolute right-20 px-4 py-2 rounded-lg bg-white text-[#0f1114] text-sm font-bold shadow-2xl border border-gray-100 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                            Mesh Assist — Ask me anything
+                        <div className="pointer-events-none absolute right-20 whitespace-nowrap rounded-lg border border-gray-100 bg-white px-4 py-2 text-sm font-bold text-[#0f1114] opacity-0 shadow-2xl transition-opacity group-hover:opacity-100">
+                            Mesh Assist - Ask about plans, jobs, or pricing
                         </div>
                     )}
                 </button>
             )}
 
-            {/* Chat Panel */}
             {open && (
-                <div className="fixed z-50 flex flex-col overflow-hidden shadow-2xl border backdrop-blur-xl"
+                <div
+                    className="fixed z-50 flex flex-col overflow-hidden border shadow-2xl backdrop-blur-xl"
                     style={{
                         background: "var(--bg-surface)",
                         borderColor: isMobile ? "transparent" : "var(--border-color)",
@@ -149,97 +177,150 @@ export const AiGuide = () => {
                         bottom: panelBottom,
                         right: panelRight,
                         borderRadius: panelRadius,
-                    }}>
-
-                    {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b"
-                        style={{ borderColor: "var(--border-color)", background: "var(--bg-surface-variant)" }}>
+                    }}
+                >
+                    <div
+                        className="flex items-center justify-between border-b px-4 py-3"
+                        style={{ borderColor: "var(--border-color)", background: "var(--bg-surface-variant)" }}
+                    >
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center p-0.5 overflow-hidden shadow-sm border border-white/20">
-                                <Image src={chatIcon} alt="Assistant" className="w-full h-full object-contain" />
+                            <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white p-0.5 shadow-sm">
+                                <Image src={chatIcon} alt="Assistant" className="h-full w-full object-contain" />
                             </div>
                             <div>
-                                <div className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>Mesh Assist</div>
-                                <div className="text-xs" style={{ color: "var(--text-disabled)" }}>AI-Powered Protocol Guide</div>
+                                <div className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                                    Mesh Assist
+                                </div>
+                                <div className="text-xs" style={{ color: "var(--text-disabled)" }}>
+                                    Business Workspace Guide
+                                </div>
                             </div>
                         </div>
-                        <button onClick={() => setOpen(false)} className="p-1.5 rounded hover:opacity-70 transition-opacity"
-                            style={{ color: "var(--text-disabled)" }}>
+                        <button
+                            onClick={() => setOpen(false)}
+                            className="rounded p-1.5 transition-opacity hover:opacity-70"
+                            style={{ color: "var(--text-disabled)" }}
+                        >
                             <X size={18} />
                         </button>
                     </div>
 
-                    {/* Messages */}
-                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
-                        {messages.map(msg => (
-                            <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                                <div className={`max-w-[85%] rounded-lg px-4 py-2.5 text-sm leading-relaxed ${msg.role === "user" ? "rounded-br-sm" : "rounded-bl-sm"}`}
+                    <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4 scrollbar-hide">
+                        {messages.map((message) => (
+                            <div
+                                key={message.id}
+                                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                            >
+                                <div
+                                    className={`max-w-[85%] rounded-lg px-4 py-2.5 text-sm leading-relaxed ${
+                                        message.role === "user" ? "rounded-br-sm" : "rounded-bl-sm"
+                                    }`}
                                     style={{
-                                        background: msg.role === "user" ? "var(--btn-primary-bg)" : "var(--bg-surface-variant)",
-                                        color: msg.role === "user" ? "var(--btn-primary-text)" : "var(--text-primary)",
-                                    }}>
-                                    {renderText(msg.text)}
-                                    {msg.actions && msg.actions.length > 0 && (
+                                        background:
+                                            message.role === "user"
+                                                ? "var(--btn-primary-bg)"
+                                                : "var(--bg-surface-variant)",
+                                        color:
+                                            message.role === "user"
+                                                ? "var(--btn-primary-text)"
+                                                : "var(--text-primary)",
+                                    }}
+                                >
+                                    {renderText(message.text)}
+                                    {message.actions && message.actions.length > 0 && (
                                         <div className="mt-2.5 space-y-1.5">
-                                            {msg.actions.filter(a => a.type === "navigate").map((a, i) => (
-                                                <button key={i} onClick={() => {
-                                                    if (a.elementId) navigateAndHighlight(a.path!, a.elementId, a.label || "Here");
-                                                    else router.push(a.path!);
-                                                    setOpen(false);
-                                                }}
-                                                    className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md transition-all hover:scale-[1.02]"
-                                                    style={{
-                                                        background: msg.role === "user" ? "rgba(255,255,255,0.15)" : "var(--sidebar-active)",
-                                                        color: msg.role === "user" ? "inherit" : "var(--gcp-blue)",
-                                                    }}>
-                                                    <ArrowRight size={12} /> Navigate to {a.path}
-                                                </button>
-                                            ))}
+                                            {message.actions
+                                                .filter((action) => action.type === "navigate")
+                                                .map((action, index) => (
+                                                    <button
+                                                        key={index}
+                                                        onClick={() => {
+                                                            if (action.elementId) {
+                                                                navigateAndHighlight(
+                                                                    action.path!,
+                                                                    action.elementId,
+                                                                    action.label || "Here",
+                                                                );
+                                                            } else {
+                                                                router.push(action.path!);
+                                                            }
+                                                            setOpen(false);
+                                                        }}
+                                                        className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all hover:scale-[1.02]"
+                                                        style={{
+                                                            background:
+                                                                message.role === "user"
+                                                                    ? "rgba(255,255,255,0.15)"
+                                                                    : "var(--sidebar-active)",
+                                                            color:
+                                                                message.role === "user"
+                                                                    ? "inherit"
+                                                                    : "var(--gcp-blue)",
+                                                        }}
+                                                    >
+                                                        <ArrowRight size={12} />
+                                                        Navigate to {action.path}
+                                                    </button>
+                                                ))}
                                         </div>
                                     )}
                                 </div>
                             </div>
                         ))}
+
                         {loading && (
                             <div className="flex justify-start">
-                                <div className="rounded-lg px-4 py-3 flex items-center gap-2"
-                                    style={{ background: "var(--bg-surface-variant)", color: "var(--text-disabled)" }}>
-                                    <Loader2 size={14} className="animate-spin" /> Thinking...
+                                <div
+                                    className="flex items-center gap-2 rounded-lg px-4 py-3"
+                                    style={{ background: "var(--bg-surface-variant)", color: "var(--text-disabled)" }}
+                                >
+                                    <Loader2 size={14} className="animate-spin" />
+                                    Thinking...
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {/* Suggestions */}
                     {messages.length <= 2 && (
-                        <div className="px-4 pb-2 flex flex-wrap gap-1.5">
-                            {SUGGESTIONS.map(s => (
-                                <button key={s} onClick={() => handleSend(s)}
-                                    className="text-xs px-3 py-1.5 rounded-full border transition-all hover:scale-[1.02]"
-                                    style={{ borderColor: "var(--border-color)", color: "var(--gcp-blue)", background: "transparent" }}>
-                                    {s}
+                        <div className="flex flex-wrap gap-1.5 px-4 pb-2">
+                            {SUGGESTIONS.map((suggestion) => (
+                                <button
+                                    key={suggestion}
+                                    onClick={() => void handleSend(suggestion)}
+                                    className="rounded-full border px-3 py-1.5 text-xs transition-all hover:scale-[1.02]"
+                                    style={{
+                                        borderColor: "var(--border-color)",
+                                        color: "var(--gcp-blue)",
+                                        background: "transparent",
+                                    }}
+                                >
+                                    {suggestion}
                                 </button>
                             ))}
                         </div>
                     )}
 
-                    {/* Input */}
-                    <div className="px-4 py-3 border-t" style={{ borderColor: "var(--border-color)" }}>
-                        <div className="flex items-center gap-2 rounded-lg px-3 py-2"
-                            style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)" }}>
+                    <div className="border-t px-4 py-3" style={{ borderColor: "var(--border-color)" }}>
+                        <div
+                            className="flex items-center gap-2 rounded-lg px-3 py-2"
+                            style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)" }}
+                        >
                             <input
                                 ref={inputRef}
                                 type="text"
                                 value={input}
-                                onChange={e => setInput(e.target.value)}
+                                onChange={(event) => setInput(event.target.value)}
                                 onKeyDown={handleKeyDown}
-                                placeholder="Ask about ANTP, Swarm, CyberShield..."
-                                className="flex-1 bg-transparent outline-none text-sm"
+                                placeholder="Ask about jobs, pricing, plans, or navigation..."
+                                className="flex-1 bg-transparent text-sm outline-none"
                                 style={{ color: "var(--text-primary)" }}
                             />
-                            <button onClick={() => handleSend()} disabled={!input.trim() || loading}
-                                className="p-1.5 rounded transition-opacity disabled:opacity-30"
-                                style={{ color: "var(--gcp-blue)" }}>
+                            <button
+                                onClick={() => void handleSend()}
+                                disabled={!input.trim() || loading}
+                                className="rounded p-1.5 transition-opacity disabled:opacity-30"
+                                style={{ color: "var(--gcp-blue)" }}
+                            >
                                 <Send size={16} />
                             </button>
                         </div>

@@ -1,16 +1,24 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Bell, HelpCircle, Sparkles, Hexagon, Sun, Moon, Menu, LogOut, FileText, Bot, Cpu, BookOpen, Layout, X } from "lucide-react";
+import {
+    Bell,
+    BookOpen,
+    Briefcase,
+    HelpCircle,
+    Layout,
+    LogOut,
+    Menu,
+    Search,
+    Sparkles,
+    X,
+} from "lucide-react";
 import Link from "next/link";
-import { useTheme } from "@/context/ThemeProvider";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useGuide } from "@/context/GuideProvider";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import chatIcon from "@/app/chat_icon.png";
 import logoImg from "@/app/logo.png";
-import { RevenueCounter } from "./RevenueCounter";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -18,26 +26,21 @@ interface SearchResult {
     type: string;
     label: string;
     href: string;
-    model_id?: string;
-    provider?: string;
-    status?: string;
-    agent_id?: string;
-    reputation?: number;
-    match?: string;
+    subtitle?: string;
 }
 
 const TYPE_ICONS: Record<string, { icon: typeof Search; color: string }> = {
     page: { icon: Layout, color: "var(--gcp-blue)" },
+    plan: { icon: Briefcase, color: "var(--gcp-cyan)" },
     doc: { icon: BookOpen, color: "var(--gcp-purple)" },
-    model: { icon: Cpu, color: "var(--gcp-cyan)" },
-    agent: { icon: Bot, color: "var(--gcp-green)" },
+    job: { icon: Briefcase, color: "var(--gcp-green)" },
 };
 
 const TYPE_LABELS: Record<string, string> = {
     page: "Pages",
+    plan: "Plans",
     doc: "Documentation",
-    model: "Models",
-    agent: "Agents",
+    job: "Jobs",
 };
 
 interface TopBarProps {
@@ -45,13 +48,11 @@ interface TopBarProps {
 }
 
 export const TopBar = ({ onMenuToggle }: TopBarProps) => {
-    const { theme, toggleTheme } = useTheme();
     const { setChatOpen } = useGuide();
     const { user, profile, signOut } = useAuth();
     const router = useRouter();
     const [showNotifications, setShowNotifications] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
-
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -63,48 +64,50 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
 
     const STATIC_PAGES: SearchResult[] = [
         { type: "page", label: "Dashboard", href: "/dashboard" },
-        { type: "page", label: "Swarm Center", href: "/swarm" },
-        { type: "page", label: "Developer Portal", href: "/developer" },
-        { type: "page", label: "Connect Model", href: "/connect" },
-        { type: "page", label: "Agents", href: "/agents" },
+        { type: "page", label: "Job Center", href: "/client" },
+        { type: "plan", label: "Business Plans", href: "/business/plans" },
         { type: "page", label: "Marketplace", href: "/marketplace" },
         { type: "page", label: "Pricing", href: "/pricing" },
-
-        { type: "page", label: "Treasury", href: "/founder" },
         { type: "doc", label: "Manifesto", href: "/manifesto" },
         { type: "doc", label: "Whitepaper", href: "/whitepaper" },
     ];
 
-    const performSearch = useCallback(async (q: string) => {
-        if (!q.trim()) {
+    const performSearch = useCallback(async (query: string) => {
+        if (!query.trim()) {
             setSearchResults([]);
             setSearchLoading(false);
             return;
         }
 
-        const localResults = STATIC_PAGES.filter(
-            p => p.label.toLowerCase().includes(q.toLowerCase())
+        const localResults = STATIC_PAGES.filter((page) =>
+            page.label.toLowerCase().includes(query.toLowerCase()),
         );
 
         setSearchResults(localResults);
 
         try {
             setSearchLoading(true);
-            const res = await fetch(`${API}/v1/search?q=${encodeURIComponent(q)}&limit=15`);
-            if (res.ok) {
-                const data = await res.json();
-                const apiResults: SearchResult[] = data.results || [];
-                const merged = [...localResults];
-                for (const r of apiResults) {
-                    const exists = merged.some(
-                        m => m.href === r.href && m.label === r.label && m.type === r.type
-                    );
-                    if (!exists) merged.push(r);
-                }
-                setSearchResults(merged);
+            const response = await fetch(`${API}/v1/search?q=${encodeURIComponent(query)}&limit=15`);
+            if (!response.ok) {
+                return;
             }
+
+            const data = await response.json();
+            const apiResults: SearchResult[] = data.results || [];
+            const merged = [...localResults];
+
+            for (const result of apiResults) {
+                const exists = merged.some(
+                    (item) => item.href === result.href && item.label === result.label && item.type === result.type,
+                );
+                if (!exists) {
+                    merged.push(result);
+                }
+            }
+
+            setSearchResults(merged);
         } catch {
-            // Keep local results on network failure
+            setSearchResults(localResults);
         } finally {
             setSearchLoading(false);
         }
@@ -113,7 +116,9 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
     const handleSearchInput = (value: string) => {
         setSearchQuery(value);
         setSelectedIndex(-1);
-        if (debounceRef.current) clearTimeout(debounceRef.current);
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+        }
         debounceRef.current = setTimeout(() => performSearch(value), 200);
     };
 
@@ -125,17 +130,17 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
         router.push(result.href);
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === "ArrowDown") {
-            e.preventDefault();
-            setSelectedIndex(prev => Math.min(prev + 1, searchResults.length - 1));
-        } else if (e.key === "ArrowUp") {
-            e.preventDefault();
-            setSelectedIndex(prev => Math.max(prev - 1, -1));
-        } else if (e.key === "Enter" && selectedIndex >= 0 && searchResults[selectedIndex]) {
-            e.preventDefault();
+    const handleKeyDown = (event: React.KeyboardEvent) => {
+        if (event.key === "ArrowDown") {
+            event.preventDefault();
+            setSelectedIndex((current) => Math.min(current + 1, searchResults.length - 1));
+        } else if (event.key === "ArrowUp") {
+            event.preventDefault();
+            setSelectedIndex((current) => Math.max(current - 1, -1));
+        } else if (event.key === "Enter" && selectedIndex >= 0 && searchResults[selectedIndex]) {
+            event.preventDefault();
             handleSelect(searchResults[selectedIndex]);
-        } else if (e.key === "Escape") {
+        } else if (event.key === "Escape") {
             setSearchOpen(false);
             setSearchQuery("");
             setSearchResults([]);
@@ -144,72 +149,98 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
     };
 
     useEffect(() => {
-        const handler = (e: KeyboardEvent) => {
-            if (e.key === "/" && !e.ctrlKey && !e.metaKey) {
-                const tag = (e.target as HTMLElement)?.tagName;
-                if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-                e.preventDefault();
+        const handler = (event: KeyboardEvent) => {
+            if (event.key === "/" && !event.ctrlKey && !event.metaKey) {
+                const tag = (event.target as HTMLElement)?.tagName;
+                if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
+                    return;
+                }
+                event.preventDefault();
                 setSearchOpen(true);
                 setTimeout(() => inputRef.current?.focus(), 50);
             }
-            if (e.key === "Escape" && searchOpen) {
+
+            if (event.key === "Escape" && searchOpen) {
                 setSearchOpen(false);
                 setSearchQuery("");
                 setSearchResults([]);
             }
         };
+
         window.addEventListener("keydown", handler);
         return () => window.removeEventListener("keydown", handler);
     }, [searchOpen]);
 
     useEffect(() => {
-        if (!searchOpen) return;
-        const handler = (e: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        if (!searchOpen) {
+            return;
+        }
+
+        const handler = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
                 setSearchOpen(false);
                 setSearchQuery("");
                 setSearchResults([]);
                 setSelectedIndex(-1);
             }
         };
+
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
     }, [searchOpen]);
 
-    const grouped = searchResults.reduce<Record<string, SearchResult[]>>((acc, r) => {
-        if (!acc[r.type]) acc[r.type] = [];
-        acc[r.type].push(r);
-        return acc;
+    const grouped = searchResults.reduce<Record<string, SearchResult[]>>((accumulator, result) => {
+        if (!accumulator[result.type]) {
+            accumulator[result.type] = [];
+        }
+        accumulator[result.type].push(result);
+        return accumulator;
     }, {});
 
-    const groupOrder = ["page", "doc", "model", "agent"];
+    const groupOrder = ["page", "plan", "doc", "job"];
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-50 h-12 flex items-center justify-between px-4 border-b transition-colors duration-200"
-            style={{ background: "var(--topbar-bg)", borderColor: "var(--border-color)" }}>
+        <header
+            className="fixed left-0 right-0 top-0 z-50 flex h-12 items-center justify-between border-b px-4 transition-colors duration-200"
+            style={{ background: "var(--topbar-bg)", borderColor: "var(--border-color)" }}
+        >
             <div className="flex items-center gap-3">
-                <button onClick={onMenuToggle} className="mobile-only p-1.5 rounded transition-colors"
-                    style={{ color: "var(--text-secondary)" }}>
+                <button
+                    onClick={onMenuToggle}
+                    className="mobile-only rounded p-1.5 transition-colors"
+                    style={{ color: "var(--text-secondary)" }}
+                >
                     <Menu size={20} />
                 </button>
 
-                <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm border border-black/10">
-                        <Image src={logoImg} alt="Pantheon Mesh" width={32} height={32} className="w-full h-full object-cover rounded-full" />
+                <Link href="/" className="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-80">
+                    <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-black/10 bg-white shadow-sm">
+                        <Image
+                            src={logoImg}
+                            alt="Pantheon Mesh"
+                            width={32}
+                            height={32}
+                            className="h-full w-full rounded-full object-cover"
+                        />
                     </div>
-                    <span className="text-sm font-semibold tracking-tight truncate" style={{ color: "var(--text-primary)" }}>
+                    <span
+                        className="truncate text-sm font-semibold tracking-tight"
+                        style={{ color: "var(--text-primary)" }}
+                    >
                         Pantheon Mesh
                     </span>
                 </Link>
             </div>
 
-            <div className="flex-1 max-w-2xl mx-8 desktop-only relative" ref={containerRef}>
+            <div className="desktop-only relative mx-8 max-w-2xl flex-1" ref={containerRef}>
                 <div
-                    className="flex items-center gap-2 rounded-lg px-3 py-1.5 cursor-text transition-all"
+                    className="flex cursor-text items-center gap-2 rounded-lg px-3 py-1.5 transition-all"
                     style={{
                         background: searchOpen ? "var(--bg-surface)" : "var(--bg-surface-variant)",
                         border: searchOpen ? "1px solid var(--gcp-blue)" : "1px solid var(--border-color)",
-                        boxShadow: searchOpen ? "0 0 0 2px var(--gcp-blue-alpha, rgba(66,133,244,0.15))" : "none",
+                        boxShadow: searchOpen
+                            ? "0 0 0 2px var(--gcp-blue-alpha, rgba(66,133,244,0.15))"
+                            : "none",
                     }}
                     onClick={() => {
                         setSearchOpen(true);
@@ -222,49 +253,51 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                             ref={inputRef}
                             type="text"
                             value={searchQuery}
-                            onChange={e => handleSearchInput(e.target.value)}
+                            onChange={(event) => handleSearchInput(event.target.value)}
                             onKeyDown={handleKeyDown}
-                            className="flex-1 bg-transparent outline-none text-sm"
+                            className="flex-1 bg-transparent text-sm outline-none"
                             style={{ color: "var(--text-primary)" }}
-                            placeholder="Search models, agents, pages, docs..."
+                            placeholder="Search jobs, plans, pages, and docs..."
                             autoFocus
                         />
                     ) : (
                         <span className="flex-1 text-sm" style={{ color: "var(--text-disabled)" }}>
-                            Search resources, docs, and agents
+                            Search business pages, docs, and workflows
                         </span>
                     )}
                     {searchOpen && searchQuery && (
                         <button
-                            onClick={(e) => {
-                                e.stopPropagation();
+                            onClick={(event) => {
+                                event.stopPropagation();
                                 setSearchQuery("");
                                 setSearchResults([]);
                                 inputRef.current?.focus();
                             }}
-                            className="p-0.5 rounded hover:bg-gcp-blue/10 transition-colors"
+                            className="rounded p-0.5 transition-colors hover:bg-gcp-blue/10"
                             style={{ color: "var(--text-disabled)" }}
                         >
                             <X size={14} />
                         </button>
                     )}
                     {!searchOpen && (
-                        <div className="ml-auto flex items-center text-xs rounded px-1.5 py-0.5"
-                            style={{ color: "var(--text-disabled)", border: "1px solid var(--border-color)" }}>
+                        <div
+                            className="ml-auto flex items-center rounded px-1.5 py-0.5 text-xs"
+                            style={{ color: "var(--text-disabled)", border: "1px solid var(--border-color)" }}
+                        >
                             /
                         </div>
                     )}
                     {searchLoading && (
-                        <div className="w-4 h-4 border-2 border-transparent border-t-gcp-blue rounded-full animate-spin" />
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-transparent border-t-gcp-blue" />
                     )}
                 </div>
 
                 {searchOpen && (searchResults.length > 0 || searchQuery.length > 0) && (
                     <div
-                        className="absolute top-full left-0 right-0 mt-1 rounded-lg overflow-hidden z-[100] max-h-[420px] overflow-y-auto"
+                        className="absolute left-0 right-0 top-full z-[100] mt-1 max-h-[420px] overflow-y-auto rounded-lg border"
                         style={{
                             background: "var(--bg-surface)",
-                            border: "1px solid var(--border-color)",
+                            borderColor: "var(--border-color)",
                             boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
                         }}
                     >
@@ -274,57 +307,57 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                                 <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
                                     No results for "{searchQuery}"
                                 </p>
-                                <p className="text-xs mt-1 opacity-50" style={{ color: "var(--text-disabled)" }}>
-                                    Try searching for models, agents, or pages
+                                <p className="mt-1 text-xs opacity-50" style={{ color: "var(--text-disabled)" }}>
+                                    Try searching for jobs, plans, or pages
                                 </p>
                             </div>
                         )}
 
-                        {groupOrder.map(type => {
+                        {groupOrder.map((type) => {
                             const items = grouped[type];
-                            if (!items || items.length === 0) return null;
+                            if (!items || items.length === 0) {
+                                return null;
+                            }
+
                             const typeInfo = TYPE_ICONS[type] || { icon: Search, color: "var(--text-secondary)" };
                             const TypeIcon = typeInfo.icon;
+
                             return (
                                 <div key={type}>
-                                    <div className="px-3 py-1.5 text-[10px] uppercase tracking-widest font-bold flex items-center gap-2"
-                                        style={{ color: "var(--text-disabled)", borderBottom: "1px solid var(--border-color)" }}>
+                                    <div
+                                        className="flex items-center gap-2 border-b px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest"
+                                        style={{ color: "var(--text-disabled)", borderColor: "var(--border-color)" }}
+                                    >
                                         <TypeIcon size={10} style={{ color: typeInfo.color }} />
                                         {TYPE_LABELS[type] || type}
                                     </div>
-                                    {items.map((result, idx) => {
-                                        const flatIdx = searchResults.indexOf(result);
-                                        const isSelected = flatIdx === selectedIndex;
+                                    {items.map((result, index) => {
+                                        const flatIndex = searchResults.indexOf(result);
+                                        const isSelected = flatIndex === selectedIndex;
+
                                         return (
                                             <button
-                                                key={`${result.type}-${result.label}-${idx}`}
+                                                key={`${result.type}-${result.label}-${index}`}
                                                 onClick={() => handleSelect(result)}
-                                                onMouseEnter={() => setSelectedIndex(flatIdx)}
-                                                className="w-full text-left px-3 py-2.5 flex items-center gap-3 transition-colors text-sm"
+                                                onMouseEnter={() => setSelectedIndex(flatIndex)}
+                                                className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors"
                                                 style={{
                                                     background: isSelected ? "var(--sidebar-active)" : "transparent",
                                                     color: isSelected ? "var(--gcp-blue)" : "var(--text-primary)",
                                                 }}
                                             >
                                                 <TypeIcon size={14} style={{ color: typeInfo.color }} />
-                                                <div className="flex-1 min-w-0">
-                                                    <span className="font-medium truncate block">{result.label}</span>
-                                                    {result.provider && (
-                                                        <span className="text-[10px] opacity-50 block" style={{ color: "var(--text-secondary)" }}>
-                                                            {result.provider} {result.model_id && `· ${result.model_id}`}
-                                                        </span>
-                                                    )}
-                                                    {result.agent_id && (
-                                                        <span className="text-[10px] opacity-50 block" style={{ color: "var(--text-secondary)" }}>
-                                                            {result.agent_id}
+                                                <div className="min-w-0 flex-1">
+                                                    <span className="block truncate font-medium">{result.label}</span>
+                                                    {result.subtitle && (
+                                                        <span
+                                                            className="block text-[10px] opacity-50"
+                                                            style={{ color: "var(--text-secondary)" }}
+                                                        >
+                                                            {result.subtitle}
                                                         </span>
                                                     )}
                                                 </div>
-                                                {result.status && (
-                                                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-widest ${result.status === "active" ? "bg-gcp-green/10 text-gcp-green" : "bg-gcp-yellow/10 text-gcp-yellow"}`}>
-                                                        {result.status}
-                                                    </span>
-                                                )}
                                             </button>
                                         );
                                     })}
@@ -332,8 +365,10 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                             );
                         })}
 
-                        <div className="px-3 py-2 flex items-center justify-between text-[10px] opacity-40"
-                            style={{ borderTop: "1px solid var(--border-color)", color: "var(--text-disabled)" }}>
+                        <div
+                            className="flex items-center justify-between border-t px-3 py-2 text-[10px] opacity-40"
+                            style={{ borderColor: "var(--border-color)", color: "var(--text-disabled)" }}
+                        >
                             <span>Press / to search</span>
                             <span>ESC to close</span>
                         </div>
@@ -342,55 +377,81 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
             </div>
 
             <div className="flex items-center gap-2">
-                {user && (
-                    <div className="desktop-only mr-2">
-                        <RevenueCounter uid={user.uid} />
-                    </div>
-                )}
-                <button onClick={() => setChatOpen(true)}
-                    className="px-4 py-1.5 rounded-full transition-all desktop-only flex items-center gap-2 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
-                    title="Mesh Assistant"
-                    style={{ background: "var(--gcp-blue)", color: "#ffffff" }}>
+                <button
+                    onClick={() => setChatOpen(true)}
+                    className="desktop-only flex items-center gap-2 rounded-full px-4 py-1.5 shadow-sm transition-all hover:scale-105 hover:shadow-md active:scale-95"
+                    title="Workspace Assistant"
+                    style={{ background: "var(--gcp-blue)", color: "#ffffff" }}
+                >
                     <Sparkles size={16} />
-                    <span className="text-xs font-bold uppercase tracking-wider">Chat with AI Assistant</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">Chat with Assistant</span>
                 </button>
-                <button onClick={() => setShowNotifications(!showNotifications)}
-                    className="p-2 rounded-full transition-colors desktop-only relative hover:bg-sidebar-hover" title="Notifications"
-                    style={{ color: "var(--text-secondary)" }}>
+
+                <button
+                    onClick={() => setShowNotifications((current) => !current)}
+                    className="desktop-only relative rounded-full p-2 transition-colors hover:bg-sidebar-hover"
+                    title="Notifications"
+                    style={{ color: "var(--text-secondary)" }}
+                >
                     <Bell size={18} />
-                    <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-gcp-red border border-[var(--topbar-bg)]" title="New notification" />
+                    <span
+                        className="absolute right-2 top-2 h-2 w-2 rounded-full border bg-gcp-red"
+                        style={{ borderColor: "var(--topbar-bg)" }}
+                    />
                 </button>
 
                 {user ? (
                     <div className="relative">
-                        <button onClick={() => setShowUserMenu(!showUserMenu)}
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ml-2 cursor-pointer transition-transform hover:scale-105 overflow-hidden"
+                        <button
+                            onClick={() => setShowUserMenu((current) => !current)}
+                            className="ml-2 h-8 w-8 cursor-pointer overflow-hidden rounded-full text-sm font-medium transition-transform hover:scale-105"
                             title={profile?.displayName || "Account"}
-                            style={{ background: "var(--gcp-blue)", color: "var(--btn-primary-text)" }}>
+                            style={{ background: "var(--gcp-blue)", color: "var(--btn-primary-text)" }}
+                        >
                             {profile?.photoURL ? (
-                                <img src={profile.photoURL} alt="" className="w-8 h-8 rounded-full object-cover" />
+                                <img src={profile.photoURL} alt="" className="h-8 w-8 rounded-full object-cover" />
                             ) : (
-                                (profile?.displayName || profile?.email || "U").charAt(0).toUpperCase()
+                                (profile?.displayName || profile?.email || "B").charAt(0).toUpperCase()
                             )}
                         </button>
+
                         {showUserMenu && (
-                            <div className="absolute top-12 right-0 w-64 gcp-card overflow-hidden z-50 animate-in fade-in slide-in-from-top-2"
-                                style={{ background: "var(--bg-surface)", borderColor: "var(--border-color)" }}>
-                                <div className="p-4 border-b" style={{ borderColor: "var(--border-color)" }}>
-                                    <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{profile?.displayName || "User"}</p>
-                                    <p className="text-xs opacity-60" style={{ color: "var(--text-secondary)" }}>{profile?.email}</p>
-                                    <p className="text-[10px] mt-1 uppercase tracking-widest font-bold text-gcp-blue">{profile?.accountType} account</p>
+                            <div
+                                className="gcp-card absolute right-0 top-12 z-50 w-64 overflow-hidden"
+                                style={{ background: "var(--bg-surface)", borderColor: "var(--border-color)" }}
+                            >
+                                <div className="border-b p-4" style={{ borderColor: "var(--border-color)" }}>
+                                    <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+                                        {profile?.displayName || "Business User"}
+                                    </p>
+                                    <p className="text-xs opacity-60" style={{ color: "var(--text-secondary)" }}>
+                                        {profile?.email}
+                                    </p>
+                                    <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-gcp-blue">
+                                        {(profile?.accountType || "business")} account
+                                    </p>
                                 </div>
+
                                 <div className="p-2">
-                                    <Link href="/dashboard" onClick={() => setShowUserMenu(false)}
-                                        className="flex items-center gap-2 p-2 rounded text-sm hover:bg-sidebar-hover transition-colors w-full"
-                                        style={{ color: "var(--text-primary)" }}>
+                                    <Link
+                                        href="/dashboard"
+                                        onClick={() => setShowUserMenu(false)}
+                                        className="flex w-full items-center gap-2 rounded p-2 text-sm transition-colors hover:bg-sidebar-hover"
+                                        style={{ color: "var(--text-primary)" }}
+                                    >
                                         Dashboard
                                     </Link>
-                                    <button onClick={async () => { await signOut(); setShowUserMenu(false); router.push("/login"); }}
-                                        className="flex items-center gap-2 p-2 rounded text-sm hover:bg-sidebar-hover transition-colors w-full text-left"
-                                        style={{ color: "var(--text-primary)" }}>
-                                        <LogOut size={14} /> Sign Out
+                                    <button
+                                        onClick={async () => {
+                                            await signOut();
+                                            setShowUserMenu(false);
+                                            router.push("/login");
+                                        }}
+                                        className="flex w-full items-center gap-2 rounded p-2 text-left text-sm transition-colors hover:bg-sidebar-hover"
+                                        style={{ color: "var(--text-primary)" }}
+                                    >
+                                        <LogOut size={14} />
+                                        Sign Out
                                     </button>
                                 </div>
                             </div>
@@ -398,30 +459,55 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                     </div>
                 ) : (
                     <Link href="/login">
-                        <button className="px-4 py-1.5 rounded-md text-sm font-medium transition-all hover:bg-sidebar-hover desktop-only"
-                            style={{ color: "var(--text-primary)", border: "1px solid var(--border-color)" }}>
+                        <button
+                            className="desktop-only rounded-md px-4 py-1.5 text-sm font-medium transition-all hover:bg-sidebar-hover"
+                            style={{ color: "var(--text-primary)", border: "1px solid var(--border-color)" }}
+                        >
                             Sign In
                         </button>
                     </Link>
                 )}
 
                 {showNotifications && (
-                    <div className="absolute top-12 right-24 w-80 gcp-card overflow-hidden z-50 animate-in fade-in slide-in-from-top-2"
-                        style={{ background: "var(--bg-surface)", borderColor: "var(--border-color)" }}>
-                        <div className="p-3 border-b flex items-center justify-between" style={{ borderColor: "var(--border-color)" }}>
-                            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>Notifications</span>
-                            <button onClick={() => setShowNotifications(false)} className="text-[10px] text-gcp-blue hover:underline">Clear all</button>
+                    <div
+                        className="gcp-card absolute right-24 top-12 z-50 w-80 overflow-hidden"
+                        style={{ background: "var(--bg-surface)", borderColor: "var(--border-color)" }}
+                    >
+                        <div
+                            className="flex items-center justify-between border-b p-3"
+                            style={{ borderColor: "var(--border-color)" }}
+                        >
+                            <span
+                                className="text-xs font-bold uppercase tracking-wider"
+                                style={{ color: "var(--text-primary)" }}
+                            >
+                                Notifications
+                            </span>
+                            <button
+                                onClick={() => setShowNotifications(false)}
+                                className="text-[10px] text-gcp-blue hover:underline"
+                            >
+                                Clear all
+                            </button>
                         </div>
                         <div className="p-8 text-center">
                             <Bell size={32} className="mx-auto mb-4 opacity-20" />
-                            <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>No new notifications</p>
-                            <p className="text-xs mt-1 opacity-50" style={{ color: "var(--text-secondary)" }}>You're all caught up with the mesh.</p>
+                            <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+                                No new notifications
+                            </p>
+                            <p className="mt-1 text-xs opacity-50" style={{ color: "var(--text-secondary)" }}>
+                                Your business workspace is up to date.
+                            </p>
                         </div>
                     </div>
                 )}
-                <button onClick={() => setChatOpen(true)}
-                    className="p-2 rounded-full transition-colors desktop-only hover:bg-sidebar-hover" title="Help"
-                    style={{ color: "var(--text-secondary)" }}>
+
+                <button
+                    onClick={() => setChatOpen(true)}
+                    className="desktop-only rounded-full p-2 transition-colors hover:bg-sidebar-hover"
+                    title="Help"
+                    style={{ color: "var(--text-secondary)" }}
+                >
                     <HelpCircle size={18} />
                 </button>
             </div>

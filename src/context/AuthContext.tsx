@@ -1,18 +1,19 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { ReactNode, createContext, useContext, useEffect, useState } from "react";
 import {
     User,
-    signInWithPopup,
-    signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
-    signOut as firebaseSignOut,
     onAuthStateChanged,
+    signInWithEmailAndPassword,
+    signInWithPopup,
+    signOut as firebaseSignOut,
+    updateProfile,
 } from "firebase/auth";
-import { ref, set, get, onValue } from "firebase/database";
+import { get, onValue, ref, set } from "firebase/database";
 import { auth, db, githubProvider, googleProvider } from "@/lib/firebase";
 
-export type AccountType = "developer" | "personal" | "business" | null;
+export type AccountType = "business" | null;
 
 interface UserProfile {
     uid: string;
@@ -21,9 +22,8 @@ interface UserProfile {
     photoURL: string | null;
     accountType: AccountType;
     createdAt: number;
-    githubUsername?: string;
-    agents?: Record<string, unknown>;
-    earnings?: number;
+    companyName?: string;
+    totalSpent?: number;
 }
 
 interface AuthContextType {
@@ -43,11 +43,11 @@ const AuthContext = createContext<AuthContextType>({
     profile: null,
     accountType: null,
     loading: true,
-    signInWithGitHub: async () => { },
-    signInWithGoogle: async () => { },
-    signInWithEmail: async () => { },
-    signUpWithEmail: async () => { },
-    signOut: async () => { },
+    signInWithGitHub: async () => {},
+    signInWithGoogle: async () => {},
+    signInWithEmail: async () => {},
+    signUpWithEmail: async () => {},
+    signOut: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -56,137 +56,139 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [accountType, setAccountType] = useState<AccountType>(null);
     const [loading, setLoading] = useState(true);
 
-    const syncWithBackend = async (uid: string, displayName: string, email: string, accountType: AccountType) => {
-        const roleMap: Record<string, string> = {
-            "developer": "developer",
-            "business": "client",
-            "personal": "user"
-        };
-        const role = accountType ? roleMap[accountType] : "user";
-        
+    const syncWithBackend = async (uid: string, displayName: string, email: string) => {
         try {
             await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/auth/sync`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    uid, 
-                    display_name: displayName || "Anonymous", 
-                    email: email || "", 
-                    role 
-                })
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    uid,
+                    display_name: displayName || "Business User",
+                    email: email || "",
+                    role: "client",
+                }),
             });
-        } catch (err) {
-            console.error("Backend sync failed:", err);
+        } catch (error) {
+            console.error("Backend sync failed:", error);
         }
     };
 
-    useEffect(() => {
-        const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-            setUser(firebaseUser);
-            if (firebaseUser) {
-                const profileRef = ref(db, `users/${firebaseUser.uid}`);
-                const snapshot = await get(profileRef);
-                if (snapshot.exists()) {
-                    const data = snapshot.val() as UserProfile;
-                    setProfile(data);
-                    setAccountType(data.accountType);
-                    
-                    // Sync with backend
-                    syncWithBackend(firebaseUser.uid, data.displayName || "", firebaseUser.email || "", data.accountType);
-                }
-
-                onValue(profileRef, (snap) => {
-                    if (snap.exists()) {
-                        const data = snap.val() as UserProfile;
-                        setProfile(data);
-                        setAccountType(data.accountType);
-                    }
-                });
-            } else {
-                setProfile(null);
-                setAccountType(null);
-            }
-            setLoading(false);
-        });
-        return () => unsub();
-    }, []);
-
-    const createUserProfile = async (
+    const upsertBusinessProfile = async (
         firebaseUser: User,
-        type: AccountType,
-        extra: Record<string, unknown> = {}
+        overrides: Partial<UserProfile> = {},
     ) => {
+        const existingSnapshot = await get(ref(db, `users/${firebaseUser.uid}`));
+        const existing = existingSnapshot.exists() ? (existingSnapshot.val() as Partial<UserProfile>) : {};
+
+        const displayName =
+            overrides.displayName ||
+            firebaseUser.displayName ||
+            existing.displayName ||
+            firebaseUser.email?.split("@")[0] ||
+            "Business User";
+
+        if (displayName !== firebaseUser.displayName) {
+            try {
+                await updateProfile(firebaseUser, { displayName });
+            } catch (error) {
+                console.warn("Unable to update Firebase display name:", error);
+            }
+        }
+
         const profileData: UserProfile = {
             uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            photoURL: firebaseUser.photoURL,
-            accountType: type,
-            createdAt: Date.now(),
-            earnings: 0,
-            ...extra,
+            email: firebaseUser.email || existing.email || null,
+            displayName,
+            photoURL: firebaseUser.photoURL || existing.photoURL || null,
+            accountType: "business",
+            createdAt: existing.createdAt || Date.now(),
+            companyName: overrides.companyName || existing.companyName,
+            totalSpent:
+                typeof overrides.totalSpent === "number"
+                    ? overrides.totalSpent
+                    : typeof existing.totalSpent === "number"
+                      ? existing.totalSpent
+                      : 0,
         };
 
         await set(ref(db, `users/${firebaseUser.uid}`), profileData);
-
-        const accountIndex = {
+        await set(ref(db, `accounts/business/${firebaseUser.uid}`), {
             uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            joinedAt: Date.now(),
-        };
-        await set(ref(db, `accounts/${type}/${firebaseUser.uid}`), accountIndex);
+            email: profileData.email,
+            displayName: profileData.displayName,
+            joinedAt: profileData.createdAt,
+        });
 
         setProfile(profileData);
-        setAccountType(type);
-        
-        // Immediate sync after creation
-        await syncWithBackend(firebaseUser.uid, profileData.displayName || "", firebaseUser.email || "", type);
+        setAccountType("business");
+        await syncWithBackend(firebaseUser.uid, profileData.displayName || "", profileData.email || "");
+
+        return profileData;
     };
+
+    useEffect(() => {
+        let profileUnsubscribe: (() => void) | undefined;
+
+        const authUnsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            setLoading(true);
+            setUser(firebaseUser);
+
+            if (profileUnsubscribe) {
+                profileUnsubscribe();
+                profileUnsubscribe = undefined;
+            }
+
+            if (!firebaseUser) {
+                setProfile(null);
+                setAccountType(null);
+                setLoading(false);
+                return;
+            }
+
+            await upsertBusinessProfile(firebaseUser);
+
+            const profileRef = ref(db, `users/${firebaseUser.uid}`);
+            profileUnsubscribe = onValue(profileRef, (snapshot) => {
+                if (!snapshot.exists()) {
+                    setProfile(null);
+                    setAccountType(null);
+                    return;
+                }
+
+                const data = snapshot.val() as UserProfile;
+                setProfile({ ...data, accountType: "business" });
+                setAccountType("business");
+            });
+
+            setLoading(false);
+        });
+
+        return () => {
+            authUnsubscribe();
+            if (profileUnsubscribe) {
+                profileUnsubscribe();
+            }
+        };
+    }, []);
 
     const signInWithGitHub = async () => {
         const result = await signInWithPopup(auth, githubProvider);
-        const firebaseUser = result.user;
-
-        const profileRef = ref(db, `users/${firebaseUser.uid}`);
-        const snapshot = await get(profileRef);
-
-        if (!snapshot.exists()) {
-            const githubUsername = firebaseUser.providerData[0]?.displayName || firebaseUser.displayName || "";
-            await createUserProfile(firebaseUser, "developer", {
-                githubUsername,
-                agents: {},
-                earnings: 0,
-            });
-        }
+        await upsertBusinessProfile(result.user);
     };
 
     const signInWithGoogle = async () => {
         const result = await signInWithPopup(auth, googleProvider);
-        const firebaseUser = result.user;
-
-        const profileRef = ref(db, `users/${firebaseUser.uid}`);
-        const snapshot = await get(profileRef);
-
-        if (!snapshot.exists()) {
-            await createUserProfile(firebaseUser, "business", {
-                gigs: {},
-                totalSpent: 0,
-            });
-        }
+        await upsertBusinessProfile(result.user);
     };
 
     const signInWithEmail = async (email: string, password: string) => {
-        await signInWithEmailAndPassword(auth, email, password);
+        const result = await signInWithEmailAndPassword(auth, email, password);
+        await upsertBusinessProfile(result.user);
     };
 
     const signUpWithEmail = async (email: string, password: string, displayName: string) => {
         const result = await createUserWithEmailAndPassword(auth, email, password);
-        const firebaseUser = result.user;
-
-        await createUserProfile(firebaseUser, "personal", {
-            displayName,
-        });
+        await upsertBusinessProfile(result.user, { displayName });
     };
 
     const handleSignOut = async () => {

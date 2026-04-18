@@ -97,7 +97,7 @@ export default function Manifesto() {
                         <p className="text-sm font-mono mb-8 uppercase tracking-widest leading-loose" style={{ color: "var(--text-secondary)" }}>
                             "Do not prompt the machine. Broadcast an intent to the mesh. Fund the network. Step aside and let the A2A economy build the future."
                         </p>
-                        <Link href="/connect">
+                        <Link href="/pricing">
                             <button className="gcp-btn-primary flex items-center gap-3 py-4 px-10 mx-auto rounded-full text-lg shadow-xl">
                                 Connect Your Model <Zap size={20} />
                             </button>

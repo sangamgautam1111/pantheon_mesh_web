@@ -1,167 +1,228 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { NeuralBackground } from "@/components/ui/NeuralBackground";
-import { FileText, ArrowLeft, ArrowDownCircle, ShieldCheck, Zap, Globe, Cpu, Coins, Lock } from "lucide-react";
 import Link from "next/link";
+import { motion } from "framer-motion";
+import {
+    ArrowDownCircle,
+    ArrowLeft,
+    Cpu,
+    FileText,
+    Globe,
+    Layers3,
+    Lock,
+    ShieldCheck,
+    Zap,
+} from "lucide-react";
+import { NeuralBackground } from "@/components/ui/NeuralBackground";
 
 export default function Whitepaper() {
     return (
-        <div className="relative min-h-screen transition-colors duration-200"
-            style={{ color: "var(--text-primary)" }}>
-
+        <div className="relative min-h-screen transition-colors duration-200" style={{ color: "var(--text-primary)" }}>
             <div className="fixed inset-0 opacity-[0.05] pointer-events-none">
                 <NeuralBackground />
             </div>
 
-            {/* Nav */}
-            <nav className="fixed top-0 left-0 right-0 z-50 h-12 flex items-center justify-between px-6 border-b backdrop-blur-md transition-colors"
-                style={{ background: "var(--topbar-bg)", borderColor: "var(--border-color)" }}>
-                <Link href="/" className="flex items-center gap-2 group transition-opacity hover:opacity-80">
+            <nav
+                className="fixed top-0 left-0 right-0 z-50 flex h-12 items-center justify-between border-b px-6 backdrop-blur-md transition-colors"
+                style={{ background: "var(--topbar-bg)", borderColor: "var(--border-color)" }}
+            >
+                <Link href="/" className="group flex items-center gap-2 transition-opacity hover:opacity-80">
                     <ArrowLeft size={16} className="text-gcp-blue" />
-                    <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>Return to Hub</span>
+                    <span
+                        className="text-xs font-medium uppercase tracking-wider"
+                        style={{ color: "var(--text-secondary)" }}
+                    >
+                        Return to Hub
+                    </span>
                 </Link>
                 <div className="flex items-center gap-2">
                     <FileText size={16} className="text-gcp-blue" />
-                    <span className="text-xs font-medium uppercase tracking-[0.15em]" style={{ color: "var(--text-primary)" }}>ANTP Core Specifications</span>
+                    <span
+                        className="text-xs font-medium uppercase tracking-[0.15em]"
+                        style={{ color: "var(--text-primary)" }}
+                    >
+                        Business Delivery Architecture
+                    </span>
                 </div>
             </nav>
 
-            {/* Content Container */}
-            <main className="relative z-10 pt-24 pb-32 px-6 max-w-4xl mx-auto">
-                {/* Hero Section */}
+            <main className="relative z-10 mx-auto max-w-4xl px-6 pt-24 pb-32">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-16 border-b pb-12"
                     style={{ borderColor: "var(--border-color)" }}
                 >
-                    <div className="inline-flex items-center gap-2 px-2.5 py-1 mb-6 gcp-badge"
-                        style={{ background: "var(--sidebar-active)", color: "var(--gcp-blue)", border: "1px solid var(--gcp-blue)" }}>
-                        VERSION 13.0.0 — PRODUCTION
+                    <div
+                        className="gcp-badge mb-6 inline-flex items-center gap-2 px-2.5 py-1"
+                        style={{
+                            background: "var(--sidebar-active)",
+                            color: "var(--gcp-blue)",
+                            border: "1px solid var(--gcp-blue)",
+                        }}
+                    >
+                        VERSION 14.0.0 - BUSINESS
                     </div>
-                    <h1 className="text-5xl md:text-6xl font-heading font-bold tracking-tight mb-6" style={{ color: "var(--text-primary)" }}>
-                        The <span className="text-gcp-blue">A2A</span> Economy.
+
+                    <h1
+                        className="mb-6 text-5xl font-heading font-bold tracking-tight md:text-6xl"
+                        style={{ color: "var(--text-primary)" }}
+                    >
+                        The <span className="text-gcp-blue">Managed AI</span> Delivery Stack.
                     </h1>
-                    <p className="text-xl leading-relaxed mb-8 max-w-2xl" style={{ color: "var(--text-secondary)" }}>
-                        A peer-to-peer technical implementation of the Autonomous Neural Transfer Protocol (ANTP) for sovereign agent clusters.
+
+                    <p className="mb-8 max-w-2xl text-xl leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                        Pantheon Mesh is a business-first execution platform for recurring digital work, combining managed
+                        model routing, structured review, and one unified client workspace.
                     </p>
 
                     <div className="flex gap-4">
-                        <button className="gcp-btn-primary flex items-center gap-2">
-                            Download Specification <ArrowDownCircle size={16} />
-                        </button>
-                        <button className="gcp-btn-text flex items-center gap-2" style={{ border: "1px solid var(--border-color)" }}>
-                            Cite this paper
-                        </button>
+                        <Link href="/business/plans" className="gcp-btn-primary flex items-center gap-2">
+                            Open Plans <ArrowDownCircle size={16} />
+                        </Link>
                     </div>
                 </motion.div>
 
-                {/* Sub-sections */}
                 <div className="space-y-20">
-                    {/* Abstract */}
                     <section>
-                        <h2 className="text-2xl font-heading font-medium mb-6 flex items-center gap-3" style={{ color: "var(--text-primary)" }}>
+                        <h2
+                            className="mb-6 flex items-center gap-3 text-2xl font-heading font-medium"
+                            style={{ color: "var(--text-primary)" }}
+                        >
                             <span className="text-gcp-blue">01.</span> Abstract
                         </h2>
                         <div className="prose prose-sm max-w-none text-lg leading-loose" style={{ color: "var(--text-secondary)" }}>
-                            The legacy web operates on a standard Request/Response HTTP model moving static information.
-                            The <strong>ANTP protocol</strong> replaces this with a decentralized <strong>Intent-Resolution architecture</strong>.
-                            Agents do not wait for human commands; they dynamically construct routing paths,
-                            establish localized consensus, and financially settle compute logic in real-time.
+                            Pantheon Mesh is designed for businesses that want common digital work completed faster, more
+                            predictably, and with less coordination overhead than traditional freelance workflows. A request
+                            enters one workspace, is routed through an internal AI team, reviewed against the brief, and
+                            returned with status history the client can inspect at any time.
                         </div>
                     </section>
 
-                    {/* Physical Layer */}
                     <section>
-                        <h2 className="text-2xl font-heading font-medium mb-6 flex items-center gap-3" style={{ color: "var(--text-primary)" }}>
-                            <span className="text-gcp-blue">02.</span> Synthesizing The Physical Layer
+                        <h2
+                            className="mb-6 flex items-center gap-3 text-2xl font-heading font-medium"
+                            style={{ color: "var(--text-primary)" }}
+                        >
+                            <span className="text-gcp-blue">02.</span> Execution Layer
                         </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                        <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-2">
                             <div className="text-lg leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                                ANTP implements a localized <strong>Physical Actuator</strong> bridging the neural inference layer
-                                directly to Kubernetes container orchestration and low-power IoT Edge networks.
-                                Intelligence physically replicates where it is needed, bypassing centralized server bottlenecks.
+                                Each request is decomposed into a practical workflow: planning, specialist execution,
+                                review, and fallback handling. The platform chooses the best provider path for the task,
+                                keeps the number of agent turns bounded, and preserves a single delivery record for the client.
                             </div>
-                            <div className="p-6 rounded-lg font-mono text-sm border"
-                                style={{ background: "var(--bg-surface-variant)", borderColor: "var(--border-color)", color: "var(--gcp-green)" }}>
-                                <div className="text-xs mb-2 opacity-50 text-gcp-text-secondary">// Provisioning edge compute</div>
-                                {"{ action: 'provision_cluster',\n  target: 'ARM64_EDGE',\n  nodes: 3,\n  budget_axm: 12.0 }"}
+                            <div
+                                className="rounded-lg border p-6 font-mono text-sm"
+                                style={{
+                                    background: "var(--bg-surface-variant)",
+                                    borderColor: "var(--border-color)",
+                                    color: "var(--gcp-green)",
+                                }}
+                            >
+                                <div className="mb-2 text-xs opacity-50 text-gcp-text-secondary">
+                                    // Internal execution handoff
+                                </div>
+                                {"{ stage: 'route_request',\n  workflow: 'planner -> worker -> reviewer',\n  budget_guard: 'enabled',\n  delivery_mode: 'business_workspace' }"}
                             </div>
                         </div>
                     </section>
 
-                    {/* Payout Protocol */}
-                    <section className="gcp-card p-10 border-gcp-blue/20 bg-gcp-blue/[0.02] shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gcp-blue/5 rounded-full -translate-y-16 translate-x-16 blur-3xl"></div>
-                        <div className="flex items-start gap-8 z-10 relative">
-                            <div className="w-16 h-16 shrink-0 rounded-2xl bg-gcp-blue/10 flex items-center justify-center text-gcp-blue border border-gcp-blue/20 shadow-inner">
+                    <section className="gcp-card relative overflow-hidden border-gcp-blue/20 bg-gcp-blue/[0.02] p-10 shadow-2xl">
+                        <div className="absolute top-0 right-0 h-32 w-32 translate-x-16 -translate-y-16 rounded-full bg-gcp-blue/5 blur-3xl" />
+                        <div className="relative z-10 flex items-start gap-8">
+                            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-gcp-blue/20 bg-gcp-blue/10 text-gcp-blue shadow-inner">
                                 <Lock size={28} />
                             </div>
                             <div>
-                                <h2 className="text-3xl font-heading font-bold mb-6" style={{ color: "var(--text-primary)" }}>
-                                    03. Pantheon Payout Protocol (PPP)
+                                <h2 className="mb-6 text-3xl font-heading font-bold" style={{ color: "var(--text-primary)" }}>
+                                    03. Control and Review Layer
                                 </h2>
-                                <div className="text-lg leading-relaxed mb-8" style={{ color: "var(--text-secondary)" }}>
-                                    The Pantheon Mesh implements a high-throughput <strong>Multi-Account Settlement Engine</strong>. 
-                                    Every execution cycle is dynamically routed through our proprietary payout protocol, ensuring 
-                                    that model contributors receive a standard <span className="text-gcp-green font-black">80.0%</span> payout 
-                                    (scaling up to <span className="text-gcp-green font-black">85.0%</span> for Premium Plan holders) 
-                                    with zero-latency settlement.
+                                <div className="mb-8 text-lg leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                                    Pantheon Mesh keeps quality and cost under control with explicit routing policies,
+                                    budget-aware execution, and a required review pass before work is marked complete.
+                                    The client sees one outcome stream, while the platform handles provider choice,
+                                    fallback behavior, and delivery validation behind the scenes.
                                 </div>
                                 <div className="grid grid-cols-2 gap-6">
-                                    <div className="p-4 rounded-lg bg-gcp-surface border border-gcp-border shadow-sm">
-                                        <div className="text-[10px] uppercase tracking-widest font-black text-gcp-blue mb-2">INFRASTRUCTURE FEE</div>
-                                        <div className="text-2xl font-black text-gcp-text">20.0%<span className="text-sm font-normal text-gcp-text-disabled ml-1">PLATFORM RETAIN</span></div>
+                                    <div className="rounded-lg border border-gcp-border bg-gcp-surface p-4 shadow-sm">
+                                        <div className="mb-2 text-[10px] font-black uppercase tracking-widest text-gcp-blue">
+                                            Review Gate
+                                        </div>
+                                        <div className="text-2xl font-black text-gcp-text">
+                                            Required
+                                            <span className="ml-1 text-sm font-normal text-gcp-text-disabled">
+                                                BEFORE DELIVERY
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div className="p-4 rounded-lg bg-gcp-surface border border-gcp-border shadow-sm">
-                                        <div className="text-[10px] uppercase tracking-widest font-black text-gcp-green mb-2">ELITE PROVIDER TIER</div>
-                                        <div className="text-2xl font-black text-gcp-text">85.0%<span className="text-sm font-normal text-gcp-text-disabled ml-1">MAX PAYOUT</span></div>
+                                    <div className="rounded-lg border border-gcp-border bg-gcp-surface p-4 shadow-sm">
+                                        <div className="mb-2 text-[10px] font-black uppercase tracking-widest text-gcp-green">
+                                            Budget Control
+                                        </div>
+                                        <div className="text-2xl font-black text-gcp-text">
+                                            Bounded
+                                            <span className="ml-1 text-sm font-normal text-gcp-text-disabled">
+                                                PER WORKFLOW
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </section>
 
-                    {/* Memory Fabric */}
                     <section>
-                        <h2 className="text-2xl font-heading font-medium mb-6 flex items-center gap-3" style={{ color: "var(--text-primary)" }}>
-                            <span className="text-gcp-blue">04.</span> Knowledge Market Liquidity
+                        <h2
+                            className="mb-6 flex items-center gap-3 text-2xl font-heading font-medium"
+                            style={{ color: "var(--text-primary)" }}
+                        >
+                            <span className="text-gcp-blue">04.</span> Business Workspace
                         </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                             <div className="md:col-span-2 text-lg leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                                Agents crystallize all resolved intents into a distributed <strong>Memory Fabric</strong>.
-                                Future retrievals automatically stream micro-royalties back to the originating wallet of the
-                                entity who initially funded the computational breakthrough.
+                                The product surface is intentionally simple: sign in, submit work, monitor progress,
+                                review completed jobs, and scale capacity through plan upgrades. Email, Google, and GitHub
+                                all route into the same business account experience.
                             </div>
-                            <div className="p-5 rounded-lg border text-center flex flex-col items-center justify-center gap-3"
-                                style={{ background: "var(--bg-surface-variant)", borderColor: "var(--border-color)" }}>
-                                <div className="w-10 h-10 rounded-full bg-gcp-yellow/10 flex items-center justify-center text-gcp-yellow">
-                                    <Coins size={20} />
+                            <div
+                                className="flex flex-col items-center justify-center gap-3 rounded-lg border p-5 text-center"
+                                style={{ background: "var(--bg-surface-variant)", borderColor: "var(--border-color)" }}
+                            >
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gcp-yellow/10 text-gcp-yellow">
+                                    <Layers3 size={20} />
                                 </div>
-                                <div className="text-sm font-bold tracking-widest text-gcp-yellow">ROYALTY ENGINE</div>
-                                <div className="text-xs" style={{ color: "var(--text-secondary)" }}>5.0% Recurrent Credit</div>
+                                <div className="text-sm font-bold tracking-widest text-gcp-yellow">UNIFIED PORTAL</div>
+                                <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                                    One account, one workflow, one delivery history
+                                </div>
                             </div>
                         </div>
                     </section>
 
-                    {/* Infrastructure */}
-                    <section className="pt-12 border-t" style={{ borderColor: "var(--border-color)" }}>
-                        <div className="flex flex-wrap gap-8 justify-between grayscale opacity-50">
-                            <div className="flex items-center gap-2"><Globe size={18} /> Global Consensus</div>
-                            <div className="flex items-center gap-2"><Cpu size={18} /> Neural Inference</div>
-                            <div className="flex items-center gap-2"><Coins size={18} /> AXM Settlement</div>
-                            <div className="flex items-center gap-2"><Lock size={18} /> CyberShield</div>
+                    <section className="border-t pt-12" style={{ borderColor: "var(--border-color)" }}>
+                        <div className="flex flex-wrap justify-between gap-8 grayscale opacity-50">
+                            <div className="flex items-center gap-2">
+                                <Globe size={18} /> Managed Routing
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Cpu size={18} /> AI Execution
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <ShieldCheck size={18} /> Review Coverage
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Lock size={18} /> Business Controls
+                            </div>
                         </div>
                     </section>
                 </div>
             </main>
 
-            {/* Sticky CTA */}
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-                <Link href="/connect">
-                    <button className="gcp-btn-primary shadow-2xl flex items-center gap-3 py-4 px-8 rounded-full text-lg">
-                        Connect Your Model <Zap size={20} />
+            <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
+                <Link href="/business/plans">
+                    <button className="gcp-btn-primary flex items-center gap-3 rounded-full px-8 py-4 text-lg shadow-2xl">
+                        Open Business Plans <Zap size={20} />
                     </button>
                 </Link>
             </div>
