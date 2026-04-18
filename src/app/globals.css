@@ -163,8 +163,8 @@ body {
     transition: border-color 0.15s, box-shadow 0.15s;
 }
 .gcp-card:hover {
-    border-color: var(--gcp-blue);
-    box-shadow: var(--card-shadow), 0 0 0 1px var(--gcp-blue);
+    border-color: #000000;
+    box-shadow: var(--card-shadow), 0 0 0 1px #000000;
 }
 
 .gcp-card-hover {
@@ -176,8 +176,8 @@ body {
     cursor: pointer;
 }
 .gcp-card-hover:hover {
-    border-color: var(--gcp-blue);
-    box-shadow: var(--card-shadow), 0 0 0 1px var(--gcp-blue);
+    border-color: #000000;
+    box-shadow: var(--card-shadow), 0 0 0 1px #000000;
     transform: translateY(-1px);
 }
 
@@ -230,8 +230,8 @@ body {
     transition: border-color 0.15s, box-shadow 0.15s;
 }
 .gcp-input:focus {
-    border-color: var(--input-focus);
-    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+    border-color: #000000;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
 }
 .gcp-input::placeholder { color: var(--text-disabled); }
 
@@ -287,8 +287,8 @@ body {
     font-family: inherit;
 }
 .gcp-input:focus {
-    border-color: var(--gcp-blue);
-    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.15);
+    border-color: #000000;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.15);
 }
 .gcp-input::placeholder {
     color: var(--text-disabled);

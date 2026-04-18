@@ -26,10 +26,7 @@ const NAV_ITEMS = [
     { label: "Pricing", href: "/pricing", icon: CreditCard },
 ];
 
-const DOCS_ITEMS = [
-    { label: "Manifesto", href: "/manifesto" },
-    { label: "Whitepaper", href: "/whitepaper" },
-];
+
 
 interface SidebarProps {
     mobileOpen: boolean;
@@ -124,7 +121,7 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                                 key={item.href}
                                 href={item.href}
                                 onClick={() => isMobile && onClose()}
-                                className={`mx-2 flex items-center gap-3 rounded px-3 py-2 text-sm transition-colors ${
+                                className={`mx-2 flex items-center gap-4 rounded px-3 py-2 text-base transition-colors ${
                                     collapsed && !isMobile ? "justify-center" : ""
                                 } ${active ? "font-medium" : ""}`}
                                 style={{
@@ -134,7 +131,7 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                                 title={collapsed && !isMobile ? item.label : undefined}
                             >
                                 <item.icon
-                                    size={18}
+                                    size={24}
                                     style={{ color: active ? "var(--gcp-blue)" : "var(--text-disabled)" }}
                                 />
                                 {(!collapsed || isMobile) && <span>{item.label}</span>}
@@ -142,48 +139,7 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                         );
                     })}
 
-                    {(!collapsed || isMobile) && (
-                        <div className="mx-2 mt-2 border-t pt-2" style={{ borderTop: "1px solid var(--border-color)" }}>
-                            <button
-                                onClick={() => setDocsOpen((current) => !current)}
-                                className="flex w-full items-center gap-3 rounded px-3 py-2 text-sm transition-colors"
-                                style={{ color: "var(--text-secondary)" }}
-                            >
-                                <BookOpen size={18} style={{ color: "var(--text-disabled)" }} />
-                                <span className="flex-1 text-left">Documentation</span>
-                                <ChevronRight
-                                    size={14}
-                                    style={{
-                                        color: "var(--text-disabled)",
-                                        transform: docsOpen ? "rotate(90deg)" : "none",
-                                        transition: "transform 0.2s",
-                                    }}
-                                />
-                            </button>
-                            {docsOpen && (
-                                <div className="ml-9 space-y-0.5">
-                                    {DOCS_ITEMS.map((item) => (
-                                        <Link
-                                            key={item.href}
-                                            href={item.href}
-                                            onClick={() => isMobile && onClose()}
-                                            className="block rounded px-3 py-1.5 text-sm transition-colors"
-                                            style={{
-                                                color:
-                                                    pathname === item.href ? "var(--gcp-blue)" : "var(--text-secondary)",
-                                                background:
-                                                    pathname === item.href
-                                                        ? "var(--sidebar-active)"
-                                                        : "transparent",
-                                            }}
-                                        >
-                                            {item.label}
-                                        </Link>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
+
                 </nav>
 
                 {!isMobile && (
