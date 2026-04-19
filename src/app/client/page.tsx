@@ -212,7 +212,7 @@ export default function ClientDashboard() {
 
             const nextMinimumBudget =
                 typeof data.min_budget_usd === "number" && Number.isFinite(data.min_budget_usd)
-                    ? data.min_budget_usd
+                    ? Math.round(data.min_budget_usd * 100) / 100
                     : DEFAULT_MINIMUM_BUDGET;
             const previousMinimumBudget = previousMinimumBudgetRef.current;
             previousMinimumBudgetRef.current = nextMinimumBudget;
@@ -230,11 +230,12 @@ export default function ClientDashboard() {
             setBudgetStrategy(typeof data.strategy === "string" ? data.strategy : "");
 
             setBudget((currentBudget) => {
+                const roundedNext = Math.round(nextMinimumBudget * 100) / 100;
                 if (!Number.isFinite(currentBudget) || currentBudget <= 0) {
-                    return nextMinimumBudget;
+                    return roundedNext;
                 }
-                if (currentBudget < nextMinimumBudget || Math.abs(currentBudget - previousMinimumBudget) < 0.01) {
-                    return nextMinimumBudget;
+                if (currentBudget < (roundedNext - 0.01) || Math.abs(currentBudget - (Math.round(previousMinimumBudget * 100) / 100)) < 0.01) {
+                    return roundedNext;
                 }
                 return currentBudget;
             });
@@ -302,7 +303,7 @@ export default function ClientDashboard() {
 
         setLoading(true);
         try {
-            const response = await fetch(`${API}/v1/client/${user.uid}/jobs`);
+            const response = await fetch(`/api/client/${user.uid}/jobs`);
             const data = await response.json();
             setJobs(Array.isArray(data) ? data : Array.isArray(data.jobs) ? data.jobs : []);
             setPlanInfo(data.plan ?? null);
@@ -352,7 +353,7 @@ export default function ClientDashboard() {
         setPosting(true);
         setFormError("");
         try {
-            const response = await fetch(`${API}/v1/client/job`, {
+            const response = await fetch(`/api/client/job`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
