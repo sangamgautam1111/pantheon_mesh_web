@@ -366,7 +366,10 @@ export default function ClientDashboard() {
 
             const result = await response.json();
             if (!response.ok) {
-                throw new Error(result.detail || "Failed to post the job.");
+                const errorMsg = Array.isArray(result.detail) 
+                    ? result.detail.map((err: any) => err.msg).join(", ") 
+                    : result.detail;
+                throw new Error(errorMsg || "Failed to post the job.");
             }
 
             if (result.id) {
