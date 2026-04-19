@@ -182,75 +182,71 @@ export default function ClientDashboard() {
             }
             return;
         }
-
-        const controller = new AbortController();
-        const timeoutId = window.setTimeout(async () => {
-            setEstimatingBudget(true);
-            try {
-                const response = await fetch(`${API}/v1/client/job/estimate-budget`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        client_uid: user.uid,
-                        title: trimmedTitle,
-                        description: trimmedDescription,
-                    }),
-                    signal: controller.signal,
-                });
-
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.detail || "Unable to estimate the minimum budget right now.");
-                }
-
-                const nextMinimumBudget =
-                    typeof data.min_budget_usd === "number" && Number.isFinite(data.min_budget_usd)
-                        ? data.min_budget_usd
-                        : DEFAULT_MINIMUM_BUDGET;
-                const previousMinimumBudget = previousMinimumBudgetRef.current;
-                previousMinimumBudgetRef.current = nextMinimumBudget;
-
-                setMinimumBudget(nextMinimumBudget);
-                setEstimatedApiCost(
-                    typeof data.estimated_api_cost_usd === "number" && Number.isFinite(data.estimated_api_cost_usd)
-                        ? data.estimated_api_cost_usd
-                        : 0,
-                );
-                setBudgetReason(typeof data.reason === "string" ? data.reason : "");
-                setBudgetStrategy(typeof data.strategy === "string" ? data.strategy : "");
-                setPlanInfo(data.plan ?? null);
-                setPlanUsage(data.usage ?? null);
-                setFormError("");
-
-                setBudget((currentBudget) => {
-                    if (!Number.isFinite(currentBudget) || currentBudget <= 0) {
-                        return nextMinimumBudget;
-                    }
-                    if (currentBudget < nextMinimumBudget || Math.abs(currentBudget - previousMinimumBudget) < 0.01) {
-                        return nextMinimumBudget;
-                    }
-                    return currentBudget;
-                });
-            } catch (error) {
-                if (controller.signal.aborted) {
-                    return;
-                }
-
-                console.error("Failed to estimate minimum budget:", error);
-                setBudgetReason("We will still protect the minimum budget on submit if estimation is delayed.");
-                setBudgetStrategy("fallback");
-            } finally {
-                if (!controller.signal.aborted) {
-                    setEstimatingBudget(false);
-                }
-            }
-        }, 650);
-
-        return () => {
-            controller.abort();
-            window.clearTimeout(timeoutId);
-        };
     }, [user?.uid, title, description]);
+
+    const calculateMinimumBudget = async () => {
+        const trimmedTitle = title.trim();
+        const trimmedDescription = description.trim();
+
+        if (!trimmedTitle || trimmedDescription.length < 10) {
+            setFormError("Please provide a title and at least 10 characters in the description.");
+            return;
+        }
+
+        setEstimatingBudget(true);
+        setFormError("");
+        try {
+            const response = await fetch(`/api/estimate-budget`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: trimmedTitle,
+                    description: trimmedDescription,
+                }),
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.detail || "Unable to estimate the minimum budget right now.");
+            }
+
+            const nextMinimumBudget =
+                typeof data.min_budget_usd === "number" && Number.isFinite(data.min_budget_usd)
+                    ? data.min_budget_usd
+                    : DEFAULT_MINIMUM_BUDGET;
+            const previousMinimumBudget = previousMinimumBudgetRef.current;
+            previousMinimumBudgetRef.current = nextMinimumBudget;
+
+            // Notice we do not set setPlanInfo / setPlanUsage here, 
+            // as this feature isolates just the budget math without interacting with database.
+
+            setMinimumBudget(nextMinimumBudget);
+            setEstimatedApiCost(
+                typeof data.estimated_api_cost_usd === "number" && Number.isFinite(data.estimated_api_cost_usd)
+                    ? data.estimated_api_cost_usd
+                    : 0,
+            );
+            setBudgetReason(typeof data.reason === "string" ? data.reason : "");
+            setBudgetStrategy(typeof data.strategy === "string" ? data.strategy : "");
+
+            setBudget((currentBudget) => {
+                if (!Number.isFinite(currentBudget) || currentBudget <= 0) {
+                    return nextMinimumBudget;
+                }
+                if (currentBudget < nextMinimumBudget || Math.abs(currentBudget - previousMinimumBudget) < 0.01) {
+                    return nextMinimumBudget;
+                }
+                return currentBudget;
+            });
+        } catch (error) {
+            console.error("Failed to estimate minimum budget:", error);
+            setBudgetReason("We will still protect the minimum budget on submit if estimation is delayed.");
+            setBudgetStrategy("fallback");
+            setFormError("Failed to estimate budget via AI. You can still set it manually above $5.");
+        } finally {
+            setEstimatingBudget(false);
+        }
+    };
 
     const filteredJobs = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
@@ -476,6 +472,21 @@ export default function ClientDashboard() {
                                             className="w-full resize-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                                             required
                                         />
+                                        <div className="mt-2 flex justify-end">
+                                            <button
+                                                type="button"
+                                                onClick={calculateMinimumBudget}
+                                                disabled={estimatingBudget || !title.trim() || description.trim().length < 10}
+                                                className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
+                                                    estimatingBudget || !title.trim() || description.trim().length < 10
+                                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                                        : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                                                }`}
+                                            >
+                                                {estimatingBudget ? <Clock size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                                                {estimatingBudget ? "Calculating AI Cost..." : "Calculate Projected Min Amount"}
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div>
@@ -580,18 +591,10 @@ export default function ClientDashboard() {
                                                         ${minimumBudget.toFixed(2)}
                                                     </p>
                                                 </div>
-                                                <div className="text-right">
-                                                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
-                                                        Estimated API cost
-                                                    </p>
-                                                    <p className="mt-2 text-lg font-bold text-gray-900">
-                                                        ${estimatedApiCost.toFixed(2)}
-                                                    </p>
-                                                </div>
                                             </div>
                                             <p className="mt-3 text-xs leading-5 text-gray-600">
                                                 {estimatingBudget
-                                                    ? "Calculating the protected minimum budget from your brief..."
+                                                    ? "Calculating the protected minimum budget using DeepSeek V3..."
                                                     : budgetReason || "The platform applies a protected minimum so the client budget stays above projected provider cost."}
                                             </p>
                                         </div>
