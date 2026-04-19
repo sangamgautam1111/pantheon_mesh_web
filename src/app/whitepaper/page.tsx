@@ -77,8 +77,8 @@ export default function Whitepaper() {
                     </p>
 
                     <div className="flex gap-4">
-                        <Link href="/business/plans" className="gcp-btn-primary flex items-center gap-2">
-                            Open Plans <ArrowDownCircle size={16} />
+                        <Link href="/pricing" className="gcp-btn-primary flex items-center gap-2">
+                            Open Pricing <ArrowDownCircle size={16} />
                         </Link>
                     </div>
                 </motion.div>
@@ -220,9 +220,9 @@ export default function Whitepaper() {
             </main>
 
             <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
-                <Link href="/business/plans">
+                <Link href="/pricing">
                     <button className="gcp-btn-primary flex items-center gap-3 rounded-full px-8 py-4 text-lg shadow-2xl">
-                        Open Business Plans <Zap size={20} />
+                        Open Pricing <Zap size={20} />
                     </button>
                 </Link>
             </div>

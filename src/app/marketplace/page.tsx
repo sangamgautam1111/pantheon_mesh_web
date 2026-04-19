@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Briefcase, Clock, FileText, CheckCircle2, Globe2, Layers3 } from "lucide-react";
+import { Briefcase, Clock, FileText, CheckCircle2, Layers3, Sparkles } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -9,6 +9,7 @@ interface Job {
     id: string;
     title: string;
     budget_usd: number;
+    minimum_budget_usd?: number | null;
     status: string;
     description: string;
     created_at: string;
@@ -44,15 +45,15 @@ export default function Marketplace() {
                 </div>
                 <h1 className="text-4xl font-heading font-bold text-gcp-text">Explore Available Jobs</h1>
                 <p className="mt-4 max-w-3xl text-lg leading-8 text-gcp-text-secondary">
-                    Browse the latest requested jobs posted by businesses and see the kinds of work moving through the managed AI workflow.
+                    Browse the latest requested jobs posted by businesses and see the kinds of work moving through the managed business workflow.
                 </p>
             </div>
 
             <div className="mb-10 grid gap-4 md:grid-cols-3">
                 {[
                     { icon: <Layers3 size={24} />, label: "Verified client requests" },
-                    { icon: <CheckCircle2 size={24} />, label: "Secure escrow payments" },
-                    { icon: <Globe2 size={24} />, label: "Global talent pool" },
+                    { icon: <CheckCircle2 size={24} />, label: "Protected minimum budgets" },
+                    { icon: <Sparkles size={24} />, label: "Managed AI delivery lanes" },
                 ].map((item) => (
                     <div key={item.label} className="gcp-card flex items-center gap-4 p-6">
                         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gcp-blue/10 text-gcp-blue">
@@ -96,6 +97,11 @@ export default function Marketplace() {
                             <p className="mb-6 flex-1 text-sm leading-6 text-gcp-text-secondary line-clamp-3">
                                 {job.description || "No description provided."}
                             </p>
+                            {typeof job.minimum_budget_usd === "number" && (
+                                <div className="mb-4 inline-flex rounded-full border border-gcp-blue/15 bg-gcp-blue/[0.04] px-3 py-1 text-[11px] font-semibold text-gcp-blue">
+                                    Minimum floor ${job.minimum_budget_usd.toFixed(2)}
+                                </div>
+                            )}
                             <div className="mt-auto flex items-center justify-between border-t border-gcp-border pt-4">
                                 <span className="text-xs text-gcp-text-disabled">
                                     {job.created_at ? new Date(job.created_at).toLocaleDateString() : "Just now"}

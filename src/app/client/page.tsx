@@ -1,9 +1,11 @@
 "use client";
 
-import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
+import { BUSINESS_PLANS } from "@/lib/businessPlans";
 import {
+    AlertCircle,
     Briefcase,
     Clock,
     ExternalLink,
@@ -13,10 +15,12 @@ import {
     Plus,
     Search,
     Send,
+    Sparkles,
     X,
 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const DEFAULT_MINIMUM_BUDGET = 5;
 const MAX_UPLOAD_BYTES = 6 * 1024 * 1024;
 const MAX_THUMBNAIL_DATA_URL_LENGTH = 1_200_000;
 const MAX_THUMBNAIL_EDGE = 1200;
@@ -26,9 +30,34 @@ interface Job {
     title: string;
     description: string;
     budget_usd: number;
+    estimated_api_cost_usd?: number | null;
+    minimum_budget_usd?: number | null;
     status: string;
     created_at: string;
     thumbnail_data_url?: string | null;
+}
+
+interface PlanSnapshot {
+    id: string;
+    name: string;
+    monthly_job_limit: number;
+    active_job_limit: number;
+    delivery_target: string;
+    delivery_target_hours: number;
+    model_lane: string;
+    bidding_lane: string;
+    review_depth: string;
+}
+
+interface PlanUsage {
+    monthly_jobs_used: number;
+    monthly_jobs_remaining: number;
+    monthly_job_limit: number;
+    active_jobs_used: number;
+    active_jobs_remaining: number;
+    active_job_limit: number;
+    can_post_job: boolean;
+    blocking_reason?: string | null;
 }
 
 function readFileAsDataUrl(file: File) {
@@ -88,24 +117,140 @@ async function createThumbnailDataUrl(file: File) {
     return dataUrl;
 }
 
+function buildFallbackPlan(planId: string | null | undefined): PlanSnapshot {
+    const fallback = BUSINESS_PLANS.find((plan) => plan.id === planId) ?? BUSINESS_PLANS[0];
+    return {
+        id: fallback.id,
+        name: fallback.name,
+        monthly_job_limit: fallback.monthlyJobLimit,
+        active_job_limit: fallback.activeJobLimit,
+        delivery_target: fallback.deliveryTarget,
+        delivery_target_hours: fallback.deliveryTargetHours,
+        model_lane: fallback.modelLane,
+        bidding_lane: fallback.biddingLane,
+        review_depth: fallback.reviewDepth,
+    };
+}
+
 export default function ClientDashboard() {
-    const { user } = useAuth();
+    const { user, profile } = useAuth();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [budget, setBudget] = useState(10.0);
+    const [budget, setBudget] = useState(DEFAULT_MINIMUM_BUDGET);
+    const [minimumBudget, setMinimumBudget] = useState(DEFAULT_MINIMUM_BUDGET);
+    const [estimatedApiCost, setEstimatedApiCost] = useState(0);
+    const [budgetReason, setBudgetReason] = useState("");
+    const [budgetStrategy, setBudgetStrategy] = useState("");
     const [thumbnailDataUrl, setThumbnailDataUrl] = useState<string | null>(null);
     const [thumbnailName, setThumbnailName] = useState("");
     const [thumbnailError, setThumbnailError] = useState("");
     const [jobs, setJobs] = useState<Job[]>([]);
+    const [planInfo, setPlanInfo] = useState<PlanSnapshot | null>(null);
+    const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(false);
     const [posting, setPosting] = useState(false);
+    const [estimatingBudget, setEstimatingBudget] = useState(false);
+    const [formError, setFormError] = useState("");
+    const previousMinimumBudgetRef = useRef(DEFAULT_MINIMUM_BUDGET);
+
+    const activePlan = planInfo ?? buildFallbackPlan(profile?.currentPlanId);
 
     useEffect(() => {
-        if (user) {
+        if (user?.uid) {
             void fetchJobs();
         }
-    }, [user]);
+    }, [user?.uid]);
+
+    useEffect(() => {
+        const trimmedTitle = title.trim();
+        const trimmedDescription = description.trim();
+
+        if (!user?.uid) {
+            return;
+        }
+
+        if (!trimmedTitle || trimmedDescription.length < 10) {
+            setEstimatingBudget(false);
+            if (!trimmedTitle && !trimmedDescription) {
+                previousMinimumBudgetRef.current = DEFAULT_MINIMUM_BUDGET;
+                setMinimumBudget(DEFAULT_MINIMUM_BUDGET);
+                setEstimatedApiCost(0);
+                setBudgetReason("");
+                setBudgetStrategy("");
+                setBudget(DEFAULT_MINIMUM_BUDGET);
+            }
+            return;
+        }
+
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(async () => {
+            setEstimatingBudget(true);
+            try {
+                const response = await fetch(`${API}/v1/client/job/estimate-budget`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        client_uid: user.uid,
+                        title: trimmedTitle,
+                        description: trimmedDescription,
+                    }),
+                    signal: controller.signal,
+                });
+
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.detail || "Unable to estimate the minimum budget right now.");
+                }
+
+                const nextMinimumBudget =
+                    typeof data.min_budget_usd === "number" && Number.isFinite(data.min_budget_usd)
+                        ? data.min_budget_usd
+                        : DEFAULT_MINIMUM_BUDGET;
+                const previousMinimumBudget = previousMinimumBudgetRef.current;
+                previousMinimumBudgetRef.current = nextMinimumBudget;
+
+                setMinimumBudget(nextMinimumBudget);
+                setEstimatedApiCost(
+                    typeof data.estimated_api_cost_usd === "number" && Number.isFinite(data.estimated_api_cost_usd)
+                        ? data.estimated_api_cost_usd
+                        : 0,
+                );
+                setBudgetReason(typeof data.reason === "string" ? data.reason : "");
+                setBudgetStrategy(typeof data.strategy === "string" ? data.strategy : "");
+                setPlanInfo(data.plan ?? null);
+                setPlanUsage(data.usage ?? null);
+                setFormError("");
+
+                setBudget((currentBudget) => {
+                    if (!Number.isFinite(currentBudget) || currentBudget <= 0) {
+                        return nextMinimumBudget;
+                    }
+                    if (currentBudget < nextMinimumBudget || Math.abs(currentBudget - previousMinimumBudget) < 0.01) {
+                        return nextMinimumBudget;
+                    }
+                    return currentBudget;
+                });
+            } catch (error) {
+                if (controller.signal.aborted) {
+                    return;
+                }
+
+                console.error("Failed to estimate minimum budget:", error);
+                setBudgetReason("We will still protect the minimum budget on submit if estimation is delayed.");
+                setBudgetStrategy("fallback");
+            } finally {
+                if (!controller.signal.aborted) {
+                    setEstimatingBudget(false);
+                }
+            }
+        }, 650);
+
+        return () => {
+            controller.abort();
+            window.clearTimeout(timeoutId);
+        };
+    }, [user?.uid, title, description]);
 
     const filteredJobs = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
@@ -114,18 +259,55 @@ export default function ClientDashboard() {
         }
 
         return jobs.filter((job) =>
-            [job.title, job.description, job.status, job.id].some((field) =>
-                field?.toLowerCase().includes(query),
-            ),
+            [job.title, job.description, job.status, job.id].some((field) => field?.toLowerCase().includes(query)),
         );
     }, [jobs, searchQuery]);
 
+    const derivedUsage = useMemo<PlanUsage>(() => {
+        if (planUsage) {
+            return planUsage;
+        }
+
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        const monthlyJobsUsed = jobs.filter((job) => {
+            const createdAt = new Date(job.created_at);
+            return createdAt.getMonth() === currentMonth && createdAt.getFullYear() === currentYear;
+        }).length;
+        const activeJobsUsed = jobs.filter((job) => job.status !== "completed" && job.status !== "failed").length;
+        const monthlyJobsRemaining = Math.max(activePlan.monthly_job_limit - monthlyJobsUsed, 0);
+        const activeJobsRemaining = Math.max(activePlan.active_job_limit - activeJobsUsed, 0);
+
+        return {
+            monthly_jobs_used: monthlyJobsUsed,
+            monthly_jobs_remaining: monthlyJobsRemaining,
+            monthly_job_limit: activePlan.monthly_job_limit,
+            active_jobs_used: activeJobsUsed,
+            active_jobs_remaining: activeJobsRemaining,
+            active_job_limit: activePlan.active_job_limit,
+            can_post_job: monthlyJobsRemaining > 0 && activeJobsRemaining > 0,
+            blocking_reason:
+                monthlyJobsRemaining <= 0
+                    ? `${activePlan.name} has reached its monthly job limit.`
+                    : activeJobsRemaining <= 0
+                      ? `${activePlan.name} has reached its active job limit.`
+                      : null,
+        };
+    }, [activePlan, jobs, planUsage]);
+
     const fetchJobs = async () => {
+        if (!user?.uid) {
+            return;
+        }
+
         setLoading(true);
         try {
-            const response = await fetch(`${API}/v1/client/${user?.uid}/jobs`);
+            const response = await fetch(`${API}/v1/client/${user.uid}/jobs`);
             const data = await response.json();
             setJobs(Array.isArray(data) ? data : Array.isArray(data.jobs) ? data.jobs : []);
+            setPlanInfo(data.plan ?? null);
+            setPlanUsage(data.usage ?? null);
         } catch (error) {
             console.error("Failed to fetch jobs:", error);
         } finally {
@@ -164,37 +346,53 @@ export default function ClientDashboard() {
 
     const handlePostJob = async (event: FormEvent) => {
         event.preventDefault();
-        if (!title || !description || budget <= 0) {
+        if (!title.trim() || !description.trim()) {
             return;
         }
 
         setPosting(true);
+        setFormError("");
         try {
             const response = await fetch(`${API}/v1/client/job`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     client_uid: user?.uid,
-                    title,
-                    description,
-                    budget_usd: budget,
+                    title: title.trim(),
+                    description: description.trim(),
+                    budget_usd: Math.max(budget, minimumBudget),
                     thumbnail_data_url: thumbnailDataUrl,
                 }),
             });
+
             const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.detail || "Failed to post the job.");
+            }
+
             if (result.id) {
                 setTitle("");
                 setDescription("");
-                setBudget(10.0);
+                setBudget(DEFAULT_MINIMUM_BUDGET);
+                setMinimumBudget(DEFAULT_MINIMUM_BUDGET);
+                setEstimatedApiCost(0);
+                setBudgetReason("");
+                setBudgetStrategy("");
+                previousMinimumBudgetRef.current = DEFAULT_MINIMUM_BUDGET;
                 resetThumbnail();
                 await fetchJobs();
             }
         } catch (error) {
+            const message = error instanceof Error ? error.message : "Failed to post the job.";
+            setFormError(message);
             console.error("Failed to post job:", error);
         } finally {
             setPosting(false);
         }
     };
+
+    const budgetSourceLabel =
+        budgetStrategy === "openrouter-deepseek-v3" ? "DeepSeek V3 minimum" : "Protected minimum";
 
     return (
         <RouteGuard allowedTypes={["business"]}>
@@ -206,9 +404,43 @@ export default function ClientDashboard() {
                             Business Job Center
                         </h1>
                         <p className="text-sm text-gray-500">
-                            Submit tasks, add a thumbnail when visuals matter, fund the workflow, and track delivery from one workspace.
+                            Submit tasks, attach a visual brief when needed, and let the platform protect the minimum budget before work enters the queue.
                         </p>
                     </div>
+
+                    <div className="mb-6 grid gap-4 rounded-3xl border border-blue-100 bg-white p-5 shadow-sm md:grid-cols-4">
+                        <div>
+                            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-blue-600">Current plan</p>
+                            <p className="mt-2 text-lg font-bold text-gray-900">{activePlan.name}</p>
+                            <p className="mt-1 text-xs text-gray-500">{activePlan.model_lane}</p>
+                        </div>
+                        <div>
+                            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-500">Jobs this month</p>
+                            <p className="mt-2 text-lg font-bold text-gray-900">
+                                {derivedUsage.monthly_jobs_used}/{derivedUsage.monthly_job_limit}
+                            </p>
+                            <p className="mt-1 text-xs text-gray-500">{derivedUsage.monthly_jobs_remaining} remaining</p>
+                        </div>
+                        <div>
+                            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-500">Active jobs</p>
+                            <p className="mt-2 text-lg font-bold text-gray-900">
+                                {derivedUsage.active_jobs_used}/{derivedUsage.active_job_limit}
+                            </p>
+                            <p className="mt-1 text-xs text-gray-500">{derivedUsage.active_jobs_remaining} available</p>
+                        </div>
+                        <div>
+                            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-500">Delivery target</p>
+                            <p className="mt-2 text-lg font-bold text-gray-900">{activePlan.delivery_target}</p>
+                            <p className="mt-1 text-xs text-gray-500">{activePlan.review_depth} review before delivery</p>
+                        </div>
+                    </div>
+
+                    {derivedUsage.blocking_reason && (
+                        <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                            <AlertCircle className="mt-0.5 shrink-0 text-amber-600" size={18} />
+                            <span>{derivedUsage.blocking_reason}</span>
+                        </div>
+                    )}
 
                     <div className="grid gap-8 lg:grid-cols-[400px_1fr]">
                         <div className="lg:col-span-1">
@@ -322,20 +554,60 @@ export default function ClientDashboard() {
                                             <input
                                                 type="number"
                                                 step="0.01"
-                                                min="1"
-                                                value={budget}
-                                                onChange={(event) => setBudget(parseFloat(event.target.value) || 0)}
+                                                min={minimumBudget}
+                                                value={Number.isFinite(budget) ? budget : ""}
+                                                onChange={(event) => {
+                                                    const nextBudget = parseFloat(event.target.value);
+                                                    if (!Number.isFinite(nextBudget)) {
+                                                        setBudget(0);
+                                                        return;
+                                                    }
+                                                    setBudget(Math.max(nextBudget, minimumBudget));
+                                                }}
                                                 className="w-full rounded-xl border border-gray-300 bg-white py-2.5 pl-8 pr-4 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                                                 required
                                             />
                                         </div>
+
+                                        <div className="mt-3 rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div>
+                                                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-blue-600">
+                                                        <Sparkles size={14} />
+                                                        {budgetSourceLabel}
+                                                    </div>
+                                                    <p className="mt-2 text-2xl font-bold text-gray-900">
+                                                        ${minimumBudget.toFixed(2)}
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+                                                        Estimated API cost
+                                                    </p>
+                                                    <p className="mt-2 text-lg font-bold text-gray-900">
+                                                        ${estimatedApiCost.toFixed(2)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <p className="mt-3 text-xs leading-5 text-gray-600">
+                                                {estimatingBudget
+                                                    ? "Calculating the protected minimum budget from your brief..."
+                                                    : budgetReason || "The platform applies a protected minimum so the client budget stays above projected provider cost."}
+                                            </p>
+                                        </div>
                                     </div>
+
+                                    {formError && (
+                                        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                                            {formError}
+                                        </div>
+                                    )}
 
                                     <button
                                         type="submit"
-                                        disabled={posting}
+                                        disabled={posting || !derivedUsage.can_post_job}
                                         className={`mt-2 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold transition-all ${
-                                            posting
+                                            posting || !derivedUsage.can_post_job
                                                 ? "cursor-not-allowed bg-blue-400 text-white"
                                                 : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md"
                                         }`}
@@ -431,6 +703,14 @@ export default function ClientDashboard() {
                                                                         day: "numeric",
                                                                     })}
                                                                 </span>
+                                                                {typeof job.minimum_budget_usd === "number" && (
+                                                                    <>
+                                                                        <span className="text-[11px] text-gray-400">•</span>
+                                                                        <span className="text-[11px] text-blue-600">
+                                                                            Floor ${job.minimum_budget_usd.toFixed(2)}
+                                                                        </span>
+                                                                    </>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>

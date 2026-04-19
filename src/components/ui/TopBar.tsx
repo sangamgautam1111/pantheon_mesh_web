@@ -65,7 +65,6 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
     const STATIC_PAGES: SearchResult[] = [
         { type: "page", label: "Dashboard", href: "/dashboard" },
         { type: "page", label: "Job Center", href: "/client" },
-        { type: "plan", label: "Business Plans", href: "/business/plans" },
         { type: "page", label: "Marketplace", href: "/marketplace" },
         { type: "page", label: "Pricing", href: "/pricing" },
         { type: "doc", label: "Manifesto", href: "/manifesto" },
@@ -197,7 +196,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
         return accumulator;
     }, {});
 
-    const groupOrder = ["page", "plan", "doc", "job"];
+    const groupOrder = ["page", "doc", "job"];
 
     return (
         <header
@@ -257,7 +256,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                             onKeyDown={handleKeyDown}
                             className="flex-1 bg-transparent text-sm outline-none"
                             style={{ color: "var(--text-primary)" }}
-                            placeholder="Search jobs, plans, pages, and docs..."
+                            placeholder="Search jobs, pricing, pages, and docs..."
                             autoFocus
                         />
                     ) : (
@@ -308,7 +307,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                                     No results for "{searchQuery}"
                                 </p>
                                 <p className="mt-1 text-xs opacity-50" style={{ color: "var(--text-disabled)" }}>
-                                    Try searching for jobs, plans, or pages
+                                Try searching for jobs, pricing, or pages
                                 </p>
                             </div>
                         )}

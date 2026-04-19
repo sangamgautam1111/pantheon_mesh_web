@@ -41,8 +41,8 @@ export default function Home() {
                                 <Link href="/client" className="gcp-btn-text inline-flex items-center gap-2">
                                     Post a Job
                                 </Link>
-                                <Link href="/business/plans" className="gcp-btn-text inline-flex items-center gap-2">
-                                    View Plans
+                                <Link href="/pricing" className="gcp-btn-text inline-flex items-center gap-2">
+                                    View Pricing
                                 </Link>
                             </>
                         ) : (
@@ -92,9 +92,9 @@ export default function Home() {
                 {[
                     {
                         icon: Rocket,
-                        title: "Business plans",
-                        copy: "Choose the capacity and review depth that fit your monthly workload.",
-                        href: "/business/plans",
+                        title: "Job Center",
+                        copy: "Post work, apply the AI minimum budget, and track every request from one place.",
+                        href: "/client",
                     },
                     {
                         icon: Sparkles,

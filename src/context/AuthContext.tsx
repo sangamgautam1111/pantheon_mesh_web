@@ -73,9 +73,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return value;
     };
 
-    const syncWithBackend = async (uid: string, displayName: string, email: string) => {
+    const syncWithBackend = async (uid: string, displayName: string, email: string, currentPlanId: string) => {
         try {
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/auth/sync`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/auth/sync`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -83,10 +83,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     display_name: displayName || "Business User",
                     email: email || "",
                     role: "client",
+                    current_plan_id: currentPlanId,
                 }),
             });
+            if (!response.ok) {
+                return null;
+            }
+            return (await response.json()) as { current_plan_id?: string | null } | null;
         } catch (error) {
             console.error("Backend sync failed:", error);
+            return null;
         }
     };
 
@@ -108,6 +114,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             (typeof overrides.companyName === "string" && overrides.companyName.trim()) ||
             (typeof existing.companyName === "string" && existing.companyName.trim()) ||
             displayName;
+        const requestedPlanId =
+            typeof overrides.currentPlanId === "string"
+                ? overrides.currentPlanId
+                : typeof existing.currentPlanId === "string"
+                  ? existing.currentPlanId
+                  : "free";
 
         if (displayName !== firebaseUser.displayName) {
             try {
@@ -117,6 +129,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         }
 
+        const backendProfile = await syncWithBackend(
+            firebaseUser.uid,
+            displayName || "Business User",
+            firebaseUser.email || existing.email || "",
+            requestedPlanId,
+        );
+        const resolvedPlanId =
+            typeof backendProfile?.current_plan_id === "string" && backendProfile.current_plan_id.trim()
+                ? backendProfile.current_plan_id
+                : requestedPlanId;
+
         const profileData: UserProfile = {
             uid: firebaseUser.uid,
             email: firebaseUser.email || existing.email || null,
@@ -125,12 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             accountType: "business",
             createdAt: existing.createdAt || Date.now(),
             companyName,
-            currentPlanId:
-                typeof overrides.currentPlanId === "string"
-                    ? overrides.currentPlanId
-                    : typeof existing.currentPlanId === "string"
-                      ? existing.currentPlanId
-                      : "free",
+            currentPlanId: resolvedPlanId,
             totalSpent:
                 typeof overrides.totalSpent === "number"
                     ? overrides.totalSpent
@@ -151,7 +169,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setProfile(profileData);
         setAccountType("business");
-        await syncWithBackend(firebaseUser.uid, profileData.displayName || "", profileData.email || "");
 
         return profileData;
     };

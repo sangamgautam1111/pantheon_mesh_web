@@ -33,7 +33,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "overview",
         route: "/dashboard",
         text:
-            "The dashboard is the business command center. It shows submitted jobs, active jobs, completed jobs, committed budget, jobs with thumbnails, recent job history, and quick paths to the job center, pricing, plans, and the assistant.",
+            "The dashboard is the business command center. It shows submitted jobs, active jobs, completed jobs, committed budget, jobs with thumbnails, recent job history, and quick paths to the job center, pricing, marketplace, and the assistant.",
     },
     {
         id: "job-center",
@@ -41,7 +41,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "jobs",
         route: "/client",
         text:
-            "Businesses post work from the Business Job Center. A job includes a title, requirements, budget in USD, and an optional thumbnail or reference image. Posted jobs appear in job history with status, budget, and created date.",
+            "Businesses post work from the Business Job Center. A job includes a title, requirements, an AI-generated minimum budget, and an optional thumbnail or reference image. The minimum budget stays above projected provider cost. Posted jobs appear in job history with status, budget, and created date.",
     },
     {
         id: "pricing-summary",
@@ -49,7 +49,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "pricing",
         route: "/pricing",
         text:
-            "Pricing is based on job capacity, delivery speed, model lane, bidding access, and review depth. Free is for trying the workspace, Starter is for recurring weekly tasks, Growth is the best plan for most active businesses, and Scale is for higher-volume operations.",
+            "Pricing is based on job capacity, delivery speed, model lane, and review depth. Free is for trying the workspace, Starter is for recurring weekly tasks, Growth is the best plan for most active businesses, and Scale is for higher-volume operations.",
     },
     {
         id: "quality-workflow",

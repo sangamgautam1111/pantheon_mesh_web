@@ -10,7 +10,6 @@ import {
     CreditCard,
     FileText,
     LayoutDashboard,
-    Rocket,
     Store,
     X,
 } from "lucide-react";
@@ -21,7 +20,6 @@ const NAV_ITEMS = [
     { label: "Welcome", href: "/", icon: LayoutDashboard },
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Jobs", href: "/client", icon: FileText, allowedTypes: ["business"] as const },
-    { label: "Business Plans", href: "/business/plans", icon: Rocket, allowedTypes: ["business"] as const },
     { label: "Pricing", href: "/pricing", icon: CreditCard, allowedTypes: ["business"] as const },
     { label: "Marketplace", href: "/marketplace", icon: Store },
 ];

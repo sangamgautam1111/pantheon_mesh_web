@@ -80,6 +80,7 @@ export default function Dashboard() {
         };
     }, [jobs]);
 
+    const currentPlan = BUSINESS_PLANS.find((plan) => plan.id === profile?.currentPlanId) ?? BUSINESS_PLANS[0];
     const featuredPlans = BUSINESS_PLANS.filter((plan) => ["free", "growth", "scale"].includes(plan.id));
 
     return (
@@ -108,10 +109,10 @@ export default function Dashboard() {
                                     Post a Job
                                 </button>
                                 <button
-                                    onClick={() => router.push("/business/plans")}
+                                    onClick={() => router.push("/pricing")}
                                     className="gcp-btn-text inline-flex items-center gap-2"
                                 >
-                                    View Plans
+                                    View Pricing
                                     <ArrowRight size={14} />
                                 </button>
                                 <button
@@ -150,15 +151,15 @@ export default function Dashboard() {
                             <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
                                 <div className="rounded-2xl border border-gcp-border bg-gcp-surface p-4">
                                     <p className="text-[10px] font-black uppercase tracking-wider text-gcp-text-disabled">
-                                        Entry plan
+                                        Current plan
                                     </p>
-                                    <p className="mt-2 font-semibold text-gcp-text">Free workspace</p>
+                                    <p className="mt-2 font-semibold text-gcp-text">{currentPlan.name}</p>
                                 </div>
                                 <div className="rounded-2xl border border-gcp-border bg-gcp-surface p-4">
                                     <p className="text-[10px] font-black uppercase tracking-wider text-gcp-text-disabled">
-                                        Recommended
+                                        Delivery lane
                                     </p>
-                                    <p className="mt-2 font-semibold text-gcp-text">Growth at $69</p>
+                                    <p className="mt-2 font-semibold text-gcp-text">{currentPlan.deliveryTarget}</p>
                                 </div>
                             </div>
                         </div>
@@ -353,8 +354,8 @@ export default function Dashboard() {
                                 </div>
                             </div>
                             <div className="space-y-3 text-sm leading-6 text-gcp-text-secondary">
-                                <p>Ask where to post work, what each plan unlocks, or how bidding lowers pricing.</p>
-                                <p>Use the dashboard for overview, the job center for posting, and the plans page for upgrades.</p>
+                                <p>Ask where to post work, what each plan unlocks, or how the minimum budget is applied.</p>
+                                <p>Use the dashboard for overview, the job center for posting, and pricing when you want to upgrade.</p>
                             </div>
                             <div className="mt-5 flex flex-wrap gap-3">
                                 <button

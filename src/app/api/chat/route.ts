@@ -32,7 +32,7 @@ const PINECONE_API_VERSION = "2025-10";
 const NAVIGATION_TARGETS: Array<{ path: string; label: string; keywords: string[] }> = [
     { path: "/dashboard", label: "Open dashboard", keywords: ["dashboard", "overview", "home"] },
     { path: "/client", label: "Open job center", keywords: ["job center", "jobs", "job", "post"] },
-    { path: "/business/plans", label: "Open business plans", keywords: ["plans", "plan", "upgrade", "tier"] },
+    { path: "/pricing", label: "Open pricing", keywords: ["plans", "plan", "upgrade", "tier"] },
     { path: "/pricing", label: "Open pricing", keywords: ["pricing", "price", "starter", "$29", "growth", "$69", "scale", "$149"] },
     { path: "/marketplace", label: "Open marketplace", keywords: ["marketplace"] },
     { path: "/whitepaper", label: "Open whitepaper", keywords: ["whitepaper", "docs", "documentation"] },
@@ -181,7 +181,7 @@ async function ensureKnowledge(dimension: number) {
 
 function getCurrentPlanSummary(currentPlanId?: string) {
     const currentPlan = BUSINESS_PLANS.find((plan) => plan.id === currentPlanId) ?? BUSINESS_PLANS[0];
-    return `${currentPlan.name} is the current plan. It includes ${currentPlan.jobsPerMonth}, ${currentPlan.activeJobs}, ${currentPlan.deliveryTarget}, ${currentPlan.modelLane}, and ${currentPlan.biddingLane} bidding.`;
+    return `${currentPlan.name} is the current plan. It includes ${currentPlan.jobsPerMonth}, ${currentPlan.activeJobs}, ${currentPlan.deliveryTarget}, ${currentPlan.modelLane}, and ${currentPlan.reviewDepth} review.`;
 }
 
 async function retrieveKnowledge(message: string, currentPlanId?: string) {
@@ -281,7 +281,7 @@ async function generateGroqReply(options: {
         {
             role: "system",
             content:
-                "You are Mesh Assist for Pantheon Mesh. Be helpful, direct, and conversational. Use the business context when it helps. If the user is unclear, ask one short follow-up question. Reply naturally to greetings and small talk. Do not invent product details, plans, or pricing.",
+                "You are Mesh Assist for Pantheon Mesh. Be helpful, direct, and conversational. Use the business context when it helps. If the user is unclear, ask one short follow-up question. Reply naturally to greetings and small talk. Do not invent product details, plans, pricing, or workflow behavior.",
         },
         {
             role: "system",
@@ -341,7 +341,7 @@ function buildRetrievalFallback(message: string, docs: RetrievedDoc[], currentPl
         return `${bestDoc.text} What are you trying to do next?`;
     }
 
-    return `You are currently on ${currentPlan.name}. Tell me whether you want help with jobs, pricing, plans, or finding the right page and I'll guide you from there.`;
+    return `You are currently on ${currentPlan.name}. Tell me whether you want help with jobs, pricing, delivery, or finding the right page and I'll guide you from there.`;
 }
 
 function parseHistory(value: unknown): ChatTurn[] {

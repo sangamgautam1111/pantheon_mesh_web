@@ -17,7 +17,7 @@ interface ChatMsg {
 
 const SUGGESTIONS = [
     "How do I post a job?",
-    "Explain the business plans",
+    "Which plan fits my work volume?",
     "Show me pricing",
     "Open the job center",
     "How does quality review work?",
@@ -30,7 +30,7 @@ export const AiGuide = () => {
         {
             id: "welcome",
             role: "assistant",
-            text: "Hi, I'm Mesh Assist. Tell me what you're trying to do and I'll help with jobs, plans, pricing, or the right page.",
+            text: "Hi, I'm Mesh Assist. Tell me what you're trying to do and I'll help with jobs, pricing, delivery, or the right page.",
         },
     ]);
     const [input, setInput] = useState("");
@@ -171,7 +171,7 @@ export const AiGuide = () => {
                     </div>
                     {!isMobile && (
                         <div className="pointer-events-none absolute right-20 whitespace-nowrap rounded-lg border border-gray-100 bg-white px-4 py-2 text-sm font-bold text-[#0f1114] opacity-0 shadow-2xl transition-opacity group-hover:opacity-100">
-                            Mesh Assist - Ask about plans, jobs, or pricing
+                            Mesh Assist - Ask about jobs, pricing, or delivery
                         </div>
                     )}
                 </button>
@@ -322,7 +322,7 @@ export const AiGuide = () => {
                                 value={input}
                                 onChange={(event) => setInput(event.target.value)}
                                 onKeyDown={handleKeyDown}
-                                placeholder="Ask about jobs, pricing, plans, or navigation..."
+                                placeholder="Ask about jobs, pricing, delivery, or navigation..."
                                 className="flex-1 bg-transparent text-sm outline-none"
                                 style={{ color: "var(--text-primary)" }}
                             />

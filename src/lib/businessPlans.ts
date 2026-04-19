@@ -6,8 +6,11 @@ export type BusinessPlan = {
     description: string;
     badge?: string;
     featured?: boolean;
+    monthlyJobLimit: number;
     jobsPerMonth: string;
+    activeJobLimit: number;
     activeJobs: string;
+    deliveryTargetHours: number;
     deliveryTarget: string;
     modelLane: string;
     biddingLane: string;
@@ -24,8 +27,11 @@ export const BUSINESS_PLANS: BusinessPlan[] = [
         cadence: "/month",
         description: "Start inside the real business workspace and test a few lightweight jobs before you pay.",
         badge: "Start Here",
+        monthlyJobLimit: 3,
         jobsPerMonth: "3 jobs",
+        activeJobLimit: 1,
         activeJobs: "1 active job",
+        deliveryTargetHours: 72,
         deliveryTarget: "Up to 72 hours",
         modelLane: "Flash / Mini lane",
         biddingLane: "Off",
@@ -45,8 +51,11 @@ export const BUSINESS_PLANS: BusinessPlan[] = [
         price: "$29",
         cadence: "/month",
         description: "For founders and lean teams that need recurring work at a low monthly price with lighter bidding.",
+        monthlyJobLimit: 12,
         jobsPerMonth: "12 jobs",
+        activeJobLimit: 2,
         activeJobs: "2 active jobs",
+        deliveryTargetHours: 24,
         deliveryTarget: "Up to 24 hours",
         modelLane: "Flash / Mini + balanced lane",
         biddingLane: "Economy pool",
@@ -68,8 +77,11 @@ export const BUSINESS_PLANS: BusinessPlan[] = [
         description: "The best plan for most businesses that want stronger models, lower pricing pressure, and faster delivery.",
         badge: "Most Popular",
         featured: true,
+        monthlyJobLimit: 40,
         jobsPerMonth: "40 jobs",
+        activeJobLimit: 5,
         activeJobs: "5 active jobs",
+        deliveryTargetHours: 8,
         deliveryTarget: "Up to 8 hours",
         modelLane: "Better reasoning lane",
         biddingLane: "Economy + standard pools",
@@ -89,8 +101,11 @@ export const BUSINESS_PLANS: BusinessPlan[] = [
         price: "$149",
         cadence: "/month",
         description: "Built for teams with continuous work, tighter deadlines, and premium model access.",
+        monthlyJobLimit: 120,
         jobsPerMonth: "120 jobs",
+        activeJobLimit: 12,
         activeJobs: "12 active jobs",
+        deliveryTargetHours: 3,
         deliveryTarget: "Up to 3 hours",
         modelLane: "Premium execution lane",
         biddingLane: "Full eligible pool",
