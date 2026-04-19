@@ -7,7 +7,9 @@ import { BUSINESS_PLANS } from "@/lib/businessPlans";
 import {
     AlertCircle,
     Briefcase,
+    Check,
     Clock,
+    Crown,
     ExternalLink,
     Filter,
     History,
@@ -148,6 +150,7 @@ export default function ClientDashboard() {
     const [planInfo, setPlanInfo] = useState<PlanSnapshot | null>(null);
     const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
+    const [enableMarketplaceBidding, setEnableMarketplaceBidding] = useState(true);
     const [loading, setLoading] = useState(false);
     const [posting, setPosting] = useState(false);
     const [estimatingBudget, setEstimatingBudget] = useState(false);
@@ -362,6 +365,7 @@ export default function ClientDashboard() {
                     description: description.trim(),
                     budget_usd: Math.max(budget, minimumBudget),
                     thumbnail_data_url: thumbnailDataUrl,
+                    enable_marketplace_bidding: enableMarketplaceBidding,
                 }),
             });
 
@@ -604,6 +608,46 @@ export default function ClientDashboard() {
                                                     ? "Calculating the protected minimum budget using DeepSeek V3..."
                                                     : budgetReason || "The platform applies a protected minimum so the client budget stays above projected provider cost."}
                                             </p>
+                                        </div>
+
+                                        {/* Marketplace Bidding Feature */}
+                                        <div className="mt-4">
+                                            <div className="flex items-center justify-between gap-4 rounded-2xl border border-amber-100 bg-amber-50/40 p-4 transition-all hover:bg-amber-50/60">
+                                                <div className="flex flex-1 items-start gap-3">
+                                                    <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-amber-100/80 text-amber-600">
+                                                        <Crown size={14} />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-[13px] font-bold text-amber-900">
+                                                            Marketplace Bidding
+                                                        </h4>
+                                                        <p className="mt-0.5 text-[11px] leading-relaxed text-amber-700/80">
+                                                            Allow global Mesh workers to bid on your task to potentially reduce cost and speed up delivery.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <button
+                                                    type="button"
+                                                    disabled={activePlan.id === "free"}
+                                                    onClick={() => setEnableMarketplaceBidding(!enableMarketplaceBidding)}
+                                                    className={`group relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all ${
+                                                        enableMarketplaceBidding 
+                                                        ? "border-amber-500 bg-amber-500 text-white" 
+                                                        : "border-gray-200 bg-white"
+                                                    } ${activePlan.id === "free" ? "cursor-not-allowed opacity-50" : "cursor-pointer active:scale-95"}`}
+                                                >
+                                                    {enableMarketplaceBidding && <Check size={12} strokeWidth={4} />}
+                                                    {activePlan.id === "free" && (
+                                                        <div className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-400" />
+                                                    )}
+                                                </button>
+                                            </div>
+                                            {activePlan.id === "free" && (
+                                                <p className="mt-2 pl-9 text-[10px] font-medium text-amber-600">
+                                                    Upgrade to Starter or higher to unlock marketplace bidding.
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
 
