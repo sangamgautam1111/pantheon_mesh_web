@@ -3,9 +3,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { X, Send, ArrowRight, Loader2 } from "lucide-react";
 import { useGuide } from "@/context/GuideProvider";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import chatIcon from "@/app/chat_icon.png";
+import { useAuth } from "@/context/AuthContext";
 
 interface ChatMsg {
     id: string;
@@ -24,11 +25,12 @@ const SUGGESTIONS = [
 
 export const AiGuide = () => {
     const { isChatOpen: open, setChatOpen: setOpen, navigateAndHighlight } = useGuide();
+    const { profile } = useAuth();
     const [messages, setMessages] = useState<ChatMsg[]>([
         {
             id: "welcome",
             role: "assistant",
-            text: "**Hi, I'm Mesh Assist.** I can help you navigate the business workspace, explain pricing, and point you to the right place to post and track jobs.",
+            text: "Hi, I'm Mesh Assist. Tell me what you're trying to do and I'll help with jobs, plans, pricing, or the right page.",
         },
     ]);
     const [input, setInput] = useState("");
@@ -37,6 +39,7 @@ export const AiGuide = () => {
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
+    const pathname = usePathname();
 
     useEffect(() => {
         const check = () => setIsMobile(window.innerWidth < 769);
@@ -72,7 +75,15 @@ export const AiGuide = () => {
             const response = await fetch("/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: userText }),
+                body: JSON.stringify({
+                    message: userText,
+                    currentPath: pathname,
+                    currentPlanId: profile?.currentPlanId || "free",
+                    messages: messages
+                        .slice(-6)
+                        .filter((message) => message.role === "user" || message.role === "assistant")
+                        .map((message) => ({ role: message.role, text: message.text })),
+                }),
             });
 
             if (!response.ok) {
@@ -259,7 +270,7 @@ export const AiGuide = () => {
                                                         }}
                                                     >
                                                         <ArrowRight size={12} />
-                                                        Navigate to {action.path}
+                                                        {action.label || `Navigate to ${action.path}`}
                                                     </button>
                                                 ))}
                                         </div>

@@ -23,6 +23,7 @@ interface UserProfile {
     accountType: AccountType;
     createdAt: number;
     companyName?: string | null;
+    currentPlanId?: string | null;
     totalSpent?: number;
 }
 
@@ -124,6 +125,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             accountType: "business",
             createdAt: existing.createdAt || Date.now(),
             companyName,
+            currentPlanId:
+                typeof overrides.currentPlanId === "string"
+                    ? overrides.currentPlanId
+                    : typeof existing.currentPlanId === "string"
+                      ? existing.currentPlanId
+                      : "free",
             totalSpent:
                 typeof overrides.totalSpent === "number"
                     ? overrides.totalSpent
@@ -139,6 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             displayName: profileData.displayName,
             joinedAt: profileData.createdAt,
             companyName: profileData.companyName,
+            currentPlanId: profileData.currentPlanId,
         }));
 
         setProfile(profileData);

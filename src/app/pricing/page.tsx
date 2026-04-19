@@ -2,8 +2,12 @@
 
 import { Check, Sparkles } from "lucide-react";
 import { BUSINESS_PLANS } from "@/lib/businessPlans";
+import { useAuth } from "@/context/AuthContext";
 
 export default function PricingPage() {
+    const { profile } = useAuth();
+    const currentPlanId = profile?.currentPlanId || "free";
+
     return (
         <div className="mx-auto max-w-7xl p-6 md:p-8">
             <div className="mb-14 mt-8 max-w-4xl">
@@ -21,79 +25,86 @@ export default function PricingPage() {
             </div>
 
             <div className="mb-16 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-                {BUSINESS_PLANS.map((plan) => (
-                    <div
-                        key={plan.id}
-                        className={`gcp-card flex h-full flex-col p-7 shadow-lg ${
-                            plan.featured ? "border-gcp-blue/30 bg-gcp-blue/[0.04] shadow-2xl" : ""
-                        }`}
-                    >
-                        {plan.badge && (
-                            <div
-                                className={`mb-5 inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] ${
-                                    plan.featured
-                                        ? "bg-gcp-blue text-white"
-                                        : "border border-gcp-blue/20 bg-gcp-blue/5 text-gcp-blue"
-                                }`}
-                            >
-                                {plan.badge}
-                            </div>
-                        )}
+                {BUSINESS_PLANS.map((plan) => {
+                    const isCurrentPlan = currentPlanId === plan.id;
 
-                        <div className="mb-4 flex items-end justify-between gap-3">
-                            <h2 className={`text-2xl font-bold ${plan.featured ? "text-gcp-blue" : "text-gcp-text"}`}>
-                                {plan.name}
-                            </h2>
-                            <span className="text-xs font-bold uppercase tracking-widest text-gcp-text-disabled">
-                                {plan.bestFor}
-                            </span>
-                        </div>
-
-                        <div className="mb-2 text-4xl font-bold text-gcp-text">
-                            {plan.price}
-                            <span className="text-sm font-normal text-gcp-text-disabled">{plan.cadence}</span>
-                        </div>
-
-                        <p className="mb-6 min-h-[72px] text-sm leading-6 text-gcp-text-secondary">
-                            {plan.description}
-                        </p>
-
-                        <div className="mb-6 space-y-3 rounded-2xl bg-gcp-surface-v/60 p-4">
-                            {[
-                                ["Jobs / month", plan.jobsPerMonth],
-                                ["Active jobs", plan.activeJobs],
-                                ["Delivery target", plan.deliveryTarget],
-                                ["Model lane", plan.modelLane],
-                                ["Price bidding", plan.biddingLane],
-                            ].map(([label, value]) => (
-                                <div key={label} className="flex items-start justify-between gap-4 text-sm">
-                                    <span className="text-gcp-text-secondary">{label}</span>
-                                    <span className="text-right font-semibold text-gcp-text">{value}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        <button
-                            type="button"
-                            className={`mb-8 inline-flex w-full items-center justify-center rounded-md px-4 py-3 text-sm font-bold ${
-                                plan.featured
-                                    ? "bg-gcp-blue text-white"
-                                    : "border border-gcp-border bg-gcp-surface-v text-gcp-text"
+                    return (
+                        <div
+                            key={plan.id}
+                            className={`gcp-card flex h-full flex-col p-7 shadow-lg ${
+                                plan.featured ? "border-gcp-blue/30 bg-gcp-blue/[0.04] shadow-2xl" : ""
                             }`}
                         >
-                            Buy {plan.name}
-                        </button>
-
-                        <div className="mt-auto space-y-4">
-                            {plan.features.map((feature) => (
-                                <div key={feature} className="flex items-start gap-3 text-sm">
-                                    <Check size={18} className="mt-0.5 shrink-0 text-gcp-blue" />
-                                    <span className="text-gcp-text-secondary">{feature}</span>
+                            {plan.badge && (
+                                <div
+                                    className={`mb-5 inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] ${
+                                        plan.featured
+                                            ? "bg-gcp-blue text-white"
+                                            : "border border-gcp-blue/20 bg-gcp-blue/5 text-gcp-blue"
+                                    }`}
+                                >
+                                    {plan.badge}
                                 </div>
-                            ))}
+                            )}
+
+                            <div className="mb-4 flex items-end justify-between gap-3">
+                                <h2 className={`text-2xl font-bold ${plan.featured ? "text-gcp-blue" : "text-gcp-text"}`}>
+                                    {plan.name}
+                                </h2>
+                                <span className="text-xs font-bold uppercase tracking-widest text-gcp-text-disabled">
+                                    {plan.bestFor}
+                                </span>
+                            </div>
+
+                            <div className="mb-2 text-4xl font-bold text-gcp-text">
+                                {plan.price}
+                                <span className="text-sm font-normal text-gcp-text-disabled">{plan.cadence}</span>
+                            </div>
+
+                            <p className="mb-6 min-h-[72px] text-sm leading-6 text-gcp-text-secondary">
+                                {plan.description}
+                            </p>
+
+                            <div className="mb-6 space-y-3 rounded-2xl bg-gcp-surface-v/60 p-4">
+                                {[
+                                    ["Jobs / month", plan.jobsPerMonth],
+                                    ["Active jobs", plan.activeJobs],
+                                    ["Delivery target", plan.deliveryTarget],
+                                    ["Model lane", plan.modelLane],
+                                    ["Price bidding", plan.biddingLane],
+                                ].map(([label, value]) => (
+                                    <div key={label} className="flex items-start justify-between gap-4 text-sm">
+                                        <span className="text-gcp-text-secondary">{label}</span>
+                                        <span className="text-right font-semibold text-gcp-text">{value}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <button
+                                type="button"
+                                disabled={isCurrentPlan}
+                                className={`mb-8 inline-flex w-full items-center justify-center rounded-md px-4 py-3 text-sm font-bold ${
+                                    isCurrentPlan
+                                        ? "cursor-default border border-gcp-blue/20 bg-gcp-blue/10 text-gcp-blue"
+                                        : plan.featured
+                                          ? "bg-gcp-blue text-white"
+                                          : "border border-gcp-border bg-gcp-surface-v text-gcp-text"
+                                }`}
+                            >
+                                {isCurrentPlan ? "Current" : `Buy ${plan.name}`}
+                            </button>
+
+                            <div className="mt-auto space-y-4">
+                                {plan.features.map((feature) => (
+                                    <div key={feature} className="flex items-start gap-3 text-sm">
+                                        <Check size={18} className="mt-0.5 shrink-0 text-gcp-blue" />
+                                        <span className="text-gcp-text-secondary">{feature}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             <div className="mb-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
