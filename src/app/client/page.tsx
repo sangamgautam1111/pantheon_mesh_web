@@ -136,8 +136,8 @@ export default function ClientDashboard() {
     const { user, profile } = useAuth();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [budget, setBudget] = useState(DEFAULT_MINIMUM_BUDGET);
-    const [minimumBudget, setMinimumBudget] = useState(DEFAULT_MINIMUM_BUDGET);
+    const [budget, setBudget] = useState(0);
+    const [minimumBudget, setMinimumBudget] = useState(0);
     const [estimatedApiCost, setEstimatedApiCost] = useState(0);
     const [budgetReason, setBudgetReason] = useState("");
     const [budgetStrategy, setBudgetStrategy] = useState("");
@@ -173,12 +173,12 @@ export default function ClientDashboard() {
         if (!trimmedTitle || trimmedDescription.length < 10) {
             setEstimatingBudget(false);
             if (!trimmedTitle && !trimmedDescription) {
-                previousMinimumBudgetRef.current = DEFAULT_MINIMUM_BUDGET;
-                setMinimumBudget(DEFAULT_MINIMUM_BUDGET);
+                previousMinimumBudgetRef.current = 0;
+                setMinimumBudget(0);
                 setEstimatedApiCost(0);
                 setBudgetReason("");
                 setBudgetStrategy("");
-                setBudget(DEFAULT_MINIMUM_BUDGET);
+                setBudget(0);
             }
             return;
         }
@@ -243,6 +243,9 @@ export default function ClientDashboard() {
             setBudgetReason("We will still protect the minimum budget on submit if estimation is delayed.");
             setBudgetStrategy("fallback");
             setFormError("Failed to estimate budget via AI. You can still set it manually above $5.");
+            setMinimumBudget(DEFAULT_MINIMUM_BUDGET);
+            setBudget((prev) => Math.max(prev, DEFAULT_MINIMUM_BUDGET));
+            previousMinimumBudgetRef.current = DEFAULT_MINIMUM_BUDGET;
         } finally {
             setEstimatingBudget(false);
         }
@@ -369,12 +372,12 @@ export default function ClientDashboard() {
             if (result.id) {
                 setTitle("");
                 setDescription("");
-                setBudget(DEFAULT_MINIMUM_BUDGET);
-                setMinimumBudget(DEFAULT_MINIMUM_BUDGET);
+                setBudget(0);
+                setMinimumBudget(0);
                 setEstimatedApiCost(0);
                 setBudgetReason("");
                 setBudgetStrategy("");
-                previousMinimumBudgetRef.current = DEFAULT_MINIMUM_BUDGET;
+                previousMinimumBudgetRef.current = 0;
                 resetThumbnail();
                 await fetchJobs();
             }
@@ -565,8 +568,8 @@ export default function ClientDashboard() {
                                             <input
                                                 type="number"
                                                 step="0.01"
-                                                min={minimumBudget}
-                                                value={Number.isFinite(budget) ? budget : ""}
+                                                min={minimumBudget || DEFAULT_MINIMUM_BUDGET}
+                                                value={Number.isFinite(budget) && budget > 0 ? budget : ""}
                                                 onChange={(event) => {
                                                     const nextBudget = parseFloat(event.target.value);
                                                     if (!Number.isFinite(nextBudget)) {
@@ -608,9 +611,9 @@ export default function ClientDashboard() {
 
                                     <button
                                         type="submit"
-                                        disabled={posting || !derivedUsage.can_post_job}
+                                        disabled={posting || !derivedUsage.can_post_job || minimumBudget === 0}
                                         className={`mt-2 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold transition-all ${
-                                            posting || !derivedUsage.can_post_job
+                                            posting || !derivedUsage.can_post_job || minimumBudget === 0
                                                 ? "cursor-not-allowed bg-blue-400 text-white"
                                                 : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md"
                                         }`}

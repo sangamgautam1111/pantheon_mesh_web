@@ -90,7 +90,7 @@ export default function Home() {
 
                             <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
                                 <div>
-                                    <h1 className="max-w-4xl text-4xl font-heading font-bold leading-[0.95] text-gcp-text md:text-6xl xl:text-7xl">
+                                    <h1 className="max-w-4xl text-3xl font-heading font-bold leading-tight text-gcp-text md:text-5xl xl:text-6xl">
                                         {user ? (
                                             <>
                                                 Welcome back, {displayName}.
