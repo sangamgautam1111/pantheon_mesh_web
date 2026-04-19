@@ -1,5 +1,61 @@
 import { NextResponse } from "next/server";
 
+async function fetchFromOpenRouter(systemPrompt: string, userPrompt: string, apiKey: string) {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://pantheon-mesh.app",
+            "X-Title": "Pantheon Mesh",
+        },
+        body: JSON.stringify({
+            model: "deepseek/deepseek-chat",
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt }
+            ],
+            response_format: { type: "json_object" },
+            temperature: 0.2,
+        })
+    });
+
+    if (!response.ok) {
+        const errBase = await response.text();
+        throw new Error(`OpenRouter returned ${response.status}: ${errBase}`);
+    }
+
+    const result = await response.json();
+    return result.choices[0].message.content;
+}
+
+async function fetchFromGroq(systemPrompt: string, userPrompt: string, apiKey: string) {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt }
+            ],
+            response_format: { type: "json_object" },
+            temperature: 0.2,
+        })
+    });
+
+    if (!response.ok) {
+        const errBase = await response.text();
+        throw new Error(`Groq returned ${response.status}: ${errBase}`);
+    }
+
+    const result = await response.json();
+    return result.choices[0].message.content;
+}
+
 export async function POST(req: Request) {
     try {
         const body = await req.json();
@@ -12,9 +68,11 @@ export async function POST(req: Request) {
             );
         }
 
-        const apiKey = process.env.OPENROUTER_API_KEY;
-        if (!apiKey) {
-            console.error("Missing OPENROUTER_API_KEY");
+        const openRouterKey = process.env.OPENROUTER_API_KEY;
+        const groqKey = process.env.GROQ_API_1;
+
+        if (!openRouterKey && !groqKey) {
+            console.error("Missing all API keys (OpenRouter & Groq)");
             return NextResponse.json(
                 { detail: "Internal Server Error regarding API keys." },
                 { status: 500 }
@@ -34,32 +92,20 @@ Review the following project title and requirements.
 
         const userPrompt = `Title: ${title}\nRequirements: ${description}`;
 
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${apiKey}`,
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://pantheon-mesh.app", // Optional, for OpenRouter rankings
-                "X-Title": "Pantheon Mesh", // Optional, for OpenRouter rankings
-            },
-            body: JSON.stringify({
-                model: "deepseek/deepseek-chat",
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: userPrompt }
-                ],
-                response_format: { type: "json_object" },
-                temperature: 0.2,
-            })
-        });
+        let rawResponse = "";
+        let usedStrategy = "";
 
-        if (!response.ok) {
-            const errBase = await response.text();
-            console.error("Openrouter Error:", errBase);
-            throw new Error(`OpenRouter returned ${response.status}`);
+        try {
+            if (!openRouterKey) throw new Error("No OpenRouter key");
+            rawResponse = await fetchFromOpenRouter(systemPrompt, userPrompt, openRouterKey);
+            usedStrategy = "openrouter-deepseek-v3";
+        } catch (orError) {
+            console.warn("OpenRouter failed, falling back to Groq:", orError);
+            if (!groqKey) throw new Error("OpenRouter failed and no Groq key available");
+            rawResponse = await fetchFromGroq(systemPrompt, userPrompt, groqKey);
+            usedStrategy = "groq-llama-3.3-70b";
         }
 
-        const result = await response.json();
         let parsed = {
             base_cost_usd: 5,
             api_cost_usd: 0,
@@ -67,9 +113,9 @@ Review the following project title and requirements.
         };
 
         try {
-            parsed = JSON.parse(result.choices[0].message.content);
+            parsed = JSON.parse(rawResponse);
         } catch (e) {
-            console.error("JSON parse error on deepseek response", e);
+            console.error("JSON parse error on AI response", e, rawResponse);
         }
 
         const baseCost = Number(parsed.base_cost_usd) || 5;
@@ -80,9 +126,9 @@ Review the following project title and requirements.
 
         return NextResponse.json({
             min_budget_usd: combinedMinimum,
-            estimated_api_cost_usd: apiCost, // We still return it if some frontend logic wants it, but normally hidden
+            estimated_api_cost_usd: apiCost,
             reason: parsed.reason || "Estimated minimum based on required computational steps.",
-            strategy: "openrouter-deepseek-v3"
+            strategy: usedStrategy
         });
 
     } catch (error) {
