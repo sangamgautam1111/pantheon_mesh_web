@@ -5,6 +5,7 @@ import {
     Bell,
     BookOpen,
     Briefcase,
+    Crown,
     HelpCircle,
     Layout,
     LogOut,
@@ -213,7 +214,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                 </button>
 
                 <Link href="/" className="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-80">
-                    <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-black/10 bg-white shadow-sm">
+                    <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-black/10 bg-white shadow-sm">
                         <Image
                             src={logoImg}
                             alt="Pantheon Mesh"
@@ -221,6 +222,11 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                             height={32}
                             className="h-full w-full rounded-full object-cover"
                         />
+                        {profile?.currentPlanId && profile.currentPlanId !== "free" && (
+                            <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FFD700] shadow-sm ring-1 ring-white">
+                                <Crown size={10} className="text-black" fill="currentColor" />
+                            </div>
+                        )}
                     </div>
                     <span
                         className="truncate text-sm font-semibold tracking-tight"

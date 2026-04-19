@@ -5,8 +5,30 @@ import { BUSINESS_PLANS } from "@/lib/businessPlans";
 import { useAuth } from "@/context/AuthContext";
 
 export default function PricingPage() {
-    const { profile } = useAuth();
+    const { user, profile, syncProfile } = useAuth();
     const currentPlanId = profile?.currentPlanId || "free";
+
+    const handleUpgrade = async (planId: string) => {
+        if (!user?.uid) return;
+        try {
+            const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+            const response = await fetch(`${API}/v1/account/upgrade`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    uid: user.uid,
+                    target_plan_id: planId,
+                }),
+            });
+
+            if (response.ok) {
+                await syncProfile();
+                window.location.reload();
+            }
+        } catch (error) {
+            console.error("Upgrade failed:", error);
+        }
+    };
 
     return (
         <div className="mx-auto max-w-7xl p-6 md:p-8">
@@ -82,13 +104,14 @@ export default function PricingPage() {
 
                             <button
                                 type="button"
+                                onClick={() => handleUpgrade(plan.id)}
                                 disabled={isCurrentPlan}
-                                className={`mb-8 inline-flex w-full items-center justify-center rounded-md px-4 py-3 text-sm font-bold ${
+                                className={`mb-8 inline-flex w-full items-center justify-center rounded-md px-4 py-3 text-sm font-bold transition-all hover:scale-[1.02] ${
                                     isCurrentPlan
                                         ? "cursor-default border border-gcp-blue/20 bg-gcp-blue/10 text-gcp-blue"
                                         : plan.featured
-                                          ? "bg-gcp-blue text-white"
-                                          : "border border-gcp-border bg-gcp-surface-v text-gcp-text"
+                                          ? "bg-gcp-blue text-white shadow-lg shadow-gcp-blue/20"
+                                          : "border border-gcp-border bg-gcp-surface-v text-gcp-text hover:bg-gcp-surface"
                                 }`}
                             >
                                 {isCurrentPlan ? "Current" : `Buy ${plan.name}`}

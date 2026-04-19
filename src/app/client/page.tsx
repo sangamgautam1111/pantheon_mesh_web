@@ -14,10 +14,13 @@ import {
     Filter,
     History,
     ImagePlus,
+    LogOut,
+    Menu,
     Plus,
     Search,
     Send,
     Sparkles,
+    Trash2,
     X,
 } from "lucide-react";
 
@@ -138,7 +141,9 @@ export default function ClientDashboard() {
     const { user, profile } = useAuth();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [budget, setBudget] = useState(0);
+    const [budget, setBudget] = useState<number>(0);
+    const [enableMarketplaceBidding, setEnableMarketplaceBidding] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [minimumBudget, setMinimumBudget] = useState(0);
     const [estimatedApiCost, setEstimatedApiCost] = useState(0);
     const [budgetReason, setBudgetReason] = useState("");
@@ -150,7 +155,6 @@ export default function ClientDashboard() {
     const [planInfo, setPlanInfo] = useState<PlanSnapshot | null>(null);
     const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
-    const [enableMarketplaceBidding, setEnableMarketplaceBidding] = useState(true);
     const [loading, setLoading] = useState(false);
     const [posting, setPosting] = useState(false);
     const [estimatingBudget, setEstimatingBudget] = useState(false);
@@ -219,9 +223,6 @@ export default function ClientDashboard() {
                     : DEFAULT_MINIMUM_BUDGET;
             const previousMinimumBudget = previousMinimumBudgetRef.current;
             previousMinimumBudgetRef.current = nextMinimumBudget;
-
-            // Notice we do not set setPlanInfo / setPlanUsage here, 
-            // as this feature isolates just the budget math without interacting with database.
 
             setMinimumBudget(nextMinimumBudget);
             setEstimatedApiCost(
@@ -322,6 +323,20 @@ export default function ClientDashboard() {
         }
     };
 
+    const deleteJob = async (jobId: string) => {
+        if (!confirm("Are you sure you want to delete this job? This action cannot be undone.")) return;
+        try {
+            const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+            const response = await fetch(`${API}/v1/client/job?job_id=${jobId}`, {
+                method: "DELETE",
+            });
+            if (!response.ok) throw new Error("Failed to delete job.");
+            await fetchJobs();
+        } catch (error) {
+            console.error("Failed to delete job:", error);
+        }
+    };
+
     const resetThumbnail = (clearError = true) => {
         setThumbnailDataUrl(null);
         setThumbnailName("");
@@ -368,8 +383,9 @@ export default function ClientDashboard() {
                     title: title.trim(),
                     description: description.trim(),
                     budget_usd: budget,
+                    enable_marketplace_bidding: activePlan.id !== "free" ? enableMarketplaceBidding : true,
+                    thumbnail_name: thumbnailName,
                     thumbnail_data_url: thumbnailDataUrl,
-                    enable_marketplace_bidding: enableMarketplaceBidding,
                 }),
             });
 
@@ -474,6 +490,67 @@ export default function ClientDashboard() {
                                             required
                                         />
                                     </div>
+
+                                    {activePlan.id !== "free" && (
+                                        <div className="space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <label className="block text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                                                    Marketplace Bidding
+                                                </label>
+                                                <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-600 ring-1 ring-inset ring-amber-200">
+                                                    <Crown size={10} fill="currentColor" />
+                                                    PREMIUM FEATURE
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setEnableMarketplaceBidding(true)}
+                                                    className={`flex items-center justify-between rounded-xl border p-3 transition-all ${
+                                                        enableMarketplaceBidding 
+                                                        ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500" 
+                                                        : "border-gray-200 bg-white hover:border-gray-300"
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`flex h-5 w-5 items-center justify-center rounded-full border ${
+                                                            enableMarketplaceBidding ? "border-blue-500 bg-blue-500 text-white" : "border-gray-300"
+                                                        }`}>
+                                                            {enableMarketplaceBidding && <Check size={12} strokeWidth={4} />}
+                                                        </div>
+                                                        <span className={`text-sm font-medium ${enableMarketplaceBidding ? "text-blue-900" : "text-gray-600"}`}>
+                                                            Enable Bidding
+                                                        </span>
+                                                    </div>
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setEnableMarketplaceBidding(false)}
+                                                    className={`flex items-center justify-between rounded-xl border p-3 transition-all ${
+                                                        !enableMarketplaceBidding 
+                                                        ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500" 
+                                                        : "border-gray-200 bg-white hover:border-gray-300"
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`flex h-5 w-5 items-center justify-center rounded-full border ${
+                                                            !enableMarketplaceBidding ? "border-blue-500 bg-blue-500 text-white" : "border-gray-300"
+                                                        }`}>
+                                                            {!enableMarketplaceBidding && <Check size={12} strokeWidth={4} />}
+                                                        </div>
+                                                        <span className={`text-sm font-medium ${!enableMarketplaceBidding ? "text-blue-900" : "text-gray-600"}`}>
+                                                            Fixed Budget
+                                                        </span>
+                                                    </div>
+                                                </button>
+                                            </div>
+                                            <p className="text-[11px] text-gray-500 leading-relaxed">
+                                                Enabling bidding allows marketplace nodes to compete for your task, potentially reducing your cost below the initial budget.
+                                            </p>
+                                        </div>
+                                    )}
 
                                     <div>
                                         <label className="mb-1.5 block text-xs font-semibold tracking-wide text-gray-500">
@@ -794,9 +871,18 @@ export default function ClientDashboard() {
                                                         <span className="whitespace-nowrap text-sm font-semibold text-gray-700">
                                                             ${job.budget_usd.toFixed(2)}
                                                         </span>
-                                                        <button className="inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900">
-                                                            <ExternalLink size={16} />
-                                                        </button>
+                                                        <div className="flex items-center gap-2 self-start md:self-center">
+                                                            <button className="inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900">
+                                                                <ExternalLink size={16} />
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => deleteJob(job.id)}
+                                                                className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-400 transition-colors hover:bg-red-100 hover:text-red-600"
+                                                                title="Delete Job"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}
