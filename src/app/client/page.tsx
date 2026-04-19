@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const DEFAULT_MINIMUM_BUDGET = 5;
+const DEFAULT_MINIMUM_BUDGET = 0.01;
 const MAX_UPLOAD_BYTES = 6 * 1024 * 1024;
 const MAX_THUMBNAIL_DATA_URL_LENGTH = 1_200_000;
 const MAX_THUMBNAIL_EDGE = 1200;
@@ -234,10 +234,14 @@ export default function ClientDashboard() {
 
             setBudget((currentBudget) => {
                 const roundedNext = Math.round(nextMinimumBudget * 100) / 100;
+                if (activePlan.id === "free") {
+                    return roundedNext;
+                }
                 if (!Number.isFinite(currentBudget) || currentBudget <= 0) {
                     return roundedNext;
                 }
-                if (currentBudget < (roundedNext - 0.01) || Math.abs(currentBudget - (Math.round(previousMinimumBudget * 100) / 100)) < 0.01) {
+                const oldMinimum = Math.round(previousMinimumBudget * 100) / 100;
+                if (Math.abs(currentBudget - oldMinimum) < 0.01) {
                     return roundedNext;
                 }
                 return currentBudget;
@@ -363,7 +367,7 @@ export default function ClientDashboard() {
                     client_uid: user?.uid,
                     title: title.trim(),
                     description: description.trim(),
-                    budget_usd: Math.max(budget, minimumBudget),
+                    budget_usd: budget,
                     thumbnail_data_url: thumbnailDataUrl,
                     enable_marketplace_bidding: enableMarketplaceBidding,
                 }),
@@ -576,17 +580,23 @@ export default function ClientDashboard() {
                                             <input
                                                 type="number"
                                                 step="0.01"
-                                                min={minimumBudget || DEFAULT_MINIMUM_BUDGET}
+                                                min={0.01}
+                                                readOnly={activePlan.id === "free"}
                                                 value={Number.isFinite(budget) && budget > 0 ? budget : ""}
                                                 onChange={(event) => {
+                                                    if (activePlan.id === "free") return;
                                                     const nextBudget = parseFloat(event.target.value);
                                                     if (!Number.isFinite(nextBudget)) {
                                                         setBudget(0);
                                                         return;
                                                     }
-                                                    setBudget(Math.max(nextBudget, minimumBudget));
+                                                    setBudget(nextBudget);
                                                 }}
-                                                className="w-full rounded-xl border border-gray-300 bg-white py-2.5 pl-8 pr-4 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                                className={`w-full rounded-xl border py-2.5 pl-8 pr-4 text-sm transition-all focus:outline-none focus:ring-2 ${
+                                                    activePlan.id === "free" 
+                                                    ? "border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed" 
+                                                    : "border-gray-300 bg-white focus:border-blue-500 focus:ring-blue-500/20"
+                                                }`}
                                                 required
                                             />
                                         </div>
