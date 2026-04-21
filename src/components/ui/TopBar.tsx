@@ -31,10 +31,10 @@ interface SearchResult {
 }
 
 const TYPE_ICONS: Record<string, { icon: typeof Search; color: string }> = {
-    page: { icon: Layout, color: "var(--gcp-blue)" },
-    plan: { icon: Briefcase, color: "var(--gcp-cyan)" },
-    doc: { icon: BookOpen, color: "var(--gcp-purple)" },
-    job: { icon: Briefcase, color: "var(--gcp-green)" },
+    page: { icon: Layout, color: "var(--text-primary)" },
+    plan: { icon: Briefcase, color: "var(--text-primary)" },
+    doc: { icon: BookOpen, color: "var(--text-primary)" },
+    job: { icon: Briefcase, color: "var(--text-primary)" },
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -62,6 +62,11 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const openAssistant = useCallback(() => {
+        setChatOpen(true);
+        window.dispatchEvent(new Event("pantheon-open-assistant"));
+    }, [setChatOpen]);
 
     const STATIC_PAGES: SearchResult[] = [
         { type: "page", label: "Dashboard", href: "/dashboard" },
@@ -237,17 +242,15 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                     className="flex cursor-text items-center gap-2 rounded-lg px-3 py-1.5 transition-all"
                     style={{
                         background: searchOpen ? "var(--bg-surface)" : "var(--bg-surface-variant)",
-                        border: searchOpen ? "1px solid var(--gcp-blue)" : "1px solid var(--border-color)",
-                        boxShadow: searchOpen
-                            ? "0 0 0 2px var(--gcp-blue-alpha, rgba(66,133,244,0.15))"
-                            : "none",
+                        border: searchOpen ? "1px solid var(--text-primary)" : "1px solid var(--border-color)",
+                        boxShadow: searchOpen ? "0 0 0 2px rgba(0,0,0,0.08)" : "none",
                     }}
                     onClick={() => {
                         setSearchOpen(true);
                         setTimeout(() => inputRef.current?.focus(), 50);
                     }}
                 >
-                    <Search size={16} style={{ color: searchOpen ? "var(--gcp-blue)" : "var(--text-disabled)" }} />
+                    <Search size={16} style={{ color: searchOpen ? "var(--text-primary)" : "var(--text-disabled)" }} />
                     {searchOpen ? (
                         <input
                             ref={inputRef}
@@ -273,7 +276,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                                 setSearchResults([]);
                                 inputRef.current?.focus();
                             }}
-                            className="rounded p-0.5 transition-colors hover:bg-gcp-blue/10"
+                            className="rounded p-0.5 transition-colors hover:bg-black/5"
                             style={{ color: "var(--text-disabled)" }}
                         >
                             <X size={14} />
@@ -288,7 +291,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                         </div>
                     )}
                     {searchLoading && (
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-transparent border-t-gcp-blue" />
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-transparent border-t-slate-950" />
                     )}
                 </div>
 
@@ -343,7 +346,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                                                 className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors"
                                                 style={{
                                                     background: isSelected ? "var(--sidebar-active)" : "transparent",
-                                                    color: isSelected ? "var(--gcp-blue)" : "var(--text-primary)",
+                                                    color: "var(--text-primary)",
                                                 }}
                                             >
                                                 <TypeIcon size={14} style={{ color: typeInfo.color }} />
@@ -378,10 +381,9 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
 
             <div className="flex items-center gap-2">
                 <button
-                    onClick={() => setChatOpen(true)}
-                    className="desktop-only flex items-center gap-2 rounded-full px-4 py-1.5 shadow-sm transition-all hover:scale-105 hover:shadow-md active:scale-95"
+                    onClick={openAssistant}
+                    className="desktop-only flex items-center gap-2 rounded-full border border-slate-950 bg-slate-950 px-4 py-1.5 text-white shadow-sm transition-all hover:scale-105 hover:bg-black hover:shadow-md active:scale-95"
                     title="Workspace Assistant"
-                    style={{ background: "var(--gcp-blue)", color: "#ffffff" }}
                 >
                     <Sparkles size={16} />
                     <span className="text-xs font-bold uppercase tracking-wider">Chat with Assistant</span>
@@ -407,7 +409,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                                 onClick={() => setShowUserMenu((current) => !current)}
                                 className="h-8 w-8 cursor-pointer overflow-hidden rounded-full text-sm font-medium transition-transform hover:scale-105"
                                 title={profile?.displayName || "Account"}
-                                style={{ background: "var(--gcp-blue)", color: "var(--btn-primary-text)" }}
+                                style={{ background: "var(--btn-primary-bg)", color: "var(--btn-primary-text)" }}
                             >
                                 {profile?.photoURL ? (
                                     <img src={profile.photoURL} alt="" className="h-8 w-8 rounded-full object-cover" />
@@ -434,7 +436,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                                     <p className="text-xs opacity-60" style={{ color: "var(--text-secondary)" }}>
                                         {profile?.email}
                                     </p>
-                                    <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-gcp-blue">
+                                    <p className="mt-1 text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--text-disabled)" }}>
                                         {(profile?.accountType || "business")} account
                                     </p>
                                 </div>
@@ -492,7 +494,8 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                             </span>
                             <button
                                 onClick={() => setShowNotifications(false)}
-                                className="text-[10px] text-gcp-blue hover:underline"
+                                className="text-[10px] font-semibold hover:underline"
+                                style={{ color: "var(--text-primary)" }}
                             >
                                 Clear all
                             </button>
@@ -510,7 +513,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                 )}
 
                 <button
-                    onClick={() => setChatOpen(true)}
+                    onClick={openAssistant}
                     className="desktop-only rounded-full p-2 transition-colors hover:bg-sidebar-hover"
                     title="Help"
                     style={{ color: "var(--text-secondary)" }}

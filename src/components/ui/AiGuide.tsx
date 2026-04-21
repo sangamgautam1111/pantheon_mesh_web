@@ -60,6 +60,12 @@ export const AiGuide = () => {
         }
     }, [open]);
 
+    useEffect(() => {
+        const openAssistant = () => setOpen(true);
+        window.addEventListener("pantheon-open-assistant", openAssistant);
+        return () => window.removeEventListener("pantheon-open-assistant", openAssistant);
+    }, [setOpen]);
+
     const handleSend = async (text?: string) => {
         const userText = text || input.trim();
         if (!userText || loading) {
@@ -156,13 +162,12 @@ export const AiGuide = () => {
             {!open && (
                 <button
                     onClick={() => setOpen(true)}
-                    className="group fixed z-50 flex items-center justify-center rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95"
+                    className="group fixed z-[70] flex items-center justify-center rounded-full bg-slate-950 shadow-2xl transition-all hover:scale-110 active:scale-95"
                     style={{
                         bottom: isMobile ? 16 : 32,
                         right: isMobile ? 16 : 32,
                         width: isMobile ? 56 : 64,
                         height: isMobile ? 56 : 64,
-                        background: "var(--gcp-blue)",
                     }}
                     title="Mesh Assist"
                 >
@@ -179,7 +184,7 @@ export const AiGuide = () => {
 
             {open && (
                 <div
-                    className="fixed z-50 flex flex-col overflow-hidden border shadow-2xl backdrop-blur-xl"
+                    className="fixed z-[80] flex flex-col overflow-hidden border shadow-2xl backdrop-blur-xl"
                     style={{
                         background: "var(--bg-surface)",
                         borderColor: isMobile ? "transparent" : "var(--border-color)",
@@ -266,7 +271,7 @@ export const AiGuide = () => {
                                                             color:
                                                                 message.role === "user"
                                                                     ? "inherit"
-                                                                    : "var(--gcp-blue)",
+                                                                    : "var(--text-primary)",
                                                         }}
                                                     >
                                                         <ArrowRight size={12} />
@@ -301,7 +306,7 @@ export const AiGuide = () => {
                                     className="rounded-full border px-3 py-1.5 text-xs transition-all hover:scale-[1.02]"
                                     style={{
                                         borderColor: "var(--border-color)",
-                                        color: "var(--gcp-blue)",
+                                        color: "var(--text-primary)",
                                         background: "transparent",
                                     }}
                                 >
@@ -330,7 +335,7 @@ export const AiGuide = () => {
                                 onClick={() => void handleSend()}
                                 disabled={!input.trim() || loading}
                                 className="rounded p-1.5 transition-opacity disabled:opacity-30"
-                                style={{ color: "var(--gcp-blue)" }}
+                                style={{ color: "var(--text-primary)" }}
                             >
                                 <Send size={16} />
                             </button>

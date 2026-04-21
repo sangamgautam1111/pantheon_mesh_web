@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Sparkles } from "lucide-react";
+import { Check } from "lucide-react";
 import { BUSINESS_PLANS } from "@/lib/businessPlans";
 import { useAuth } from "@/context/AuthContext";
 
@@ -33,10 +33,6 @@ export default function PricingPage() {
     return (
         <div className="mx-auto max-w-7xl p-6 md:p-8">
             <div className="mb-14 mt-8 max-w-4xl">
-                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-gcp-blue/20 bg-gcp-blue/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-gcp-blue">
-                    <Sparkles size={14} />
-                    Pricing
-                </div>
                 <h1 className="mb-4 text-4xl font-heading font-bold text-gcp-text md:text-6xl">
                     Pick the plan for your job volume, speed, and model quality.
                 </h1>
@@ -54,25 +50,11 @@ export default function PricingPage() {
                         <div
                             key={plan.id}
                             className={`gcp-card flex h-full flex-col p-7 shadow-lg ${
-                                plan.featured ? "border-gcp-blue/30 bg-gcp-blue/[0.04] shadow-2xl" : ""
+                                plan.featured ? "border-gcp-text bg-gcp-surface-v shadow-2xl" : ""
                             }`}
                         >
-                            {plan.badge && (
-                                <div
-                                    className={`mb-5 inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] ${
-                                        plan.featured
-                                            ? "bg-gcp-blue text-white"
-                                            : "border border-gcp-blue/20 bg-gcp-blue/5 text-gcp-blue"
-                                    }`}
-                                >
-                                    {plan.badge}
-                                </div>
-                            )}
-
                             <div className="mb-4 flex items-end justify-between gap-3">
-                                <h2 className={`text-2xl font-bold ${plan.featured ? "text-gcp-blue" : "text-gcp-text"}`}>
-                                    {plan.name}
-                                </h2>
+                                <h2 className="text-2xl font-bold text-gcp-text">{plan.name}</h2>
                                 <span className="text-xs font-bold uppercase tracking-widest text-gcp-text-disabled">
                                     {plan.bestFor}
                                 </span>
@@ -109,9 +91,9 @@ export default function PricingPage() {
                                 disabled={isCurrentPlan}
                                 className={`mb-8 inline-flex w-full items-center justify-center rounded-md px-4 py-3 text-sm font-bold transition-all hover:scale-[1.02] ${
                                     isCurrentPlan
-                                        ? "cursor-default border border-gcp-blue/20 bg-gcp-blue/10 text-gcp-blue"
+                                        ? "cursor-default border border-gcp-border bg-gcp-surface-v text-gcp-text"
                                         : plan.featured
-                                          ? "bg-gcp-blue text-white shadow-lg shadow-gcp-blue/20"
+                                          ? "bg-gcp-text text-gcp-surface shadow-lg"
                                           : "border border-gcp-border bg-gcp-surface-v text-gcp-text hover:bg-gcp-surface"
                                 }`}
                             >
@@ -121,7 +103,7 @@ export default function PricingPage() {
                             <div className="mt-auto space-y-4">
                                 {plan.features.map((feature) => (
                                     <div key={feature} className="flex items-start gap-3 text-sm">
-                                        <Check size={18} className="mt-0.5 shrink-0 text-gcp-blue" />
+                                        <Check size={18} className="mt-0.5 shrink-0 text-gcp-text" />
                                         <span className="text-gcp-text-secondary">{feature}</span>
                                     </div>
                                 ))}
@@ -198,7 +180,7 @@ export default function PricingPage() {
                         </p>
                     </div>
 
-                    <div className="mt-8 rounded-2xl border border-dashed border-gcp-blue/25 bg-gcp-blue/[0.04] p-4 text-sm text-gcp-text-secondary">
+                    <div className="mt-8 rounded-2xl border border-dashed border-gcp-border bg-gcp-surface-v p-4 text-sm text-gcp-text-secondary">
                         Buy plan buttons update the workspace plan now. Checkout can be connected later.
                     </div>
                 </div>

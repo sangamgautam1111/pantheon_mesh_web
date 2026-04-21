@@ -11,7 +11,6 @@ import {
     Coins,
     FileImage,
     FileText,
-    Layers3,
     LogOut,
     Plus,
     Sparkles,
@@ -82,17 +81,17 @@ export default function Dashboard() {
 
     const currentPlan = BUSINESS_PLANS.find((plan) => plan.id === profile?.currentPlanId) ?? BUSINESS_PLANS[0];
     const featuredPlans = BUSINESS_PLANS.filter((plan) => ["free", "growth", "scale"].includes(plan.id));
+    const openAssistant = () => {
+        setChatOpen(true);
+        window.dispatchEvent(new Event("pantheon-open-assistant"));
+    };
 
     return (
         <RouteGuard allowedTypes={["business"]}>
             <div className="w-full p-6 md:p-8">
-                <section className="overflow-hidden rounded-[28px] border border-gcp-border bg-[radial-gradient(circle_at_top_right,rgba(26,115,232,0.16),transparent_38%),linear-gradient(180deg,var(--bg-surface),var(--bg-surface-variant))] p-6 shadow-xl md:p-8">
+                <section className="overflow-hidden rounded-[28px] border border-gcp-border bg-gcp-surface p-6 shadow-xl md:p-8">
                     <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                         <div className="max-w-3xl">
-                            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-gcp-blue/20 bg-gcp-blue/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.26em] text-gcp-blue">
-                                <Layers3 size={14} />
-                                Dashboard
-                            </div>
                             <h1 className="text-3xl font-heading font-bold leading-tight text-gcp-text md:text-5xl">
                                 Track your jobs and budget.
                             </h1>
@@ -116,7 +115,7 @@ export default function Dashboard() {
                                     <ArrowRight size={14} />
                                 </button>
                                 <button
-                                    onClick={() => setChatOpen(true)}
+                                    onClick={openAssistant}
                                     className="gcp-btn-text inline-flex items-center gap-2"
                                 >
                                     <Sparkles size={14} />
@@ -125,8 +124,8 @@ export default function Dashboard() {
                             </div>
                         </div>
 
-                        <div className="min-w-[260px] rounded-3xl border border-gcp-blue/15 bg-gcp-blue/[0.04] p-5">
-                            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-gcp-blue">
+                        <div className="min-w-[260px] rounded-3xl border border-gcp-border bg-gcp-surface p-5">
+                            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-gcp-text-disabled">
                                 Account
                             </p>
                             <div className="mt-3 flex items-center gap-3">
@@ -137,8 +136,8 @@ export default function Dashboard() {
                                         className="h-12 w-12 rounded-full border border-gcp-border object-cover"
                                     />
                                 ) : (
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-gcp-border bg-gcp-surface-v">
-                                        <Layers3 size={18} className="text-gcp-blue" />
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-gcp-border bg-gcp-surface-v text-sm font-bold text-gcp-text">
+                                        {(profile?.companyName || profile?.displayName || "W").charAt(0).toUpperCase()}
                                     </div>
                                 )}
                                 <div className="min-w-0">
@@ -171,31 +170,31 @@ export default function Dashboard() {
                         {
                             label: "Submitted Jobs",
                             value: String(metrics.totalJobs),
-                            icon: <FileText size={18} className="text-gcp-blue" />,
+                            icon: <FileText size={18} className="text-gcp-text" />,
                         },
                         {
                             label: "Active Jobs",
                             value: String(metrics.activeJobs),
-                            icon: <Activity size={18} className="text-gcp-yellow" />,
+                            icon: <Activity size={18} className="text-gcp-text" />,
                         },
                         {
                             label: "Completed Jobs",
                             value: String(metrics.completedJobs),
-                            icon: <CheckCircle2 size={18} className="text-gcp-green" />,
+                            icon: <CheckCircle2 size={18} className="text-gcp-text" />,
                         },
                         {
                             label: "Committed Budget",
                             value: `$${metrics.totalBudget.toFixed(2)}`,
-                            icon: <Coins size={18} className="text-gcp-cyan" />,
+                            icon: <Coins size={18} className="text-gcp-text" />,
                         },
                         {
                             label: "Jobs With Thumbnails",
                             value: String(metrics.jobsWithAssets),
-                            icon: <FileImage size={18} className="text-gcp-blue" />,
+                            icon: <FileImage size={18} className="text-gcp-text" />,
                         },
                     ].map((item) => (
                         <div key={item.label} className="gcp-card p-5">
-                            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-gcp-blue/10">
+                            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-gcp-surface-v">
                                 {item.icon}
                             </div>
                             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gcp-text-disabled">
@@ -215,7 +214,7 @@ export default function Dashboard() {
                                     Your latest requests, budgets, and delivery progress.
                                 </p>
                             </div>
-                            <Link href="/client" className="text-sm font-medium text-gcp-blue hover:underline">
+                            <Link href="/client" className="text-sm font-medium text-gcp-text hover:underline">
                                 Open Job Center
                             </Link>
                         </div>
@@ -262,10 +261,10 @@ export default function Dashboard() {
                                             </div>
                                         </div>
                                         <div className="flex flex-wrap items-center gap-3 md:justify-end">
-                                            <span className="text-sm font-semibold text-gcp-green">
+                                            <span className="text-sm font-semibold text-gcp-text">
                                                 ${job.budget_usd.toFixed(2)}
                                             </span>
-                                            <span className="gcp-badge bg-gcp-blue/10 text-[10px] font-bold text-gcp-blue">
+                                            <span className="rounded-full border border-gcp-border bg-gcp-surface-v px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-gcp-text">
                                                 {job.status.toUpperCase()}
                                             </span>
                                         </div>
@@ -278,8 +277,8 @@ export default function Dashboard() {
                     <div className="space-y-6">
                         <div className="gcp-card p-6 md:p-8">
                             <div className="mb-5 flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gcp-blue/10">
-                                    <Clock3 size={18} className="text-gcp-blue" />
+                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gcp-surface-v">
+                                    <Clock3 size={18} className="text-gcp-text" />
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-heading font-bold text-gcp-text">Your plan</h2>
@@ -293,12 +292,12 @@ export default function Dashboard() {
                                     <div
                                         key={plan.id}
                                         className={`rounded-3xl border p-5 ${
-                                            plan.featured ? "border-gcp-blue/30 bg-gcp-blue/[0.04]" : "border-gcp-border bg-gcp-surface"
+                                            plan.featured ? "border-gcp-text bg-gcp-surface-v" : "border-gcp-border bg-gcp-surface"
                                         }`}
                                     >
                                         <div className="flex items-start justify-between gap-4">
                                             <div>
-                                                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gcp-blue">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gcp-text-disabled">
                                                     {plan.name}
                                                 </p>
                                                 <p className="mt-2 text-2xl font-bold text-gcp-text">
@@ -308,11 +307,6 @@ export default function Dashboard() {
                                                     </span>
                                                 </p>
                                             </div>
-                                            {plan.badge && (
-                                                <span className="rounded-full border border-gcp-blue/20 bg-gcp-blue/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-gcp-blue">
-                                                    {plan.badge}
-                                                </span>
-                                            )}
                                         </div>
                                         <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                                             <div className="rounded-2xl bg-gcp-surface-v p-3">
@@ -340,7 +334,7 @@ export default function Dashboard() {
                             <button
                                 type="button"
                                 onClick={() => router.push("/pricing")}
-                                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gcp-blue/20 bg-gcp-blue/10 px-4 py-3 text-sm font-semibold text-gcp-blue transition-colors hover:bg-gcp-blue/15"
+                                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gcp-text px-4 py-3 text-sm font-semibold text-gcp-surface transition-colors hover:opacity-90"
                             >
                                 Compare all plans
                                 <ArrowRight size={14} />
@@ -349,8 +343,8 @@ export default function Dashboard() {
 
                         <div className="gcp-card p-6 md:p-8">
                             <div className="mb-4 flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gcp-blue/10">
-                                    <Sparkles size={18} className="text-gcp-blue" />
+                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gcp-surface-v">
+                                    <Sparkles size={18} className="text-gcp-text" />
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-heading font-bold text-gcp-text">Need help?</h2>
@@ -366,7 +360,7 @@ export default function Dashboard() {
                             <div className="mt-5 flex flex-wrap gap-3">
                                 <button
                                     type="button"
-                                    onClick={() => setChatOpen(true)}
+                                    onClick={openAssistant}
                                     className="gcp-btn-primary inline-flex items-center gap-2"
                                 >
                                     Open Assistant

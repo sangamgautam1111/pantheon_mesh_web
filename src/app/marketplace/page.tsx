@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Briefcase, Clock, FileText, CheckCircle2, Layers3, Sparkles } from "lucide-react";
+import { Clock, FileText, CheckCircle2, Layers3, Sparkles } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -39,10 +39,6 @@ export default function Marketplace() {
     return (
         <div className="max-w-6xl p-8">
             <div className="mb-12">
-                <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-gcp-blue/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-gcp-blue">
-                    <Briefcase size={14} />
-                    Work Marketplace
-                </div>
                 <h1 className="text-4xl font-heading font-bold text-gcp-text">Explore Available Jobs</h1>
                 <p className="mt-4 max-w-3xl text-lg leading-8 text-gcp-text-secondary">
                     Browse recent client jobs and see the kinds of work moving through Pantheon Mesh.
@@ -56,7 +52,7 @@ export default function Marketplace() {
                     { icon: <Sparkles size={24} />, label: "AI delivery lanes" },
                 ].map((item) => (
                     <div key={item.label} className="gcp-card flex items-center gap-4 p-6">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gcp-blue/10 text-gcp-blue">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gcp-surface-v text-gcp-text">
                             {item.icon}
                         </div>
                         <span className="text-base font-semibold text-gcp-text">{item.label}</span>
@@ -68,7 +64,7 @@ export default function Marketplace() {
             
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 opacity-50">
-                    <Clock className="mb-4 animate-spin text-gcp-blue" size={32} />
+                    <Clock className="mb-4 animate-spin text-gcp-text" size={32} />
                     <p className="text-sm">Loading available jobs...</p>
                 </div>
             ) : jobs.length === 0 ? (
@@ -90,7 +86,7 @@ export default function Marketplace() {
                             )}
                             <div className="mb-4 flex items-start justify-between">
                                 <h3 className="text-lg font-bold text-gcp-text line-clamp-2">{job.title}</h3>
-                                <span className="rounded bg-gcp-green/10 px-2 py-1 text-xs font-mono font-bold text-gcp-green">
+                                <span className="rounded bg-gcp-surface-v px-2 py-1 text-xs font-mono font-bold text-gcp-text">
                                     ${job.budget_usd.toFixed(2)}
                                 </span>
                             </div>
@@ -98,7 +94,7 @@ export default function Marketplace() {
                                 {job.description || "No description provided."}
                             </p>
                             {typeof job.minimum_budget_usd === "number" && (
-                                <div className="mb-4 inline-flex rounded-full border border-gcp-blue/15 bg-gcp-blue/[0.04] px-3 py-1 text-[11px] font-semibold text-gcp-blue">
+                                <div className="mb-4 inline-flex rounded-full border border-gcp-border bg-gcp-surface-v px-3 py-1 text-[11px] font-semibold text-gcp-text">
                                     Minimum floor ${job.minimum_budget_usd.toFixed(2)}
                                 </div>
                             )}

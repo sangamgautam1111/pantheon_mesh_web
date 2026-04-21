@@ -561,7 +561,7 @@ export default function NewClientJobPage() {
     };
 
     const renderScope = () => (
-        <section className="overflow-hidden rounded-[34px] border border-white bg-white shadow-xl shadow-blue-900/5">
+        <section className="overflow-hidden rounded-[34px] border border-white bg-white shadow-xl shadow-slate-900/5">
             <div className="border-b border-slate-100 bg-slate-50/70 px-6 py-5 md:px-8">
                 <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">Step 1 - Scope</p>
                 <h2 className="mt-2 text-2xl font-black text-slate-950">What are we building?</h2>
@@ -708,7 +708,7 @@ export default function NewClientJobPage() {
         </section>
     );
     const renderRouting = () => (
-        <section className="rounded-[34px] border border-white bg-white p-6 shadow-xl shadow-blue-900/5 md:p-8">
+        <section className="rounded-[34px] border border-white bg-white p-6 shadow-xl shadow-slate-900/5 md:p-8">
             <div className="mb-6">
                 <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
                     Step 2 - Model routing
@@ -763,14 +763,6 @@ export default function NewClientJobPage() {
                         >
                             <div className="flex items-start justify-between gap-3">
                                 <BrandLogoStrip logos={lane.logos} />
-                                <span
-                                    className={cx(
-                                        "rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wide",
-                                        available ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-500",
-                                    )}
-                                >
-                                    {available ? "Available" : "Locked"}
-                                </span>
                             </div>
                             <h3 className="mt-5 text-xl font-black text-slate-950">{lane.title}</h3>
                             <p className="mt-1 text-xs font-black uppercase tracking-[0.18em] text-slate-500">{lane.tag}</p>
@@ -783,6 +775,9 @@ export default function NewClientJobPage() {
                                     <CheckCircle2 size={17} />
                                     Selected for this job
                                 </div>
+                            )}
+                            {!available && (
+                                <div className="mt-5 text-sm font-black text-slate-400">Locked for current plan</div>
                             )}
                         </button>
                     );
@@ -799,32 +794,32 @@ export default function NewClientJobPage() {
                                 : "Bidding unlocks on Growth and Scale when you use a paid model lane."}
                         </p>
                     </div>
-                    <button
-                        type="button"
-                        onClick={() => canEnableBidding && setEnableBidding((current) => !current)}
-                        disabled={!canEnableBidding}
-                        className={cx(
-                            "flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-sm font-black transition-all md:w-64",
-                            canEnableBidding
-                                ? "border-slate-950 bg-white text-slate-950"
-                                : "cursor-not-allowed border-slate-200 bg-white text-slate-400",
-                        )}
-                    >
-                        <span>{enableBidding && canEnableBidding ? "Bidding enabled" : "Bidding off"}</span>
-                        <span
+                    <div className="flex items-center gap-3">
+                        <span className="text-sm font-black text-slate-950">
+                            {enableBidding && canEnableBidding ? "On" : "Off"}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => canEnableBidding && setEnableBidding((current) => !current)}
+                            disabled={!canEnableBidding}
                             className={cx(
-                                "relative h-7 w-12 rounded-full transition-colors",
-                                enableBidding && canEnableBidding ? "bg-slate-950" : "bg-slate-200",
+                                "relative h-8 w-14 rounded-full border transition-all",
+                                canEnableBidding ? "border-slate-950 bg-white" : "cursor-not-allowed border-slate-200 bg-slate-100",
+                                enableBidding && canEnableBidding && "bg-slate-950",
                             )}
+                            aria-label="Toggle marketplace bidding"
                         >
                             <span
                                 className={cx(
-                                    "absolute top-1 h-5 w-5 rounded-full bg-white transition-transform",
-                                    enableBidding && canEnableBidding ? "translate-x-6" : "translate-x-1",
+                                    "absolute top-1 h-6 w-6 rounded-full transition-transform",
+                                    enableBidding && canEnableBidding
+                                        ? "translate-x-6 bg-white"
+                                        : "translate-x-1 bg-slate-950",
+                                    !canEnableBidding && "bg-slate-300",
                                 )}
                             />
-                        </span>
-                    </button>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -836,7 +831,7 @@ export default function NewClientJobPage() {
                 <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Bidding execution</p>
                     <p className="mt-2 font-black text-slate-950">
-                        {activePlan.bid_agent_limit > 0 ? `${activePlan.bid_agent_limit} agents` : "Off"}
+                        {canEnableBidding && enableBidding ? `${activePlan.bid_agent_limit} agents` : "Off"}
                     </p>
                 </div>
                 <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
@@ -848,7 +843,7 @@ export default function NewClientJobPage() {
     );
     const renderCheckout = () => (
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-            <div className="rounded-[34px] border border-white bg-white p-6 shadow-xl shadow-blue-900/5 md:p-8">
+            <div className="rounded-[34px] border border-white bg-white p-6 shadow-xl shadow-slate-900/5 md:p-8">
                 <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
                     Step 3 - Price check
                 </p>
@@ -979,7 +974,7 @@ export default function NewClientJobPage() {
                 </div>
             </div>
 
-            <aside className="rounded-[34px] border border-white bg-white p-6 shadow-xl shadow-blue-900/5">
+            <aside className="rounded-[34px] border border-white bg-white p-6 shadow-xl shadow-slate-900/5">
                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">Job summary</p>
                 <h3 className="mt-3 text-xl font-black text-slate-950">{jobTitle || "Untitled job"}</h3>
                 <p className="mt-3 line-clamp-6 text-sm leading-6 text-slate-500">
@@ -1077,7 +1072,7 @@ export default function NewClientJobPage() {
                             </p>
                         </div>
 
-                        <div className="rounded-[28px] border border-white bg-white/90 p-5 shadow-xl shadow-blue-900/5 backdrop-blur">
+                        <div className="rounded-[28px] border border-white bg-white/90 p-5 shadow-xl shadow-slate-900/5 backdrop-blur">
                             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Current plan</p>
                             <div className="mt-3 flex items-center gap-3">
                                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-lg font-black text-white">

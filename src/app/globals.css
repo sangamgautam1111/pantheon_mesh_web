@@ -20,7 +20,7 @@
     --topbar-bg: #000000;
     --sidebar-bg: #000000;
     --sidebar-hover: #0a0c0f;
-    --sidebar-active: rgba(66, 133, 244, 0.1);
+    --sidebar-active: rgba(255, 255, 255, 0.08);
 
     /* Borders — subtle, not distracting */
     --border-color: #21262d;
@@ -30,18 +30,18 @@
     --text-primary: #e6edf3;
     --text-secondary: #8b949e;
     --text-disabled: #484f58;
-    --text-link: #58a6ff;
+    --text-link: #e6edf3;
 
-    /* GCP Accent Colors — vibrant on dark */
-    --gcp-blue: #4285f4;
-    --gcp-blue-hover: #5a95f5;
-    --gcp-green: #34a853;
-    --gcp-green-dark: #2ea44f;
-    --gcp-yellow: #fbbc04;
-    --gcp-yellow-dark: #f0b400;
+    /* Neutral accent colors keep legacy utility classes premium instead of colorful. */
+    --gcp-blue: #e6edf3;
+    --gcp-blue-hover: #ffffff;
+    --gcp-green: #e6edf3;
+    --gcp-green-dark: #ffffff;
+    --gcp-yellow: #e6edf3;
+    --gcp-yellow-dark: #ffffff;
     --gcp-red: #ea4335;
     --gcp-red-dark: #d93025;
-    --gcp-cyan: #24c1e0;
+    --gcp-cyan: #e6edf3;
 
     /* Cards */
     --card-bg: #161a1e;
@@ -49,16 +49,16 @@
     --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
 
     /* Buttons */
-    --btn-primary-bg: #4285f4;
+    --btn-primary-bg: #000000;
     --btn-primary-text: #ffffff;
-    --btn-primary-hover: #5a95f5;
+    --btn-primary-hover: #111111;
     --btn-secondary-bg: #21262d;
     --btn-secondary-text: #c9d1d9;
 
     /* Inputs */
     --input-bg: #0d1117;
     --input-border: #30363d;
-    --input-focus: #4285f4;
+    --input-focus: #e6edf3;
 
     /* Overlay */
     --overlay-bg: rgba(1, 4, 9, 0.7);
@@ -82,7 +82,7 @@
     --topbar-bg: #ffffff;
     --sidebar-bg: #ffffff;
     --sidebar-hover: #f1f3f4;
-    --sidebar-active: rgba(66, 133, 244, 0.08);
+    --sidebar-active: rgba(0, 0, 0, 0.06);
 
     --border-color: #dadce0;
     --border-subtle: #e8eaed;
@@ -90,31 +90,31 @@
     --text-primary: #202124;
     --text-secondary: #5f6368;
     --text-disabled: #9aa0a6;
-    --text-link: #1a73e8;
+    --text-link: #202124;
 
-    --gcp-blue: #1a73e8;
-    --gcp-blue-hover: #1967d2;
-    --gcp-green: #188038;
-    --gcp-green-dark: #137333;
-    --gcp-yellow: #f9ab00;
-    --gcp-yellow-dark: #e37400;
+    --gcp-blue: #000000;
+    --gcp-blue-hover: #111111;
+    --gcp-green: #202124;
+    --gcp-green-dark: #000000;
+    --gcp-yellow: #202124;
+    --gcp-yellow-dark: #000000;
     --gcp-red: #d93025;
     --gcp-red-dark: #c5221f;
-    --gcp-cyan: #12b5cb;
+    --gcp-cyan: #202124;
 
     --card-bg: #ffffff;
     --card-border: #dadce0;
     --card-shadow: 0 1px 2px rgba(60, 64, 67, 0.1), 0 1px 3px rgba(60, 64, 67, 0.08);
 
-    --btn-primary-bg: #1a73e8;
+    --btn-primary-bg: #000000;
     --btn-primary-text: #ffffff;
-    --btn-primary-hover: #1967d2;
+    --btn-primary-hover: #111111;
     --btn-secondary-bg: #ffffff;
     --btn-secondary-text: #3c4043;
 
     --input-bg: #ffffff;
     --input-border: #dadce0;
-    --input-focus: #1a73e8;
+    --input-focus: #000000;
 
     --overlay-bg: rgba(32, 33, 36, 0.5);
 
@@ -197,7 +197,7 @@ body {
 
 .gcp-btn-text {
     background: transparent;
-    color: var(--gcp-blue);
+    color: var(--text-primary);
     padding: 8px 16px;
     border-radius: 4px;
     font-size: 14px;
@@ -206,7 +206,7 @@ body {
     cursor: pointer;
     transition: background 0.15s;
 }
-.gcp-btn-text:hover { background: var(--sidebar-active); }
+.gcp-btn-text:hover { background: var(--sidebar-active); color: var(--text-primary); }
 
 .gcp-badge {
     display: inline-flex;
@@ -295,7 +295,7 @@ body {
 }
 
 .gcp-btn-primary {
-    background: var(--gcp-blue);
+    background: #000000;
     color: #ffffff;
     border: none;
     border-radius: 6px;
@@ -307,7 +307,7 @@ body {
     cursor: pointer;
     transition: background 0.2s, transform 0.1s;
 }
-.gcp-btn-primary:hover { background: var(--gcp-blue-hover); }
+.gcp-btn-primary:hover { background: #111111; }
 .gcp-btn-primary:active { transform: scale(0.97); }
 
 .gcp-btn-text {
@@ -319,7 +319,7 @@ body {
     font-weight: 500;
     cursor: pointer;
     transition: background 0.2s;
-    color: var(--text-secondary);
+    color: var(--text-primary);
 }
 .gcp-btn-text:hover { background: var(--bg-hover); }
 

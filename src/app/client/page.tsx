@@ -220,8 +220,8 @@ export default function ClientJobsPage() {
                     </section>
 
                     {derivedUsage.blocking_reason && (
-                        <div className="mt-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                            <AlertCircle className="mt-0.5 shrink-0 text-amber-600" size={18} />
+                        <div className="mt-6 flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800">
+                            <AlertCircle className="mt-0.5 shrink-0 text-slate-950" size={18} />
                             <span>{derivedUsage.blocking_reason}</span>
                         </div>
                     )}
@@ -244,7 +244,7 @@ export default function ClientJobsPage() {
                                 label: "Active Jobs",
                                 value: `${derivedUsage.active_jobs_used}/${derivedUsage.active_job_limit}`,
                                 sub: `${derivedUsage.active_jobs_remaining} slots available`,
-                                icon: <Clock size={18} className="text-amber-500" />,
+                                icon: <Clock size={18} className="text-slate-950" />,
                             },
                             {
                                 label: "Bidding",

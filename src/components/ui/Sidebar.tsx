@@ -80,7 +80,7 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                                 </div>
                                 <div className="min-w-0">
                                     <div
-                                        className="truncate text-sm font-semibold transition-colors group-hover:text-gcp-blue"
+                                        className="truncate text-sm font-semibold transition-colors"
                                         style={{ color: "var(--text-primary)" }}
                                     >
                                         Pantheon Mesh
@@ -90,11 +90,7 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                                     </div>
                                 </div>
                             </div>
-                            <ChevronDown
-                                size={14}
-                                className="flex-shrink-0 transition-colors group-hover:text-gcp-blue"
-                                style={{ color: "var(--text-disabled)" }}
-                            />
+                            <ChevronDown size={14} className="flex-shrink-0 transition-colors" style={{ color: "var(--text-disabled)" }} />
                         </div>
                     </div>
                 )}
@@ -117,13 +113,13 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                                 } ${active ? "font-medium" : ""}`}
                                 style={{
                                     background: active ? "var(--sidebar-active)" : "transparent",
-                                    color: active ? "var(--gcp-blue)" : "var(--text-secondary)",
+                                    color: active ? "var(--text-primary)" : "var(--text-secondary)",
                                 }}
                                 title={collapsed && !isMobile ? item.label : undefined}
                             >
                                 <item.icon
                                     size={24}
-                                    style={{ color: active ? "var(--gcp-blue)" : "var(--text-disabled)" }}
+                                    style={{ color: active ? "var(--text-primary)" : "var(--text-disabled)" }}
                                 />
                                 {(!collapsed || isMobile) && <span>{item.label}</span>}
                             </Link>
