@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { detectWorkCategory, normalizePlanId, type PlanId, type WorkCategoryId } from "@/lib/modelGroups";
 
 const PRODUCTION_API_BASE = "https://pantheon-api-mlqrumx6cq-uc.a.run.app";
 const GLOBAL_MINIMUM_BUDGET_USD = 1;
@@ -13,6 +14,46 @@ const PLAN_PRICE_RATIO: Record<string, number> = {
     starter: 0.14,
     growth: 0.12,
     scale: 0.1,
+};
+
+const PLAN_BID_AGENT_LIMIT: Record<PlanId, number> = {
+    free: 0,
+    starter: 0,
+    growth: 6,
+    scale: 10,
+};
+
+const MODEL_GROUP_COST_FLOORS: Record<WorkCategoryId, Record<PlanId, { base: number; marketFloor: number }>> = {
+    development: {
+        free: { base: 0.18, marketFloor: 18 },
+        starter: { base: 0.75, marketFloor: 45 },
+        growth: { base: 2.2, marketFloor: 120 },
+        scale: { base: 5.5, marketFloor: 240 },
+    },
+    media: {
+        free: { base: 0.75, marketFloor: 30 },
+        starter: { base: 2.5, marketFloor: 90 },
+        growth: { base: 7.5, marketFloor: 220 },
+        scale: { base: 18, marketFloor: 450 },
+    },
+    writing: {
+        free: { base: 0.05, marketFloor: 10 },
+        starter: { base: 0.25, marketFloor: 25 },
+        growth: { base: 0.8, marketFloor: 60 },
+        scale: { base: 2.2, marketFloor: 180 },
+    },
+    design: {
+        free: { base: 0.4, marketFloor: 25 },
+        starter: { base: 1.5, marketFloor: 75 },
+        growth: { base: 4.5, marketFloor: 180 },
+        scale: { base: 10, marketFloor: 350 },
+    },
+    automation: {
+        free: { base: 0.25, marketFloor: 30 },
+        starter: { base: 0.95, marketFloor: 80 },
+        growth: { base: 2.8, marketFloor: 180 },
+        scale: { base: 6.2, marketFloor: 360 },
+    },
 };
 
 const SIMPLE_WRITING_KEYWORDS = [
@@ -71,6 +112,7 @@ function buildPricingDescription(body: Record<string, unknown>, description: str
     const timeline = typeof body.timeline === "string" ? body.timeline : "";
     const modelLane = typeof body.model_lane === "string" ? body.model_lane : "";
     const modelGroup = typeof body.model_group === "string" ? body.model_group : "";
+    const workCategory = typeof body.work_category === "string" ? body.work_category : "";
     const assetTotalMb = numberFrom(body.asset_total_mb, 0);
     const assetCount = numberFrom(body.asset_count, 0);
     const assetTypes = Array.isArray(body.asset_types)
@@ -90,6 +132,9 @@ function buildPricingDescription(body: Record<string, unknown>, description: str
     }
     if (modelLane || modelGroup) {
         details.push(`Selected model routing: ${modelGroup || modelLane}.`);
+    }
+    if (workCategory) {
+        details.push(`Detected work category: ${workCategory}.`);
     }
     if (assetCount || assetTotalMb || assetTypes.length > 0) {
         details.push(
@@ -314,6 +359,82 @@ function numberFrom(value: unknown, fallback = 0) {
     return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function getStringArray(value: unknown) {
+    return Array.isArray(value)
+        ? value.filter((item): item is string => typeof item === "string" && Boolean(item.trim()))
+        : [];
+}
+
+function getWorkCategory(body: Record<string, unknown>, title: string, description: string): WorkCategoryId {
+    const category = typeof body.work_category === "string" ? body.work_category : "";
+    if (category === "development" || category === "media" || category === "writing" || category === "design" || category === "automation") {
+        return category;
+    }
+    return detectWorkCategory({
+        title,
+        description,
+        assetTypes: getStringArray(body.asset_types),
+        assetLinks: getStringArray(body.asset_links),
+        assetTotalMb: numberFrom(body.asset_total_mb, 0),
+    });
+}
+
+function hasHeavyGpuSignals(text: string, assetTypes: string[], assetTotalMb: number) {
+    return (
+        assetTypes.some((type) => type.startsWith("video/") || type.startsWith("audio/")) ||
+        /\b(video|vfx|render|ffmpeg|timeline|youtube|podcast|b-roll|sora|veo|gpu|4k|8k)\b/.test(text) ||
+        assetTotalMb > 250
+    );
+}
+
+function estimateProtectedInternalCost(body: Record<string, unknown>, title: string, description: string, planId: PlanId) {
+    const category = getWorkCategory(body, title, description);
+    const assetTypes = getStringArray(body.asset_types);
+    const assetLinks = getStringArray(body.asset_links);
+    const assetTotalMb = numberFrom(body.asset_total_mb, 0);
+    const assetCount = numberFrom(body.asset_count, 0);
+    const assetTextPreview = typeof body.asset_text_preview === "string" ? body.asset_text_preview : "";
+    const combined = `${title} ${description} ${assetTypes.join(" ")} ${assetLinks.join(" ")}`.toLowerCase();
+    const costFloor = MODEL_GROUP_COST_FLOORS[category][planId];
+    let internalCost = costFloor.base;
+
+    internalCost += Math.min(assetTextPreview.length / 12000, 1.5);
+    internalCost += Math.min(assetLinks.length * 0.12, 1.2);
+    internalCost += Math.min(assetCount * 0.08, 2.4);
+
+    if (category === "media") {
+        internalCost += Math.min(assetTotalMb * 0.035, 45);
+        if (assetTotalMb > 100) internalCost += 6;
+        if (assetTotalMb > 500) internalCost += 12;
+        if (assetTotalMb > 1000) internalCost += 28;
+        if (hasHeavyGpuSignals(combined, assetTypes, assetTotalMb)) internalCost += planId === "scale" ? 18 : 7;
+        if (/\b(b-roll|sora|veo|generate video|missing footage)\b/.test(combined)) internalCost += planId === "scale" ? 35 : 14;
+    } else if (category === "design") {
+        internalCost += Math.min(assetTotalMb * 0.018, 8);
+        if (assetTypes.some((type) => type.startsWith("image/"))) internalCost += 0.8;
+        if (/\b(midjourney|figma|pixel perfect|design system|brand kit)\b/.test(combined)) internalCost += planId === "scale" ? 8 : 3;
+    } else if (category === "development" || category === "automation") {
+        internalCost += Math.min(assetTotalMb * 0.01, 6);
+        if (/\b(repo|large codebase|multi-file|full-stack|database|webhook|pipeline|scraping|puppeteer)\b/.test(combined)) {
+            internalCost += planId === "scale" ? 5 : 2;
+        }
+    } else if (category === "writing") {
+        if (/\b(whitepaper|market research|fact-check|sources|technical report|pitch deck)\b/.test(combined)) {
+            internalCost += planId === "scale" ? 4 : 1.25;
+        }
+    }
+
+    if (Boolean(body.rush)) {
+        internalCost *= 1.45;
+    }
+
+    return {
+        category,
+        internalCost: roundDisplay(internalCost),
+        marketFloor: costFloor.marketFloor,
+    };
+}
+
 function cleanJsonObject(text: string) {
     const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
     const start = cleaned.indexOf("{");
@@ -399,7 +520,11 @@ function guardLocalEstimate(
     strategy: string,
     model: string,
     marketContext = "",
+    body: Record<string, unknown> = {},
+    extra: Record<string, unknown> = {},
 ) {
+    const normalizedPlan = normalizePlanId(planId);
+    const protectedCost = estimateProtectedInternalCost(body, title, description, normalizedPlan);
     const suggestedMinimum = numberFrom(
         parsed.minimum_client_budget_usd ?? parsed.min_budget_usd,
         GLOBAL_MINIMUM_BUDGET_USD,
@@ -407,9 +532,12 @@ function guardLocalEstimate(
     let estimatedInternalCost = Math.max(
         0.01,
         numberFrom(parsed.estimated_api_cost_usd ?? parsed.api_cost_usd, 0.35),
+        protectedCost.internalCost,
     );
     let humanMarketCost = Math.max(
         numberFrom(parsed.human_market_cost_usd, suggestedMinimum * 4),
+        protectedCost.marketFloor,
+        estimatedInternalCost * 8,
         5,
     );
 
@@ -417,12 +545,18 @@ function guardLocalEstimate(
     humanMarketCost = normalized.humanMarketCost;
     estimatedInternalCost = normalized.estimatedInternalCost;
 
-    const ratio = PLAN_PRICE_RATIO[planId] ?? PLAN_PRICE_RATIO.free;
+    const ratio = PLAN_PRICE_RATIO[normalizedPlan] ?? PLAN_PRICE_RATIO.free;
+    const biddingEnabled = Boolean(body.bidding_enabled);
+    const bidAgentLimit = PLAN_BID_AGENT_LIMIT[normalizedPlan];
+    const biddingReserve = biddingEnabled && bidAgentLimit > 0 ? estimatedInternalCost * Math.min(1.8, bidAgentLimit * 0.18) : 0;
     const marginFloor = estimatedInternalCost * MINIMUM_MARGIN_MULTIPLIER;
     const platformFloor = estimatedInternalCost + Math.max(BASE_PLATFORM_OVERHEAD_USD, humanMarketCost * 0.015);
+    const biddingNoLossFloor = (estimatedInternalCost + biddingReserve) * MINIMUM_MARGIN_MULTIPLIER + BASE_PLATFORM_OVERHEAD_USD;
     const aiPriceTarget = humanMarketCost * ratio + estimatedInternalCost;
     const maxClientPrice = humanMarketCost * MAX_AI_PRICE_RATIO + estimatedInternalCost;
-    const minBudget = roundBudget(Math.max(marginFloor, platformFloor, aiPriceTarget, Math.min(suggestedMinimum, maxClientPrice)));
+    const minBudget = roundBudget(
+        Math.max(marginFloor, platformFloor, biddingNoLossFloor, aiPriceTarget, Math.min(suggestedMinimum, maxClientPrice)),
+    );
     const savingsPercent = Math.round(Math.max(0, 100 - (minBudget / humanMarketCost) * 100) * 10) / 10;
 
     return {
@@ -432,8 +566,19 @@ function guardLocalEstimate(
         reason: parsed.reason?.trim() || "Calculated as a low AI project price compared with typical freelancer rates.",
         strategy,
         model,
-        market_breakdown: buildMarketBreakdown(title, description, humanMarketCost, marketContext),
-        market_context_available: Boolean(marketContext.trim()),
+        market_breakdown: Array.isArray(extra.market_breakdown)
+            ? extra.market_breakdown
+            : buildMarketBreakdown(title, description, humanMarketCost, marketContext),
+        market_context_available:
+            typeof extra.market_context_available === "boolean"
+                ? extra.market_context_available
+                : Boolean(marketContext.trim()),
+        work_category: protectedCost.category,
+        plan: extra.plan,
+        usage: extra.usage,
+        delivery_target: extra.delivery_target,
+        bidding_lane: extra.bidding_lane,
+        bid_agent_limit: extra.bid_agent_limit,
     };
 }
 
@@ -563,7 +708,19 @@ export async function POST(req: Request) {
 
                 if (response.ok) {
                     const data = await response.json();
-                    return NextResponse.json(sanitizePublicEstimate(data, "backend-estimate", title, pricingDescription));
+                    return NextResponse.json(
+                        guardLocalEstimate(
+                            data as RawEstimate,
+                            title,
+                            pricingDescription,
+                            planId,
+                            typeof data.strategy === "string" ? data.strategy : "backend-estimate",
+                            typeof data.model === "string" ? data.model : "backend-estimate",
+                            "",
+                            body,
+                            data,
+                        ),
+                    );
                 }
             } catch (error) {
                 console.warn("Backend estimate failed; trying server-side model fallback:", error);
@@ -577,12 +734,13 @@ Calculate the lowest safe AI project price for a business client.
 Rules:
 1. Classify the job by scope and difficulty from the actual words in the brief. Do not inflate vague/simple tasks.
 2. Estimate human_market_cost_usd realistically. Simple writing such as a short story, email, paragraph, rewrite, caption, or summary is usually $10-$35 unless the brief asks for long-form, screenplay, film, book, chapters, research, or premium production work.
-3. Estimate estimated_api_cost_usd: hidden provider/model/tool cost, including retries and review. This is internal only.
+3. Estimate estimated_api_cost_usd: hidden provider/model/tool cost for the selected work category and model group, including retries, review, asset reading, and tool calls. This is internal only.
 4. Estimate minimum_client_budget_usd as the lowest client-facing project price. If human_market_cost_usd is $100, the client-facing AI price should target about $10-$16 before hidden delivery cost protection. Smaller simple tasks should be much lower.
 5. The final quote must stay above hidden delivery cost plus platform margin, but never pad the price just because the plan is higher.
-6. If Requirements include raw asset size/count, file types, selected model routing, reference links, or rush timeline, use those signals carefully to adjust effort and hidden compute cost.
-7. Use live market-search context when present to anchor human_market_cost_usd, especially Fiverr or freelancer marketplace rates. Do not claim a web result exists if none was provided.
-8. Keep the reason client-friendly. Do not mention API cost, provider cost, margin, or internal calculations.
+6. If Requirements include video, audio, VFX, render, GPU, B-roll generation, Sora/Veo, large files, or long timelines, apply a much higher hidden compute/tool cost so the platform never loses money.
+7. If bidding is enabled, include extra hidden reserve for agent bidding, retries, and failed attempts before setting the public minimum.
+8. Use live market-search context when present to anchor human_market_cost_usd, especially Fiverr or freelancer marketplace rates. Do not claim a web result exists if none was provided.
+9. Keep the reason client-friendly. Do not mention API cost, provider cost, margin, or internal calculations.
 
 Return only JSON:
 {
@@ -639,7 +797,7 @@ Return only JSON:
         }
 
         return NextResponse.json(
-            guardLocalEstimate(parsed, title, pricingDescription, planId, usedStrategy, usedModel, marketContext),
+            guardLocalEstimate(parsed, title, pricingDescription, planId, usedStrategy, usedModel, marketContext, body),
         );
     } catch (error) {
         console.error("Failed to calculate budget:", error);

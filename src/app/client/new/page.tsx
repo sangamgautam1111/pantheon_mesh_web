@@ -7,6 +7,16 @@ import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import { BUSINESS_PLANS } from "@/lib/businessPlans";
 import {
+    WORK_CATEGORY_LABELS,
+    canUseModelLane,
+    detectWorkCategory,
+    getModelGroupsForCategory,
+    normalizePlanId,
+    type ModelGroupDefinition,
+    type ModelLaneId,
+    type PlanId,
+} from "@/lib/modelGroups";
+import {
     AlertTriangle,
     ArrowLeft,
     ArrowRight,
@@ -32,7 +42,6 @@ import qwenLogo from "../../../../logos/qwen.png";
 
 type StepId = "scope" | "routing" | "checkout";
 type TimelineId = "standard" | "rush";
-type ModelLaneId = "flash" | "standard" | "advanced" | "elite";
 
 interface AssetMeta {
     id: string;
@@ -106,73 +115,26 @@ const TIMELINES = [
     },
 ];
 
-const MODEL_LANES = [
-    {
-        id: "flash" as const,
-        planId: "free",
-        planName: "Free Plan",
-        title: "The Flash Squad",
-        tag: "Basic AI Lane",
-        description: "Ultra-fast, low-cost routing for quick scripts, text formatting, simple components, and small creative tasks.",
-        examples: "Emails, summaries, simple copy, small scripts",
-        workflow: "Gemini creates the first draft. Qwen runs a fast syntax and logic pass before delivery.",
-        bidding: "No bidding",
-        logos: [
-            { role: "Coder", name: "Gemini 3 Flash", src: geminiLogo.src },
-            { role: "Reviewer", name: "Qwen 3.5 27B", src: qwenLogo.src },
-        ],
-    },
-    {
-        id: "standard" as const,
-        planId: "starter",
-        planName: "Starter Plan",
-        title: "The Standard Duo",
-        tag: "Standard AI Lane",
-        description: "Reliable day-to-day coding for teams that need cleaner structure, better reasoning, and strong basic review.",
-        examples: "Landing pages, coding fixes, scripts, structured business tasks",
-        workflow: "Claude Sonnet designs and writes. DeepSeek V3.2 reviews edge cases and tightens inefficient code.",
-        bidding: "No bidding",
-        logos: [
-            { role: "PM / Architect", name: "Claude Sonnet 4.6", src: anthropicLogo.src },
-            { role: "Debugger", name: "DeepSeek V3.2", src: deepseekLogo.src },
-        ],
-    },
-    {
-        id: "advanced" as const,
-        planId: "growth",
-        planName: "Growth Plan",
-        title: "The Advanced Syndicate",
-        tag: "Advanced AI Lane",
-        description: "Multi-agent planning, tool-use, stronger review, and bidding pressure for real product work.",
-        examples: "n8n automations, backend databases, API integrations, full-stack fixes",
-        workflow: "Claude coordinates. GPT-5.4 executes. DeepSeek-R1 verifies logic. GLM-5.1 handles integrations.",
-        bidding: "Up to 6 bidding agents",
-        logos: [
-            { role: "PM", name: "Claude Sonnet 4.6", src: anthropicLogo.src },
-            { role: "Master Coder", name: "GPT-5.4", src: chatgptLogo.src },
-            { role: "Logic Agent", name: "DeepSeek-R1", src: deepseekLogo.src },
-            { role: "Integration", name: "GLM-5.1", src: glmLogo.src },
-        ],
-    },
-    {
-        id: "elite" as const,
-        planId: "scale",
-        planName: "Scale Plan",
-        title: "The Elite Pantheon Council",
-        tag: "Premium AI Lane",
-        description: "World-class engineering lane for complex full-stack systems, high-risk launches, and deep QA.",
-        examples: "Web3 platforms, autonomous bots, multi-file refactors, complex apps",
-        workflow: "Opus architects, Codex executes, Gemini inspects UI, Llama audits security, and Qwen stress-tests.",
-        bidding: "Up to 10 bidding agents",
-        logos: [
-            { role: "Architect", name: "Claude Opus 4.7", src: anthropicLogo.src },
-            { role: "Executor", name: "GPT-5.3 Codex", src: chatgptLogo.src },
-            { role: "Vision UI", name: "Gemini 3 Pro", src: geminiLogo.src },
-            { role: "Security", name: "Llama 4 Maverick", src: llamaLogo.src },
-            { role: "Sandbox", name: "Qwen 3.6 A3B", src: qwenLogo.src },
-        ],
-    },
-];
+const LOGOS_BY_KEY: Record<string, string> = {
+    anthropic: anthropicLogo.src,
+    chatgpt: chatgptLogo.src,
+    deepseek: deepseekLogo.src,
+    gemini: geminiLogo.src,
+    glm: glmLogo.src,
+    llama: llamaLogo.src,
+    qwen: qwenLogo.src,
+};
+
+function withLogos(group: ModelGroupDefinition) {
+    return {
+        ...group,
+        logos: group.models.map((model) => ({
+            role: model.role,
+            name: model.name,
+            src: LOGOS_BY_KEY[model.logoKey] ?? chatgptLogo.src,
+        })),
+    };
+}
 
 function cx(...parts: Array<string | false | null | undefined>) {
     return parts.filter(Boolean).join(" ");
@@ -192,12 +154,6 @@ function buildFallbackPlan(planId: string | null | undefined): PlanSnapshot {
         bid_agent_limit: fallback.bidAgentLimit,
         review_depth: fallback.reviewDepth,
     };
-}
-
-function canUseLane(planId: string, lane: ModelLaneId) {
-    const planRank: Record<string, number> = { free: 0, starter: 1, growth: 2, scale: 3 };
-    const laneRank: Record<ModelLaneId, number> = { flash: 0, standard: 1, advanced: 2, elite: 3 };
-    return (planRank[planId] ?? 0) >= laneRank[lane];
 }
 
 function formatMoney(value: number | null | undefined) {
@@ -325,7 +281,6 @@ export default function NewClientJobPage() {
 
     const activePlan = planInfo ?? buildFallbackPlan(profile?.currentPlanId);
     const selectedTimeline = TIMELINES.find((item) => item.id === timeline) ?? TIMELINES[0];
-    const selectedLaneInfo = MODEL_LANES.find((lane) => lane.id === selectedLane) ?? MODEL_LANES[0];
     const currentStepIndex = STEPS.findIndex((item) => item.id === step);
     const assetLinks = useMemo(() => parseLinks(assetLinkText), [assetLinkText]);
     const assetTotalMb = useMemo(
@@ -336,9 +291,25 @@ export default function NewClientJobPage() {
         () => Array.from(new Set(assets.map((asset) => asset.type || "unknown"))),
         [assets],
     );
+    const detectedWorkCategory = useMemo(
+        () =>
+            detectWorkCategory({
+                title: jobTitle,
+                description: goal,
+                assetTypes,
+                assetLinks,
+                assetTotalMb,
+            }),
+        [assetLinks, assetTotalMb, assetTypes, goal, jobTitle],
+    );
+    const modelGroups = useMemo(
+        () => getModelGroupsForCategory(detectedWorkCategory).map(withLogos),
+        [detectedWorkCategory],
+    );
+    const selectedLaneInfo = modelGroups.find((lane) => lane.id === selectedLane) ?? modelGroups[0];
     const canContinueScope = jobTitle.trim().length >= 3 && goal.trim().length >= 15;
     const canPostByPlan = planUsage?.can_post_job ?? true;
-    const selectedLaneAllowed = canUseLane(activePlan.id, selectedLane);
+    const selectedLaneAllowed = canUseModelLane(activePlan.id, selectedLane);
     const canEnableBidding = activePlan.bid_agent_limit > 0 && ["advanced", "elite"].includes(selectedLane);
 
     const scopeComplexity = useMemo(() => {
@@ -373,6 +344,7 @@ export default function NewClientJobPage() {
                 assetTypes,
                 assetTextPreview,
                 selectedLane,
+                detectedWorkCategory,
                 enableBidding,
                 plan: activePlan.id,
             }),
@@ -383,6 +355,7 @@ export default function NewClientJobPage() {
             assetTotalMb,
             assetTypes,
             assets.length,
+            detectedWorkCategory,
             enableBidding,
             goal,
             jobTitle,
@@ -411,20 +384,14 @@ export default function NewClientJobPage() {
     }, [user?.uid]);
 
     useEffect(() => {
-        if (activePlan.id === "scale") {
-            setSelectedLane("elite");
-        } else if (activePlan.id === "growth") {
-            setSelectedLane("advanced");
-        } else if (activePlan.id === "starter") {
-            setSelectedLane("standard");
-        } else if (activePlan.id === "free") {
-            setSelectedLane("flash");
-        }
+        const laneByPlan: Record<PlanId, ModelLaneId> = {
+            free: "flash",
+            starter: "standard",
+            growth: "advanced",
+            scale: "elite",
+        };
+        setSelectedLane(laneByPlan[normalizePlanId(activePlan.id)]);
     }, [activePlan.id]);
-
-    useEffect(() => {
-        setEnableBidding(activePlan.bid_agent_limit > 0 && ["advanced", "elite"].includes(selectedLane));
-    }, [activePlan.bid_agent_limit, selectedLane]);
 
     useEffect(() => {
         setEnableBidding(canEnableBidding);
@@ -448,7 +415,9 @@ export default function NewClientJobPage() {
         asset_count: assets.length,
         asset_types: assetTypes,
         asset_text_preview: assetTextPreview,
+        work_category: detectedWorkCategory,
         model_lane: selectedLane,
+        model_group_id: selectedLaneInfo.id,
         model_group: `${selectedLaneInfo.title} - ${selectedLaneInfo.tag}. ${selectedLaneInfo.workflow}`,
         bidding_enabled: canEnableBidding && enableBidding,
     });
@@ -759,13 +728,16 @@ export default function NewClientJobPage() {
                     Each plan has a purpose-built model cluster. Higher plans unlock stronger councils, deeper review,
                     and bidding execution where the plan allows it.
                 </p>
+                <div className="mt-4 inline-flex rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-black text-slate-950">
+                    Detected work type: {WORK_CATEGORY_LABELS[detectedWorkCategory]}
+                </div>
             </div>
 
             {activePlan.id === "free" && scopeComplexity.isComplex && (
                 <div className="mb-5 flex gap-3 rounded-3xl border border-slate-300 bg-slate-50 p-4 text-sm text-slate-800">
                     <AlertTriangle className="mt-0.5 shrink-0 text-slate-950" size={19} />
                     <div>
-                        <p className="font-black">The Flash Squad may struggle with this scope.</p>
+                        <p className="font-black">{modelGroups[0].title} may struggle with this scope.</p>
                         <p className="mt-1 leading-6">
                             Signals found: {scopeComplexity.reasons.join(", ")}. Upgrade to Growth to unlock the Advanced
                             Syndicate and 6-agent bidding for stronger execution.
@@ -775,8 +747,8 @@ export default function NewClientJobPage() {
             )}
 
             <div className="grid gap-4 xl:grid-cols-4">
-                {MODEL_LANES.map((lane) => {
-                    const available = canUseLane(activePlan.id, lane.id);
+                {modelGroups.map((lane) => {
+                    const available = canUseModelLane(activePlan.id, lane.id);
                     const active = selectedLane === lane.id;
                     return (
                         <button
@@ -1049,8 +1021,12 @@ export default function NewClientJobPage() {
                         <span className="font-black text-slate-950">{activePlan.name}</span>
                     </div>
                     <div className="flex justify-between gap-3">
+                        <span className="text-slate-500">Work type</span>
+                        <span className="text-right font-black text-slate-950">{WORK_CATEGORY_LABELS[detectedWorkCategory]}</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
                         <span className="text-slate-500">Model group</span>
-                        <span className="text-right font-black text-slate-950">{selectedLaneInfo.tag}</span>
+                        <span className="text-right font-black text-slate-950">{selectedLaneInfo.title}</span>
                     </div>
                     <div className="flex justify-between gap-3">
                         <span className="text-slate-500">Bidding</span>
@@ -1072,6 +1048,12 @@ export default function NewClientJobPage() {
                     </div>
                 )}
 
+                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+                    <span className="font-black text-slate-950">Test output then pay.</span> Agents create the first
+                    test output only after the protected minimum is accepted, so bidding cannot undercut hidden compute
+                    cost or platform margin.
+                </div>
+
                 <button
                     type="button"
                     onClick={submitJob}
@@ -1080,8 +1062,8 @@ export default function NewClientJobPage() {
                 >
                     {isPosting ? <Loader2 className="animate-spin" size={17} /> : <Send size={17} />}
                     {activePlan.id === "free" && selectedLane === "flash"
-                        ? "Send To The Flash Squad"
-                        : "Fund Job & Deploy Agents"}
+                        ? `Send To ${selectedLaneInfo.title}`
+                        : "Test Output, Pay & Deploy"}
                 </button>
                 <button
                     type="button"
