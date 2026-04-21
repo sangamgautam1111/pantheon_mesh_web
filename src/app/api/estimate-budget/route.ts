@@ -899,12 +899,32 @@ ${marketBlock}`;
             );
         }
 
-        /* ── Step 3: Parse DeepSeek's decision + apply safety floor ── */
+        /* ── Step 3: Parse DeepSeek's decision + apply structural validation pipeline ── */
         let parsed: RawEstimate = {};
         try {
             parsed = JSON.parse(cleanJsonObject(rawResponse)) as RawEstimate;
+            
+            // ANTI-HALLUCINATION PIPELINE:
+            // 1. Force API cost cap. AI token inference should never exceed $50 for consumer jobs even in extreme cases.
+            if (parsed.estimated_api_cost_usd !== undefined) {
+                parsed.estimated_api_cost_usd = Math.min(Math.max(0.01, parsed.estimated_api_cost_usd), 45.00);
+            }
+            if (parsed.api_cost_usd !== undefined) {
+                parsed.api_cost_usd = Math.min(Math.max(0.01, parsed.api_cost_usd), 45.00);
+            }
+            
+            // 2. Extract safe numbers as fallbacks
+            const safeMarketCost = parsed.human_market_cost_usd ?? 0;
+            const safeBudget = parsed.minimum_client_budget_usd ?? parsed.min_budget_usd ?? 0;
+            
+            // 3. Ensure the final budget NEVER exceeds the human market cost (otherwise it's not a discount)
+            if (safeBudget > 0 && safeMarketCost > 0 && safeBudget > safeMarketCost) {
+                parsed.minimum_client_budget_usd = safeMarketCost * 0.15; // Force fallback to 15% discount if hallucination flipped them
+            }
+            
         } catch (error) {
             console.error("DeepSeek budget JSON parse error:", error, rawResponse);
+            // If completely unparsable, guardLocalEstimate's safety defaults will automatically catch it below.
         }
 
         return NextResponse.json(
