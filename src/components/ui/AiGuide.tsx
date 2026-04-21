@@ -15,6 +15,41 @@ interface ChatMsg {
     actions?: { type: string; path?: string; elementId?: string; label?: string }[];
 }
 
+interface PanelSize {
+    width: number;
+    height: number;
+}
+
+interface PanelPosition {
+    x: number;
+    y: number;
+}
+
+const DEFAULT_PANEL_SIZE: PanelSize = { width: 440, height: 620 };
+const MIN_PANEL_SIZE: PanelSize = { width: 360, height: 440 };
+const PANEL_MARGIN = 12;
+const PANEL_TOP_MARGIN = 56;
+
+function clampNumber(value: number, min: number, max: number) {
+    return Math.min(Math.max(value, min), Math.max(min, max));
+}
+
+function getDefaultPanelPosition(size: PanelSize): PanelPosition {
+    return {
+        x: window.innerWidth - size.width - 24,
+        y: window.innerHeight - size.height - 24,
+    };
+}
+
+function clampPanelPosition(position: PanelPosition, size: PanelSize): PanelPosition {
+    const maxX = window.innerWidth - size.width - PANEL_MARGIN;
+    const maxY = window.innerHeight - size.height - PANEL_MARGIN;
+    return {
+        x: clampNumber(position.x, PANEL_MARGIN, maxX),
+        y: clampNumber(position.y, PANEL_TOP_MARGIN, maxY),
+    };
+}
+
 const SUGGESTIONS = [
     "How do I post a job?",
     "Which plan fits my work volume?",
@@ -36,8 +71,19 @@ export const AiGuide = () => {
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [panelSize, setPanelSize] = useState<PanelSize>(DEFAULT_PANEL_SIZE);
+    const [panelPosition, setPanelPosition] = useState<PanelPosition | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const dragStateRef = useRef<{
+        startPointer: PanelPosition;
+        startPosition: PanelPosition;
+    } | null>(null);
+    const resizeStateRef = useRef<{
+        startPointer: PanelPosition;
+        startSize: PanelSize;
+        startPosition: PanelPosition;
+    } | null>(null);
     const router = useRouter();
     const pathname = usePathname();
 
@@ -47,6 +93,70 @@ export const AiGuide = () => {
         window.addEventListener("resize", check);
         return () => window.removeEventListener("resize", check);
     }, []);
+
+    useEffect(() => {
+        if (!open || isMobile) {
+            return;
+        }
+        setPanelPosition((current) => {
+            const nextPosition = current ?? getDefaultPanelPosition(panelSize);
+            return clampPanelPosition(nextPosition, panelSize);
+        });
+    }, [open, isMobile, panelSize]);
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 769) {
+                return;
+            }
+            setPanelPosition((current) => (current ? clampPanelPosition(current, panelSize) : current));
+        };
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, [panelSize]);
+
+    useEffect(() => {
+        const handlePointerMove = (event: PointerEvent) => {
+            if (dragStateRef.current) {
+                const deltaX = event.clientX - dragStateRef.current.startPointer.x;
+                const deltaY = event.clientY - dragStateRef.current.startPointer.y;
+                setPanelPosition(
+                    clampPanelPosition(
+                        {
+                            x: dragStateRef.current.startPosition.x + deltaX,
+                            y: dragStateRef.current.startPosition.y + deltaY,
+                        },
+                        panelSize,
+                    ),
+                );
+            }
+
+            if (resizeStateRef.current) {
+                const deltaX = event.clientX - resizeStateRef.current.startPointer.x;
+                const deltaY = event.clientY - resizeStateRef.current.startPointer.y;
+                const maxWidth = window.innerWidth - resizeStateRef.current.startPosition.x - PANEL_MARGIN;
+                const maxHeight = window.innerHeight - resizeStateRef.current.startPosition.y - PANEL_MARGIN;
+                setPanelSize({
+                    width: clampNumber(resizeStateRef.current.startSize.width + deltaX, MIN_PANEL_SIZE.width, maxWidth),
+                    height: clampNumber(resizeStateRef.current.startSize.height + deltaY, MIN_PANEL_SIZE.height, maxHeight),
+                });
+            }
+        };
+
+        const handlePointerUp = () => {
+            dragStateRef.current = null;
+            resizeStateRef.current = null;
+        };
+
+        window.addEventListener("pointermove", handlePointerMove);
+        window.addEventListener("pointerup", handlePointerUp);
+        window.addEventListener("pointercancel", handlePointerUp);
+        return () => {
+            window.removeEventListener("pointermove", handlePointerMove);
+            window.removeEventListener("pointerup", handlePointerUp);
+            window.removeEventListener("pointercancel", handlePointerUp);
+        };
+    }, [panelSize]);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -135,6 +245,34 @@ export const AiGuide = () => {
         }
     };
 
+    const handleDragStart = (event: React.PointerEvent<HTMLDivElement>) => {
+        if (isMobile || event.button !== 0) {
+            return;
+        }
+        const currentPosition = panelPosition ?? getDefaultPanelPosition(panelSize);
+        dragStateRef.current = {
+            startPointer: { x: event.clientX, y: event.clientY },
+            startPosition: clampPanelPosition(currentPosition, panelSize),
+        };
+        event.currentTarget.setPointerCapture(event.pointerId);
+        event.preventDefault();
+    };
+
+    const handleResizeStart = (event: React.PointerEvent<HTMLDivElement>) => {
+        if (isMobile || event.button !== 0) {
+            return;
+        }
+        const currentPosition = panelPosition ?? getDefaultPanelPosition(panelSize);
+        resizeStateRef.current = {
+            startPointer: { x: event.clientX, y: event.clientY },
+            startSize: panelSize,
+            startPosition: clampPanelPosition(currentPosition, panelSize),
+        };
+        event.currentTarget.setPointerCapture(event.pointerId);
+        event.preventDefault();
+        event.stopPropagation();
+    };
+
     const renderText = (text: string) =>
         text.split("\n").map((line, index) => (
             <span key={index}>
@@ -150,12 +288,6 @@ export const AiGuide = () => {
                 )}
             </span>
         ));
-
-    const panelWidth = isMobile ? "100vw" : "420px";
-    const panelHeight = isMobile ? "100vh" : "600px";
-    const panelBottom = isMobile ? "0" : "24px";
-    const panelRight = isMobile ? "0" : "24px";
-    const panelRadius = isMobile ? "0" : "12px";
 
     return (
         <>
@@ -188,15 +320,18 @@ export const AiGuide = () => {
                     style={{
                         background: "var(--bg-surface)",
                         borderColor: isMobile ? "transparent" : "var(--border-color)",
-                        width: panelWidth,
-                        height: panelHeight,
-                        bottom: panelBottom,
-                        right: panelRight,
-                        borderRadius: panelRadius,
+                        width: isMobile ? "100vw" : panelSize.width,
+                        height: isMobile ? "100vh" : panelSize.height,
+                        top: isMobile ? 0 : panelPosition?.y,
+                        left: isMobile ? 0 : panelPosition?.x,
+                        bottom: isMobile || panelPosition ? undefined : 24,
+                        right: isMobile || panelPosition ? undefined : 24,
+                        borderRadius: isMobile ? 0 : 16,
                     }}
                 >
                     <div
-                        className="flex items-center justify-between border-b px-4 py-3"
+                        onPointerDown={handleDragStart}
+                        className="flex cursor-move select-none items-center justify-between border-b px-4 py-3"
                         style={{ borderColor: "var(--border-color)", background: "var(--bg-surface-variant)" }}
                     >
                         <div className="flex items-center gap-3">
@@ -208,12 +343,13 @@ export const AiGuide = () => {
                                     Mesh Assist
                                 </div>
                                 <div className="text-xs" style={{ color: "var(--text-disabled)" }}>
-                                    Business Workspace Guide
+                                    Drag header. Resize corner.
                                 </div>
                             </div>
                         </div>
                         <button
                             onClick={() => setOpen(false)}
+                            onPointerDown={(event) => event.stopPropagation()}
                             className="rounded p-1.5 transition-opacity hover:opacity-70"
                             style={{ color: "var(--text-disabled)" }}
                         >
@@ -341,6 +477,16 @@ export const AiGuide = () => {
                             </button>
                         </div>
                     </div>
+                    {!isMobile && (
+                        <div
+                            onPointerDown={handleResizeStart}
+                            className="absolute bottom-1 right-1 z-10 h-6 w-6 cursor-nwse-resize rounded-br-xl"
+                            aria-label="Resize Mesh Assist"
+                            title="Resize Mesh Assist"
+                        >
+                            <div className="absolute bottom-2 right-2 h-3 w-3 border-b-2 border-r-2 border-slate-400" />
+                        </div>
+                    )}
                 </div>
             )}
         </>

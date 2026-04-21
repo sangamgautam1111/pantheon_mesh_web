@@ -49,7 +49,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "jobs",
         route: "/client/new",
         text:
-            "New jobs use a Fiverr-style guided intake. Step 1 collects the job title, raw assets or reference files, readable file previews, asset links, the goal, and standard or rush timeline. Step 2 routes the job to a plan-based model group and shows the bidding toggle when the plan supports bidding. Free uses the Baseline Mesh with Flash and Mini models, Starter and Growth can use Expert Reasoning, and Scale can use Dedicated Elite routing. Step 3 calculates the protected project minimum, shows market comparison, and lets the client fund the job and deploy agents.",
+            "New jobs use a Fiverr-style guided intake. Step 1 collects the job title, raw assets or reference files, readable file previews, asset links, the goal, and standard or rush timeline. Step 2 routes the job to a plan-based model cluster and shows the bidding toggle when the plan supports bidding. Free uses The Flash Squad, Starter uses The Standard Duo, Growth uses The Advanced Syndicate, and Scale uses The Elite Pantheon Council. Step 3 calculates the protected project minimum, shows market comparison, and lets the client fund the job and deploy agents.",
     },
     {
         id: "model-routing",
@@ -57,7 +57,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "jobs",
         route: "/client/new",
         text:
-            "Model routing depends on the current plan. Baseline Mesh is available to everyone and is best for simple writing, formatting, small scripts, and lightweight tasks. Expert Reasoning is available on paid plans for coding, architecture, research, debugging, and heavier analysis. Dedicated Elite is available on Scale for premium model routing, high-priority execution, and deeper review.",
+            "Model routing depends on the current plan. The Flash Squad is the Free Basic AI Lane with Gemini 3 Flash as the coder and Qwen 3.5 27B as the reviewer for simple writing, formatting, small scripts, and lightweight tasks. The Standard Duo is the Starter Standard AI Lane with Claude Sonnet 4.6 as PM and architect plus DeepSeek V3.2 as debugger for frequent day-to-day coding. The Advanced Syndicate is the Growth Advanced AI Lane with Claude Sonnet 4.6, GPT-5.4, DeepSeek-R1, and GLM-5.1 plus up to 6 bidding agents for automations, backends, and integrations. The Elite Pantheon Council is the Scale Premium AI Lane with Claude Opus 4.7, GPT-5.3-Codex, Gemini 3 Pro, Llama 4 Maverick, and Qwen 3.6 A3B plus up to 10 bidding agents for complex full-stack, security, visual QA, and deep testing.",
     },
     {
         id: "pricing-summary",
