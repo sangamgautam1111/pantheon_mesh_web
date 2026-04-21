@@ -181,7 +181,7 @@ async function ensureKnowledge(dimension: number) {
 
 function getCurrentPlanSummary(currentPlanId?: string) {
     const currentPlan = BUSINESS_PLANS.find((plan) => plan.id === currentPlanId) ?? BUSINESS_PLANS[0];
-    return `${currentPlan.name} is the current plan. It includes ${currentPlan.jobsPerMonth}, ${currentPlan.activeJobs}, ${currentPlan.deliveryTarget}, ${currentPlan.modelLane}, and ${currentPlan.reviewDepth} review.`;
+    return `${currentPlan.name} is the current plan. It includes ${currentPlan.jobsPerMonth}, ${currentPlan.activeJobs}, ${currentPlan.deliveryTarget}, ${currentPlan.modelLane}, ${currentPlan.biddingAgents}, and ${currentPlan.reviewDepth} review.`;
 }
 
 async function retrieveKnowledge(message: string, currentPlanId?: string) {
@@ -281,7 +281,7 @@ async function generateGroqReply(options: {
         {
             role: "system",
             content:
-                "You are Mesh Assist for Pantheon Mesh. Be helpful, direct, and conversational. Use the business context when it helps. If the user is unclear, ask one short follow-up question. Reply naturally to greetings and small talk. Do not invent product details, plans, pricing, or workflow behavior.",
+                "You are Mesh Assist for Pantheon Mesh. Be helpful, direct, and conversational. Use the business context when it helps. If the user is unclear, ask one short follow-up question. Reply naturally to greetings and small talk. If asked why a client would choose Pantheon over ChatGPT, Claude, or vibe coding tools, explain that Pantheon is a job workflow with pricing, posting, bidding on eligible plans, review, tracking, and delivery history rather than a blank chat box. Do not invent product details, plans, pricing, or workflow behavior.",
         },
         {
             role: "system",
@@ -331,10 +331,25 @@ function buildRetrievalFallback(message: string, docs: RetrievedDoc[], currentPl
 
     if (docs.length > 0) {
         const bestDoc = docs[0];
+        if (query.includes("chatgpt") || query.includes("claude") || query.includes("vibe") || query.includes("raw ai")) {
+            return "Pantheon is not just a raw AI chat subscription. It gives clients job intake, minimum project pricing, optional thumbnails, plan-based model lanes, Growth and Scale bidding agents, review, tracking, and delivery history in one workspace. What kind of client job are you thinking about?";
+        }
         if (query.includes("$29") || query.includes("starter")) {
             const starterPlan = BUSINESS_PLANS.find((plan) => plan.id === "starter");
             if (starterPlan) {
-                return `You are currently on ${currentPlan.name}. The $29 ${starterPlan.name} plan gives ${starterPlan.jobsPerMonth}, ${starterPlan.activeJobs}, ${starterPlan.deliveryTarget} delivery, ${starterPlan.modelLane}, and ${starterPlan.reviewDepth} review.`;
+                return `You are currently on ${currentPlan.name}. The $29 ${starterPlan.name} plan gives ${starterPlan.jobsPerMonth}, ${starterPlan.activeJobs}, ${starterPlan.deliveryTarget} delivery, ${starterPlan.modelLane}, ${starterPlan.biddingAgents}, and ${starterPlan.reviewDepth} review.`;
+            }
+        }
+        if (query.includes("$69") || query.includes("growth")) {
+            const growthPlan = BUSINESS_PLANS.find((plan) => plan.id === "growth");
+            if (growthPlan) {
+                return `You are currently on ${currentPlan.name}. The $69 ${growthPlan.name} plan gives ${growthPlan.jobsPerMonth}, ${growthPlan.activeJobs}, ${growthPlan.deliveryTarget} delivery, ${growthPlan.modelLane}, ${growthPlan.biddingAgents}, and ${growthPlan.reviewDepth} review.`;
+            }
+        }
+        if (query.includes("$149") || query.includes("scale")) {
+            const scalePlan = BUSINESS_PLANS.find((plan) => plan.id === "scale");
+            if (scalePlan) {
+                return `You are currently on ${currentPlan.name}. The $149 ${scalePlan.name} plan gives ${scalePlan.jobsPerMonth}, ${scalePlan.activeJobs}, ${scalePlan.deliveryTarget} delivery, ${scalePlan.modelLane}, ${scalePlan.biddingAgents}, and ${scalePlan.reviewDepth} review.`;
             }
         }
 

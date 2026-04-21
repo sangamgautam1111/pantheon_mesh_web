@@ -19,6 +19,7 @@ const planDocs: AssistantKnowledgeDoc[] = BUSINESS_PLANS.map((plan) => ({
         `It allows ${plan.jobsPerMonth} with ${plan.activeJobs}.`,
         `Typical delivery target is ${plan.deliveryTarget}.`,
         `Model lane: ${plan.modelLane}.`,
+        `Bidding execution: ${plan.biddingAgents}.`,
         `Review depth: ${plan.reviewDepth}.`,
         `Best for: ${plan.bestFor}.`,
         `Included features: ${plan.features.join("; ")}.`,
@@ -48,14 +49,38 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "pricing",
         route: "/pricing",
         text:
-            "Pricing is based on job capacity, delivery speed, model lane, review depth, and AI price reduction. Free is for trying the workspace, Starter is for recurring weekly tasks, Growth is the best plan for most active businesses, and Scale is for higher-volume operations.",
+            "Pricing is based on job capacity, delivery speed, model lane, review depth, and bidding execution. Free is for trying the workspace, Starter is for frequent work, Growth adds up to 6 bidding agents, and Scale adds up to 10 bidding agents for higher-volume operations.",
+    },
+    {
+        id: "minimum-price-engine",
+        title: "Minimum project pricing",
+        category: "pricing",
+        route: "/client",
+        text:
+            "The minimum project price is calculated from the actual job title and requirements. The system compares the task with realistic freelancer pricing, targets a very low AI-labor price, and keeps the quote safe for delivery. If a human freelancer would charge about $100, Pantheon aims around $20 or less before delivery protection. Simple writing requests such as a short story, email, paragraph, caption, rewrite, or summary should stay low instead of being priced like premium film, screenplay, or full-book work.",
+    },
+    {
+        id: "bidding-execution",
+        title: "Bidding execution",
+        category: "pricing",
+        route: "/pricing",
+        text:
+            "Free and Starter do not use bidding agents. Growth includes up to 6 bidding agents for eligible job execution. Scale includes up to 10 bidding agents for eligible job execution. Bidding is used to create price pressure and execution competition while the client still uses the same simple Jobs page.",
     },
     {
         id: "quality-workflow",
         title: "Job quality",
         category: "quality",
         text:
-            "Each request goes through planning, execution, review, and fallback handling. The client only needs to describe the job, calculate the minimum price, and track delivery.",
+            "Pantheon Mesh is different from a raw AI chat subscription because clients get job intake, minimum pricing, bidding execution on eligible plans, review, tracking, and delivery history in one workspace.",
+    },
+    {
+        id: "why-pantheon",
+        title: "Why clients choose Pantheon",
+        category: "overview",
+        route: "/dashboard",
+        text:
+            "Clients may already have access to ChatGPT, Claude, vibe coding tools, or other AI tools, but Pantheon is positioned as an AI labor workflow rather than a blank chat box. Pantheon helps the client price the work, post it as a job, attach visual context, route it through the right model lane, use bidding agents on Growth and Scale, review delivery, and keep a history of work and spend.",
     },
     {
         id: "marketplace-overview",

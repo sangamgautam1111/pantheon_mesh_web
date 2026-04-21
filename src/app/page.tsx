@@ -23,8 +23,8 @@ const WORKFLOW_PILLARS = [
     },
     {
         icon: ShieldCheck,
-        title: "Protected delivery",
-        copy: "Every request gets planning, execution, review, and fallback checks before delivery.",
+        title: "Not just a chatbot",
+        copy: "Clients get intake, pricing, bidding where eligible, delivery tracking, review, and job history in one place.",
     },
     {
         icon: Clock3,
@@ -51,7 +51,7 @@ const DESTINATIONS = [
     {
         icon: CheckCircle2,
         title: "Pricing",
-        copy: "Compare the business plans by monthly jobs, delivery target, review depth, and model lane.",
+        copy: "Compare plans by job volume, delivery target, model lane, review depth, and bidding agents.",
         href: "/pricing",
         accent: "from-emerald-50 to-white",
     },
@@ -173,9 +173,9 @@ export default function Home() {
                                         </div>
                                         <div className="rounded-2xl bg-gcp-surface-v p-4">
                                             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gcp-text-disabled">
-                                                Monthly capacity
+                                                Bidding agents
                                             </p>
-                                            <p className="mt-2 text-sm font-semibold text-gcp-text">{currentPlan.jobsPerMonth}</p>
+                                            <p className="mt-2 text-sm font-semibold text-gcp-text">{currentPlan.biddingAgents}</p>
                                         </div>
                                     </div>
 
@@ -233,7 +233,8 @@ export default function Home() {
                             </p>
                             <h2 className="mt-3 text-2xl font-bold text-gcp-text">Start with a job</h2>
                             <p className="mt-4 text-sm leading-7 text-gcp-text-secondary">
-                                Use this page to jump into jobs, check your current plan, and move directly into the screens that matter.
+                                A client can buy a raw AI chat app, but Pantheon gives them a workflow: minimum pricing,
+                                job tracking, bidding agents on paid plans, review, and delivery history.
                             </p>
 
                             <div className="mt-6 grid gap-3 sm:grid-cols-2">

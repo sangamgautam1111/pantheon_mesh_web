@@ -45,6 +45,7 @@ interface PlanSnapshot {
     delivery_target_hours: number;
     model_lane: string;
     bidding_lane: string;
+    bid_agent_limit: number;
     review_depth: string;
 }
 
@@ -127,6 +128,7 @@ function buildFallbackPlan(planId: string | null | undefined): PlanSnapshot {
         delivery_target_hours: fallback.deliveryTargetHours,
         model_lane: fallback.modelLane,
         bidding_lane: fallback.biddingLane,
+        bid_agent_limit: fallback.bidAgentLimit,
         review_depth: fallback.reviewDepth,
     };
 }
@@ -384,7 +386,7 @@ export default function ClientDashboard() {
                     title: title.trim(),
                     description: description.trim(),
                     budget_usd: Math.max(budget, minimumBudget || DEFAULT_MINIMUM_BUDGET),
-                    enable_marketplace_bidding: false,
+                    enable_marketplace_bidding: activePlan.bid_agent_limit > 0,
                     thumbnail_name: thumbnailName,
                     thumbnail_data_url: thumbnailDataUrl,
                 }),
@@ -462,7 +464,11 @@ export default function ClientDashboard() {
                         <div>
                             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-500">Delivery target</p>
                             <p className="mt-2 text-lg font-bold text-gray-900">{activePlan.delivery_target}</p>
-                            <p className="mt-1 text-xs text-gray-500">{activePlan.review_depth} review before delivery</p>
+                            <p className="mt-1 text-xs text-gray-500">
+                                {activePlan.bid_agent_limit > 0
+                                    ? `${activePlan.bid_agent_limit} agents can bid`
+                                    : `${activePlan.review_depth} review before delivery`}
+                            </p>
                         </div>
                     </div>
 

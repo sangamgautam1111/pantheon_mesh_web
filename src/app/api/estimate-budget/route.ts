@@ -3,14 +3,50 @@ import { NextResponse } from "next/server";
 const PRODUCTION_API_BASE = "https://pantheon-api-mlqrumx6cq-uc.a.run.app";
 const GLOBAL_MINIMUM_BUDGET_USD = 1;
 const MINIMUM_MARGIN_MULTIPLIER = 2.8;
-const BASE_PLATFORM_OVERHEAD_USD = 1.25;
+const BASE_PLATFORM_OVERHEAD_USD = 0.85;
+const MAX_AI_PRICE_RATIO = 0.2;
 
 const PLAN_PRICE_RATIO: Record<string, number> = {
-    free: 0.25,
-    starter: 0.22,
-    growth: 0.18,
+    free: 0.2,
+    starter: 0.18,
+    growth: 0.16,
     scale: 0.15,
 };
+
+const SIMPLE_WRITING_KEYWORDS = [
+    "story",
+    "email",
+    "letter",
+    "caption",
+    "paragraph",
+    "summary",
+    "bio",
+    "description",
+    "rewrite",
+    "copy",
+];
+
+const LONG_FORM_KEYWORDS = [
+    "full book",
+    "novel",
+    "screenplay",
+    "movie",
+    "film",
+    "bollywood",
+    "chapter",
+    "chapters",
+    "series",
+    "landing page",
+    "website",
+    "frontend",
+    "backend",
+    "dashboard",
+    "automation",
+    "integration",
+    "high end",
+    "premium",
+    "production",
+];
 
 type RawEstimate = {
     human_market_cost_usd?: number;
@@ -78,25 +114,58 @@ function sanitizePublicEstimate(data: Record<string, unknown>, strategyFallback 
     };
 }
 
-function guardLocalEstimate(parsed: RawEstimate, planId: string, strategy: string, model: string) {
+function normalizeEstimatesForScope(
+    title: string,
+    description: string,
+    humanMarketCost: number,
+    estimatedInternalCost: number,
+) {
+    const combined = `${title} ${description}`.toLowerCase();
+    const wordCount = combined.split(/\s+/).filter(Boolean).length;
+    const isSimpleWriting = SIMPLE_WRITING_KEYWORDS.some((keyword) => combined.includes(keyword));
+    const isLongForm = LONG_FORM_KEYWORDS.some((keyword) => combined.includes(keyword));
+
+    if (isSimpleWriting && !isLongForm && wordCount <= 35) {
+        return {
+            humanMarketCost: Math.min(Math.max(humanMarketCost, 18), 35),
+            estimatedInternalCost: Math.min(Math.max(estimatedInternalCost, 0.08), 0.45),
+        };
+    }
+
+    if (isSimpleWriting && !isLongForm && wordCount <= 80) {
+        return {
+            humanMarketCost: Math.min(Math.max(humanMarketCost, 28), 70),
+            estimatedInternalCost: Math.min(Math.max(estimatedInternalCost, 0.12), 0.9),
+        };
+    }
+
+    return { humanMarketCost, estimatedInternalCost };
+}
+
+function guardLocalEstimate(parsed: RawEstimate, title: string, description: string, planId: string, strategy: string, model: string) {
     const suggestedMinimum = numberFrom(
         parsed.minimum_client_budget_usd ?? parsed.min_budget_usd,
         GLOBAL_MINIMUM_BUDGET_USD,
     );
-    const estimatedInternalCost = Math.max(
+    let estimatedInternalCost = Math.max(
         0.01,
         numberFrom(parsed.estimated_api_cost_usd ?? parsed.api_cost_usd, 0.35),
     );
-    const humanMarketCost = Math.max(
-        suggestedMinimum,
+    let humanMarketCost = Math.max(
         numberFrom(parsed.human_market_cost_usd, suggestedMinimum * 4),
         5,
     );
+
+    const normalized = normalizeEstimatesForScope(title, description, humanMarketCost, estimatedInternalCost);
+    humanMarketCost = normalized.humanMarketCost;
+    estimatedInternalCost = normalized.estimatedInternalCost;
+
     const ratio = PLAN_PRICE_RATIO[planId] ?? PLAN_PRICE_RATIO.free;
     const marginFloor = estimatedInternalCost * MINIMUM_MARGIN_MULTIPLIER;
-    const platformFloor = estimatedInternalCost + Math.max(BASE_PLATFORM_OVERHEAD_USD, humanMarketCost * 0.025);
-    const aiPriceTarget = humanMarketCost * ratio;
-    const minBudget = roundBudget(Math.max(suggestedMinimum, marginFloor, platformFloor, aiPriceTarget));
+    const platformFloor = estimatedInternalCost + Math.max(BASE_PLATFORM_OVERHEAD_USD, humanMarketCost * 0.015);
+    const aiPriceTarget = humanMarketCost * ratio + estimatedInternalCost;
+    const maxClientPrice = humanMarketCost * MAX_AI_PRICE_RATIO + estimatedInternalCost;
+    const minBudget = roundBudget(Math.max(marginFloor, platformFloor, aiPriceTarget, Math.min(suggestedMinimum, maxClientPrice)));
     const savingsPercent = Math.round(Math.max(0, 100 - (minBudget / humanMarketCost) * 100) * 10) / 10;
 
     return {
@@ -244,10 +313,12 @@ export async function POST(req: Request) {
 Calculate the lowest safe AI project price for a business client.
 
 Rules:
-1. Estimate human_market_cost_usd: what a real freelancer or small agency would normally charge.
-2. Estimate estimated_api_cost_usd: hidden provider/model/tool cost, including retries and review. This is internal only.
-3. Estimate minimum_client_budget_usd: a client-facing price that is much cheaper than the human market cost but never below internal cost plus platform margin.
-4. Keep the reason client-friendly. Do not mention API cost, provider cost, margin, or internal calculations.
+1. Classify the job by scope and difficulty from the actual words in the brief. Do not inflate vague/simple tasks.
+2. Estimate human_market_cost_usd realistically. Simple writing such as a short story, email, paragraph, rewrite, caption, or summary is usually $10-$35 unless the brief asks for long-form, screenplay, film, book, chapters, research, or premium production work.
+3. Estimate estimated_api_cost_usd: hidden provider/model/tool cost, including retries and review. This is internal only.
+4. Estimate minimum_client_budget_usd as the lowest client-facing project price. If human_market_cost_usd is $100, the client-facing AI price should be about $20 maximum before hidden delivery cost protection. Smaller simple tasks should be much lower.
+5. The final quote must stay above hidden delivery cost plus platform margin, but never pad the price just because the plan is higher.
+6. Keep the reason client-friendly. Do not mention API cost, provider cost, margin, or internal calculations.
 
 Return only JSON:
 {
@@ -302,7 +373,7 @@ Return only JSON:
             console.error("Budget JSON parse error:", error, rawResponse);
         }
 
-        return NextResponse.json(guardLocalEstimate(parsed, planId, usedStrategy, usedModel));
+        return NextResponse.json(guardLocalEstimate(parsed, title, description, planId, usedStrategy, usedModel));
     } catch (error) {
         console.error("Failed to calculate budget:", error);
         return NextResponse.json(

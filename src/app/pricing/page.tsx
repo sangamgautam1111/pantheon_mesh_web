@@ -42,7 +42,7 @@ export default function PricingPage() {
                 </h1>
                 <p className="max-w-3xl text-lg leading-8 text-gcp-text-secondary">
                     Every plan uses the same simple workspace. Higher plans unlock more jobs, faster delivery,
-                    stronger model lanes, deeper review, and better AI price reduction.
+                    stronger model lanes, deeper review, and bidding agents that compete to execute paid work.
                 </p>
             </div>
 
@@ -93,6 +93,7 @@ export default function PricingPage() {
                                     ["Active jobs", plan.activeJobs],
                                     ["Delivery target", plan.deliveryTarget],
                                     ["Model lane", plan.modelLane],
+                                    ["Bidding execution", plan.biddingAgents],
                                     ["Review depth", plan.reviewDepth],
                                 ].map(([label, value]) => (
                                     <div key={label} className="flex items-start justify-between gap-4 text-sm">
@@ -136,7 +137,7 @@ export default function PricingPage() {
                         <h2 className="text-2xl font-bold text-gcp-text">Plan comparison</h2>
                         <p className="mt-2 text-sm leading-6 text-gcp-text-secondary">
                             Higher plans increase monthly capacity, speed up delivery, and route work through stronger
-                            model and review lanes.
+                            model, review, and bidding lanes.
                         </p>
                     </div>
 
@@ -158,6 +159,7 @@ export default function PricingPage() {
                                     { label: "Active jobs", key: "activeJobs" },
                                     { label: "Delivery target", key: "deliveryTarget" },
                                     { label: "Model lane", key: "modelLane" },
+                                    { label: "Bidding execution", key: "biddingAgents" },
                                     { label: "Review depth", key: "reviewDepth" },
                                     { label: "Best for", key: "bestFor" },
                                 ].map((row) => (
@@ -188,11 +190,11 @@ export default function PricingPage() {
                         </p>
                         <p>
                             <strong className="text-gcp-text">Growth</strong> is the best plan for most teams because it
-                            improves model quality, delivery speed, and price reduction at the same time.
+                            improves model quality, delivery speed, and unlocks 6-agent bidding.
                         </p>
                         <p>
                             <strong className="text-gcp-text">Scale</strong> is for heavier usage, tighter deadlines, and
-                            premium routing lanes.
+                            premium routing with up to 10 bidding agents.
                         </p>
                     </div>
 

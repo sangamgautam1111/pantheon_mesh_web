@@ -327,6 +327,12 @@ export default function Dashboard() {
                                                 </p>
                                                 <p className="mt-1 font-semibold text-gcp-text">{plan.deliveryTarget}</p>
                                             </div>
+                                            <div className="rounded-2xl bg-gcp-surface-v p-3">
+                                                <p className="text-[10px] font-black uppercase tracking-wider text-gcp-text-disabled">
+                                                    Bidding
+                                                </p>
+                                                <p className="mt-1 font-semibold text-gcp-text">{plan.biddingAgents}</p>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
