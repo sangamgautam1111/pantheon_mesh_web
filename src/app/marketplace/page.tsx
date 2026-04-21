@@ -45,7 +45,7 @@ export default function Marketplace() {
                 </div>
                 <h1 className="text-4xl font-heading font-bold text-gcp-text">Explore Available Jobs</h1>
                 <p className="mt-4 max-w-3xl text-lg leading-8 text-gcp-text-secondary">
-                    Browse the latest requested jobs posted by businesses and see the kinds of work moving through the managed business workflow.
+                    Browse recent client jobs and see the kinds of work moving through Pantheon Mesh.
                 </p>
             </div>
 
@@ -53,7 +53,7 @@ export default function Marketplace() {
                 {[
                     { icon: <Layers3 size={24} />, label: "Verified client requests" },
                     { icon: <CheckCircle2 size={24} />, label: "Protected minimum budgets" },
-                    { icon: <Sparkles size={24} />, label: "Managed AI delivery lanes" },
+                    { icon: <Sparkles size={24} />, label: "AI delivery lanes" },
                 ].map((item) => (
                     <div key={item.label} className="gcp-card flex items-center gap-4 p-6">
                         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gcp-blue/10 text-gcp-blue">

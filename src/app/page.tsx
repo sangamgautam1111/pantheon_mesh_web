@@ -24,12 +24,12 @@ const WORKFLOW_PILLARS = [
     {
         icon: ShieldCheck,
         title: "Protected delivery",
-        copy: "Every request is routed through planning, execution, review, and fallback checks before it reaches your workspace.",
+        copy: "Every request gets planning, execution, review, and fallback checks before delivery.",
     },
     {
         icon: Clock3,
         title: "Faster throughput",
-        copy: "Plans change capacity and delivery speed, while the interface stays simple for the team using it every day.",
+        copy: "Plans change capacity, speed, model quality, and review depth without changing the simple interface.",
     },
 ];
 
@@ -37,14 +37,14 @@ const DESTINATIONS = [
     {
         icon: Briefcase,
         title: "Job Center",
-        copy: "Post a job, attach a thumbnail, and let the platform set a protected minimum budget before submission.",
+        copy: "Post a job, attach a thumbnail, and calculate the minimum project price before submission.",
         href: "/client",
         accent: "from-blue-50 to-white",
     },
     {
         icon: Sparkles,
         title: "Marketplace",
-        copy: "See the live business jobs and managed work categories currently moving through the system.",
+        copy: "See recent client jobs and the kinds of work moving through the system.",
         href: "/marketplace",
         accent: "from-amber-50 to-white",
     },
@@ -58,7 +58,7 @@ const DESTINATIONS = [
     {
         icon: FileText,
         title: "Whitepaper",
-        copy: "Read the product architecture and how the managed business workflow is structured end to end.",
+        copy: "Read the product architecture and delivery plan.",
         href: "/whitepaper",
         accent: "from-slate-100 to-white",
     },
@@ -66,8 +66,8 @@ const DESTINATIONS = [
 
 const HOW_IT_WORKS = [
     "Write the job title and business requirements.",
-    "Pantheon Mesh estimates provider cost and applies a protected client minimum budget.",
-    "The managed workflow executes, reviews, and delivers through one business workspace.",
+    "Pantheon Mesh calculates the minimum project price.",
+    "The job is delivered and tracked from one account.",
 ];
 
 export default function Home() {
@@ -85,7 +85,7 @@ export default function Home() {
                         <div className="relative z-10">
                             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-gcp-blue/15 bg-gcp-blue/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-gcp-blue">
                                 <Layers3 size={14} />
-                                Managed Business Workspace
+                                AI Work Platform
                             </div>
 
                             <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
@@ -95,7 +95,7 @@ export default function Home() {
                                             <>
                                                 Welcome back, {displayName}.
                                                 <br />
-                                                Run work from one business account.
+                                                Run work from one account.
                                             </>
                                         ) : (
                                             <>
@@ -107,9 +107,8 @@ export default function Home() {
                                     </h1>
 
                                     <p className="mt-6 max-w-3xl text-base leading-8 text-gcp-text-secondary md:text-lg">
-                                        Pantheon Mesh keeps the product simple: businesses submit work, the managed AI workflow
-                                        executes it, and the workspace tracks budgets, delivery, and history without the usual
-                                        freelancer back-and-forth.
+                                        Pantheon Mesh keeps it simple: describe the task, get a low AI project price,
+                                        post the job, and track delivery without freelancer back-and-forth.
                                     </p>
 
                                     <div className="mt-8 flex flex-wrap gap-3">
@@ -129,7 +128,7 @@ export default function Home() {
                                         ) : (
                                             <>
                                                 <Link href="/login" className="gcp-btn-primary inline-flex items-center gap-2 rounded-xl px-5 py-3">
-                                                    Sign In to Business Workspace
+                                                    Sign In
                                                     <ArrowRight size={15} />
                                                 </Link>
                                                 <Link href="/pricing" className="gcp-btn-text inline-flex items-center gap-2 rounded-xl px-5 py-3">
@@ -144,7 +143,7 @@ export default function Home() {
                                     <div className="mb-5 flex items-center justify-between gap-4">
                                         <div>
                                             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gcp-blue">
-                                                Workspace Snapshot
+                                                Account Snapshot
                                             </p>
                                             <p className="mt-2 text-2xl font-bold text-gcp-text">{workspaceName}</p>
                                         </div>
@@ -182,7 +181,7 @@ export default function Home() {
 
                                     <div className="mt-5 rounded-2xl border border-dashed border-gcp-blue/20 bg-gcp-blue/[0.04] p-4">
                                         <p className="text-sm leading-6 text-gcp-text-secondary">
-                                            Job budgets are now protected by an AI minimum that stays above estimated provider cost before a request is posted.
+                                            Every job gets a minimum price before posting, so clients see a clear low price up front.
                                         </p>
                                     </div>
                                 </div>
@@ -212,7 +211,7 @@ export default function Home() {
                                     <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gcp-blue">
                                         How It Works
                                     </p>
-                                    <h2 className="mt-2 text-2xl font-bold text-gcp-text">One clean workflow</h2>
+                                    <h2 className="mt-2 text-2xl font-bold text-gcp-text">How it works</h2>
                                 </div>
                             </div>
 
@@ -230,18 +229,18 @@ export default function Home() {
 
                         <div className="rounded-[30px] border border-gcp-blue/15 bg-[linear-gradient(180deg,rgba(26,115,232,0.08),rgba(255,255,255,0.98))] p-6 shadow-lg md:p-7">
                             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gcp-blue">
-                                Operator Notes
+                                Quick Start
                             </p>
-                            <h2 className="mt-3 text-2xl font-bold text-gcp-text">Built for business speed, not clutter</h2>
+                            <h2 className="mt-3 text-2xl font-bold text-gcp-text">Start with a job</h2>
                             <p className="mt-4 text-sm leading-7 text-gcp-text-secondary">
-                                The welcome page is now a real workspace overview. Use it to jump into jobs, understand the current plan, and move directly into the screens that matter.
+                                Use this page to jump into jobs, check your current plan, and move directly into the screens that matter.
                             </p>
 
                             <div className="mt-6 grid gap-3 sm:grid-cols-2">
                                 <Link href="/client" className="rounded-2xl border border-white/80 bg-white/90 p-4 transition-transform hover:-translate-y-0.5">
                                     <p className="text-sm font-bold text-gcp-text">Post new work</p>
                                     <p className="mt-2 text-xs leading-5 text-gcp-text-secondary">
-                                        Open the job form and let the system calculate the protected minimum budget.
+                                        Open the job form and calculate the minimum project price.
                                     </p>
                                 </Link>
                                 <Link href="/pricing" className="rounded-2xl border border-white/80 bg-white/90 p-4 transition-transform hover:-translate-y-0.5">

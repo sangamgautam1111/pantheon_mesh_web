@@ -7,15 +7,11 @@ import { BUSINESS_PLANS } from "@/lib/businessPlans";
 import {
     AlertCircle,
     Briefcase,
-    Check,
     Clock,
-    Crown,
     ExternalLink,
     Filter,
     History,
     ImagePlus,
-    LogOut,
-    Menu,
     Plus,
     Search,
     Send,
@@ -24,8 +20,7 @@ import {
     X,
 } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const DEFAULT_MINIMUM_BUDGET = 0.01;
+const DEFAULT_MINIMUM_BUDGET = 1;
 const MAX_UPLOAD_BYTES = 6 * 1024 * 1024;
 const MAX_THUMBNAIL_DATA_URL_LENGTH = 1_200_000;
 const MAX_THUMBNAIL_EDGE = 1200;
@@ -35,7 +30,6 @@ interface Job {
     title: string;
     description: string;
     budget_usd: number;
-    estimated_api_cost_usd?: number | null;
     minimum_budget_usd?: number | null;
     status: string;
     created_at: string;
@@ -142,10 +136,9 @@ export default function ClientDashboard() {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [budget, setBudget] = useState<number>(0);
-    const [enableMarketplaceBidding, setEnableMarketplaceBidding] = useState(true);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [minimumBudget, setMinimumBudget] = useState(0);
-    const [estimatedApiCost, setEstimatedApiCost] = useState(0);
+    const [humanMarketCost, setHumanMarketCost] = useState(0);
+    const [savingsPercent, setSavingsPercent] = useState(0);
     const [budgetReason, setBudgetReason] = useState("");
     const [budgetStrategy, setBudgetStrategy] = useState("");
     const [thumbnailDataUrl, setThumbnailDataUrl] = useState<string | null>(null);
@@ -182,7 +175,8 @@ export default function ClientDashboard() {
             if (!trimmedTitle && !trimmedDescription) {
                 previousMinimumBudgetRef.current = 0;
                 setMinimumBudget(0);
-                setEstimatedApiCost(0);
+                setHumanMarketCost(0);
+                setSavingsPercent(0);
                 setBudgetReason("");
                 setBudgetStrategy("");
                 setBudget(0);
@@ -209,6 +203,8 @@ export default function ClientDashboard() {
                 body: JSON.stringify({
                     title: trimmedTitle,
                     description: trimmedDescription,
+                    client_uid: user?.uid,
+                    current_plan_id: activePlan.id,
                 }),
             });
 
@@ -225,9 +221,14 @@ export default function ClientDashboard() {
             previousMinimumBudgetRef.current = nextMinimumBudget;
 
             setMinimumBudget(nextMinimumBudget);
-            setEstimatedApiCost(
-                typeof data.estimated_api_cost_usd === "number" && Number.isFinite(data.estimated_api_cost_usd)
-                    ? data.estimated_api_cost_usd
+            setHumanMarketCost(
+                typeof data.human_market_cost_usd === "number" && Number.isFinite(data.human_market_cost_usd)
+                    ? data.human_market_cost_usd
+                    : 0,
+            );
+            setSavingsPercent(
+                typeof data.savings_percent === "number" && Number.isFinite(data.savings_percent)
+                    ? data.savings_percent
                     : 0,
             );
             setBudgetReason(typeof data.reason === "string" ? data.reason : "");
@@ -249,9 +250,9 @@ export default function ClientDashboard() {
             });
         } catch (error) {
             console.error("Failed to estimate minimum budget:", error);
-            setBudgetReason("We will still protect the minimum budget on submit if estimation is delayed.");
+            setBudgetReason("We will still protect the minimum price on submit if estimation is delayed.");
             setBudgetStrategy("fallback");
-            setFormError("Failed to estimate budget via AI. You can still set it manually above $5.");
+            setFormError("Failed to estimate the minimum price. Try again before posting.");
             setMinimumBudget(DEFAULT_MINIMUM_BUDGET);
             setBudget((prev) => Math.max(prev, DEFAULT_MINIMUM_BUDGET));
             previousMinimumBudgetRef.current = DEFAULT_MINIMUM_BUDGET;
@@ -325,9 +326,9 @@ export default function ClientDashboard() {
 
     const deleteJob = async (jobId: string) => {
         if (!confirm("Are you sure you want to delete this job? This action cannot be undone.")) return;
+        if (!user?.uid) return;
         try {
-            const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-            const response = await fetch(`${API}/v1/client/job?job_id=${jobId}`, {
+            const response = await fetch(`/api/client/job?job_id=${encodeURIComponent(jobId)}&uid=${encodeURIComponent(user.uid)}`, {
                 method: "DELETE",
             });
             if (!response.ok) throw new Error("Failed to delete job.");
@@ -382,8 +383,8 @@ export default function ClientDashboard() {
                     client_uid: user?.uid,
                     title: title.trim(),
                     description: description.trim(),
-                    budget_usd: budget,
-                    enable_marketplace_bidding: activePlan.id !== "free" ? enableMarketplaceBidding : true,
+                    budget_usd: Math.max(budget, minimumBudget || DEFAULT_MINIMUM_BUDGET),
+                    enable_marketplace_bidding: false,
                     thumbnail_name: thumbnailName,
                     thumbnail_data_url: thumbnailDataUrl,
                 }),
@@ -402,7 +403,8 @@ export default function ClientDashboard() {
                 setDescription("");
                 setBudget(0);
                 setMinimumBudget(0);
-                setEstimatedApiCost(0);
+                setHumanMarketCost(0);
+                setSavingsPercent(0);
                 setBudgetReason("");
                 setBudgetStrategy("");
                 previousMinimumBudgetRef.current = 0;
@@ -419,7 +421,9 @@ export default function ClientDashboard() {
     };
 
     const budgetSourceLabel =
-        budgetStrategy === "openrouter-deepseek-v3" ? "DeepSeek V3 minimum" : "Protected minimum";
+        budgetStrategy.includes("deepseek") || budgetStrategy.includes("openrouter")
+            ? "AI project minimum"
+            : "Project minimum";
 
     return (
         <RouteGuard allowedTypes={["business"]}>
@@ -428,10 +432,10 @@ export default function ClientDashboard() {
                     <div className="mb-8">
                         <h1 className="mb-2 flex items-center gap-2 text-2xl font-bold text-gray-900">
                             <Briefcase className="text-blue-600" size={28} />
-                            Business Job Center
+                            Jobs
                         </h1>
                         <p className="text-sm text-gray-500">
-                            Submit tasks, attach a visual brief when needed, and let the platform protect the minimum budget before work enters the queue.
+                            Describe the work, calculate the minimum project price, and post it for AI delivery.
                         </p>
                     </div>
 
@@ -491,67 +495,6 @@ export default function ClientDashboard() {
                                         />
                                     </div>
 
-                                    {activePlan.id !== "free" && (
-                                        <div className="space-y-3">
-                                            <div className="flex items-center justify-between">
-                                                <label className="block text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                                    Marketplace Bidding
-                                                </label>
-                                                <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-600 ring-1 ring-inset ring-amber-200">
-                                                    <Crown size={10} fill="currentColor" />
-                                                    PREMIUM FEATURE
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setEnableMarketplaceBidding(true)}
-                                                    className={`flex items-center justify-between rounded-xl border p-3 transition-all ${
-                                                        enableMarketplaceBidding 
-                                                        ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500" 
-                                                        : "border-gray-200 bg-white hover:border-gray-300"
-                                                    }`}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                                                            enableMarketplaceBidding ? "border-blue-500 bg-blue-500 text-white" : "border-gray-300"
-                                                        }`}>
-                                                            {enableMarketplaceBidding && <Check size={12} strokeWidth={4} />}
-                                                        </div>
-                                                        <span className={`text-sm font-medium ${enableMarketplaceBidding ? "text-blue-900" : "text-gray-600"}`}>
-                                                            Enable Bidding
-                                                        </span>
-                                                    </div>
-                                                </button>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setEnableMarketplaceBidding(false)}
-                                                    className={`flex items-center justify-between rounded-xl border p-3 transition-all ${
-                                                        !enableMarketplaceBidding 
-                                                        ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500" 
-                                                        : "border-gray-200 bg-white hover:border-gray-300"
-                                                    }`}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                                                            !enableMarketplaceBidding ? "border-blue-500 bg-blue-500 text-white" : "border-gray-300"
-                                                        }`}>
-                                                            {!enableMarketplaceBidding && <Check size={12} strokeWidth={4} />}
-                                                        </div>
-                                                        <span className={`text-sm font-medium ${!enableMarketplaceBidding ? "text-blue-900" : "text-gray-600"}`}>
-                                                            Fixed Budget
-                                                        </span>
-                                                    </div>
-                                                </button>
-                                            </div>
-                                            <p className="text-[11px] text-gray-500 leading-relaxed">
-                                                Enabling bidding allows marketplace nodes to compete for your task, potentially reducing your cost below the initial budget.
-                                            </p>
-                                        </div>
-                                    )}
-
                                     <div>
                                         <label className="mb-1.5 block text-xs font-semibold tracking-wide text-gray-500">
                                             REQUIREMENTS
@@ -576,7 +519,7 @@ export default function ClientDashboard() {
                                                 }`}
                                             >
                                                 {estimatingBudget ? <Clock size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                                                {estimatingBudget ? "Calculating AI Cost..." : "Calculate Projected Min Amount"}
+                                                {estimatingBudget ? "Calculating..." : "Calculate Minimum Price"}
                                             </button>
                                         </div>
                                     </div>
@@ -648,7 +591,7 @@ export default function ClientDashboard() {
 
                                     <div>
                                         <label className="mb-1.5 block text-xs font-semibold tracking-wide text-gray-500">
-                                            BUDGET (USD)
+                                            PROJECT PRICE (USD)
                                         </label>
                                         <div className="relative">
                                             <span className="absolute left-4 top-2.5 text-sm font-medium text-gray-400">
@@ -657,7 +600,7 @@ export default function ClientDashboard() {
                                             <input
                                                 type="number"
                                                 step="0.01"
-                                                min={0.01}
+                                                min={minimumBudget || DEFAULT_MINIMUM_BUDGET}
                                                 readOnly={activePlan.id === "free"}
                                                 value={Number.isFinite(budget) && budget > 0 ? budget : ""}
                                                 onChange={(event) => {
@@ -667,7 +610,7 @@ export default function ClientDashboard() {
                                                         setBudget(0);
                                                         return;
                                                     }
-                                                    setBudget(nextBudget);
+                                                    setBudget(Math.max(nextBudget, minimumBudget || DEFAULT_MINIMUM_BUDGET));
                                                 }}
                                                 className={`w-full rounded-xl border py-2.5 pl-8 pr-4 text-sm transition-all focus:outline-none focus:ring-2 ${
                                                     activePlan.id === "free" 
@@ -692,48 +635,28 @@ export default function ClientDashboard() {
                                             </div>
                                             <p className="mt-3 text-xs leading-5 text-gray-600">
                                                 {estimatingBudget
-                                                    ? "Calculating the protected minimum budget using DeepSeek V3..."
-                                                    : budgetReason || "The platform applies a protected minimum so the client budget stays above projected provider cost."}
+                                                    ? "Calculating the lowest safe AI project price..."
+                                                    : budgetReason || "Calculate the minimum price before posting. It stays low for clients while protecting delivery quality."}
                                             </p>
-                                        </div>
-
-                                        {/* Marketplace Bidding Feature */}
-                                        <div className="mt-4">
-                                            <div className="flex items-center justify-between gap-4 rounded-2xl border border-amber-100 bg-amber-50/40 p-4 transition-all hover:bg-amber-50/60">
-                                                <div className="flex flex-1 items-start gap-3">
-                                                    <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-amber-100/80 text-amber-600">
-                                                        <Crown size={14} />
+                                            {(humanMarketCost > 0 || savingsPercent > 0) && (
+                                                <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+                                                    <div className="rounded-xl bg-white/70 p-3">
+                                                        <p className="font-semibold uppercase tracking-[0.14em] text-gray-400">
+                                                            Typical freelancer
+                                                        </p>
+                                                        <p className="mt-1 text-sm font-bold text-gray-900">
+                                                            ${humanMarketCost.toFixed(2)}
+                                                        </p>
                                                     </div>
-                                                    <div>
-                                                        <h4 className="text-[13px] font-bold text-amber-900">
-                                                            Marketplace Bidding
-                                                        </h4>
-                                                        <p className="mt-0.5 text-[11px] leading-relaxed text-amber-700/80">
-                                                            Allow global Mesh workers to bid on your task to potentially reduce cost and speed up delivery.
+                                                    <div className="rounded-xl bg-white/70 p-3">
+                                                        <p className="font-semibold uppercase tracking-[0.14em] text-gray-400">
+                                                            Client savings
+                                                        </p>
+                                                        <p className="mt-1 text-sm font-bold text-emerald-700">
+                                                            {savingsPercent > 0 ? `${savingsPercent.toFixed(1)}% cheaper` : "Lower than freelance"}
                                                         </p>
                                                     </div>
                                                 </div>
-                                                
-                                                <button
-                                                    type="button"
-                                                    disabled={activePlan.id === "free"}
-                                                    onClick={() => setEnableMarketplaceBidding(!enableMarketplaceBidding)}
-                                                    className={`group relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all ${
-                                                        enableMarketplaceBidding 
-                                                        ? "border-amber-500 bg-amber-500 text-white" 
-                                                        : "border-gray-200 bg-white"
-                                                    } ${activePlan.id === "free" ? "cursor-not-allowed opacity-50" : "cursor-pointer active:scale-95"}`}
-                                                >
-                                                    {enableMarketplaceBidding && <Check size={12} strokeWidth={4} />}
-                                                    {activePlan.id === "free" && (
-                                                        <div className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-400" />
-                                                    )}
-                                                </button>
-                                            </div>
-                                            {activePlan.id === "free" && (
-                                                <p className="mt-2 pl-9 text-[10px] font-medium text-amber-600">
-                                                    Upgrade to Starter or higher to unlock marketplace bidding.
-                                                </p>
                                             )}
                                         </div>
                                     </div>

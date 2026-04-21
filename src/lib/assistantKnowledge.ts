@@ -19,7 +19,6 @@ const planDocs: AssistantKnowledgeDoc[] = BUSINESS_PLANS.map((plan) => ({
         `It allows ${plan.jobsPerMonth} with ${plan.activeJobs}.`,
         `Typical delivery target is ${plan.deliveryTarget}.`,
         `Model lane: ${plan.modelLane}.`,
-        `Bidding access: ${plan.biddingLane}.`,
         `Review depth: ${plan.reviewDepth}.`,
         `Best for: ${plan.bestFor}.`,
         `Included features: ${plan.features.join("; ")}.`,
@@ -33,15 +32,15 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "overview",
         route: "/dashboard",
         text:
-            "The dashboard is the business command center. It shows submitted jobs, active jobs, completed jobs, committed budget, jobs with thumbnails, recent job history, and quick paths to the job center, pricing, marketplace, and the assistant.",
+            "The dashboard shows submitted jobs, active jobs, completed jobs, committed budget, jobs with thumbnails, recent job history, and quick paths to jobs, pricing, marketplace, and the assistant.",
     },
     {
         id: "job-center",
-        title: "Business job center",
+        title: "Jobs page",
         category: "jobs",
         route: "/client",
         text:
-            "Businesses post work from the Business Job Center. A job includes a title, requirements, an AI-generated minimum budget, and an optional thumbnail or reference image. The minimum budget stays above projected provider cost. Posted jobs appear in job history with status, budget, and created date.",
+            "Businesses post work from the Jobs page. A job includes a title, requirements, an AI-generated minimum project price, and an optional thumbnail or reference image. Posted jobs appear in job history with status, price, and created date.",
     },
     {
         id: "pricing-summary",
@@ -49,14 +48,14 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "pricing",
         route: "/pricing",
         text:
-            "Pricing is based on job capacity, delivery speed, model lane, and review depth. Free is for trying the workspace, Starter is for recurring weekly tasks, Growth is the best plan for most active businesses, and Scale is for higher-volume operations.",
+            "Pricing is based on job capacity, delivery speed, model lane, review depth, and AI price reduction. Free is for trying the workspace, Starter is for recurring weekly tasks, Growth is the best plan for most active businesses, and Scale is for higher-volume operations.",
     },
     {
         id: "quality-workflow",
-        title: "Managed quality workflow",
+        title: "Job quality",
         category: "quality",
         text:
-            "Each request goes through planning, execution, review, and fallback handling. The platform keeps the workflow simple for the client while applying routing, review coverage, and delivery checks behind the scenes.",
+            "Each request goes through planning, execution, review, and fallback handling. The client only needs to describe the job, calculate the minimum price, and track delivery.",
     },
     {
         id: "marketplace-overview",

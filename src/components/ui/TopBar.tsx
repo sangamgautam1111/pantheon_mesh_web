@@ -214,7 +214,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                 </button>
 
                 <Link href="/" className="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-80">
-                    <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-black/10 bg-white shadow-sm">
+                    <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-black/10 bg-white shadow-sm">
                         <Image
                             src={logoImg}
                             alt="Pantheon Mesh"
@@ -222,11 +222,6 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                             height={32}
                             className="h-full w-full rounded-full object-cover"
                         />
-                        {profile?.currentPlanId && profile.currentPlanId !== "free" && (
-                            <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FFD700] shadow-sm ring-1 ring-white">
-                                <Crown size={10} className="text-black" fill="currentColor" />
-                            </div>
-                        )}
                     </div>
                     <span
                         className="truncate text-sm font-semibold tracking-tight"
@@ -407,18 +402,25 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
 
                 {user ? (
                     <div className="relative">
-                        <button
-                            onClick={() => setShowUserMenu((current) => !current)}
-                            className="ml-2 h-8 w-8 cursor-pointer overflow-hidden rounded-full text-sm font-medium transition-transform hover:scale-105"
-                            title={profile?.displayName || "Account"}
-                            style={{ background: "var(--gcp-blue)", color: "var(--btn-primary-text)" }}
-                        >
-                            {profile?.photoURL ? (
-                                <img src={profile.photoURL} alt="" className="h-8 w-8 rounded-full object-cover" />
-                            ) : (
-                                (profile?.displayName || profile?.email || "B").charAt(0).toUpperCase()
+                        <div className="relative ml-2">
+                            <button
+                                onClick={() => setShowUserMenu((current) => !current)}
+                                className="h-8 w-8 cursor-pointer overflow-hidden rounded-full text-sm font-medium transition-transform hover:scale-105"
+                                title={profile?.displayName || "Account"}
+                                style={{ background: "var(--gcp-blue)", color: "var(--btn-primary-text)" }}
+                            >
+                                {profile?.photoURL ? (
+                                    <img src={profile.photoURL} alt="" className="h-8 w-8 rounded-full object-cover" />
+                                ) : (
+                                    (profile?.displayName || profile?.email || "B").charAt(0).toUpperCase()
+                                )}
+                            </button>
+                            {profile?.currentPlanId && profile.currentPlanId !== "free" && (
+                                <div className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#FFD700] shadow-sm ring-2 ring-white">
+                                    <Crown size={10} className="text-black" fill="currentColor" />
+                                </div>
                             )}
-                        </button>
+                        </div>
 
                         {showUserMenu && (
                             <div

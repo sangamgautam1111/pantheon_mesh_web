@@ -35,14 +35,14 @@ export default function PricingPage() {
             <div className="mb-14 mt-8 max-w-4xl">
                 <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-gcp-blue/20 bg-gcp-blue/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-gcp-blue">
                     <Sparkles size={14} />
-                    Business Pricing
+                    Pricing
                 </div>
                 <h1 className="mb-4 text-4xl font-heading font-bold text-gcp-text md:text-6xl">
-                    Pick the plan that matches your job volume, delivery speed, and model quality.
+                    Pick the plan for your job volume, speed, and model quality.
                 </h1>
                 <p className="max-w-3xl text-lg leading-8 text-gcp-text-secondary">
-                    Plans are shaped around the number of jobs you can post each month, how quickly work is returned,
-                    which AI lanes are unlocked, and whether bidding is enabled to reduce the job price.
+                    Every plan uses the same simple workspace. Higher plans unlock more jobs, faster delivery,
+                    stronger model lanes, deeper review, and better AI price reduction.
                 </p>
             </div>
 
@@ -93,7 +93,7 @@ export default function PricingPage() {
                                     ["Active jobs", plan.activeJobs],
                                     ["Delivery target", plan.deliveryTarget],
                                     ["Model lane", plan.modelLane],
-                                    ["Price bidding", plan.biddingLane],
+                                    ["Review depth", plan.reviewDepth],
                                 ].map(([label, value]) => (
                                     <div key={label} className="flex items-start justify-between gap-4 text-sm">
                                         <span className="text-gcp-text-secondary">{label}</span>
@@ -135,8 +135,8 @@ export default function PricingPage() {
                     <div className="border-b px-6 py-5" style={{ borderColor: "var(--border-color)" }}>
                         <h2 className="text-2xl font-bold text-gcp-text">Plan comparison</h2>
                         <p className="mt-2 text-sm leading-6 text-gcp-text-secondary">
-                            Bidding lowers price by letting the AI lanes allowed in your plan compete for the work.
-                            Higher plans unlock better models, faster delivery targets, and stronger price pressure.
+                            Higher plans increase monthly capacity, speed up delivery, and route work through stronger
+                            model and review lanes.
                         </p>
                     </div>
 
@@ -158,7 +158,6 @@ export default function PricingPage() {
                                     { label: "Active jobs", key: "activeJobs" },
                                     { label: "Delivery target", key: "deliveryTarget" },
                                     { label: "Model lane", key: "modelLane" },
-                                    { label: "Price bidding", key: "biddingLane" },
                                     { label: "Review depth", key: "reviewDepth" },
                                     { label: "Best for", key: "bestFor" },
                                 ].map((row) => (
@@ -184,12 +183,12 @@ export default function PricingPage() {
                             lightweight jobs.
                         </p>
                         <p>
-                            <strong className="text-gcp-text">Starter</strong> adds more monthly volume and economy
-                            bidding for lower pricing.
+                            <strong className="text-gcp-text">Starter</strong> adds more monthly volume and faster
+                            delivery for regular work.
                         </p>
                         <p>
                             <strong className="text-gcp-text">Growth</strong> is the best plan for most teams because it
-                            improves model quality, delivery speed, and bidding power at the same time.
+                            improves model quality, delivery speed, and price reduction at the same time.
                         </p>
                         <p>
                             <strong className="text-gcp-text">Scale</strong> is for heavier usage, tighter deadlines, and
@@ -198,7 +197,7 @@ export default function PricingPage() {
                     </div>
 
                     <div className="mt-8 rounded-2xl border border-dashed border-gcp-blue/25 bg-gcp-blue/[0.04] p-4 text-sm text-gcp-text-secondary">
-                        Buy plan buttons are visible now and intentionally do nothing until checkout is connected.
+                        Buy plan buttons update the workspace plan now. Checkout can be connected later.
                     </div>
                 </div>
             </div>

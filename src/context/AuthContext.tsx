@@ -36,6 +36,7 @@ interface AuthContextType {
     signInWithGoogle: () => Promise<void>;
     signInWithEmail: (email: string, password: string) => Promise<void>;
     signUpWithEmail: (email: string, password: string, displayName: string) => Promise<void>;
+    syncProfile: () => Promise<void>;
     signOut: () => Promise<void>;
 }
 
@@ -48,6 +49,7 @@ const AuthContext = createContext<AuthContextType>({
     signInWithGoogle: async () => {},
     signInWithEmail: async () => {},
     signUpWithEmail: async () => {},
+    syncProfile: async () => {},
     signOut: async () => {},
 });
 
@@ -238,6 +240,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await upsertBusinessProfile(result.user, { displayName, companyName: displayName });
     };
 
+    const syncProfile = async () => {
+        if (!user) {
+            return;
+        }
+
+        await upsertBusinessProfile(user);
+    };
+
     const handleSignOut = async () => {
         await firebaseSignOut(auth);
         setUser(null);
@@ -256,6 +266,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 signInWithGoogle,
                 signInWithEmail,
                 signUpWithEmail,
+                syncProfile,
                 signOut: handleSignOut,
             }}
         >

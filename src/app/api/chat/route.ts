@@ -334,7 +334,7 @@ function buildRetrievalFallback(message: string, docs: RetrievedDoc[], currentPl
         if (query.includes("$29") || query.includes("starter")) {
             const starterPlan = BUSINESS_PLANS.find((plan) => plan.id === "starter");
             if (starterPlan) {
-                return `You are currently on ${currentPlan.name}. The $29 ${starterPlan.name} plan gives ${starterPlan.jobsPerMonth}, ${starterPlan.activeJobs}, ${starterPlan.deliveryTarget} delivery, ${starterPlan.modelLane}, and ${starterPlan.biddingLane} bidding.`;
+                return `You are currently on ${currentPlan.name}. The $29 ${starterPlan.name} plan gives ${starterPlan.jobsPerMonth}, ${starterPlan.activeJobs}, ${starterPlan.deliveryTarget} delivery, ${starterPlan.modelLane}, and ${starterPlan.reviewDepth} review.`;
             }
         }
 

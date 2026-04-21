@@ -85,20 +85,20 @@ export default function Dashboard() {
 
     return (
         <RouteGuard allowedTypes={["business"]}>
-            <div className="max-w-7xl p-6 md:p-8">
+            <div className="w-full p-6 md:p-8">
                 <section className="overflow-hidden rounded-[28px] border border-gcp-border bg-[radial-gradient(circle_at_top_right,rgba(26,115,232,0.16),transparent_38%),linear-gradient(180deg,var(--bg-surface),var(--bg-surface-variant))] p-6 shadow-xl md:p-8">
                     <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                         <div className="max-w-3xl">
                             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-gcp-blue/20 bg-gcp-blue/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.26em] text-gcp-blue">
                                 <Layers3 size={14} />
-                                Business Command Center
+                                Dashboard
                             </div>
                             <h1 className="text-3xl font-heading font-bold leading-tight text-gcp-text md:text-5xl">
-                                Run every business request from one dashboard.
+                                Track your jobs and budget.
                             </h1>
                             <p className="mt-4 max-w-2xl text-sm leading-7 text-gcp-text-secondary md:text-base">
-                                Post new work, track active delivery, see how much budget is committed, and upgrade into
-                                stronger model lanes when your team needs more speed.
+                                Post work, watch delivery status, see your committed budget, and upgrade when you need
+                                more jobs or faster turnaround.
                             </p>
                             <div className="mt-6 flex flex-wrap gap-3">
                                 <button
@@ -127,7 +127,7 @@ export default function Dashboard() {
 
                         <div className="min-w-[260px] rounded-3xl border border-gcp-blue/15 bg-gcp-blue/[0.04] p-5">
                             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-gcp-blue">
-                                Workspace
+                                Account
                             </p>
                             <div className="mt-3 flex items-center gap-3">
                                 {profile?.photoURL ? (
@@ -143,7 +143,7 @@ export default function Dashboard() {
                                 )}
                                 <div className="min-w-0">
                                     <p className="truncate text-base font-bold text-gcp-text">
-                                        {profile?.companyName || profile?.displayName || "Business Workspace"}
+                                        {profile?.companyName || profile?.displayName || "Workspace"}
                                     </p>
                                     <p className="truncate text-xs text-gcp-text-secondary">{profile?.email}</p>
                                 </div>
@@ -282,9 +282,9 @@ export default function Dashboard() {
                                     <Clock3 size={18} className="text-gcp-blue" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-heading font-bold text-gcp-text">How the plans work</h2>
+                                    <h2 className="text-xl font-heading font-bold text-gcp-text">Your plan</h2>
                                     <p className="mt-1 text-sm text-gcp-text-secondary">
-                                        Same workspace, different throughput and delivery lanes.
+                                        Your plan controls job limits, speed, model quality, and review depth.
                                     </p>
                                 </div>
                             </div>

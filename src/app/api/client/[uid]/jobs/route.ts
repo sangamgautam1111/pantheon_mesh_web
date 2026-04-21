@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 
 export async function GET(
     req: Request,
-    { params }: { params: { uid: string } }
+    { params }: { params: Promise<{ uid: string }> }
 ) {
-    const { uid } = params;
+    const { uid } = await params;
     
     const apiBase = process.env.NEXT_PUBLIC_API_URL && !process.env.NEXT_PUBLIC_API_URL.includes("localhost")
         ? process.env.NEXT_PUBLIC_API_URL 
