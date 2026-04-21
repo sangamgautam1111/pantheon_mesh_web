@@ -31,7 +31,8 @@ const PINECONE_API_VERSION = "2025-10";
 
 const NAVIGATION_TARGETS: Array<{ path: string; label: string; keywords: string[] }> = [
     { path: "/dashboard", label: "Open dashboard", keywords: ["dashboard", "overview", "home"] },
-    { path: "/client", label: "Open job center", keywords: ["job center", "jobs", "job", "post"] },
+    { path: "/client/new", label: "Create a job", keywords: ["create job", "new job", "post job", "post new job", "guided intake", "gig intake"] },
+    { path: "/client", label: "Open job center", keywords: ["job center", "jobs", "job history", "active jobs"] },
     { path: "/pricing", label: "Open pricing", keywords: ["plans", "plan", "upgrade", "tier"] },
     { path: "/pricing", label: "Open pricing", keywords: ["pricing", "price", "starter", "$29", "growth", "$69", "scale", "$149"] },
     { path: "/marketplace", label: "Open marketplace", keywords: ["marketplace"] },

@@ -57,6 +57,44 @@ type RawEstimate = {
     reason?: string;
 };
 
+function buildPricingDescription(body: Record<string, unknown>, description: string) {
+    const details = [description.trim()];
+    const timeline = typeof body.timeline === "string" ? body.timeline : "";
+    const modelLane = typeof body.model_lane === "string" ? body.model_lane : "";
+    const modelGroup = typeof body.model_group === "string" ? body.model_group : "";
+    const assetTotalMb = numberFrom(body.asset_total_mb, 0);
+    const assetCount = numberFrom(body.asset_count, 0);
+    const assetTypes = Array.isArray(body.asset_types)
+        ? body.asset_types.filter((item): item is string => typeof item === "string" && Boolean(item.trim()))
+        : [];
+    const assetLinks = Array.isArray(body.asset_links)
+        ? body.asset_links.filter((item): item is string => typeof item === "string" && Boolean(item.trim()))
+        : [];
+    const rush = Boolean(body.rush);
+
+    if (timeline) {
+        details.push(`Timeline constraint: ${timeline}.`);
+    }
+    if (rush) {
+        details.push("Rush delivery requested under 1 hour.");
+    }
+    if (modelLane || modelGroup) {
+        details.push(`Selected model routing: ${modelGroup || modelLane}.`);
+    }
+    if (assetCount || assetTotalMb || assetTypes.length > 0) {
+        details.push(
+            `Raw assets: ${assetCount} files, asset total size: ${assetTotalMb.toFixed(2)} MB, asset types: ${
+                assetTypes.join(", ") || "unknown"
+            }.`,
+        );
+    }
+    if (assetLinks.length > 0) {
+        details.push(`Asset/reference links provided: ${assetLinks.slice(0, 5).join("; ")}.`);
+    }
+
+    return details.filter(Boolean).join("\n");
+}
+
 function getApiBase() {
     const configured = process.env.NEXT_PUBLIC_API_URL;
     if (configured && !configured.includes("localhost")) {
@@ -277,6 +315,7 @@ export async function POST(req: Request) {
         const body = await req.json();
         const title = typeof body?.title === "string" ? body.title.trim() : "";
         const description = typeof body?.description === "string" ? body.description.trim() : "";
+        const pricingDescription = buildPricingDescription(body, description);
         const clientUid = typeof body?.client_uid === "string" ? body.client_uid.trim() : "";
         const planId = typeof body?.current_plan_id === "string" ? body.current_plan_id.trim().toLowerCase() : "free";
 
@@ -293,6 +332,7 @@ export async function POST(req: Request) {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
+                        ...body,
                         client_uid: clientUid,
                         title,
                         description,
@@ -318,7 +358,8 @@ Rules:
 3. Estimate estimated_api_cost_usd: hidden provider/model/tool cost, including retries and review. This is internal only.
 4. Estimate minimum_client_budget_usd as the lowest client-facing project price. If human_market_cost_usd is $100, the client-facing AI price should be about $20 maximum before hidden delivery cost protection. Smaller simple tasks should be much lower.
 5. The final quote must stay above hidden delivery cost plus platform margin, but never pad the price just because the plan is higher.
-6. Keep the reason client-friendly. Do not mention API cost, provider cost, margin, or internal calculations.
+6. If Requirements include raw asset size/count, file types, selected model routing, reference links, or rush timeline, use those signals carefully to adjust effort and hidden compute cost.
+7. Keep the reason client-friendly. Do not mention API cost, provider cost, margin, or internal calculations.
 
 Return only JSON:
 {
@@ -328,7 +369,7 @@ Return only JSON:
   "reason": "one short client-facing sentence"
 }`;
 
-        const userPrompt = `Title: ${title}\nRequirements: ${description}\nPlan: ${planId}`;
+        const userPrompt = `Title: ${title}\nRequirements: ${pricingDescription}\nPlan: ${planId}`;
         const deepseekKey = process.env.DEEPSEEK_API_KEY;
         const openRouterKey = process.env.OPENROUTER_API_KEY;
         const groqKey = process.env.GROQ_API_1;
@@ -373,7 +414,7 @@ Return only JSON:
             console.error("Budget JSON parse error:", error, rawResponse);
         }
 
-        return NextResponse.json(guardLocalEstimate(parsed, title, description, planId, usedStrategy, usedModel));
+        return NextResponse.json(guardLocalEstimate(parsed, title, pricingDescription, planId, usedStrategy, usedModel));
     } catch (error) {
         console.error("Failed to calculate budget:", error);
         return NextResponse.json(

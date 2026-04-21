@@ -41,7 +41,23 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "jobs",
         route: "/client",
         text:
-            "Businesses post work from the Jobs page. A job includes a title, requirements, an AI-generated minimum project price, and an optional thumbnail or reference image. Posted jobs appear in job history with status, price, and created date.",
+            "The Jobs page is the active jobs and history center. It shows posted work, status, price, thumbnails, and plan capacity. To create a new job, businesses use the guided intake at /client/new.",
+    },
+    {
+        id: "guided-job-intake",
+        title: "Guided job intake",
+        category: "jobs",
+        route: "/client/new",
+        text:
+            "New jobs use a Fiverr-style guided intake. Step 1 collects the job title, raw assets or reference files, asset links, the goal, and standard or rush timeline. Step 2 routes the job to a plan-based model group. Free uses the Baseline Mesh with Flash and Mini models, Starter and Growth can use Expert Reasoning, and Scale can use Dedicated Elite routing. Step 3 calculates the protected project minimum and lets the client fund the job and deploy agents.",
+    },
+    {
+        id: "model-routing",
+        title: "Model routing",
+        category: "jobs",
+        route: "/client/new",
+        text:
+            "Model routing depends on the current plan. Baseline Mesh is available to everyone and is best for simple writing, formatting, small scripts, and lightweight tasks. Expert Reasoning is available on paid plans for coding, architecture, research, debugging, and heavier analysis. Dedicated Elite is available on Scale for premium model routing, high-priority execution, and deeper review.",
     },
     {
         id: "pricing-summary",
@@ -55,9 +71,9 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         id: "minimum-price-engine",
         title: "Minimum project pricing",
         category: "pricing",
-        route: "/client",
+        route: "/client/new",
         text:
-            "The minimum project price is calculated from the actual job title and requirements. The system compares the task with realistic freelancer pricing, targets a very low AI-labor price, and keeps the quote safe for delivery. If a human freelancer would charge about $100, Pantheon aims around $20 or less before delivery protection. Simple writing requests such as a short story, email, paragraph, caption, rewrite, or summary should stay low instead of being priced like premium film, screenplay, or full-book work.",
+            "The minimum project price is calculated from the actual job title, requirements, raw asset count and size, file types, asset links, timeline urgency, current plan, and selected model routing. The system compares the task with realistic freelancer pricing, targets a very low AI-labor price, and keeps the quote safe for hidden compute and delivery cost. If a human freelancer would charge about $100, Pantheon aims around $20 or less before delivery protection. Simple writing requests such as a short story, email, paragraph, caption, rewrite, or summary should stay low instead of being priced like premium film, screenplay, or full-book work.",
     },
     {
         id: "bidding-execution",
