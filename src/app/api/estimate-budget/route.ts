@@ -812,8 +812,8 @@ RULES:
    - If neither exists, estimate conservatively from your training data.
 3. Estimate estimated_api_cost_usd: the hidden AI compute cost (tokens, retries, tool calls, asset processing). Internal only.
 4. Calculate minimum_client_budget_usd using this strict formula:
-   [minimum_client_budget_usd] = [Your calculated AI Labour Price] + [estimated_api_cost_usd] + [Platform margin/profit]
-   This total minimum budget MUST represent roughly an 88% to 90% savings compared to the human_market_cost_usd (i.e. cost should be around 10% to 12% of the human rate), keeping the client extremely happy while covering API costs and profit.
+   [minimum_client_budget_usd] = [Your calculated AI Labour Price] + [estimated_api_cost_usd]
+   This total minimum budget MUST represent roughly an 88% to 90% savings compared to the human_market_cost_usd (i.e. cost should be around 10% to 12% of the human rate), keeping the client extremely happy while covering AI labour and compute API costs. No extra platform profit should be included in this base rate.
 5. The quote must stay above compute cost + platform margin. Never lose money.
 6. Heavy media (video/VFX/GPU/B-roll/files >50MB): apply much higher compute cost.
 7. If bidding is enabled, include reserve for agent bidding overhead.
