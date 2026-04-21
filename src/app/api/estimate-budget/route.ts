@@ -765,41 +765,9 @@ export async function POST(req: Request) {
             );
         }
 
-        // Backend override — if backend returns a valid estimate, guard it and return
-        if (clientUid) {
-            try {
-                const response = await fetch(`${getApiBase()}/v1/client/job/estimate-budget`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        ...body,
-                        client_uid: clientUid,
-                        title,
-                        description,
-                    }),
-                    cache: "no-store",
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    return NextResponse.json(
-                        guardLocalEstimate(
-                            data as RawEstimate,
-                            title,
-                            pricingDescription,
-                            planId,
-                            typeof data.strategy === "string" ? data.strategy : "backend-estimate",
-                            typeof data.model === "string" ? data.model : "backend-estimate",
-                            "",
-                            body,
-                            data,
-                        ),
-                    );
-                }
-            } catch (error) {
-                console.warn("Backend estimate failed; continuing with DeepSeek pipeline:", error);
-            }
-        }
+        // NOTE: Backend /v1/client/job/estimate-budget is NOT used for pricing.
+        // ALL pricing decisions are made exclusively by DeepSeek R1.
+        // The backend is only used for job persistence and execution, never for price calculation.
 
         /* ── Step 1: Gather ALL market intelligence in parallel ── */
         const deepseekKey = process.env.DEEPSEEK_API_KEY;

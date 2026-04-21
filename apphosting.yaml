@@ -13,3 +13,18 @@ env:
     value: "localhost"
   - variable: NEXT_PUBLIC_KERNEL_PORT
     value: "9090"
+  # ─── DeepSeek R1: sole pricing brain ───
+  - variable: DEEPSEEK_API_KEY
+    secret: DEEPSEEK_API_KEY
+  # ─── Market intelligence scouts ───
+  - variable: OPENROUTER_API_KEY
+    secret: OPENROUTER_API_KEY
+  - variable: GROQ_API_1
+    secret: GROQ_API_1
+  # ─── Pinecone ───
+  - variable: PINECONE_API_KEY
+    secret: PINECONE_API_KEY
+  - variable: PINECONE_INDEX
+    value: "pantheon"
+  - variable: PINECONE_HOST
+    value: "https://pantheon-lrkj6rk.svc.aped-4627-b74a.pinecone.io"
