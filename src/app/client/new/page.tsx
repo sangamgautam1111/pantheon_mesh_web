@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { BUSINESS_PLANS } from "@/lib/businessPlans";
 import {
     WORK_CATEGORY_LABELS,
+    LANE_RANK,
     canUseModelLane,
     detectWorkCategory,
     getModelGroupsForCategory,
@@ -15,6 +16,7 @@ import {
     type ModelGroupDefinition,
     type ModelLaneId,
     type PlanId,
+    type WorkCategoryId,
 } from "@/lib/modelGroups";
 import {
     AlertTriangle,
@@ -95,7 +97,7 @@ interface MarketBreakdownRow {
 const STEPS: Array<{ id: StepId; label: string; eyebrow: string }> = [
     { id: "scope", label: "Scope", eyebrow: "What are we building?" },
     { id: "routing", label: "Routing", eyebrow: "Choose the agent lane" },
-    { id: "checkout", label: "Price", eyebrow: "Calculate and deploy" },
+    { id: "checkout", label: "Price", eyebrow: "Calculate and send" },
 ];
 
 const TIMELINES = [
@@ -114,6 +116,42 @@ const TIMELINES = [
         rush: true,
     },
 ];
+
+const COMPLEXITY_NOTICE_COPY: Record<
+    WorkCategoryId,
+    { basic: string; challenge: string; capability: string; outcome: string }
+> = {
+    development: {
+        basic: "basic code",
+        challenge: "multi-file architecture and production debugging",
+        capability: "deeper code reasoning and sandbox review",
+        outcome: "safer production delivery",
+    },
+    media: {
+        basic: "simple cuts and transcripts",
+        challenge: "heavy video timelines and render work",
+        capability: "video vision, semantic search, and GPU-aware planning",
+        outcome: "cleaner media delivery",
+    },
+    writing: {
+        basic: "short copy",
+        challenge: "research-heavy writing and brand voice matching",
+        capability: "stronger research, fact checks, and editorial review",
+        outcome: "sharper business content",
+    },
+    design: {
+        basic: "simple visual assets",
+        challenge: "custom animations and pixel-perfect UI",
+        capability: "deep visual reasoning",
+        outcome: "pixel-perfect delivery",
+    },
+    automation: {
+        basic: "simple data cleanup",
+        challenge: "webhooks, scraping, and multi-step automation",
+        capability: "tool-use planning and loop-safe execution",
+        outcome: "more reliable workflows",
+    },
+};
 
 const LOGOS_BY_KEY: Record<string, string> = {
     anthropic: anthropicLogo.src,
@@ -168,6 +206,62 @@ function formatFileSize(bytes: number) {
 
 function parseLinks(value: string) {
     return value.split(/[\n,]+/).map((link) => link.trim()).filter(Boolean);
+}
+
+function inferPromptAssetEstimate(title: string, goal: string, links: string[]) {
+    const text = `${title} ${goal}`.toLowerCase();
+    const sizeMatches = Array.from(text.matchAll(/([0-9]+(?:\.[0-9]+)?)\s*(gb|mb|kb)\b/g));
+    const explicitMb = sizeMatches.reduce((total, match) => {
+        const value = Number(match[1]);
+        const unit = match[2];
+        if (!Number.isFinite(value)) {
+            return total;
+        }
+        if (unit === "gb") {
+            return total + value * 1024;
+        }
+        if (unit === "kb") {
+            return total + value / 1024;
+        }
+        return total + value;
+    }, 0);
+
+    const countMatch = text.match(/([0-9]+)\s*(files|images|videos|clips|pages|urls|links|csvs|records|rows|products)\b/);
+    const mentionedCount = countMatch ? Number(countMatch[1]) : 0;
+    const promptSignals = [
+        /\b(video|audio|podcast|render|vfx|timeline|youtube|clip)\b/.test(text),
+        /\b(image|logo|thumbnail|banner|brand|figma|ui|ux|mockup|animation)\b/.test(text),
+        /\b(scraper|scrape|proxy|database|dashboard|frontend|backend|api|webhook|automation|csv)\b/.test(text),
+        /\b(research|whitepaper|article|blog|seo|pitch deck)\b/.test(text),
+    ].filter(Boolean).length;
+
+    if (explicitMb > 0 || mentionedCount > 0 || links.length > 0 || promptSignals > 0) {
+        const estimatedMb =
+            explicitMb ||
+            (/\b(video|audio|render|vfx|timeline|youtube)\b/.test(text)
+                ? 120
+                : /\b(image|logo|thumbnail|banner|figma|mockup)\b/.test(text)
+                  ? 2
+                  : /\b(scraper|proxy|database|dashboard|frontend|backend|api|automation)\b/.test(text)
+                    ? 1.5
+                    : 0.1);
+        const count = Math.max(links.length, mentionedCount, promptSignals > 0 ? 1 : 0);
+        return {
+            count,
+            mb: Math.max(0.05, estimatedMb),
+            label: links.length > 0 ? `${links.length} reference links` : "Prompt scope",
+            detail: `inferred ${Math.max(0.05, estimatedMb).toFixed(2)} MB workload`,
+            derived: true,
+        };
+    }
+
+    return {
+        count: 1,
+        mb: 0.05,
+        label: "Prompt scope",
+        detail: "text-only workload",
+        derived: true,
+    };
 }
 
 function BrandLogoStrip({ logos }: { logos: Array<{ role: string; name: string; src: string }> }) {
@@ -291,6 +385,16 @@ export default function NewClientJobPage() {
         () => Array.from(new Set(assets.map((asset) => asset.type || "unknown"))),
         [assets],
     );
+    const promptAssetEstimate = useMemo(
+        () => inferPromptAssetEstimate(jobTitle, goal, assetLinks),
+        [assetLinks, goal, jobTitle],
+    );
+    const effectiveAssetCount = assets.length > 0 ? assets.length : promptAssetEstimate.count;
+    const effectiveAssetTotalMb = assets.length > 0 ? assetTotalMb : promptAssetEstimate.mb;
+    const assetSummaryText =
+        assets.length > 0
+            ? `${assets.length} files - ${assetTotalMb.toFixed(2)} MB`
+            : `${promptAssetEstimate.label} - ${promptAssetEstimate.detail}`;
     const detectedWorkCategory = useMemo(
         () =>
             detectWorkCategory({
@@ -298,9 +402,9 @@ export default function NewClientJobPage() {
                 description: goal,
                 assetTypes,
                 assetLinks,
-                assetTotalMb,
+                assetTotalMb: effectiveAssetTotalMb,
             }),
-        [assetLinks, assetTotalMb, assetTypes, goal, jobTitle],
+        [assetLinks, assetTypes, effectiveAssetTotalMb, goal, jobTitle],
     );
     const modelGroups = useMemo(
         () => getModelGroupsForCategory(detectedWorkCategory).map(withLogos),
@@ -315,22 +419,53 @@ export default function NewClientJobPage() {
     const scopeComplexity = useMemo(() => {
         const text = `${jobTitle} ${goal} ${assetTypes.join(" ")}`.toLowerCase();
         const reasons: string[] = [];
+        let score = 0;
 
-        if (assetTotalMb > 50) {
+        if (effectiveAssetTotalMb > 50) {
             reasons.push("large raw assets");
+            score += effectiveAssetTotalMb > 250 ? 2 : 1;
         }
         if (assetTypes.some((type) => type.startsWith("video/")) || /\b(video|render|youtube|timeline|motion)\b/.test(text)) {
             reasons.push("video or timeline work");
+            score += 2;
         }
         if (/\b(full[- ]?stack|backend|frontend|multi[- ]?file|debug|architecture|production)\b/.test(text)) {
             reasons.push("engineering complexity");
+            score += 2;
+        }
+        if (/\b(animation|pixel perfect|figma|design system|custom css|motion)\b/.test(text)) {
+            reasons.push("deep visual reasoning");
+            score += 2;
+        }
+        if (/\b(scraper|scrape|proxy|proxy rotation|database|webhook|pipeline|puppeteer|automation)\b/.test(text)) {
+            reasons.push("automation and integration complexity");
+            score += 2;
+        }
+        if (assetLinks.length > 0 || promptAssetEstimate.derived) {
+            score += Math.min(1, assetLinks.length * 0.25);
         }
         if (timeline === "rush") {
             reasons.push("rush delivery");
+            score += 1;
         }
 
-        return { isComplex: reasons.length > 0, reasons };
-    }, [assetTotalMb, assetTypes, goal, jobTitle, timeline]);
+        const recommendedLane: ModelLaneId = score >= 5 ? "elite" : score >= 2 ? "advanced" : score >= 1 ? "standard" : "flash";
+        const uniqueReasons = Array.from(new Set(reasons));
+        return { isComplex: uniqueReasons.length > 0, reasons: uniqueReasons, score, recommendedLane };
+    }, [assetLinks.length, assetTypes, effectiveAssetTotalMb, goal, jobTitle, promptAssetEstimate.derived, timeline]);
+    const complexityNotice = useMemo(() => {
+        const recommendedLaneInfo =
+            modelGroups.find((lane) => lane.id === scopeComplexity.recommendedLane) ?? modelGroups[0];
+        if (!scopeComplexity.isComplex || LANE_RANK[selectedLane] >= LANE_RANK[recommendedLaneInfo.id]) {
+            return null;
+        }
+
+        const copy = COMPLEXITY_NOTICE_COPY[detectedWorkCategory];
+        return {
+            title: `${recommendedLaneInfo.title} recommended`,
+            body: `Notice: ${selectedLaneInfo.title} handles ${copy.basic} well, but ${copy.challenge} require ${copy.capability}. Upgrade to the ${recommendedLaneInfo.planName} to unlock ${recommendedLaneInfo.tag} for ${copy.outcome}.`,
+        };
+    }, [detectedWorkCategory, modelGroups, scopeComplexity.isComplex, scopeComplexity.recommendedLane, selectedLane, selectedLaneInfo.title]);
 
     const payloadKey = useMemo(
         () =>
@@ -339,12 +474,14 @@ export default function NewClientJobPage() {
                 goal: goal.trim(),
                 timeline,
                 links: assetLinks,
-                assetTotalMb,
-                assetCount: assets.length,
+                assetTotalMb: effectiveAssetTotalMb,
+                assetCount: effectiveAssetCount,
                 assetTypes,
                 assetTextPreview,
                 selectedLane,
                 detectedWorkCategory,
+                complexityScore: scopeComplexity.score,
+                complexityReasons: scopeComplexity.reasons,
                 enableBidding,
                 plan: activePlan.id,
             }),
@@ -352,14 +489,16 @@ export default function NewClientJobPage() {
             activePlan.id,
             assetLinks,
             assetTextPreview,
-            assetTotalMb,
             assetTypes,
-            assets.length,
             detectedWorkCategory,
+            effectiveAssetCount,
+            effectiveAssetTotalMb,
             enableBidding,
             goal,
             jobTitle,
             selectedLane,
+            scopeComplexity.reasons,
+            scopeComplexity.score,
             timeline,
         ],
     );
@@ -411,11 +550,15 @@ export default function NewClientJobPage() {
         timeline: selectedTimeline.title,
         rush: selectedTimeline.rush,
         asset_links: assetLinks,
-        asset_total_mb: assetTotalMb,
-        asset_count: assets.length,
+        asset_total_mb: effectiveAssetTotalMb,
+        asset_count: effectiveAssetCount,
+        asset_source: assets.length > 0 ? "uploaded-files" : "prompt-derived",
         asset_types: assetTypes,
         asset_text_preview: assetTextPreview,
         work_category: detectedWorkCategory,
+        complexity_score: scopeComplexity.score,
+        complexity_reasons: scopeComplexity.reasons,
+        recommended_model_lane: scopeComplexity.recommendedLane,
         model_lane: selectedLane,
         model_group_id: selectedLaneInfo.id,
         model_group: `${selectedLaneInfo.title} - ${selectedLaneInfo.tag}. ${selectedLaneInfo.workflow}`,
@@ -542,7 +685,7 @@ export default function NewClientJobPage() {
         try {
             const readyEstimate = estimate ?? (await calculateEstimate());
             if (!readyEstimate) {
-                throw new Error("Calculate the project minimum before deploying agents.");
+                throw new Error("Calculate the project minimum before sending the job to models.");
             }
 
             const response = await fetch("/api/client/job", {
@@ -733,14 +876,14 @@ export default function NewClientJobPage() {
                 </div>
             </div>
 
-            {activePlan.id === "free" && scopeComplexity.isComplex && (
+            {complexityNotice && (
                 <div className="mb-5 flex gap-3 rounded-3xl border border-slate-300 bg-slate-50 p-4 text-sm text-slate-800">
                     <AlertTriangle className="mt-0.5 shrink-0 text-slate-950" size={19} />
                     <div>
-                        <p className="font-black">{modelGroups[0].title} may struggle with this scope.</p>
-                        <p className="mt-1 leading-6">
-                            Signals found: {scopeComplexity.reasons.join(", ")}. Upgrade to Growth to unlock the Advanced
-                            Syndicate and 6-agent bidding for stronger execution.
+                        <p className="font-black">{complexityNotice.title}</p>
+                        <p className="mt-1 leading-6">{complexityNotice.body}</p>
+                        <p className="mt-2 text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+                            Complexity signals: {scopeComplexity.reasons.join(", ")}
                         </p>
                     </div>
                 </div>
@@ -931,7 +1074,7 @@ export default function NewClientJobPage() {
                                 <div className="rounded-2xl bg-white p-4">
                                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Assets</p>
                                     <p className="mt-2 text-sm font-black text-slate-950">
-                                        {assets.length} files - {assetTotalMb.toFixed(2)} MB
+                                        {assetSummaryText}
                                     </p>
                                 </div>
                             </div>
@@ -980,7 +1123,7 @@ export default function NewClientJobPage() {
                             </div>
                             <p className="text-lg font-black text-slate-950">Ready for pricing.</p>
                             <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
-                                Calculate the project minimum before funding and deploying agents.
+                                Calculate the project minimum before sending the job to models.
                             </p>
                             <button
                                 type="button"
@@ -1049,9 +1192,9 @@ export default function NewClientJobPage() {
                 )}
 
                 <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-                    <span className="font-black text-slate-950">Test output then pay.</span> Agents create the first
-                    test output only after the protected minimum is accepted, so bidding cannot undercut hidden compute
-                    cost or platform margin.
+                    <span className="font-black text-slate-950">First step: send to models.</span> The protected
+                    minimum is saved with the job so future billing and execution cannot undercut compute cost or
+                    platform margin.
                 </div>
 
                 <button
@@ -1061,9 +1204,7 @@ export default function NewClientJobPage() {
                     className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white shadow-xl shadow-slate-900/15 transition-all hover:-translate-y-0.5 hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     {isPosting ? <Loader2 className="animate-spin" size={17} /> : <Send size={17} />}
-                    {activePlan.id === "free" && selectedLane === "flash"
-                        ? `Send To ${selectedLaneInfo.title}`
-                        : "Test Output, Pay & Deploy"}
+                    Send To Models
                 </button>
                 <button
                     type="button"
@@ -1169,11 +1310,15 @@ export default function NewClientJobPage() {
                                 <div className="mt-4 space-y-3 text-sm">
                                     <div className="flex justify-between gap-3">
                                         <span className="text-slate-500">Assets</span>
-                                        <span className="font-bold text-slate-950">{assets.length} files</span>
+                                        <span className="text-right font-bold text-slate-950">
+                                            {assets.length > 0 ? `${assets.length} files` : promptAssetEstimate.label}
+                                        </span>
                                     </div>
                                     <div className="flex justify-between gap-3">
-                                        <span className="text-slate-500">Asset size</span>
-                                        <span className="font-bold text-slate-950">{assetTotalMb.toFixed(2)} MB</span>
+                                        <span className="text-slate-500">Workload size</span>
+                                        <span className="text-right font-bold text-slate-950">
+                                            {assets.length > 0 ? `${assetTotalMb.toFixed(2)} MB` : promptAssetEstimate.detail}
+                                        </span>
                                     </div>
                                     <div className="flex justify-between gap-3">
                                         <span className="text-slate-500">Timeline</span>

@@ -107,14 +107,24 @@ type MarketBreakdownRow = {
     quality: string;
 };
 
+const CATEGORY_COMPARATOR_SOURCES = new Set([
+    "Commercial UI kit",
+    "Commercial SaaS Scraper (e.g., Apify)",
+    "Cloud render / video API",
+    "SEO research suite",
+]);
+
 function buildPricingDescription(body: Record<string, unknown>, description: string) {
     const details = [description.trim()];
     const timeline = typeof body.timeline === "string" ? body.timeline : "";
     const modelLane = typeof body.model_lane === "string" ? body.model_lane : "";
     const modelGroup = typeof body.model_group === "string" ? body.model_group : "";
     const workCategory = typeof body.work_category === "string" ? body.work_category : "";
+    const complexityScore = numberFrom(body.complexity_score, 0);
+    const complexityReasons = getStringArray(body.complexity_reasons);
     const assetTotalMb = numberFrom(body.asset_total_mb, 0);
     const assetCount = numberFrom(body.asset_count, 0);
+    const assetSource = typeof body.asset_source === "string" ? body.asset_source : "uploaded-or-prompt";
     const assetTypes = Array.isArray(body.asset_types)
         ? body.asset_types.filter((item): item is string => typeof item === "string" && Boolean(item.trim()))
         : [];
@@ -136,11 +146,14 @@ function buildPricingDescription(body: Record<string, unknown>, description: str
     if (workCategory) {
         details.push(`Detected work category: ${workCategory}.`);
     }
+    if (complexityScore > 0 || complexityReasons.length > 0) {
+        details.push(`Complexity score: ${complexityScore.toFixed(2)}. Complexity signals: ${complexityReasons.join(", ") || "none"}.`);
+    }
     if (assetCount || assetTotalMb || assetTypes.length > 0) {
         details.push(
             `Raw assets: ${assetCount} files, asset total size: ${assetTotalMb.toFixed(2)} MB, asset types: ${
                 assetTypes.join(", ") || "unknown"
-            }.`,
+            }, source: ${assetSource}.`,
         );
     }
     if (assetLinks.length > 0) {
@@ -301,6 +314,7 @@ function buildMarketBreakdown(title: string, description: string, humanMarketCos
     const medianAnchor = prices.length > 0 ? prices[Math.floor(prices.length / 2)] : Math.max(35, humanMarketCost);
     const highAnchor = prices.length > 0 ? prices[prices.length - 1] : Math.max(120, humanMarketCost * 2);
     const combined = `${title} ${description}`.toLowerCase();
+    const category = getWorkCategory({}, title, description);
     const isUiOrWeb = ["ui", "component", "tailwind", "next.js", "react", "landing page", "website", "dashboard"].some((keyword) =>
         combined.includes(keyword),
     );
@@ -326,7 +340,28 @@ function buildMarketBreakdown(title: string, description: string, humanMarketCos
         },
     ];
 
-    if (isUiOrWeb) {
+    if (category === "automation") {
+        rows.push({
+            source: "Commercial SaaS Scraper (e.g., Apify)",
+            estimated_cost: "$50 - $200/mo",
+            delivery_time: "Instant",
+            quality: "Recurring monthly fee; still needs technical setup, proxy rules, and maintenance.",
+        });
+    } else if (category === "media") {
+        rows.push({
+            source: "Cloud render / video API",
+            estimated_cost: "$30 - $300/mo",
+            delivery_time: "Instant",
+            quality: "Tool access only; editing logic, review, and final assembly still need setup.",
+        });
+    } else if (category === "writing") {
+        rows.push({
+            source: "SEO research suite",
+            estimated_cost: "$60 - $250/mo",
+            delivery_time: "Instant",
+            quality: "Research and keyword tooling only; strategy, writing, and editing still require work.",
+        });
+    } else if (isUiOrWeb) {
         rows.push({
             source: "Commercial UI kit",
             estimated_cost: "$149 - $299",
@@ -336,6 +371,20 @@ function buildMarketBreakdown(title: string, description: string, humanMarketCos
     }
 
     return rows;
+}
+
+function normalizeMarketBreakdown(
+    rows: unknown,
+    title: string,
+    description: string,
+    humanMarketCost: number,
+    marketContext = "",
+) {
+    const generatedRows = buildMarketBreakdown(title, description, humanMarketCost, marketContext);
+    const comparator = generatedRows.find((row) => CATEGORY_COMPARATOR_SOURCES.has(row.source));
+    const inputRows = Array.isArray(rows) ? (rows as MarketBreakdownRow[]) : generatedRows;
+    const cleanedRows = inputRows.filter((row) => !CATEGORY_COMPARATOR_SOURCES.has(row.source));
+    return comparator ? [...cleanedRows, comparator] : cleanedRows;
 }
 
 function getApiBase() {
@@ -393,14 +442,24 @@ function estimateProtectedInternalCost(body: Record<string, unknown>, title: str
     const assetLinks = getStringArray(body.asset_links);
     const assetTotalMb = numberFrom(body.asset_total_mb, 0);
     const assetCount = numberFrom(body.asset_count, 0);
+    const complexityScore = Math.max(0, numberFrom(body.complexity_score, 0));
+    const complexityReasons = getStringArray(body.complexity_reasons);
     const assetTextPreview = typeof body.asset_text_preview === "string" ? body.asset_text_preview : "";
-    const combined = `${title} ${description} ${assetTypes.join(" ")} ${assetLinks.join(" ")}`.toLowerCase();
+    const combined = `${title} ${description} ${assetTypes.join(" ")} ${assetLinks.join(" ")} ${complexityReasons.join(" ")}`.toLowerCase();
     const costFloor = MODEL_GROUP_COST_FLOORS[category][planId];
     let internalCost = costFloor.base;
+    const marketLift: Record<WorkCategoryId, number> = {
+        development: 35,
+        media: 45,
+        writing: 8,
+        design: 28,
+        automation: 40,
+    };
 
     internalCost += Math.min(assetTextPreview.length / 12000, 1.5);
     internalCost += Math.min(assetLinks.length * 0.12, 1.2);
     internalCost += Math.min(assetCount * 0.08, 2.4);
+    internalCost += Math.min(complexityScore * 0.75, 7.5);
 
     if (category === "media") {
         internalCost += Math.min(assetTotalMb * 0.035, 45);
@@ -415,7 +474,7 @@ function estimateProtectedInternalCost(body: Record<string, unknown>, title: str
         if (/\b(midjourney|figma|pixel perfect|design system|brand kit)\b/.test(combined)) internalCost += planId === "scale" ? 8 : 3;
     } else if (category === "development" || category === "automation") {
         internalCost += Math.min(assetTotalMb * 0.01, 6);
-        if (/\b(repo|large codebase|multi-file|full-stack|database|webhook|pipeline|scraping|puppeteer)\b/.test(combined)) {
+        if (/\b(repo|large codebase|multi-file|full-stack|database|webhook|pipeline|scraping|scraper|proxy|proxy rotation|puppeteer)\b/.test(combined)) {
             internalCost += planId === "scale" ? 5 : 2;
         }
     } else if (category === "writing") {
@@ -431,7 +490,7 @@ function estimateProtectedInternalCost(body: Record<string, unknown>, title: str
     return {
         category,
         internalCost: roundDisplay(internalCost),
-        marketFloor: costFloor.marketFloor,
+        marketFloor: roundDisplay(costFloor.marketFloor + complexityScore * marketLift[category]),
     };
 }
 
@@ -472,9 +531,7 @@ function sanitizePublicEstimate(
                 ? data.strategy.trim()
                 : strategyFallback,
         model: typeof data.model === "string" ? data.model : undefined,
-        market_breakdown: Array.isArray(data.market_breakdown)
-            ? data.market_breakdown
-            : buildMarketBreakdown(title, description, humanMarketCost, marketContext),
+        market_breakdown: normalizeMarketBreakdown(data.market_breakdown, title, description, humanMarketCost, marketContext),
         market_context_available:
             typeof data.market_context_available === "boolean"
                 ? data.market_context_available
@@ -566,9 +623,7 @@ function guardLocalEstimate(
         reason: parsed.reason?.trim() || "Calculated as a low AI project price compared with typical freelancer rates.",
         strategy,
         model,
-        market_breakdown: Array.isArray(extra.market_breakdown)
-            ? extra.market_breakdown
-            : buildMarketBreakdown(title, description, humanMarketCost, marketContext),
+        market_breakdown: normalizeMarketBreakdown(extra.market_breakdown, title, description, humanMarketCost, marketContext),
         market_context_available:
             typeof extra.market_context_available === "boolean"
                 ? extra.market_context_available

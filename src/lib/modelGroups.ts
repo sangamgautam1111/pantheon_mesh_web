@@ -428,7 +428,11 @@ const CATEGORY_KEYWORDS: Record<WorkCategoryId, string[]> = {
         "zapier",
         "webhook",
         "scrape",
+        "scraper",
         "scraping",
+        "proxy",
+        "proxy rotation",
+        "browser automation",
         "lead gen",
         "lead generation",
         "csv",
@@ -487,6 +491,9 @@ export function detectWorkCategory(input: WorkCategoryInput): WorkCategoryId {
     }
     if (assetTypes.some((type) => type.includes("csv") || type.includes("json") || type.includes("spreadsheet"))) {
         scores.automation += 4;
+    }
+    if (/\b(scraper|scrape|proxy|proxy rotation|puppeteer|browser automation)\b/.test(text)) {
+        scores.automation += 6;
     }
     if ((input.assetTotalMb ?? 0) > 250) {
         scores.media += 2;
