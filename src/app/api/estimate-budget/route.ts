@@ -806,20 +806,23 @@ You must explicitly analyze any "Asset/reference links provided" and "Readable a
 
 RULES:
 1. Classify the job by scope and difficulty from the actual words in the brief and attached assets. Do not inflate vague/simple tasks.
-2. Estimate human_market_cost_usd from the market intelligence provided:
+2. Determine human_market_cost_usd:
    - If LIVE WEB SEARCH data exists, treat those prices as PRIMARY GROUND TRUTH.
    - If SCOUT ESTIMATES exist, use them as SECONDARY confirmation.
    - If neither exists, estimate conservatively from your training data.
-3. Estimate estimated_api_cost_usd: the hidden AI compute cost (tokens, retries, tool calls, asset processing). Internal only.
-4. Calculate minimum_client_budget_usd using this strict formula:
-   [minimum_client_budget_usd] = [Your calculated AI Labour Price] + [estimated_api_cost_usd]
-   This total minimum budget MUST represent roughly an 88% to 90% savings compared to the human_market_cost_usd (i.e. cost should be around 10% to 12% of the human rate), keeping the client extremely happy while covering AI labour and compute API costs. No extra platform profit should be included in this base rate.
-5. The quote must stay above compute cost + platform margin. Never lose money.
-6. Heavy media (video/VFX/GPU/B-roll/files >50MB): apply much higher compute cost.
-7. If bidding is enabled, include reserve for agent bidding overhead.
-8. Be FAIR. Do not over-charge. Do not under-charge below compute cost.
-9. Keep the reason client-friendly. Never mention API cost, margin, or internal math.
-10. Generate market_breakdown: an array of 3-4 marketplace comparison rows. Each row must be relevant to the SPECIFIC job type. Examples:
+3. Calculate the AI Labour Price:
+   Apply an 85% to 90% savings discount to the human_market_cost_usd. This heavily discounted amount (the remaining 10% to 15%) is your "AI Labour Price" (which acts as the platform's profit).
+4. Estimate estimated_api_cost_usd: 
+   Calculate the expected LLM token, compute, and tool api costs required for the AI agents to actually develop/deliver this specific project (Internal only).
+5. Calculate minimum_client_budget_usd using this strict formula:
+   [minimum_client_budget_usd] = [AI Labour Price] + [estimated_api_cost_usd]
+   This ensures the client gets an insane 85-90% discount on labor, while still fully covering the exact API development costs so the platform pays nothing out of pocket.
+6. The quote must stay above compute cost + platform margin. Never lose money.
+7. Heavy media (video/VFX/GPU/B-roll/files >50MB): apply much higher compute cost.
+8. If bidding is enabled, include reserve for agent bidding overhead.
+9. Be FAIR. Do not over-charge. Do not under-charge below compute cost.
+10. Keep the reason client-friendly. Never mention API cost, margin, or internal math.
+11. Generate market_breakdown: an array of 3-4 marketplace comparison rows. Each row must be relevant to the SPECIFIC job type. Examples:
     - For a backend/IoT/API job: compare against "Fiverr gigs", "Upwork specialists", "Dev agency", "Enterprise BaaS (e.g., Supabase / AWS)"
     - For a video/media job: compare against "Fiverr editors", "Upwork video producers", "Production agency", "Cloud render / video API"
     - For a web/UI job: compare against "Fiverr designers", "Upwork React devs", "Design agency", "Premium UI kit (e.g., Tailwind UI)"
