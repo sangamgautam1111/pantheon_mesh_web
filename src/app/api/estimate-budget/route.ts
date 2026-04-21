@@ -578,10 +578,12 @@ function guardLocalEstimate(
     const marginFloor = estimatedInternalCost * MINIMUM_MARGIN_MULTIPLIER;
     const platformFloor = estimatedInternalCost + Math.max(BASE_PLATFORM_OVERHEAD_USD, humanMarketCost * 0.015);
     const biddingNoLossFloor = (estimatedInternalCost + biddingReserve) * MINIMUM_MARGIN_MULTIPLIER + BASE_PLATFORM_OVERHEAD_USD;
-    const aiPriceTarget = humanMarketCost * ratio + estimatedInternalCost;
-    const maxClientPrice = humanMarketCost * MAX_AI_PRICE_RATIO + estimatedInternalCost;
+    
+    // DeepSeek handles the 10-15% logic natively now. We only apply a hard ceiling (max 15%) to prevent AI math hallucinations.
+    const maxClientPrice = Math.max(humanMarketCost * 0.15 + estimatedInternalCost, platformFloor);
+    
     const minBudget = roundBudget(
-        Math.max(marginFloor, platformFloor, biddingNoLossFloor, aiPriceTarget, Math.min(suggestedMinimum, maxClientPrice)),
+        Math.max(marginFloor, platformFloor, biddingNoLossFloor, Math.min(suggestedMinimum, maxClientPrice)),
     );
     const savingsPercent = Math.round(Math.max(0, 100 - (minBudget / humanMarketCost) * 100) * 10) / 10;
 
@@ -813,7 +815,7 @@ RULES:
 3. Calculate the AI Labour Price:
    Apply an 85% to 90% savings discount to the human_market_cost_usd. This heavily discounted amount (the remaining 10% to 15%) is your "AI Labour Price" (which acts as the platform's profit).
 4. Estimate estimated_api_cost_usd: 
-   Calculate the expected LLM token, compute, and tool api costs required for the AI agents to actually develop/deliver this specific project (Internal only).
+   Calculate the expected LLM token, compute, and tool api costs required for the AI agents to actually develop/deliver this specific project (Internal only). IMPORTANT: LLM tokens cost micro-cents! Almost all projects cost between $0.05 and $2.50 maximum in compute. Do NOT include the client's 3rd-party SaaS API costs (like Stripe, Twilio) here. This is ONLY the AI platform's internal token burn rate.
 5. Calculate minimum_client_budget_usd using this strict formula:
    [minimum_client_budget_usd] = [AI Labour Price] + [estimated_api_cost_usd]
    This ensures the client gets an insane 85-90% discount on labor, while still fully covering the exact API development costs so the platform pays nothing out of pocket.
