@@ -28,3 +28,6 @@ env:
     value: "pantheon"
   - variable: PINECONE_HOST
     value: "https://pantheon-lrkj6rk.svc.aped-4627-b74a.pinecone.io"
+  # ─── Real-time web search ───
+  - variable: TAVILY_API_KEY
+    secret: TAVILY_API_KEY
