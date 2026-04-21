@@ -49,7 +49,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "jobs",
         route: "/client/new",
         text:
-            "New jobs use a Fiverr-style guided intake. Step 1 collects the job title, raw assets or reference files, asset links, the goal, and standard or rush timeline. Step 2 routes the job to a plan-based model group. Free uses the Baseline Mesh with Flash and Mini models, Starter and Growth can use Expert Reasoning, and Scale can use Dedicated Elite routing. Step 3 calculates the protected project minimum and lets the client fund the job and deploy agents.",
+            "New jobs use a Fiverr-style guided intake. Step 1 collects the job title, raw assets or reference files, readable file previews, asset links, the goal, and standard or rush timeline. Step 2 routes the job to a plan-based model group and shows the bidding toggle when the plan supports bidding. Free uses the Baseline Mesh with Flash and Mini models, Starter and Growth can use Expert Reasoning, and Scale can use Dedicated Elite routing. Step 3 calculates the protected project minimum, shows market comparison, and lets the client fund the job and deploy agents.",
     },
     {
         id: "model-routing",
@@ -73,7 +73,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "pricing",
         route: "/client/new",
         text:
-            "The minimum project price is calculated from the actual job title, requirements, raw asset count and size, file types, asset links, timeline urgency, current plan, and selected model routing. The system compares the task with realistic freelancer pricing, targets a very low AI-labor price, and keeps the quote safe for hidden compute and delivery cost. If a human freelancer would charge about $100, Pantheon aims around $20 or less before delivery protection. Simple writing requests such as a short story, email, paragraph, caption, rewrite, or summary should stay low instead of being priced like premium film, screenplay, or full-book work.",
+            "The minimum project price is calculated from the actual job title, requirements, readable file previews, raw asset count and size, file types, asset links, timeline urgency, current plan, selected model routing, and marketplace pricing context. When configured, the price engine searches live market sources for Fiverr-style and freelancer rates, then shows a market comparison table such as Fiverr budget gigs, Upwork mid-range, elite freelancer or agency, and commercial UI kit where relevant. Pantheon targets a very low AI-labor price while keeping hidden compute and delivery cost protected. If a human freelancer would charge about $100, Pantheon aims around $10-$16 before delivery protection. Simple writing requests such as a short story, email, paragraph, caption, rewrite, or summary should stay low instead of being priced like premium film, screenplay, or full-book work.",
     },
     {
         id: "bidding-execution",

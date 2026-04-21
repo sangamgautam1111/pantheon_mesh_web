@@ -10,7 +10,6 @@ import {
     AlertTriangle,
     ArrowLeft,
     ArrowRight,
-    Brain,
     Briefcase,
     CheckCircle2,
     Clock,
@@ -18,9 +17,7 @@ import {
     ImagePlus,
     Link as LinkIcon,
     Loader2,
-    Rocket,
     Send,
-    ShieldCheck,
     Sparkles,
     UploadCloud,
     X,
@@ -66,8 +63,17 @@ interface BudgetEstimate {
     human_market_cost_usd?: number;
     savings_percent?: number;
     reason?: string;
+    market_breakdown?: MarketBreakdownRow[];
+    market_context_available?: boolean;
     plan?: PlanSnapshot;
     usage?: PlanUsage;
+}
+
+interface MarketBreakdownRow {
+    source: string;
+    estimated_cost: string;
+    delivery_time: string;
+    quality: string;
 }
 
 const STEPS: Array<{ id: StepId; label: string; eyebrow: string }> = [
@@ -100,6 +106,10 @@ const MODEL_LANES = [
         tag: "Flash / Mini group",
         description: "Fast lightweight models for simple writing, formatting, basic scripts, and small creative tasks.",
         examples: "Emails, summaries, simple copy, short scripts",
+        logos: [
+            { name: "Gemini", src: "https://cdn.simpleicons.org/googlegemini/111111" },
+            { name: "Mistral", src: "https://cdn.simpleicons.org/mistralai/111111" },
+        ],
     },
     {
         id: "expert" as const,
@@ -107,6 +117,11 @@ const MODEL_LANES = [
         tag: "DeepSeek / advanced coding group",
         description: "Stronger reasoning for full-stack work, debugging, structured design, and heavier analysis.",
         examples: "Landing pages, coding fixes, research, multi-step plans",
+        logos: [
+            { name: "DeepSeek", src: "https://cdn.simpleicons.org/deepseek/111111" },
+            { name: "OpenAI", src: "https://cdn.simpleicons.org/openai/111111" },
+            { name: "Anthropic", src: "https://cdn.simpleicons.org/anthropic/111111" },
+        ],
     },
     {
         id: "dedicated" as const,
@@ -114,6 +129,12 @@ const MODEL_LANES = [
         tag: "Premium execution group",
         description: "Premium model routing with the strongest review depth and global execution priority.",
         examples: "High-volume production work, complex assets, urgent launches",
+        logos: [
+            { name: "OpenAI", src: "https://cdn.simpleicons.org/openai/111111" },
+            { name: "Anthropic", src: "https://cdn.simpleicons.org/anthropic/111111" },
+            { name: "Gemini", src: "https://cdn.simpleicons.org/googlegemini/111111" },
+            { name: "DeepSeek", src: "https://cdn.simpleicons.org/deepseek/111111" },
+        ],
     },
 ];
 
@@ -161,6 +182,32 @@ function parseLinks(value: string) {
     return value.split(/[\n,]+/).map((link) => link.trim()).filter(Boolean);
 }
 
+function BrandLogoStrip({ logos }: { logos: Array<{ name: string; src: string }> }) {
+    return (
+        <div className="flex flex-wrap items-center gap-2">
+            {logos.map((logo) => (
+                <div
+                    key={logo.name}
+                    className="flex h-10 min-w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white px-3"
+                    title={logo.name}
+                >
+                    <img
+                        src={logo.src}
+                        alt={`${logo.name} logo`}
+                        className="h-5 w-5 object-contain grayscale"
+                        onError={(event) => {
+                            event.currentTarget.style.display = "none";
+                        }}
+                    />
+                    <span className="ml-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-900">
+                        {logo.name}
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
 async function createThumbnailDataUrl(file: File) {
     if (!file.type.startsWith("image/")) {
         return null;
@@ -198,6 +245,28 @@ async function createThumbnailDataUrl(file: File) {
     });
 }
 
+async function readAssetTextPreview(file: File) {
+    const readableTypes = [
+        "text/",
+        "application/json",
+        "application/csv",
+        "application/xml",
+        "application/javascript",
+    ];
+    const readableExtensions = [".txt", ".md", ".csv", ".json", ".xml", ".html", ".css", ".js", ".ts", ".tsx"];
+    const lowerName = file.name.toLowerCase();
+    const canRead =
+        readableTypes.some((type) => file.type.startsWith(type)) ||
+        readableExtensions.some((extension) => lowerName.endsWith(extension));
+
+    if (!canRead || file.size > 750_000) {
+        return "";
+    }
+
+    const text = await file.text();
+    return `File: ${file.name}\n${text.slice(0, 4000)}`;
+}
+
 export default function NewClientJobPage() {
     const router = useRouter();
     const { user, profile } = useAuth();
@@ -207,10 +276,12 @@ export default function NewClientJobPage() {
     const [timeline, setTimeline] = useState<TimelineId>("standard");
     const [assetLinkText, setAssetLinkText] = useState("");
     const [assets, setAssets] = useState<AssetMeta[]>([]);
+    const [assetTextPreview, setAssetTextPreview] = useState("");
     const [thumbnailDataUrl, setThumbnailDataUrl] = useState<string | null>(null);
     const [planInfo, setPlanInfo] = useState<PlanSnapshot | null>(null);
     const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
     const [selectedLane, setSelectedLane] = useState<ModelLaneId>("baseline");
+    const [enableBidding, setEnableBidding] = useState(false);
     const [estimate, setEstimate] = useState<BudgetEstimate | null>(null);
     const [estimateKey, setEstimateKey] = useState("");
     const [isEstimating, setIsEstimating] = useState(false);
@@ -233,6 +304,7 @@ export default function NewClientJobPage() {
     const canContinueScope = jobTitle.trim().length >= 3 && goal.trim().length >= 15;
     const canPostByPlan = planUsage?.can_post_job ?? true;
     const selectedLaneAllowed = canUseLane(activePlan.id, selectedLane);
+    const canEnableBidding = activePlan.bid_agent_limit > 0 && selectedLane !== "baseline";
 
     const scopeComplexity = useMemo(() => {
         const text = `${jobTitle} ${goal} ${assetTypes.join(" ")}`.toLowerCase();
@@ -264,10 +336,24 @@ export default function NewClientJobPage() {
                 assetTotalMb,
                 assetCount: assets.length,
                 assetTypes,
+                assetTextPreview,
                 selectedLane,
+                enableBidding,
                 plan: activePlan.id,
             }),
-        [activePlan.id, assetLinks, assetTotalMb, assetTypes, assets.length, goal, jobTitle, selectedLane, timeline],
+        [
+            activePlan.id,
+            assetLinks,
+            assetTextPreview,
+            assetTotalMb,
+            assetTypes,
+            assets.length,
+            enableBidding,
+            goal,
+            jobTitle,
+            selectedLane,
+            timeline,
+        ],
     );
 
     useEffect(() => {
@@ -300,6 +386,10 @@ export default function NewClientJobPage() {
     }, [activePlan.id]);
 
     useEffect(() => {
+        setEnableBidding(canEnableBidding);
+    }, [canEnableBidding]);
+
+    useEffect(() => {
         if (payloadKey !== estimateKey) {
             setEstimate(null);
         }
@@ -316,8 +406,10 @@ export default function NewClientJobPage() {
         asset_total_mb: assetTotalMb,
         asset_count: assets.length,
         asset_types: assetTypes,
+        asset_text_preview: assetTextPreview,
         model_lane: selectedLane,
         model_group: `${selectedLaneInfo.title} - ${selectedLaneInfo.tag}`,
+        bidding_enabled: canEnableBidding && enableBidding,
     });
 
     const handleAssetUpload = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -346,6 +438,12 @@ export default function NewClientJobPage() {
                     setThumbnailDataUrl(thumbnail);
                 }
             }
+        }
+
+        const textPreviews = await Promise.all(files.map((file) => readAssetTextPreview(file)));
+        const readablePreview = textPreviews.filter(Boolean).join("\n\n---\n\n");
+        if (readablePreview) {
+            setAssetTextPreview((current) => `${current}\n\n${readablePreview}`.trim().slice(0, 6000));
         }
 
         event.target.value = "";
@@ -444,7 +542,7 @@ export default function NewClientJobPage() {
                     ...buildPricingPayload(),
                     budget_usd: readyEstimate.min_budget_usd,
                     thumbnail_data_url: thumbnailDataUrl,
-                    enable_marketplace_bidding: activePlan.bid_agent_limit > 0 && selectedLane !== "baseline",
+                    enable_marketplace_bidding: canEnableBidding && enableBidding,
                     bidding_lane: activePlan.bidding_lane,
                 }),
             });
@@ -465,7 +563,7 @@ export default function NewClientJobPage() {
     const renderScope = () => (
         <section className="overflow-hidden rounded-[34px] border border-white bg-white shadow-xl shadow-blue-900/5">
             <div className="border-b border-slate-100 bg-slate-50/70 px-6 py-5 md:px-8">
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-blue-600">Step 1 - Scope</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">Step 1 - Scope</p>
                 <h2 className="mt-2 text-2xl font-black text-slate-950">What are we building?</h2>
                 <p className="mt-2 text-sm text-slate-500">
                     Keep it plain. The project manager uses these signals to estimate real effort.
@@ -482,7 +580,7 @@ export default function NewClientJobPage() {
                             value={jobTitle}
                             onChange={(event) => setJobTitle(event.target.value)}
                             placeholder="Build a React landing page"
-                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-950 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-950 outline-none transition-all focus:border-slate-500 focus:ring-4 focus:ring-slate-500/10"
                         />
                     </label>
 
@@ -495,7 +593,7 @@ export default function NewClientJobPage() {
                             onChange={(event) => setGoal(event.target.value)}
                             placeholder="Describe the outcome, style, pages, constraints, examples, and anything the agent must avoid."
                             rows={8}
-                            className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                            className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition-all focus:border-slate-500 focus:ring-4 focus:ring-slate-500/10"
                         />
                     </label>
 
@@ -506,9 +604,9 @@ export default function NewClientJobPage() {
                             </span>
                             <span className="text-xs text-slate-400">Files are measured for pricing context.</span>
                         </div>
-                        <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-blue-200 bg-blue-50/50 px-6 py-8 text-center transition-all hover:border-blue-400 hover:bg-blue-50">
+                        <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center transition-all hover:border-slate-500 hover:bg-white">
                             <input type="file" multiple className="hidden" onChange={handleAssetUpload} />
-                            <UploadCloud className="mb-3 text-blue-600" size={30} />
+                            <UploadCloud className="mb-3 text-slate-950" size={30} />
                             <span className="text-sm font-black text-slate-950">Upload raw assets or reference files</span>
                             <span className="mt-2 max-w-md text-xs leading-5 text-slate-500">
                                 Images, documents, CSVs, videos, brand files, or anything that changes the real job size.
@@ -551,14 +649,14 @@ export default function NewClientJobPage() {
                             onChange={(event) => setAssetLinkText(event.target.value)}
                             placeholder="Paste Drive, Figma, YouTube, GitHub, docs, or reference links. One per line."
                             rows={4}
-                            className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                            className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition-all focus:border-slate-500 focus:ring-4 focus:ring-slate-500/10"
                         />
                     </label>
                 </div>
 
                 <aside className="space-y-4">
                     <div className="rounded-[28px] border border-slate-200 bg-slate-950 p-5 text-white">
-                        <Clock className="mb-4 text-blue-300" size={24} />
+                        <Clock className="mb-4 text-white" size={24} />
                         <h3 className="text-lg font-black">Timeline</h3>
                         <p className="mt-2 text-sm leading-6 text-slate-300">
                             Rush work costs more because the system reserves faster execution and review.
@@ -572,13 +670,13 @@ export default function NewClientJobPage() {
                                     className={cx(
                                         "w-full rounded-2xl border p-4 text-left transition-all",
                                         timeline === item.id
-                                            ? "border-blue-300 bg-blue-500/20"
+                                            ? "border-white bg-white/15"
                                             : "border-white/10 bg-white/5 hover:bg-white/10",
                                     )}
                                 >
                                     <span className="flex items-center justify-between gap-3">
                                         <span className="font-black">{item.title}</span>
-                                        <span className="rounded-full bg-white/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-blue-100">
+                                        <span className="rounded-full bg-white/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
                                             {item.multiplier}
                                         </span>
                                     </span>
@@ -588,19 +686,19 @@ export default function NewClientJobPage() {
                         </div>
                     </div>
 
-                    <div className="rounded-[28px] border border-blue-100 bg-white p-5">
+                    <div className="rounded-[28px] border border-slate-200 bg-white p-5">
                         <p className="text-sm font-black text-slate-950">Pricing reads more than text.</p>
                         <div className="mt-4 space-y-3 text-sm text-slate-500">
                             <div className="flex gap-3">
-                                <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-500" size={16} />
+                                <CheckCircle2 className="mt-0.5 shrink-0 text-slate-950" size={16} />
                                 File size helps estimate analysis and tool cost.
                             </div>
                             <div className="flex gap-3">
-                                <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-500" size={16} />
+                                <CheckCircle2 className="mt-0.5 shrink-0 text-slate-950" size={16} />
                                 Rush delivery increases the minimum only when needed.
                             </div>
                             <div className="flex gap-3">
-                                <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-500" size={16} />
+                                <CheckCircle2 className="mt-0.5 shrink-0 text-slate-950" size={16} />
                                 Simple writing stays cheap instead of being over-priced.
                             </div>
                         </div>
@@ -612,10 +710,10 @@ export default function NewClientJobPage() {
     const renderRouting = () => (
         <section className="rounded-[34px] border border-white bg-white p-6 shadow-xl shadow-blue-900/5 md:p-8">
             <div className="mb-6">
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-blue-600">
-                    Step 2 - Agent and model routing
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
+                    Step 2 - Model routing
                 </p>
-                <h2 className="mt-2 text-2xl font-black text-slate-950">Choose the brain power.</h2>
+                <h2 className="mt-2 text-2xl font-black text-slate-950">Select model group.</h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
                     Free jobs route through the baseline Flash/Mini group. Paid plans unlock stronger model groups and
                     bidding execution where the plan allows it.
@@ -623,8 +721,8 @@ export default function NewClientJobPage() {
             </div>
 
             {activePlan.id === "free" && scopeComplexity.isComplex && (
-                <div className="mb-5 flex gap-3 rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                    <AlertTriangle className="mt-0.5 shrink-0 text-amber-600" size={19} />
+                <div className="mb-5 flex gap-3 rounded-3xl border border-slate-300 bg-slate-50 p-4 text-sm text-slate-800">
+                    <AlertTriangle className="mt-0.5 shrink-0 text-slate-950" size={19} />
                     <div>
                         <p className="font-black">Baseline models may struggle with this scope.</p>
                         <p className="mt-1 leading-6">
@@ -658,24 +756,13 @@ export default function NewClientJobPage() {
                             className={cx(
                                 "relative overflow-hidden rounded-[30px] border p-5 text-left transition-all",
                                 active && available
-                                    ? "border-blue-400 bg-blue-50 shadow-lg shadow-blue-500/10"
-                                    : "border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50",
+                                    ? "border-slate-950 bg-slate-50 shadow-lg shadow-slate-900/10"
+                                    : "border-slate-200 bg-white hover:border-slate-400 hover:bg-slate-50",
                                 !available && "opacity-70",
                             )}
                         >
                             <div className="flex items-start justify-between gap-3">
-                                <div
-                                    className={cx(
-                                        "flex h-12 w-12 items-center justify-center rounded-2xl",
-                                        lane.id === "baseline" && "bg-blue-100 text-blue-700",
-                                        lane.id === "expert" && "bg-emerald-100 text-emerald-700",
-                                        lane.id === "dedicated" && "bg-amber-100 text-amber-700",
-                                    )}
-                                >
-                                    {lane.id === "baseline" && <Brain size={22} />}
-                                    {lane.id === "expert" && <ShieldCheck size={22} />}
-                                    {lane.id === "dedicated" && <Rocket size={22} />}
-                                </div>
+                                <BrandLogoStrip logos={lane.logos} />
                                 <span
                                     className={cx(
                                         "rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wide",
@@ -686,13 +773,13 @@ export default function NewClientJobPage() {
                                 </span>
                             </div>
                             <h3 className="mt-5 text-xl font-black text-slate-950">{lane.title}</h3>
-                            <p className="mt-1 text-xs font-black uppercase tracking-[0.18em] text-blue-600">{lane.tag}</p>
+                            <p className="mt-1 text-xs font-black uppercase tracking-[0.18em] text-slate-500">{lane.tag}</p>
                             <p className="mt-4 text-sm leading-6 text-slate-500">{lane.description}</p>
                             <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-xs leading-5 text-slate-500">
                                 <span className="font-black text-slate-700">Best for:</span> {lane.examples}
                             </div>
                             {active && available && (
-                                <div className="mt-5 flex items-center gap-2 text-sm font-black text-blue-700">
+                                <div className="mt-5 flex items-center gap-2 text-sm font-black text-slate-950">
                                     <CheckCircle2 size={17} />
                                     Selected for this job
                                 </div>
@@ -700,6 +787,45 @@ export default function NewClientJobPage() {
                         </button>
                     );
                 })}
+            </div>
+
+            <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <p className="text-sm font-black text-slate-950">Marketplace bidding</p>
+                        <p className="mt-1 text-sm leading-6 text-slate-500">
+                            {canEnableBidding
+                                ? `${activePlan.name} can send this job to ${activePlan.bid_agent_limit} execution agents for price pressure.`
+                                : "Bidding unlocks on Growth and Scale when you use a paid model lane."}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => canEnableBidding && setEnableBidding((current) => !current)}
+                        disabled={!canEnableBidding}
+                        className={cx(
+                            "flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-sm font-black transition-all md:w-64",
+                            canEnableBidding
+                                ? "border-slate-950 bg-white text-slate-950"
+                                : "cursor-not-allowed border-slate-200 bg-white text-slate-400",
+                        )}
+                    >
+                        <span>{enableBidding && canEnableBidding ? "Bidding enabled" : "Bidding off"}</span>
+                        <span
+                            className={cx(
+                                "relative h-7 w-12 rounded-full transition-colors",
+                                enableBidding && canEnableBidding ? "bg-slate-950" : "bg-slate-200",
+                            )}
+                        >
+                            <span
+                                className={cx(
+                                    "absolute top-1 h-5 w-5 rounded-full bg-white transition-transform",
+                                    enableBidding && canEnableBidding ? "translate-x-6" : "translate-x-1",
+                                )}
+                            />
+                        </span>
+                    </button>
+                </div>
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-3">
@@ -723,21 +849,21 @@ export default function NewClientJobPage() {
     const renderCheckout = () => (
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
             <div className="rounded-[34px] border border-white bg-white p-6 shadow-xl shadow-blue-900/5 md:p-8">
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-blue-600">
-                    Step 3 - AI calculation and anchor
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
+                    Step 3 - Price check
                 </p>
-                <h2 className="mt-2 text-2xl font-black text-slate-950">Calculate the protected minimum.</h2>
+                <h2 className="mt-2 text-2xl font-black text-slate-950">Calculate market price.</h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
                     The Mesh Project Manager compares the job against realistic freelancer cost, then sets the lowest safe
                     AI-labor price for this plan and routing lane.
                 </p>
 
-                <div className="mt-8 rounded-[30px] border border-blue-100 bg-[linear-gradient(135deg,#f8fbff,#edf5ff)] p-6">
+                <div className="mt-8 rounded-[30px] border border-slate-200 bg-slate-50 p-6">
                     {isEstimating ? (
                         <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
                             <div className="relative mb-6 flex h-24 w-24 items-center justify-center rounded-[32px] bg-white shadow-lg">
-                                <div className="absolute inset-0 animate-ping rounded-[32px] bg-blue-400/20" />
-                                <Loader2 className="animate-spin text-blue-600" size={34} />
+                                <div className="absolute inset-0 animate-ping rounded-[32px] bg-slate-400/20" />
+                                <Loader2 className="animate-spin text-slate-950" size={34} />
                             </div>
                             <p className="text-lg font-black text-slate-950">
                                 Mesh Project Manager is estimating compute costs...
@@ -750,7 +876,7 @@ export default function NewClientJobPage() {
                         <div>
                             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                                 <div>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-blue-600">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
                                         Project minimum
                                     </p>
                                     <p className="mt-3 text-5xl font-black tracking-tight text-slate-950">
@@ -763,12 +889,12 @@ export default function NewClientJobPage() {
                                 </div>
                                 <div className="rounded-3xl bg-white p-5 shadow-sm">
                                     <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
-                                        Typical freelancer
+                                        Fiverr / web market
                                     </p>
                                     <p className="mt-2 text-2xl font-black text-slate-400 line-through">
                                         {formatMoney(estimate.human_market_cost_usd)}
                                     </p>
-                                    <p className="mt-3 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-sm font-black text-emerald-700">
+                                    <p className="mt-3 inline-flex rounded-full bg-slate-950 px-3 py-1 text-sm font-black text-white">
                                         {typeof estimate.savings_percent === "number"
                                             ? `${estimate.savings_percent.toFixed(1)}% cheaper`
                                             : "AI-labor price"}
@@ -792,11 +918,48 @@ export default function NewClientJobPage() {
                                     </p>
                                 </div>
                             </div>
+
+                            {estimate.market_breakdown && estimate.market_breakdown.length > 0 && (
+                                <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white">
+                                    <div className="border-b border-slate-100 px-4 py-3">
+                                        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">
+                                            Market comparison
+                                        </p>
+                                        <p className="mt-1 text-xs text-slate-500">
+                                            {estimate.market_context_available
+                                                ? "Anchored with live market-search context where available."
+                                                : "Generated from marketplace pricing patterns when live search is unavailable."}
+                                        </p>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[680px] text-left text-sm">
+                                            <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                                                <tr>
+                                                    <th className="px-4 py-3">Source</th>
+                                                    <th className="px-4 py-3">Estimated cost</th>
+                                                    <th className="px-4 py-3">Delivery</th>
+                                                    <th className="px-4 py-3">Quality / flexibility</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {estimate.market_breakdown.map((row) => (
+                                                    <tr key={row.source}>
+                                                        <td className="px-4 py-3 font-black text-slate-950">{row.source}</td>
+                                                        <td className="px-4 py-3 font-black text-slate-950">{row.estimated_cost}</td>
+                                                        <td className="px-4 py-3 text-slate-600">{row.delivery_time}</td>
+                                                        <td className="px-4 py-3 text-slate-600">{row.quality}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
                             <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-[28px] bg-white shadow-sm">
-                                <FileText className="text-blue-600" size={30} />
+                                <FileText className="text-slate-950" size={30} />
                             </div>
                             <p className="text-lg font-black text-slate-950">Ready for pricing.</p>
                             <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
@@ -806,10 +969,10 @@ export default function NewClientJobPage() {
                                 type="button"
                                 onClick={calculateEstimate}
                                 disabled={isEstimating}
-                                className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-slate-900/15 transition-all hover:-translate-y-0.5 hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 <Sparkles size={16} />
-                                Calculate Project Minimum
+                                Calculate Market Price
                             </button>
                         </div>
                     )}
@@ -817,7 +980,7 @@ export default function NewClientJobPage() {
             </div>
 
             <aside className="rounded-[34px] border border-white bg-white p-6 shadow-xl shadow-blue-900/5">
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-blue-600">Job summary</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">Job summary</p>
                 <h3 className="mt-3 text-xl font-black text-slate-950">{jobTitle || "Untitled job"}</h3>
                 <p className="mt-3 line-clamp-6 text-sm leading-6 text-slate-500">
                     {goal || "No requirements added yet."}
@@ -847,7 +1010,7 @@ export default function NewClientJobPage() {
                     <div className="flex justify-between gap-3">
                         <span className="text-slate-500">Bidding</span>
                         <span className="font-black text-slate-950">
-                            {activePlan.bid_agent_limit > 0 && selectedLane !== "baseline"
+                            {canEnableBidding && enableBidding
                                 ? `${activePlan.bid_agent_limit} agents`
                                 : "Off"}
                         </span>
@@ -859,7 +1022,7 @@ export default function NewClientJobPage() {
                 </div>
 
                 {!canPostByPlan && (
-                    <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+                    <div className="mt-5 rounded-2xl border border-slate-300 bg-slate-50 p-4 text-sm leading-6 text-slate-800">
                         {planUsage?.blocking_reason || "Your current plan cannot post another job right now."}
                     </div>
                 )}
@@ -868,7 +1031,7 @@ export default function NewClientJobPage() {
                     type="button"
                     onClick={submitJob}
                     disabled={!estimate || isPosting || isEstimating || !canPostByPlan}
-                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white shadow-xl shadow-slate-900/15 transition-all hover:-translate-y-0.5 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white shadow-xl shadow-slate-900/15 transition-all hover:-translate-y-0.5 hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     {isPosting ? <Loader2 className="animate-spin" size={17} /> : <Send size={17} />}
                     {activePlan.id === "free" && selectedLane === "baseline"
@@ -879,7 +1042,7 @@ export default function NewClientJobPage() {
                     type="button"
                     onClick={calculateEstimate}
                     disabled={isEstimating}
-                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 transition-all hover:border-blue-200 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 transition-all hover:border-slate-400 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     <Sparkles size={16} />
                     Recalculate Minimum
@@ -890,34 +1053,34 @@ export default function NewClientJobPage() {
 
     return (
         <RouteGuard allowedTypes={["business"]}>
-            <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#eaf2ff_0%,transparent_34%),linear-gradient(180deg,#f8fbff_0%,#eef4ff_100%)] px-4 py-8 md:px-8">
+            <div className="min-h-screen bg-slate-50 px-4 py-8 md:px-8">
                 <div className="mx-auto max-w-7xl">
                     <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div>
                             <Link
                                 href="/client"
-                                className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-bold text-blue-700 shadow-sm transition-colors hover:bg-blue-50"
+                                className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
                             >
                                 <ArrowLeft size={14} />
                                 Back to jobs
                             </Link>
-                            <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.26em] text-blue-700">
+                            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.26em] text-slate-700">
                                 <Sparkles size={14} />
-                                Guided Job Intake
+                                Job request
                             </div>
-                            <h1 className="mt-4 max-w-4xl text-3xl font-black tracking-tight text-slate-950 md:text-5xl">
-                                Tell the mesh enough to price the real work.
+                            <h1 className="mt-4 max-w-4xl text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
+                                Create a job request.
                             </h1>
                             <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-500 md:text-base">
-                                This flow reads scope, assets, urgency, and model routing before calculating the protected
-                                minimum. The client sees a simple low price; hidden compute cost stays protected.
+                                Add the work details, choose the model group, then compare real market price against the
+                                AI project minimum.
                             </p>
                         </div>
 
                         <div className="rounded-[28px] border border-white bg-white/90 p-5 shadow-xl shadow-blue-900/5 backdrop-blur">
                             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Current plan</p>
                             <div className="mt-3 flex items-center gap-3">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-lg font-black text-white">
+                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-lg font-black text-white">
                                     {activePlan.name.charAt(0)}
                                 </div>
                                 <div>
@@ -947,15 +1110,15 @@ export default function NewClientJobPage() {
                                             }}
                                             className={cx(
                                                 "mb-2 flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-all last:mb-0",
-                                                isActive && "bg-blue-600 text-white shadow-lg shadow-blue-500/20",
+                                                isActive && "bg-slate-950 text-white shadow-lg shadow-slate-900/15",
                                                 !isActive && "text-slate-600 hover:bg-slate-50",
                                             )}
                                         >
                                             <span
                                                 className={cx(
                                                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black",
-                                                    isActive && "bg-white text-blue-600",
-                                                    !isActive && isDone && "bg-emerald-50 text-emerald-600",
+                                                    isActive && "bg-white text-slate-950",
+                                                    !isActive && isDone && "bg-slate-100 text-slate-950",
                                                     !isActive && !isDone && "bg-slate-100 text-slate-400",
                                                 )}
                                             >
@@ -963,7 +1126,7 @@ export default function NewClientJobPage() {
                                             </span>
                                             <span>
                                                 <span className="block text-sm font-black">{item.label}</span>
-                                                <span className={cx("block text-xs", isActive ? "text-blue-100" : "text-slate-400")}>
+                                                <span className={cx("block text-xs", isActive ? "text-slate-200" : "text-slate-400")}>
                                                     {item.eyebrow}
                                                 </span>
                                             </span>
@@ -972,8 +1135,8 @@ export default function NewClientJobPage() {
                                 })}
                             </div>
 
-                            <div className="rounded-[30px] border border-blue-100 bg-white p-5 shadow-sm">
-                                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-blue-600">
+                            <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm">
+                                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-700">
                                     Live pricing inputs
                                 </p>
                                 <div className="mt-4 space-y-3 text-sm">
@@ -1014,7 +1177,7 @@ export default function NewClientJobPage() {
                                     type="button"
                                     onClick={goBack}
                                     disabled={step === "scope"}
-                                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 transition-all hover:border-blue-200 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 transition-all hover:border-slate-400 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"
                                 >
                                     <ArrowLeft size={16} />
                                     Back
@@ -1024,7 +1187,7 @@ export default function NewClientJobPage() {
                                     <button
                                         type="button"
                                         onClick={goNext}
-                                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5 hover:bg-blue-700"
+                                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-3 text-sm font-black text-white shadow-lg shadow-slate-900/15 transition-all hover:-translate-y-0.5 hover:bg-black"
                                     >
                                         Continue
                                         <ArrowRight size={16} />
@@ -1032,7 +1195,7 @@ export default function NewClientJobPage() {
                                 ) : (
                                     <Link
                                         href="/client"
-                                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 transition-all hover:border-blue-200 hover:text-blue-700"
+                                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 transition-all hover:border-slate-400 hover:text-slate-950"
                                     >
                                         View active jobs
                                         <Briefcase size={16} />

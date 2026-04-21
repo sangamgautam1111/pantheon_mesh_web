@@ -74,10 +74,10 @@ function buildFallbackPlan(planId: string | null | undefined): PlanSnapshot {
 
 function statusClasses(status: string) {
     if (status === "completed") {
-        return "bg-emerald-100 text-emerald-700";
+        return "bg-slate-900 text-white";
     }
     if (status === "queued" || status === "active" || status === "in_progress") {
-        return "bg-blue-100 text-blue-700";
+        return "bg-slate-100 text-slate-800";
     }
     if (status === "failed") {
         return "bg-red-100 text-red-700";
@@ -182,37 +182,35 @@ export default function ClientJobsPage() {
 
     return (
         <RouteGuard allowedTypes={["business"]}>
-            <div className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#f8fafc_48%,#eef4ff_100%)] px-4 py-8 md:px-8">
+            <div className="min-h-screen bg-slate-50 px-4 py-8 md:px-8">
                 <div className="mx-auto max-w-7xl">
-                    <section className="relative overflow-hidden rounded-[32px] border border-blue-100 bg-white p-6 shadow-xl md:p-8">
-                        <div className="absolute right-0 top-0 h-72 w-72 translate-x-24 -translate-y-24 rounded-full bg-blue-100 blur-3xl" />
-                        <div className="absolute bottom-0 left-1/2 h-48 w-48 -translate-x-1/2 translate-y-24 rounded-full bg-cyan-100 blur-3xl" />
+                    <section className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-white p-6 shadow-xl md:p-8">
                         <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                             <div className="max-w-3xl">
-                                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.26em] text-blue-700">
+                                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.26em] text-slate-700">
                                     <History size={14} />
-                                    Active Jobs And History
+                                    Job center
                                 </div>
                                 <h1 className="text-3xl font-black tracking-tight text-slate-950 md:text-5xl">
-                                    Your AI job center.
+                                    Your job center.
                                 </h1>
                                 <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-500 md:text-base">
                                     Track posted work, delivery status, committed spend, and plan capacity. New jobs now start
-                                    with a guided gig-style intake so the project manager can price the real scope.
+                                    with a guided intake so the project manager can price the real scope.
                                 </p>
                             </div>
 
                             <div className="flex flex-col gap-3 sm:flex-row">
                                 <Link
                                     href="/client/new"
-                                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5 hover:bg-blue-700"
+                                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition-all hover:-translate-y-0.5 hover:bg-black"
                                 >
                                     <Plus size={16} />
                                     Create Job
                                 </Link>
                                 <Link
                                     href="/pricing"
-                                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:text-blue-700"
+                                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition-all hover:-translate-y-0.5 hover:border-slate-400 hover:text-slate-950"
                                 >
                                     View Plan
                                     <ArrowRight size={16} />
@@ -234,13 +232,13 @@ export default function ClientJobsPage() {
                                 label: "Plan",
                                 value: activePlan.name,
                                 sub: activePlan.model_lane,
-                                icon: <Sparkles size={18} className="text-blue-600" />,
+                                icon: <Sparkles size={18} className="text-slate-950" />,
                             },
                             {
                                 label: "Jobs This Month",
                                 value: `${derivedUsage.monthly_jobs_used}/${derivedUsage.monthly_job_limit}`,
                                 sub: `${derivedUsage.monthly_jobs_remaining} remaining`,
-                                icon: <Briefcase size={18} className="text-blue-600" />,
+                                icon: <Briefcase size={18} className="text-slate-950" />,
                             },
                             {
                                 label: "Active Jobs",
@@ -252,13 +250,13 @@ export default function ClientJobsPage() {
                                 label: "Bidding",
                                 value: activePlan.bid_agent_limit > 0 ? `${activePlan.bid_agent_limit} agents` : "Off",
                                 sub: activePlan.bidding_lane,
-                                icon: <Filter size={18} className="text-emerald-600" />,
+                                icon: <Filter size={18} className="text-slate-950" />,
                             },
                             {
                                 label: "Committed",
                                 value: `$${totalBudget.toFixed(2)}`,
                                 sub: `${jobs.length} total jobs`,
-                                icon: <FileImage size={18} className="text-cyan-600" />,
+                                icon: <FileImage size={18} className="text-slate-950" />,
                             },
                         ].map((item) => (
                             <div key={item.label} className="rounded-3xl border border-white bg-white p-5 shadow-sm">
@@ -284,14 +282,14 @@ export default function ClientJobsPage() {
                                 <div className="group relative flex items-center">
                                     <Search
                                         size={16}
-                                        className="absolute left-3 text-slate-400 transition-colors group-focus-within:text-blue-600"
+                                        className="absolute left-3 text-slate-400 transition-colors group-focus-within:text-slate-950"
                                     />
                                     <input
                                         type="text"
                                         value={searchQuery}
                                         onChange={(event) => setSearchQuery(event.target.value)}
                                         placeholder="Search jobs..."
-                                        className="w-full rounded-full border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm outline-none transition-all focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10 md:w-72"
+                                        className="w-full rounded-full border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm outline-none transition-all focus:border-slate-500 focus:bg-white focus:ring-2 focus:ring-slate-500/10 md:w-72"
                                     />
                                 </div>
                                 <button className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-400 transition-colors hover:text-slate-900">
@@ -303,7 +301,7 @@ export default function ClientJobsPage() {
                         <div className="min-h-[520px]">
                             {loading ? (
                                 <div className="flex min-h-[520px] flex-col items-center justify-center text-slate-400">
-                                    <Clock className="mb-4 animate-spin text-blue-600" size={34} />
+                                    <Clock className="mb-4 animate-spin text-slate-950" size={34} />
                                     <p className="text-sm font-medium">Loading jobs...</p>
                                 </div>
                             ) : filteredJobs.length === 0 ? (
@@ -321,7 +319,7 @@ export default function ClientJobsPage() {
                                     </p>
                                     <Link
                                         href="/client/new"
-                                        className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/20"
+                                        className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/15"
                                     >
                                         <Plus size={16} />
                                         Create Job
@@ -365,7 +363,7 @@ export default function ClientJobsPage() {
                                                         {typeof job.minimum_budget_usd === "number" && (
                                                             <>
                                                                 <span className="text-[11px] text-slate-300">-</span>
-                                                                <span className="text-[11px] font-semibold text-blue-600">
+                                                                <span className="text-[11px] font-semibold text-slate-950">
                                                                     Floor ${job.minimum_budget_usd.toFixed(2)}
                                                                 </span>
                                                             </>

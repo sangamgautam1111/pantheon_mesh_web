@@ -4,13 +4,15 @@ const PRODUCTION_API_BASE = "https://pantheon-api-mlqrumx6cq-uc.a.run.app";
 const GLOBAL_MINIMUM_BUDGET_USD = 1;
 const MINIMUM_MARGIN_MULTIPLIER = 2.8;
 const BASE_PLATFORM_OVERHEAD_USD = 0.85;
-const MAX_AI_PRICE_RATIO = 0.2;
+const MAX_AI_PRICE_RATIO = 0.1;
+const MARKET_SEARCH_MAX_RESULTS = 4;
+const MARKET_SEARCH_TIMEOUT_MS = 5000;
 
 const PLAN_PRICE_RATIO: Record<string, number> = {
-    free: 0.2,
-    starter: 0.18,
-    growth: 0.16,
-    scale: 0.15,
+    free: 0.16,
+    starter: 0.14,
+    growth: 0.12,
+    scale: 0.1,
 };
 
 const SIMPLE_WRITING_KEYWORDS = [
@@ -57,6 +59,13 @@ type RawEstimate = {
     reason?: string;
 };
 
+type MarketBreakdownRow = {
+    source: string;
+    estimated_cost: string;
+    delivery_time: string;
+    quality: string;
+};
+
 function buildPricingDescription(body: Record<string, unknown>, description: string) {
     const details = [description.trim()];
     const timeline = typeof body.timeline === "string" ? body.timeline : "";
@@ -70,6 +79,7 @@ function buildPricingDescription(body: Record<string, unknown>, description: str
     const assetLinks = Array.isArray(body.asset_links)
         ? body.asset_links.filter((item): item is string => typeof item === "string" && Boolean(item.trim()))
         : [];
+    const assetTextPreview = typeof body.asset_text_preview === "string" ? body.asset_text_preview.trim() : "";
     const rush = Boolean(body.rush);
 
     if (timeline) {
@@ -91,8 +101,196 @@ function buildPricingDescription(body: Record<string, unknown>, description: str
     if (assetLinks.length > 0) {
         details.push(`Asset/reference links provided: ${assetLinks.slice(0, 5).join("; ")}.`);
     }
+    if (assetTextPreview) {
+        details.push(`Readable asset text preview: ${assetTextPreview.slice(0, 6000)}.`);
+    }
 
     return details.filter(Boolean).join("\n");
+}
+
+function extractPriceValues(text: string) {
+    return Array.from(text.matchAll(/\$\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/g))
+        .map((match) => Number(match[1].replace(/,/g, "")))
+        .filter((value) => Number.isFinite(value) && value >= 3 && value <= 10000);
+}
+
+function compactSearchText(value: string, limit = 220) {
+    return value.replace(/\s+/g, " ").trim().slice(0, limit);
+}
+
+function normalizeMarketItems(items: Array<{ title?: string; snippet?: string; url?: string }>, source: string) {
+    const prices: number[] = [];
+    const lines = items.slice(0, MARKET_SEARCH_MAX_RESULTS).flatMap((item) => {
+        const title = compactSearchText(item.title || "");
+        const snippet = compactSearchText(item.snippet || "");
+        const url = compactSearchText(item.url || "", 120);
+        prices.push(...extractPriceValues(`${title}. ${snippet}`));
+        return title || snippet ? [`- ${title}: ${snippet} (${url})`] : [];
+    });
+
+    if (lines.length === 0) {
+        return "";
+    }
+
+    if (prices.length > 0) {
+        const sortedPrices = [...prices].sort((left, right) => left - right);
+        const medianPrice = sortedPrices[Math.floor(sortedPrices.length / 2)];
+        lines.unshift(`${source} observed market prices include a median visible price around $${medianPrice.toFixed(2)}.`);
+    }
+
+    return lines.join("\n");
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), MARKET_SEARCH_TIMEOUT_MS);
+    try {
+        return await fetch(url, { ...init, signal: controller.signal, cache: "no-store" });
+    } finally {
+        clearTimeout(timeout);
+    }
+}
+
+async function tavilyMarketSearch(query: string) {
+    const apiKey = process.env.TAVILY_API_KEY;
+    if (!apiKey) {
+        return "";
+    }
+    const response = await fetchWithTimeout("https://api.tavily.com/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            api_key: apiKey,
+            query,
+            search_depth: "basic",
+            max_results: MARKET_SEARCH_MAX_RESULTS,
+            include_answer: false,
+        }),
+    });
+    if (!response.ok) {
+        return "";
+    }
+    const data = await response.json();
+    const items = Array.isArray(data.results)
+        ? data.results.map((item: any) => ({
+              title: String(item.title || ""),
+              snippet: String(item.content || ""),
+              url: String(item.url || ""),
+          }))
+        : [];
+    return normalizeMarketItems(items, "Live web search");
+}
+
+async function serperMarketSearch(query: string) {
+    const apiKey = process.env.SERPER_API_KEY;
+    if (!apiKey) {
+        return "";
+    }
+    const response = await fetchWithTimeout("https://google.serper.dev/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-API-KEY": apiKey },
+        body: JSON.stringify({ q: query, num: MARKET_SEARCH_MAX_RESULTS }),
+    });
+    if (!response.ok) {
+        return "";
+    }
+    const data = await response.json();
+    const items = Array.isArray(data.organic)
+        ? data.organic.map((item: any) => ({
+              title: String(item.title || ""),
+              snippet: String(item.snippet || ""),
+              url: String(item.link || ""),
+          }))
+        : [];
+    return normalizeMarketItems(items, "Live web search");
+}
+
+async function braveMarketSearch(query: string) {
+    const apiKey = process.env.BRAVE_SEARCH_API_KEY;
+    if (!apiKey) {
+        return "";
+    }
+    const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${MARKET_SEARCH_MAX_RESULTS}`;
+    const response = await fetchWithTimeout(url, {
+        headers: { Accept: "application/json", "X-Subscription-Token": apiKey },
+    });
+    if (!response.ok) {
+        return "";
+    }
+    const data = await response.json();
+    const results = data.web?.results;
+    const items = Array.isArray(results)
+        ? results.map((item: any) => ({
+              title: String(item.title || ""),
+              snippet: String(item.description || ""),
+              url: String(item.url || ""),
+          }))
+        : [];
+    return normalizeMarketItems(items, "Live web search");
+}
+
+async function buildMarketResearchContext(title: string, description: string) {
+    const query = `Fiverr freelancer gig price ${title} ${compactSearchText(description, 120)} cost USD`;
+    for (const provider of [tavilyMarketSearch, serperMarketSearch, braveMarketSearch]) {
+        try {
+            const context = await provider(query);
+            if (context) {
+                return context;
+            }
+        } catch (error) {
+            console.warn("Market search provider failed:", error);
+        }
+    }
+    return "";
+}
+
+function formatMarketRange(low: number, high: number) {
+    const lowValue = Math.max(1, Math.round(low / 5) * 5);
+    const highValue = Math.max(lowValue + 5, Math.round(high / 5) * 5);
+    return `$${lowValue.toFixed(0)} - $${highValue.toFixed(0)}`;
+}
+
+function buildMarketBreakdown(title: string, description: string, humanMarketCost: number, marketContext = "") {
+    const prices = extractPriceValues(marketContext).sort((left, right) => left - right);
+    const lowAnchor = prices.length > 0 ? prices[Math.max(0, Math.floor(prices.length / 4) - 1)] : Math.max(15, humanMarketCost * 0.35);
+    const medianAnchor = prices.length > 0 ? prices[Math.floor(prices.length / 2)] : Math.max(35, humanMarketCost);
+    const highAnchor = prices.length > 0 ? prices[prices.length - 1] : Math.max(120, humanMarketCost * 2);
+    const combined = `${title} ${description}`.toLowerCase();
+    const isUiOrWeb = ["ui", "component", "tailwind", "next.js", "react", "landing page", "website", "dashboard"].some((keyword) =>
+        combined.includes(keyword),
+    );
+
+    const rows: MarketBreakdownRow[] = [
+        {
+            source: "Fiverr budget gigs",
+            estimated_cost: formatMarketRange(Math.max(10, lowAnchor * 0.7), Math.max(25, medianAnchor * 0.9)),
+            delivery_time: "2-4 days",
+            quality: "Basic delivery; quality and originality vary by seller.",
+        },
+        {
+            source: "Upwork mid-range",
+            estimated_cost: formatMarketRange(Math.max(60, medianAnchor), Math.max(120, medianAnchor * 1.8)),
+            delivery_time: "3-7 days",
+            quality: "Custom implementation with stronger communication and revisions.",
+        },
+        {
+            source: "Elite freelancer / agency",
+            estimated_cost: `$${Math.max(400, Math.round(Math.max(highAnchor, humanMarketCost * 2) / 25) * 25).toFixed(0)}+`,
+            delivery_time: "1 week+",
+            quality: "Brand integration, deeper QA, polish, and project management.",
+        },
+    ];
+
+    if (isUiOrWeb) {
+        rows.push({
+            source: "Commercial UI kit",
+            estimated_cost: "$149 - $299",
+            delivery_time: "Instant",
+            quality: "Template access only; still needs customization and integration.",
+        });
+    }
+
+    return rows;
 }
 
 function getApiBase() {
@@ -126,7 +324,13 @@ function cleanJsonObject(text: string) {
     return cleaned;
 }
 
-function sanitizePublicEstimate(data: Record<string, unknown>, strategyFallback = "ai-estimate") {
+function sanitizePublicEstimate(
+    data: Record<string, unknown>,
+    strategyFallback = "ai-estimate",
+    title = "",
+    description = "",
+    marketContext = "",
+) {
     const minBudget = roundBudget(numberFrom(data.min_budget_usd, GLOBAL_MINIMUM_BUDGET_USD));
     const humanMarketCost = roundDisplay(Math.max(numberFrom(data.human_market_cost_usd, 0), minBudget));
     const savingsPercent =
@@ -147,6 +351,13 @@ function sanitizePublicEstimate(data: Record<string, unknown>, strategyFallback 
                 ? data.strategy.trim()
                 : strategyFallback,
         model: typeof data.model === "string" ? data.model : undefined,
+        market_breakdown: Array.isArray(data.market_breakdown)
+            ? data.market_breakdown
+            : buildMarketBreakdown(title, description, humanMarketCost, marketContext),
+        market_context_available:
+            typeof data.market_context_available === "boolean"
+                ? data.market_context_available
+                : Boolean(marketContext.trim()),
         plan: data.plan,
         usage: data.usage,
     };
@@ -180,7 +391,15 @@ function normalizeEstimatesForScope(
     return { humanMarketCost, estimatedInternalCost };
 }
 
-function guardLocalEstimate(parsed: RawEstimate, title: string, description: string, planId: string, strategy: string, model: string) {
+function guardLocalEstimate(
+    parsed: RawEstimate,
+    title: string,
+    description: string,
+    planId: string,
+    strategy: string,
+    model: string,
+    marketContext = "",
+) {
     const suggestedMinimum = numberFrom(
         parsed.minimum_client_budget_usd ?? parsed.min_budget_usd,
         GLOBAL_MINIMUM_BUDGET_USD,
@@ -213,6 +432,8 @@ function guardLocalEstimate(parsed: RawEstimate, title: string, description: str
         reason: parsed.reason?.trim() || "Calculated as a low AI project price compared with typical freelancer rates.",
         strategy,
         model,
+        market_breakdown: buildMarketBreakdown(title, description, humanMarketCost, marketContext),
+        market_context_available: Boolean(marketContext.trim()),
     };
 }
 
@@ -342,13 +563,14 @@ export async function POST(req: Request) {
 
                 if (response.ok) {
                     const data = await response.json();
-                    return NextResponse.json(sanitizePublicEstimate(data, "backend-estimate"));
+                    return NextResponse.json(sanitizePublicEstimate(data, "backend-estimate", title, pricingDescription));
                 }
             } catch (error) {
                 console.warn("Backend estimate failed; trying server-side model fallback:", error);
             }
         }
 
+        const marketContext = await buildMarketResearchContext(title, pricingDescription);
         const systemPrompt = `You are the Pantheon Mesh Pricing Engine.
 Calculate the lowest safe AI project price for a business client.
 
@@ -356,10 +578,11 @@ Rules:
 1. Classify the job by scope and difficulty from the actual words in the brief. Do not inflate vague/simple tasks.
 2. Estimate human_market_cost_usd realistically. Simple writing such as a short story, email, paragraph, rewrite, caption, or summary is usually $10-$35 unless the brief asks for long-form, screenplay, film, book, chapters, research, or premium production work.
 3. Estimate estimated_api_cost_usd: hidden provider/model/tool cost, including retries and review. This is internal only.
-4. Estimate minimum_client_budget_usd as the lowest client-facing project price. If human_market_cost_usd is $100, the client-facing AI price should be about $20 maximum before hidden delivery cost protection. Smaller simple tasks should be much lower.
+4. Estimate minimum_client_budget_usd as the lowest client-facing project price. If human_market_cost_usd is $100, the client-facing AI price should target about $10-$16 before hidden delivery cost protection. Smaller simple tasks should be much lower.
 5. The final quote must stay above hidden delivery cost plus platform margin, but never pad the price just because the plan is higher.
 6. If Requirements include raw asset size/count, file types, selected model routing, reference links, or rush timeline, use those signals carefully to adjust effort and hidden compute cost.
-7. Keep the reason client-friendly. Do not mention API cost, provider cost, margin, or internal calculations.
+7. Use live market-search context when present to anchor human_market_cost_usd, especially Fiverr or freelancer marketplace rates. Do not claim a web result exists if none was provided.
+8. Keep the reason client-friendly. Do not mention API cost, provider cost, margin, or internal calculations.
 
 Return only JSON:
 {
@@ -369,7 +592,8 @@ Return only JSON:
   "reason": "one short client-facing sentence"
 }`;
 
-        const userPrompt = `Title: ${title}\nRequirements: ${pricingDescription}\nPlan: ${planId}`;
+        const marketBlock = marketContext || "No live market-search context was available. Use realistic freelancer marketplace judgment.";
+        const userPrompt = `Title: ${title}\nRequirements: ${pricingDescription}\nPlan: ${planId}\nMarket rate research:\n${marketBlock}`;
         const deepseekKey = process.env.DEEPSEEK_API_KEY;
         const openRouterKey = process.env.OPENROUTER_API_KEY;
         const groqKey = process.env.GROQ_API_1;
@@ -414,7 +638,9 @@ Return only JSON:
             console.error("Budget JSON parse error:", error, rawResponse);
         }
 
-        return NextResponse.json(guardLocalEstimate(parsed, title, pricingDescription, planId, usedStrategy, usedModel));
+        return NextResponse.json(
+            guardLocalEstimate(parsed, title, pricingDescription, planId, usedStrategy, usedModel, marketContext),
+        );
     } catch (error) {
         console.error("Failed to calculate budget:", error);
         return NextResponse.json(
