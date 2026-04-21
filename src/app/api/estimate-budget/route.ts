@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import { detectWorkCategory, normalizePlanId, type PlanId, type WorkCategoryId } from "@/lib/modelGroups";
 
 const PRODUCTION_API_BASE = "https://pantheon-api-mlqrumx6cq-uc.a.run.app";
+const DEEPSEEK_PRICING_MODEL = "deepseek-reasoner"; // R1 — best paid model for fair pricing
+const DEEPSEEK_PRICING_FALLBACK = "deepseek-chat"; // V3 — fast fallback
 const GLOBAL_MINIMUM_BUDGET_USD = 1;
 const MINIMUM_MARGIN_MULTIPLIER = 2.8;
 const BASE_PLATFORM_OVERHEAD_USD = 0.85;
 const MAX_AI_PRICE_RATIO = 0.1;
-const MARKET_SEARCH_MAX_RESULTS = 4;
-const MARKET_SEARCH_TIMEOUT_MS = 5000;
+const MARKET_SEARCH_MAX_RESULTS = 6;
+const MARKET_SEARCH_TIMEOUT_MS = 8000;
 
 const PLAN_PRICE_RATIO: Record<string, number> = {
     free: 0.16,
@@ -98,6 +100,7 @@ type RawEstimate = {
     estimated_api_cost_usd?: number;
     api_cost_usd?: number;
     reason?: string;
+    market_breakdown?: MarketBreakdownRow[];
 };
 
 type MarketBreakdownRow = {
@@ -107,12 +110,7 @@ type MarketBreakdownRow = {
     quality: string;
 };
 
-const CATEGORY_COMPARATOR_SOURCES = new Set([
-    "Commercial UI kit",
-    "Commercial SaaS Scraper (e.g., Apify)",
-    "Cloud render / video API",
-    "SEO research suite",
-]);
+
 
 function buildPricingDescription(body: Record<string, unknown>, description: string) {
     const details = [description.trim()];
@@ -308,83 +306,54 @@ function formatMarketRange(low: number, high: number) {
     return `$${lowValue.toFixed(0)} - $${highValue.toFixed(0)}`;
 }
 
-function buildMarketBreakdown(title: string, description: string, humanMarketCost: number, marketContext = "") {
-    const prices = extractPriceValues(marketContext).sort((left, right) => left - right);
-    const lowAnchor = prices.length > 0 ? prices[Math.max(0, Math.floor(prices.length / 4) - 1)] : Math.max(15, humanMarketCost * 0.35);
-    const medianAnchor = prices.length > 0 ? prices[Math.floor(prices.length / 2)] : Math.max(35, humanMarketCost);
-    const highAnchor = prices.length > 0 ? prices[prices.length - 1] : Math.max(120, humanMarketCost * 2);
-    const combined = `${title} ${description}`.toLowerCase();
-    const category = getWorkCategory({}, title, description);
-    const isUiOrWeb = ["ui", "component", "tailwind", "next.js", "react", "landing page", "website", "dashboard"].some((keyword) =>
-        combined.includes(keyword),
-    );
-
-    const rows: MarketBreakdownRow[] = [
+function buildEmergencyFallbackBreakdown(humanMarketCost: number): MarketBreakdownRow[] {
+    // Only used when DeepSeek fails to return market_breakdown.
+    // These are generic placeholders — the real rows come from DeepSeek.
+    return [
         {
-            source: "Fiverr budget gigs",
-            estimated_cost: formatMarketRange(Math.max(10, lowAnchor * 0.7), Math.max(25, medianAnchor * 0.9)),
+            source: "Budget freelancers",
+            estimated_cost: formatMarketRange(humanMarketCost * 0.35, humanMarketCost * 0.9),
             delivery_time: "2-4 days",
-            quality: "Basic delivery; quality and originality vary by seller.",
+            quality: "Basic delivery; quality varies.",
         },
         {
-            source: "Upwork mid-range",
-            estimated_cost: formatMarketRange(Math.max(60, medianAnchor), Math.max(120, medianAnchor * 1.8)),
+            source: "Mid-range freelancers",
+            estimated_cost: formatMarketRange(humanMarketCost, humanMarketCost * 1.8),
             delivery_time: "3-7 days",
-            quality: "Custom implementation with stronger communication and revisions.",
+            quality: "Custom implementation with communication and revisions.",
         },
         {
-            source: "Elite freelancer / agency",
-            estimated_cost: `$${Math.max(400, Math.round(Math.max(highAnchor, humanMarketCost * 2) / 25) * 25).toFixed(0)}+`,
+            source: "Agency / specialist",
+            estimated_cost: `$${Math.max(400, Math.round(humanMarketCost * 2 / 25) * 25).toFixed(0)}+`,
             delivery_time: "1 week+",
-            quality: "Brand integration, deeper QA, polish, and project management.",
+            quality: "Full-service delivery with QA and project management.",
         },
     ];
-
-    if (category === "automation") {
-        rows.push({
-            source: "Commercial SaaS Scraper (e.g., Apify)",
-            estimated_cost: "$50 - $200/mo",
-            delivery_time: "Instant",
-            quality: "Recurring monthly fee; still needs technical setup, proxy rules, and maintenance.",
-        });
-    } else if (category === "media") {
-        rows.push({
-            source: "Cloud render / video API",
-            estimated_cost: "$30 - $300/mo",
-            delivery_time: "Instant",
-            quality: "Tool access only; editing logic, review, and final assembly still need setup.",
-        });
-    } else if (category === "writing") {
-        rows.push({
-            source: "SEO research suite",
-            estimated_cost: "$60 - $250/mo",
-            delivery_time: "Instant",
-            quality: "Research and keyword tooling only; strategy, writing, and editing still require work.",
-        });
-    } else if (isUiOrWeb) {
-        rows.push({
-            source: "Commercial UI kit",
-            estimated_cost: "$149 - $299",
-            delivery_time: "Instant",
-            quality: "Template access only; still needs customization and integration.",
-        });
-    }
-
-    return rows;
 }
 
 function normalizeMarketBreakdown(
-    rows: unknown,
+    aiRows: unknown,
     title: string,
     description: string,
     humanMarketCost: number,
     marketContext = "",
 ) {
-    const generatedRows = buildMarketBreakdown(title, description, humanMarketCost, marketContext);
-    const comparator = generatedRows.find((row) => CATEGORY_COMPARATOR_SOURCES.has(row.source));
-    const inputRows = Array.isArray(rows) ? (rows as MarketBreakdownRow[]) : generatedRows;
-    const cleanedRows = inputRows.filter((row) => !CATEGORY_COMPARATOR_SOURCES.has(row.source));
-    return comparator ? [...cleanedRows, comparator] : cleanedRows;
+    // Prefer AI-generated rows from DeepSeek
+    if (Array.isArray(aiRows) && aiRows.length >= 2) {
+        const valid = aiRows.filter(
+            (row: any) => row && typeof row.source === "string" && typeof row.estimated_cost === "string",
+        ) as MarketBreakdownRow[];
+        if (valid.length >= 2) {
+            return valid.map((row) => ({
+                source: String(row.source || "").trim(),
+                estimated_cost: String(row.estimated_cost || "").trim(),
+                delivery_time: String(row.delivery_time || "").trim(),
+                quality: String(row.quality || "").trim(),
+            }));
+        }
+    }
+    // Emergency fallback only — all real rows should come from DeepSeek
+    return buildEmergencyFallbackBreakdown(humanMarketCost);
 }
 
 function getApiBase() {
@@ -623,7 +592,7 @@ function guardLocalEstimate(
         reason: parsed.reason?.trim() || "Calculated as a low AI project price compared with typical freelancer rates.",
         strategy,
         model,
-        market_breakdown: normalizeMarketBreakdown(extra.market_breakdown, title, description, humanMarketCost, marketContext),
+        market_breakdown: normalizeMarketBreakdown(parsed.market_breakdown ?? extra.market_breakdown, title, description, humanMarketCost, marketContext),
         market_context_available:
             typeof extra.market_context_available === "boolean"
                 ? extra.market_context_available
@@ -638,98 +607,147 @@ function guardLocalEstimate(
 }
 
 async function fetchFromDeepSeek(systemPrompt: string, userPrompt: string, apiKey: string) {
-    const response = await fetch("https://api.deepseek.com/chat/completions", {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            model: "deepseek-chat",
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userPrompt },
-            ],
-            response_format: { type: "json_object" },
-            temperature: 0.15,
-            max_tokens: 320,
-        }),
-    });
+    // Try the best model first (R1 reasoner), fall back to V3 chat
+    const models = [DEEPSEEK_PRICING_MODEL, DEEPSEEK_PRICING_FALLBACK];
+    let lastError: Error | null = null;
 
-    if (!response.ok) {
-        throw new Error(`DeepSeek API returned ${response.status}: ${await response.text()}`);
+    for (const model of models) {
+        try {
+            const isReasoner = model === "deepseek-reasoner";
+            const payload: Record<string, unknown> = {
+                model,
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: userPrompt },
+                ],
+                response_format: { type: "json_object" },
+                max_tokens: isReasoner ? 1024 : 512,
+            };
+            // Reasoner doesn't support temperature
+            if (!isReasoner) {
+                payload.temperature = 0.12;
+            }
+
+            const response = await fetch("https://api.deepseek.com/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                console.warn(`DeepSeek ${model} returned ${response.status}: ${errText}`);
+                lastError = new Error(`DeepSeek ${model}: ${response.status}`);
+                continue;
+            }
+
+            const result = await response.json();
+            const content = result.choices?.[0]?.message?.content as string;
+            if (!content) {
+                lastError = new Error(`DeepSeek ${model}: empty response`);
+                continue;
+            }
+
+            return { content, model };
+        } catch (err) {
+            lastError = err instanceof Error ? err : new Error(String(err));
+            console.warn(`DeepSeek ${model} failed:`, lastError.message);
+        }
     }
 
-    const result = await response.json();
-    return result.choices[0].message.content as string;
+    throw lastError || new Error("All DeepSeek models failed");
 }
 
-async function fetchFromOpenRouter(systemPrompt: string, userPrompt: string, apiKey: string) {
-    const model =
-        process.env.OPENROUTER_BUDGET_MODEL ||
-        process.env.BENCHMARK_MODEL ||
-        "deepseek/deepseek-chat-v3-0324";
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://pantheon-mesh.app",
-            "X-Title": "Pantheon Mesh Budget Estimator",
-        },
-        body: JSON.stringify({
-            model,
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userPrompt },
-            ],
-            response_format: { type: "json_object" },
-            temperature: 0.15,
-            max_tokens: 320,
-        }),
-    });
+/* ─────────────────────────────────────────────────────────────────────────────
+   MARKET INTELLIGENCE SCOUTS
+   OpenRouter and Groq are NOT pricing decision-makers.
+   They are fast, cheap market-data scouts that gather additional real-time
+   pricing intelligence BEFORE DeepSeek makes the final call.
+   ───────────────────────────────────────────────────────────────────────────── */
 
-    if (!response.ok) {
-        throw new Error(`OpenRouter returned ${response.status}: ${await response.text()}`);
+const MARKET_SCOUT_PROMPT = `You are a freelancer marketplace price researcher.
+Given a job description, estimate what a human freelancer would charge on Fiverr, Upwork, and Toptal.
+Return ONLY a JSON object with these fields:
+{
+  "fiverr_low_usd": number,
+  "fiverr_high_usd": number,
+  "upwork_mid_usd": number,
+  "agency_usd": number,
+  "reasoning": "one sentence explaining your estimate"
+}
+Do NOT output anything except the JSON object.`;
+
+async function scoutMarketIntelGroq(title: string, description: string, apiKey: string) {
+    try {
+        const model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model,
+                messages: [
+                    { role: "system", content: MARKET_SCOUT_PROMPT },
+                    { role: "user", content: `Job: ${title}\nDetails: ${compactSearchText(description, 800)}` },
+                ],
+                response_format: { type: "json_object" },
+                temperature: 0.2,
+                max_tokens: 200,
+            }),
+        });
+
+        if (!response.ok) return "";
+        const result = await response.json();
+        const content = result.choices?.[0]?.message?.content || "";
+        return `Groq market scout (${model}): ${content}`;
+    } catch {
+        return "";
     }
-
-    const result = await response.json();
-    return {
-        content: result.choices[0].message.content as string,
-        model,
-    };
 }
 
-async function fetchFromGroq(systemPrompt: string, userPrompt: string, apiKey: string) {
-    const model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            model,
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userPrompt },
-            ],
-            response_format: { type: "json_object" },
-            temperature: 0.2,
-            max_tokens: 320,
-        }),
-    });
+async function scoutMarketIntelOpenRouter(title: string, description: string, apiKey: string) {
+    try {
+        const model = process.env.OPENROUTER_BUDGET_MODEL || "deepseek/deepseek-chat-v3-0324";
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://pantheon-mesh.app",
+                "X-Title": "Pantheon Mesh Market Scout",
+            },
+            body: JSON.stringify({
+                model,
+                messages: [
+                    { role: "system", content: MARKET_SCOUT_PROMPT },
+                    { role: "user", content: `Job: ${title}\nDetails: ${compactSearchText(description, 800)}` },
+                ],
+                response_format: { type: "json_object" },
+                temperature: 0.15,
+                max_tokens: 200,
+            }),
+        });
 
-    if (!response.ok) {
-        throw new Error(`Groq returned ${response.status}: ${await response.text()}`);
+        if (!response.ok) return "";
+        const result = await response.json();
+        const content = result.choices?.[0]?.message?.content || "";
+        return `OpenRouter market scout (${model}): ${content}`;
+    } catch {
+        return "";
     }
-
-    const result = await response.json();
-    return {
-        content: result.choices[0].message.content as string,
-        model,
-    };
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MAIN PIPELINE
+   Step 1: Gather market intelligence (web search + Groq scout + OpenRouter scout)
+   Step 2: Feed ALL intelligence into DeepSeek R1 (the ONLY pricing brain)
+   Step 3: Apply guardLocalEstimate safety floor (platform never loses money)
+   ───────────────────────────────────────────────────────────────────────────── */
 
 export async function POST(req: Request) {
     try {
@@ -747,6 +765,7 @@ export async function POST(req: Request) {
             );
         }
 
+        // Backend override — if backend returns a valid estimate, guard it and return
         if (clientUid) {
             try {
                 const response = await fetch(`${getApiBase()}/v1/client/job/estimate-budget`, {
@@ -778,81 +797,141 @@ export async function POST(req: Request) {
                     );
                 }
             } catch (error) {
-                console.warn("Backend estimate failed; trying server-side model fallback:", error);
+                console.warn("Backend estimate failed; continuing with DeepSeek pipeline:", error);
             }
         }
 
-        const marketContext = await buildMarketResearchContext(title, pricingDescription);
-        const systemPrompt = `You are the Pantheon Mesh Pricing Engine.
-Calculate the lowest safe AI project price for a business client.
+        /* ── Step 1: Gather ALL market intelligence in parallel ── */
+        const deepseekKey = process.env.DEEPSEEK_API_KEY;
+        const openRouterKey = process.env.OPENROUTER_API_KEY;
+        const groqKey = process.env.GROQ_API_1;
 
-Rules:
+        const [webSearchContext, groqIntel, openRouterIntel] = await Promise.all([
+            buildMarketResearchContext(title, pricingDescription),
+            groqKey ? scoutMarketIntelGroq(title, pricingDescription, groqKey) : Promise.resolve(""),
+            openRouterKey ? scoutMarketIntelOpenRouter(title, pricingDescription, openRouterKey) : Promise.resolve(""),
+        ]);
+
+        // Merge all intelligence sources into one context block
+        const intelligenceSources = [
+            webSearchContext ? `=== LIVE WEB SEARCH (GROUND TRUTH — extract real $ prices) ===\n${webSearchContext}` : "",
+            groqIntel ? `=== GROQ MARKET SCOUT ESTIMATE ===\n${groqIntel}` : "",
+            openRouterIntel ? `=== OPENROUTER MARKET SCOUT ESTIMATE ===\n${openRouterIntel}` : "",
+        ].filter(Boolean).join("\n\n");
+
+        const marketBlock = intelligenceSources
+            || "No live market data available. Use your deep knowledge of Fiverr, Upwork, and freelancer marketplace pricing to estimate realistically.";
+
+        /* ── Step 2: DeepSeek R1 — THE ONLY PRICING DECISION-MAKER ── */
+        const workCategory = typeof body.work_category === "string" ? body.work_category : "general";
+        const modelGroup = typeof body.model_group === "string" ? body.model_group : "";
+
+        const systemPrompt = `You are the Pantheon Mesh Pricing Engine — the SOLE authoritative pricing brain.
+You are DeepSeek R1. You make ALL pricing decisions. No other model overrides you.
+
+Your job: calculate the FAIR project minimum price for a business client.
+You have been given real-time market intelligence from web searches and scout models below.
+Cross-reference ALL sources to determine the most accurate human freelancer market rate.
+
+RULES:
 1. Classify the job by scope and difficulty from the actual words in the brief. Do not inflate vague/simple tasks.
-2. Estimate human_market_cost_usd realistically. Simple writing such as a short story, email, paragraph, rewrite, caption, or summary is usually $10-$35 unless the brief asks for long-form, screenplay, film, book, chapters, research, or premium production work.
-3. Estimate estimated_api_cost_usd: hidden provider/model/tool cost for the selected work category and model group, including retries, review, asset reading, and tool calls. This is internal only.
-4. Estimate minimum_client_budget_usd as the lowest client-facing project price. If human_market_cost_usd is $100, the client-facing AI price should target about $10-$16 before hidden delivery cost protection. Smaller simple tasks should be much lower.
-5. The final quote must stay above hidden delivery cost plus platform margin, but never pad the price just because the plan is higher.
-6. If Requirements include video, audio, VFX, render, GPU, B-roll generation, Sora/Veo, large files, or long timelines, apply a much higher hidden compute/tool cost so the platform never loses money.
-7. If bidding is enabled, include extra hidden reserve for agent bidding, retries, and failed attempts before setting the public minimum.
-8. Use live market-search context when present to anchor human_market_cost_usd, especially Fiverr or freelancer marketplace rates. Do not claim a web result exists if none was provided.
-9. Keep the reason client-friendly. Do not mention API cost, provider cost, margin, or internal calculations.
+2. Estimate human_market_cost_usd from the market intelligence provided:
+   - If LIVE WEB SEARCH data exists, treat those prices as PRIMARY GROUND TRUTH.
+   - If SCOUT ESTIMATES exist, use them as SECONDARY confirmation.
+   - If neither exists, estimate conservatively from your training data.
+3. Estimate estimated_api_cost_usd: the hidden AI compute cost (tokens, retries, tool calls, asset processing). Internal only.
+4. Calculate minimum_client_budget_usd: the FAIR lowest price for this job via AI.
+   Target 8-16% of human_market_cost_usd + hidden delivery cost protection.
+5. The quote must stay above compute cost + platform margin. Never lose money.
+6. Heavy media (video/VFX/GPU/B-roll/files >50MB): apply much higher compute cost.
+7. If bidding is enabled, include reserve for agent bidding overhead.
+8. Be FAIR. Do not over-charge. Do not under-charge below compute cost.
+9. Keep the reason client-friendly. Never mention API cost, margin, or internal math.
+10. Generate market_breakdown: an array of 3-4 marketplace comparison rows. Each row must be relevant to the SPECIFIC job type. Examples:
+    - For a backend/IoT/API job: compare against "Fiverr gigs", "Upwork specialists", "Dev agency", "Enterprise BaaS (e.g., Supabase / AWS)"
+    - For a video/media job: compare against "Fiverr editors", "Upwork video producers", "Production agency", "Cloud render / video API"
+    - For a web/UI job: compare against "Fiverr designers", "Upwork React devs", "Design agency", "Premium UI kit (e.g., Tailwind UI)"
+    - For an automation/scraping job: compare against "Fiverr automation gigs", "Upwork data engineers", "Agency", "Commercial SaaS (e.g., Apify)"
+    Choose REAL marketplace comparators that match the actual job. The 4th row should be a relevant commercial tool/service alternative, NOT a generic "UI kit" for every job.
+    Use realistic price ranges based on the market intelligence and your knowledge.
 
-Return only JSON:
+Return ONLY this JSON:
 {
   "human_market_cost_usd": number,
   "minimum_client_budget_usd": number,
   "estimated_api_cost_usd": number,
-  "reason": "one short client-facing sentence"
+  "reason": "one short client-facing sentence explaining the market comparison",
+  "market_breakdown": [
+    { "source": "string", "estimated_cost": "$X - $Y", "delivery_time": "string", "quality": "one sentence" },
+    { "source": "string", "estimated_cost": "$X - $Y", "delivery_time": "string", "quality": "one sentence" },
+    { "source": "string", "estimated_cost": "$X+", "delivery_time": "string", "quality": "one sentence" },
+    { "source": "string", "estimated_cost": "$X - $Y/mo", "delivery_time": "string", "quality": "one sentence" }
+  ]
 }`;
 
-        const marketBlock = marketContext || "No live market-search context was available. Use realistic freelancer marketplace judgment.";
-        const userPrompt = `Title: ${title}\nRequirements: ${pricingDescription}\nPlan: ${planId}\nMarket rate research:\n${marketBlock}`;
-        const deepseekKey = process.env.DEEPSEEK_API_KEY;
-        const openRouterKey = process.env.OPENROUTER_API_KEY;
-        const groqKey = process.env.GROQ_API_1;
+        const userPrompt = `Title: ${title}
+Work Category: ${workCategory}
+Model Cluster: ${modelGroup}
+Plan: ${planId}
+Requirements: ${pricingDescription}
+
+MARKET INTELLIGENCE:
+${marketBlock}`;
+
+        if (!deepseekKey) {
+            // DeepSeek is mandatory — if no key, use protected local estimate as fallback
+            console.error("CRITICAL: No DEEPSEEK_API_KEY configured. Using protected local estimate.");
+            return NextResponse.json(
+                guardLocalEstimate(
+                    {} as RawEstimate,
+                    title,
+                    pricingDescription,
+                    planId,
+                    "local-protected-estimate",
+                    "none",
+                    intelligenceSources,
+                    body,
+                ),
+            );
+        }
 
         let rawResponse = "";
         let usedStrategy = "";
         let usedModel = "";
 
         try {
-            if (!deepseekKey) {
-                throw new Error("No DeepSeek key");
-            }
-            rawResponse = await fetchFromDeepSeek(systemPrompt, userPrompt, deepseekKey);
-            usedStrategy = "deepseek-v3-native";
-            usedModel = "deepseek-chat";
+            const deepSeekResult = await fetchFromDeepSeek(systemPrompt, userPrompt, deepseekKey);
+            rawResponse = deepSeekResult.content;
+            usedStrategy = deepSeekResult.model === "deepseek-reasoner" ? "deepseek-r1-pricing" : "deepseek-v3-pricing";
+            usedModel = deepSeekResult.model;
         } catch (deepSeekError) {
-            console.warn("DeepSeek Native failed, trying OpenRouter:", deepSeekError);
-            try {
-                if (!openRouterKey) {
-                    throw new Error("No OpenRouter key");
-                }
-                const openRouterResult = await fetchFromOpenRouter(systemPrompt, userPrompt, openRouterKey);
-                rawResponse = openRouterResult.content;
-                usedStrategy = "openrouter-deepseek-v3";
-                usedModel = openRouterResult.model;
-            } catch (openRouterError) {
-                console.warn("OpenRouter failed, falling back to Groq:", openRouterError);
-                if (!groqKey) {
-                    throw new Error("All preferred AI sources failed.");
-                }
-                const groqResult = await fetchFromGroq(systemPrompt, userPrompt, groqKey);
-                rawResponse = groqResult.content;
-                usedStrategy = "groq-fallback";
-                usedModel = groqResult.model;
-            }
+            // DeepSeek failed — do NOT fall back to another model for pricing.
+            // Use the protected local estimate (safety floor) instead.
+            console.error("DeepSeek pricing failed. Using protected local estimate:", deepSeekError);
+            return NextResponse.json(
+                guardLocalEstimate(
+                    {} as RawEstimate,
+                    title,
+                    pricingDescription,
+                    planId,
+                    "local-protected-estimate",
+                    "deepseek-unavailable",
+                    intelligenceSources,
+                    body,
+                ),
+            );
         }
 
+        /* ── Step 3: Parse DeepSeek's decision + apply safety floor ── */
         let parsed: RawEstimate = {};
         try {
             parsed = JSON.parse(cleanJsonObject(rawResponse)) as RawEstimate;
         } catch (error) {
-            console.error("Budget JSON parse error:", error, rawResponse);
+            console.error("DeepSeek budget JSON parse error:", error, rawResponse);
         }
 
         return NextResponse.json(
-            guardLocalEstimate(parsed, title, pricingDescription, planId, usedStrategy, usedModel, marketContext, body),
+            guardLocalEstimate(parsed, title, pricingDescription, planId, usedStrategy, usedModel, intelligenceSources, body),
         );
     } catch (error) {
         console.error("Failed to calculate budget:", error);
