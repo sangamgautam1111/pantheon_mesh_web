@@ -37,10 +37,13 @@ import {
 import anthropicLogo from "../../../../logos/anthorpic.png";
 import chatgptLogo from "../../../../logos/chatgpt.jpg";
 import deepseekLogo from "../../../../logos/deepseek.png";
+import fluxLogo from "../../../../logos/flux.png";
 import geminiLogo from "../../../../logos/gemini.jpg";
 import glmLogo from "../../../../logos/glm.png";
 import llamaLogo from "../../../../logos/llama.png";
+import midjourneyLogo from "../../../../logos/mid journey.png";
 import qwenLogo from "../../../../logos/qwen.png";
+import stableDiffusionLogo from "../../../../logos/stable diffusion.png";
 
 type StepId = "scope" | "routing" | "checkout";
 type TimelineId = "standard" | "rush";
@@ -94,6 +97,14 @@ interface MarketBreakdownRow {
     estimated_cost: string;
     delivery_time: string;
     quality: string;
+}
+
+interface CategoryClassification {
+    work_category?: WorkCategoryId;
+    label?: string;
+    confidence?: number;
+    reason?: string;
+    strategy?: string;
 }
 
 const STEPS: Array<{ id: StepId; label: string; eyebrow: string }> = [
@@ -159,11 +170,25 @@ const LOGOS_BY_KEY: Record<string, string> = {
     anthropic: anthropicLogo.src,
     chatgpt: chatgptLogo.src,
     deepseek: deepseekLogo.src,
+    flux: fluxLogo.src,
     gemini: geminiLogo.src,
     glm: glmLogo.src,
     llama: llamaLogo.src,
+    midjourney: midjourneyLogo.src,
     qwen: qwenLogo.src,
+    stableDiffusion: stableDiffusionLogo.src,
 };
+
+const WORK_CATEGORY_IDS: WorkCategoryId[] = ["development", "media", "writing", "design", "automation"];
+
+function isWorkCategoryId(value: unknown): value is WorkCategoryId {
+    return typeof value === "string" && WORK_CATEGORY_IDS.includes(value as WorkCategoryId);
+}
+
+function getLogoInitials(name: string) {
+    const words = name.replace(/[^a-z0-9\s+.-]/gi, " ").split(/\s+/).filter(Boolean);
+    return (words.length >= 2 ? `${words[0][0]}${words[1][0]}` : name.slice(0, 2)).toUpperCase();
+}
 
 function withLogos(group: ModelGroupDefinition) {
     return {
@@ -171,7 +196,7 @@ function withLogos(group: ModelGroupDefinition) {
         logos: group.models.map((model) => ({
             role: model.role,
             name: model.name,
-            src: LOGOS_BY_KEY[model.logoKey] ?? chatgptLogo.src,
+            src: LOGOS_BY_KEY[model.logoKey] ?? "",
         })),
     };
 }
@@ -275,14 +300,20 @@ function BrandLogoStrip({ logos }: { logos: Array<{ role: string; name: string; 
                     className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2"
                     title={logo.name}
                 >
-                    <img
-                        src={logo.src}
-                        alt={`${logo.name} logo`}
-                        className="h-7 w-7 shrink-0 rounded-xl object-contain grayscale"
-                        onError={(event) => {
-                            event.currentTarget.style.display = "none";
-                        }}
-                    />
+                    {logo.src ? (
+                        <img
+                            src={logo.src}
+                            alt={`${logo.name} logo`}
+                            className="h-7 w-7 shrink-0 rounded-xl object-contain grayscale"
+                            onError={(event) => {
+                                event.currentTarget.style.display = "none";
+                            }}
+                        />
+                    ) : (
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-[9px] font-black text-slate-950">
+                            {getLogoInitials(logo.name)}
+                        </span>
+                    )}
                     <span className="min-w-0">
                         <span className="block text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">
                             {logo.role}
@@ -372,6 +403,9 @@ export default function NewClientJobPage() {
     const [estimate, setEstimate] = useState<BudgetEstimate | null>(null);
     const [estimateKey, setEstimateKey] = useState("");
     const [isEstimating, setIsEstimating] = useState(false);
+    const [isClassifyingCategory, setIsClassifyingCategory] = useState(false);
+    const [aiWorkCategory, setAiWorkCategory] = useState<WorkCategoryId | null>(null);
+    const [categoryReason, setCategoryReason] = useState("");
     const [isPosting, setIsPosting] = useState(false);
     const [error, setError] = useState("");
 
@@ -397,7 +431,7 @@ export default function NewClientJobPage() {
         assets.length > 0
             ? `${assets.length} files - ${assetTotalMb.toFixed(2)} MB`
             : `${promptAssetEstimate.label} - ${promptAssetEstimate.detail}`;
-    const detectedWorkCategory = useMemo(
+    const fallbackWorkCategory = useMemo(
         () =>
             detectWorkCategory({
                 title: jobTitle,
@@ -407,6 +441,19 @@ export default function NewClientJobPage() {
                 assetTotalMb: effectiveAssetTotalMb,
             }),
         [assetLinks, assetTypes, effectiveAssetTotalMb, goal, jobTitle],
+    );
+    const detectedWorkCategory = aiWorkCategory ?? fallbackWorkCategory;
+    const classificationKey = useMemo(
+        () =>
+            JSON.stringify({
+                title: jobTitle.trim(),
+                goal: goal.trim(),
+                assetTypes,
+                assetLinks,
+                assetTotalMb: effectiveAssetTotalMb,
+                assetCount: effectiveAssetCount,
+            }),
+        [assetLinks, assetTypes, effectiveAssetCount, effectiveAssetTotalMb, goal, jobTitle],
     );
     const modelGroups = useMemo(
         () => getModelGroupsForCategory(detectedWorkCategory).map(withLogos),
@@ -482,6 +529,7 @@ export default function NewClientJobPage() {
                 assetTextPreview,
                 selectedLane,
                 detectedWorkCategory,
+                aiWorkCategory,
                 complexityScore: scopeComplexity.score,
                 complexityReasons: scopeComplexity.reasons,
                 enableBidding,
@@ -492,6 +540,7 @@ export default function NewClientJobPage() {
             assetLinks,
             assetTextPreview,
             assetTypes,
+            aiWorkCategory,
             detectedWorkCategory,
             effectiveAssetCount,
             effectiveAssetTotalMb,
@@ -504,6 +553,11 @@ export default function NewClientJobPage() {
             timeline,
         ],
     );
+
+    useEffect(() => {
+        setAiWorkCategory(null);
+        setCategoryReason("");
+    }, [classificationKey]);
 
     useEffect(() => {
         if (!user?.uid) {
@@ -566,6 +620,42 @@ export default function NewClientJobPage() {
         model_group: `${selectedLaneInfo.title} - ${selectedLaneInfo.tag}. ${selectedLaneInfo.workflow}`,
         bidding_enabled: canEnableBidding && enableBidding,
     });
+
+    const classifyWorkCategory = async () => {
+        setIsClassifyingCategory(true);
+        try {
+            const response = await fetch("/api/classify-job", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: jobTitle.trim(),
+                    description: goal.trim(),
+                    asset_links: assetLinks,
+                    asset_total_mb: effectiveAssetTotalMb,
+                    asset_count: effectiveAssetCount,
+                    asset_types: assetTypes,
+                    asset_text_preview: assetTextPreview,
+                }),
+            });
+            const data = (await response.json()) as CategoryClassification;
+            if (!response.ok) {
+                throw new Error("DeepSeek classification failed.");
+            }
+            if (isWorkCategoryId(data.work_category)) {
+                setAiWorkCategory(data.work_category);
+                setCategoryReason(data.reason || "");
+                return data.work_category;
+            }
+        } catch (classifyError) {
+            console.warn("Category classification fallback used:", classifyError);
+        } finally {
+            setIsClassifyingCategory(false);
+        }
+
+        setAiWorkCategory(fallbackWorkCategory);
+        setCategoryReason("Routed by local context while DeepSeek classification was unavailable.");
+        return fallbackWorkCategory;
+    };
 
     const handleAssetUpload = async (event: ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(event.target.files || []);
@@ -648,6 +738,7 @@ export default function NewClientJobPage() {
                 return;
             }
             setError("");
+            await classifyWorkCategory();
             setStep("routing");
             return;
         }
@@ -873,9 +964,21 @@ export default function NewClientJobPage() {
                     Each plan has a purpose-built model cluster. Higher plans unlock stronger councils, deeper review,
                     and bidding execution where the plan allows it.
                 </p>
-                <div className="mt-4 inline-flex rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-black text-slate-950">
-                    Detected work type: {WORK_CATEGORY_LABELS[detectedWorkCategory]}
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <div className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-black text-slate-950">
+                        Detected work type: {WORK_CATEGORY_LABELS[detectedWorkCategory]}
+                    </div>
+                    <div className="text-xs font-semibold text-slate-500">
+                        {isClassifyingCategory
+                            ? "DeepSeek is choosing the route..."
+                            : aiWorkCategory
+                              ? "DeepSeek selected this route from the project scope."
+                              : "Local route preview. Continue from Step 1 to ask DeepSeek."}
+                    </div>
                 </div>
+                {categoryReason && (
+                    <p className="mt-2 max-w-3xl text-xs leading-5 text-slate-500">{categoryReason}</p>
+                )}
             </div>
 
             {complexityNotice && (
@@ -957,8 +1060,8 @@ export default function NewClientJobPage() {
                         <p className="text-sm font-black text-slate-950">Marketplace bidding</p>
                         <p className="mt-1 text-sm leading-6 text-slate-500">
                             {canEnableBidding
-                                ? `${activePlan.name} can send this job to ${activePlan.bid_agent_limit} execution agents for price pressure.`
-                                : "Bidding unlocks on Growth and Scale when you use a paid model lane."}
+                                ? `${activePlan.name} can send this job to ${activePlan.bid_agent_limit} execution agents. Agents compete, which can reduce your minimum price before you send the job.`
+                                : "Bidding unlocks on Growth and Scale. Agents compete to reduce the protected minimum price when the selected lane supports it."}
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -1021,7 +1124,7 @@ export default function NewClientJobPage() {
                 </p>
                 <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500 shadow-sm">
                     <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg>
-                    Powered by DeepSeek R1 · Live Tavily web search · Groq + OpenRouter scouts
+                    Powered by DeepSeek R1 · live market search · Groq + OpenRouter scouts
                 </div>
 
                 <div className="mt-8 rounded-[30px] border border-slate-200 bg-slate-50 p-6">
@@ -1372,10 +1475,20 @@ export default function NewClientJobPage() {
                                     <button
                                         type="button"
                                         onClick={goNext}
-                                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-3 text-sm font-black text-white shadow-lg shadow-slate-900/15 transition-all hover:-translate-y-0.5 hover:bg-black"
+                                        disabled={isClassifyingCategory}
+                                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-3 text-sm font-black text-white shadow-lg shadow-slate-900/15 transition-all hover:-translate-y-0.5 hover:bg-black disabled:cursor-wait disabled:opacity-70"
                                     >
-                                        Continue
-                                        <ArrowRight size={16} />
+                                        {step === "scope" && isClassifyingCategory ? (
+                                            <>
+                                                <Loader2 className="animate-spin" size={16} />
+                                                Classifying route
+                                            </>
+                                        ) : (
+                                            <>
+                                                Continue
+                                                <ArrowRight size={16} />
+                                            </>
+                                        )}
                                     </button>
                                 ) : (
                                     <Link

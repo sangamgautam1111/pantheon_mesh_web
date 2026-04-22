@@ -97,7 +97,7 @@ export const MODEL_GROUPS_BY_WORK_TYPE: Record<WorkCategoryId, ModelGroupDefinit
             models: [
                 { role: "Architect", name: "GPT-5.4", logoKey: "chatgpt" },
                 { role: "Logic Verify", name: "DeepSeek-R1", logoKey: "deepseek" },
-                { role: "Repo Tool", name: "GitHub API Tool", logoKey: "glm" },
+                { role: "Repo Tool", name: "GitHub API Tool", logoKey: "github" },
             ],
         },
         {
@@ -170,9 +170,9 @@ export const MODEL_GROUPS_BY_WORK_TYPE: Record<WorkCategoryId, ModelGroupDefinit
             bidding: "Up to 10 bidding agents",
             models: [
                 { role: "Director", name: "Claude 4.6 Opus", logoKey: "anthropic" },
-                { role: "Video Search", name: "TwelveLabs API", logoKey: "gemini" },
-                { role: "B-roll", name: "Veo / Sora API", logoKey: "chatgpt" },
-                { role: "Rendering", name: "Cloud GPU", logoKey: "qwen" },
+                { role: "Video Search", name: "TwelveLabs API", logoKey: "twelvelabs" },
+                { role: "B-roll", name: "Veo / Sora API", logoKey: "sora" },
+                { role: "Rendering", name: "Cloud GPU", logoKey: "cloudGpu" },
             ],
         },
     ],
@@ -201,7 +201,7 @@ export const MODEL_GROUPS_BY_WORK_TYPE: Record<WorkCategoryId, ModelGroupDefinit
             bidding: "No bidding",
             models: [
                 { role: "Fast Writer", name: "Claude 4.6 Haiku", logoKey: "anthropic" },
-                { role: "SEO / RAG", name: "Command R+", logoKey: "glm" },
+                { role: "SEO / RAG", name: "Command R+", logoKey: "command" },
             ],
         },
         {
@@ -232,7 +232,7 @@ export const MODEL_GROUPS_BY_WORK_TYPE: Record<WorkCategoryId, ModelGroupDefinit
             models: [
                 { role: "Lead Writer", name: "Claude 4.6 Opus", logoKey: "anthropic" },
                 { role: "Fact Check", name: "DeepSeek-R1", logoKey: "deepseek" },
-                { role: "Live Research", name: "Perplexity API", logoKey: "chatgpt" },
+                { role: "Live Research", name: "Perplexity API", logoKey: "perplexity" },
             ],
         },
     ],
@@ -247,7 +247,7 @@ export const MODEL_GROUPS_BY_WORK_TYPE: Record<WorkCategoryId, ModelGroupDefinit
             examples: "Basic icons, simple raster images, rough concepts",
             workflow: "Stable Diffusion 3.5 generates lightweight raster images and icon concepts.",
             bidding: "No bidding",
-            models: [{ role: "Raster Generate", name: "Stable Diffusion 3.5", logoKey: "gemini" }],
+            models: [{ role: "Raster Generate", name: "Stable Diffusion 3.5", logoKey: "stableDiffusion" }],
         },
         {
             id: "standard",
@@ -260,7 +260,7 @@ export const MODEL_GROUPS_BY_WORK_TYPE: Record<WorkCategoryId, ModelGroupDefinit
             workflow: "Flux.1 creates stronger assets. GPT-4o Vision analyzes palettes and visual references.",
             bidding: "No bidding",
             models: [
-                { role: "Asset Generate", name: "Flux.1", logoKey: "gemini" },
+                { role: "Asset Generate", name: "Flux.1", logoKey: "flux" },
                 { role: "Vision Review", name: "GPT-4o Vision", logoKey: "chatgpt" },
             ],
         },
@@ -275,7 +275,7 @@ export const MODEL_GROUPS_BY_WORK_TYPE: Record<WorkCategoryId, ModelGroupDefinit
             workflow: "Midjourney API drives aesthetic direction. Claude 4.6 Sonnet turns visuals into Tailwind CSS and SVG code.",
             bidding: "Up to 6 bidding agents",
             models: [
-                { role: "Aesthetic", name: "Midjourney API", logoKey: "gemini" },
+                { role: "Aesthetic", name: "Midjourney API", logoKey: "midjourney" },
                 { role: "UI Code", name: "Claude 4.6 Sonnet", logoKey: "anthropic" },
             ],
         },
@@ -291,8 +291,8 @@ export const MODEL_GROUPS_BY_WORK_TYPE: Record<WorkCategoryId, ModelGroupDefinit
             bidding: "Up to 10 bidding agents",
             models: [
                 { role: "Sketch Vision", name: "Gemini 3 Pro Vision", logoKey: "gemini" },
-                { role: "Aesthetic", name: "Midjourney API", logoKey: "chatgpt" },
-                { role: "Layout Agent", name: "Figma-Agent", logoKey: "glm" },
+                { role: "Aesthetic", name: "Midjourney API", logoKey: "midjourney" },
+                { role: "Layout Agent", name: "Figma-Agent", logoKey: "figma" },
             ],
         },
     ],
@@ -439,6 +439,27 @@ const CATEGORY_KEYWORDS: Record<WorkCategoryId, string[]> = {
         "json",
         "etl",
         "pipeline",
+        "workflow",
+        "orchestration",
+        "auto-posting",
+        "auto posting",
+        "schedule",
+        "scheduler",
+        "distribution",
+        "buffer",
+        "metricool",
+        "heygen",
+        "remotion",
+        "json2video",
+        "whisper",
+        "transcribe",
+        "ingest",
+        "export",
+        "llm",
+        "lip-sync",
+        "avatar",
+        "integration",
+        "integrations",
         "automation",
         "puppeteer",
         "airtable",
@@ -467,6 +488,20 @@ export function detectWorkCategory(input: WorkCategoryInput): WorkCategoryId {
         .join(" ")
         .toLowerCase();
 
+    const automationOrchestrationMatches = [
+        /\b(auto(?:mated)?|automation|workflow|pipeline|orchestration|scheduler?|auto[- ]?posting|distribution)\b/.test(text),
+        /\b(api|webhook|integrat(?:e|ion|ions)|buffer|metricool|heygen|remotion|json2video|whisper|zapier|n8n)\b/.test(text),
+        /\b(ingest|transcribe|rewrite|send|export|schedule|post|connect|trigger)\b/.test(text),
+    ].filter(Boolean).length;
+
+    const pureMediaExecution =
+        /\b(edit|cut|caption|subtitle|color correction|vfx|b-roll|render|timeline)\b/.test(text) &&
+        !/\b(api|webhook|workflow|pipeline|automation|integrat(?:e|ion|ions)|schedule|auto[- ]?posting)\b/.test(text);
+
+    if (automationOrchestrationMatches >= 2 && !pureMediaExecution) {
+        return "automation";
+    }
+
     const scores: Record<WorkCategoryId, number> = {
         development: 0,
         media: 0,
@@ -494,6 +529,9 @@ export function detectWorkCategory(input: WorkCategoryInput): WorkCategoryId {
     }
     if (/\b(scraper|scrape|proxy|proxy rotation|puppeteer|browser automation)\b/.test(text)) {
         scores.automation += 6;
+    }
+    if (automationOrchestrationMatches >= 2) {
+        scores.automation += 8;
     }
     if ((input.assetTotalMb ?? 0) > 250) {
         scores.media += 2;
