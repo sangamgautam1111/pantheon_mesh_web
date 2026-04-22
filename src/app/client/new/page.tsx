@@ -81,6 +81,7 @@ interface PlanUsage {
 
 interface BudgetEstimate {
     min_budget_usd: number;
+    estimated_api_cost_usd?: number;
     human_market_cost_usd?: number;
     savings_percent?: number;
     reason?: string;
@@ -787,6 +788,9 @@ export default function NewClientJobPage() {
                 body: JSON.stringify({
                     ...buildPricingPayload(),
                     budget_usd: readyEstimate.min_budget_usd,
+                    projected_minimum_usd: readyEstimate.min_budget_usd,
+                    estimated_api_cost_usd: readyEstimate.estimated_api_cost_usd,
+                    pricing_strategy: readyEstimate.strategy,
                     thumbnail_data_url: thumbnailDataUrl,
                     enable_marketplace_bidding: canEnableBidding && enableBidding,
                     bidding_lane: activePlan.bidding_lane,

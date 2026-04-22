@@ -360,14 +360,6 @@ export default function ClientJobsPage() {
                                                                 day: "numeric",
                                                             })}
                                                         </span>
-                                                        {typeof job.minimum_budget_usd === "number" && (
-                                                            <>
-                                                                <span className="text-[11px] text-slate-300">-</span>
-                                                                <span className="text-[11px] font-semibold text-slate-950">
-                                                                    Floor ${job.minimum_budget_usd.toFixed(2)}
-                                                                </span>
-                                                            </>
-                                                        )}
                                                     </div>
                                                 </div>
                                             </div>

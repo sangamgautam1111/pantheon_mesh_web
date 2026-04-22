@@ -489,6 +489,7 @@ function sanitizePublicEstimate(
 
     return {
         min_budget_usd: minBudget,
+        estimated_api_cost_usd: roundDisplay(numberFrom(data.estimated_api_cost_usd ?? data.api_cost_usd, 0)),
         human_market_cost_usd: humanMarketCost,
         savings_percent: numberFrom(data.savings_percent, savingsPercent),
         reason:
@@ -629,6 +630,7 @@ function guardLocalEstimate(
 
     return {
         min_budget_usd: minBudget,
+        estimated_api_cost_usd: roundDisplay(estimatedInternalCost),
         human_market_cost_usd: roundDisplay(humanMarketCost),
         savings_percent: savingsPercent,
         reason: parsed.reason?.trim() || "Calculated as a low AI project price compared with typical freelancer rates.",
