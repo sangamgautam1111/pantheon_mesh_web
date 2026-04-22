@@ -286,7 +286,7 @@ async function braveMarketSearch(query: string) {
 }
 
 async function buildMarketResearchContext(title: string, description: string) {
-    const query = `Fiverr freelancer gig price ${title} ${compactSearchText(description, 120)} cost USD`;
+    const query = `Fiverr Upwork freelancer price ${title} ${compactSearchText(description, 120)} cost USD`;
     for (const provider of [tavilyMarketSearch, serperMarketSearch, braveMarketSearch]) {
         try {
             const context = await provider(query);
@@ -515,11 +515,37 @@ function normalizeEstimatesForScope(
     description: string,
     humanMarketCost: number,
     estimatedInternalCost: number,
+    body: Record<string, unknown> = {},
 ) {
-    const combined = `${title} ${description}`.toLowerCase();
+    const rawDescription = typeof body.description === "string" ? body.description : description;
+    const combined = `${title} ${rawDescription}`.toLowerCase();
     const wordCount = combined.split(/\s+/).filter(Boolean).length;
+    const category = getWorkCategory(body, title, rawDescription);
+    const assetTypes = getStringArray(body.asset_types).map((type) => type.toLowerCase());
+    const assetTotalMb = numberFrom(body.asset_total_mb, 0);
+    const assetCount = numberFrom(body.asset_count, 0);
+    const hasUploadedFiles = body.asset_source === "uploaded-files" || assetCount > 0 || assetTotalMb > 0;
+    const hasDetailedUploadedAssets =
+        hasUploadedFiles &&
+        (assetTotalMb > 5 ||
+            assetCount > 2 ||
+            assetTypes.some((type) => /video|audio|pdf|zip|figma|photoshop|illustrator|sketch/.test(type)));
+    const hasReferenceLinks = getStringArray(body.asset_links).length > 0;
     const isSimpleWriting = SIMPLE_WRITING_KEYWORDS.some((keyword) => combined.includes(keyword));
     const isLongForm = LONG_FORM_KEYWORDS.some((keyword) => combined.includes(keyword));
+    const isSimpleDesignRequest =
+        category === "design" &&
+        /\b(logo|icon|thumbnail|banner|brand mark|wordmark)\b/.test(combined) &&
+        wordCount <= 24 &&
+        !hasDetailedUploadedAssets &&
+        !hasReferenceLinks &&
+        !/\b(full brand|brand identity|brand kit|style guide|multiple|animation|animated|3d|vector pack|mockup|website|app)\b/.test(combined);
+    const isSimpleAutomationRequest =
+        category === "automation" &&
+        wordCount <= 28 &&
+        !hasDetailedUploadedAssets &&
+        !hasReferenceLinks &&
+        !/\b(proxy|database|dashboard|frontend|backend|login|auth|scale|production|multi|thousand|million)\b/.test(combined);
 
     if (isSimpleWriting && !isLongForm && wordCount <= 35) {
         return {
@@ -532,6 +558,20 @@ function normalizeEstimatesForScope(
         return {
             humanMarketCost: Math.min(Math.max(humanMarketCost, 28), 70),
             estimatedInternalCost: Math.min(Math.max(estimatedInternalCost, 0.12), 0.9),
+        };
+    }
+
+    if (isSimpleDesignRequest) {
+        return {
+            humanMarketCost: Math.min(Math.max(humanMarketCost, 50), 150),
+            estimatedInternalCost: Math.min(Math.max(estimatedInternalCost, 0.25), 1.25),
+        };
+    }
+
+    if (isSimpleAutomationRequest) {
+        return {
+            humanMarketCost: Math.min(Math.max(humanMarketCost, 60), 180),
+            estimatedInternalCost: Math.min(Math.max(estimatedInternalCost, 0.35), 1.8),
         };
     }
 
@@ -567,7 +607,7 @@ function guardLocalEstimate(
         5,
     );
 
-    const normalized = normalizeEstimatesForScope(title, description, humanMarketCost, estimatedInternalCost);
+    const normalized = normalizeEstimatesForScope(title, description, humanMarketCost, estimatedInternalCost, body);
     humanMarketCost = normalized.humanMarketCost;
     estimatedInternalCost = normalized.estimatedInternalCost;
 
@@ -672,6 +712,7 @@ async function fetchFromDeepSeek(systemPrompt: string, userPrompt: string, apiKe
 
 const MARKET_SCOUT_PROMPT = `You are a freelancer marketplace price researcher.
 Given a job description, estimate what a human freelancer would charge on Fiverr, Upwork, and Toptal.
+Use the exact scope in the prompt. Short, vague, no-asset jobs must use low Fiverr/Upwork ranges; do not price them like enterprise packages.
 Return ONLY a JSON object with these fields:
 {
   "fiverr_low_usd": number,
@@ -812,6 +853,9 @@ RULES:
    - If LIVE WEB SEARCH data exists, treat those prices as PRIMARY GROUND TRUTH.
    - If SCOUT ESTIMATES exist, use them as SECONDARY confirmation.
    - If neither exists, estimate conservatively from your training data.
+   - Always average the exact-scope Fiverr budget range and Upwork mid-range first. Use agency/enterprise prices only as a high reference, not as the main anchor, unless the user gave detailed enterprise requirements.
+   - Analyze request depth. If the prompt is extremely short (under 20 words), vague, and has no significant uploaded assets or reference links, anchor human_market_cost_usd at the LOWEST freelance end. A small reference image under 5 MB is not a brand-identity package by itself. For example, a one-sentence professional logo request should usually be $50-$150, not $2,000+.
+   - Only use $2,000+ human pricing for detailed brand identity systems, multi-step workflows, heavy raw assets, production software, complex automations, or clearly enterprise scope.
 3. Calculate the AI Labour Price:
    Apply an 85% to 90% savings discount to the human_market_cost_usd. This heavily discounted amount (the remaining 10% to 15%) is your "AI Labour Price" (which acts as the platform's profit).
 4. Estimate estimated_api_cost_usd: 
