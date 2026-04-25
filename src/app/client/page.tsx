@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, Building2, Clock, MapPin, MessageSquare, Plus, Search } from "lucide-react";
+import { RouteGuard } from "@/components/auth/RouteGuard";
+import { useAuth } from "@/context/AuthContext";
 import { PHONE_REPAIR_REQUESTS } from "@/lib/nearquote";
 
 function statusClass(status: string) {
@@ -11,33 +13,37 @@ function statusClass(status: string) {
 }
 
 export default function RequestCenterPage() {
+    const { accountType } = useAuth();
+    const isBusiness = accountType === "business";
     const openRequests = PHONE_REPAIR_REQUESTS.filter((request) => request.status !== "chosen").length;
     const totalOffers = PHONE_REPAIR_REQUESTS.reduce((sum, request) => sum + request.offers, 0);
 
     return (
-        <main className="min-h-screen bg-[#f8f7f2] px-4 py-8 text-slate-950 md:px-8">
+        <RouteGuard allowedTypes={["customer", "business"]}>
+            <main className="min-h-screen bg-[#f8f7f2] px-4 py-8 text-slate-950 md:px-8">
             <div className="mx-auto max-w-7xl">
                 <section className="rounded-[34px] border border-slate-200 bg-white p-7 shadow-xl md:p-9">
                     <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                         <div className="max-w-3xl">
                             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-slate-600">
                                 <MessageSquare size={14} />
-                                Request center
+                                {isBusiness ? "Local business lead inbox" : "Customer request center"}
                             </div>
                             <h1 className="text-4xl font-black tracking-tight md:text-6xl">
-                                Phone repair quote requests.
+                                {isBusiness ? "Nearby phone repair leads." : "Your phone repair requests."}
                             </h1>
                             <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
-                                Needaro starts with one category and one city. Track requests, offers, response speed,
-                                and whether customers choose a shop.
+                                {isBusiness
+                                    ? "See customer problems that match your local service area, then reply with price, time, warranty, and a helpful note."
+                                    : "Post one local problem and compare offers from nearby shops without exposing your contact details to every business."}
                             </p>
                         </div>
                         <Link
-                            href="/client/new"
+                            href={isBusiness ? "/dashboard" : "/client/new"}
                             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-4 text-sm font-black text-white shadow-lg shadow-slate-900/15 transition-all hover:-translate-y-0.5"
                         >
                             <Plus size={17} />
-                            New customer request
+                            {isBusiness ? "Open dashboard" : "New customer request"}
                         </Link>
                     </div>
                 </section>
@@ -45,8 +51,8 @@ export default function RequestCenterPage() {
                 <section className="mt-6 grid gap-4 md:grid-cols-4">
                     {[
                         { label: "First niche", value: "Phone repair", icon: BadgeCheck },
-                        { label: "Open requests", value: String(openRequests), icon: MessageSquare },
-                        { label: "Total offers", value: String(totalOffers), icon: Building2 },
+                        { label: isBusiness ? "Open leads" : "Open requests", value: String(openRequests), icon: MessageSquare },
+                        { label: isBusiness ? "Quotes sent" : "Offers received", value: String(totalOffers), icon: Building2 },
                         { label: "Target response", value: "30 min", icon: Clock },
                     ].map((item) => (
                         <div key={item.label} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -60,8 +66,14 @@ export default function RequestCenterPage() {
                 <section className="mt-6 overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm">
                     <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 md:flex-row md:items-center md:justify-between">
                         <div>
-                            <h2 className="text-xl font-black">Customer requests</h2>
-                            <p className="mt-1 text-sm text-slate-500">Demo request feed for the phone repair MVP.</p>
+                            <h2 className="text-xl font-black">
+                                {isBusiness ? "Customer leads" : "My requests and offers"}
+                            </h2>
+                            <p className="mt-1 text-sm text-slate-500">
+                                {isBusiness
+                                    ? "Demo lead feed for local repair shops."
+                                    : "Demo customer feed for tracking repair offers."}
+                            </p>
                         </div>
                         <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-400">
                             <Search size={16} />
@@ -99,8 +111,8 @@ export default function RequestCenterPage() {
                                         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">First offer</p>
                                         <p className="mt-2 text-xl font-black">{request.firstOfferTime}</p>
                                     </div>
-                                    <Link href="/client/new" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white">
-                                        View flow
+                                    <Link href={isBusiness ? "/dashboard" : "/client/new"} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white">
+                                        {isBusiness ? "Prepare quote" : "View flow"}
                                         <ArrowRight size={15} />
                                     </Link>
                                 </div>
@@ -109,6 +121,7 @@ export default function RequestCenterPage() {
                     </div>
                 </section>
             </div>
-        </main>
+            </main>
+        </RouteGuard>
     );
 }

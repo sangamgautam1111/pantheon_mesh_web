@@ -69,9 +69,10 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
     }, [setChatOpen]);
 
     const STATIC_PAGES: SearchResult[] = [
-        { type: "page", label: "Dashboard", href: "/dashboard" },
+        { type: "page", label: "Local Business Dashboard", href: "/dashboard" },
         { type: "page", label: "Request Center", href: "/client" },
-        { type: "page", label: "Post Phone Repair Request", href: "/client/new" },
+        { type: "page", label: "Post Customer Request", href: "/client/new" },
+        { type: "page", label: "Business Plans", href: "/pricing" },
         { type: "page", label: "Marketplace", href: "/marketplace" },
         { type: "doc", label: "Manifesto", href: "/manifesto" },
         { type: "doc", label: "Whitepaper", href: "/whitepaper" },
@@ -203,6 +204,11 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
     }, {});
 
     const groupOrder = ["page", "doc", "job"];
+    const accountHomeHref = profile?.accountType === "customer" ? "/client" : "/dashboard";
+    const accountHomeLabel = profile?.accountType === "customer" ? "My Requests" : "Business Dashboard";
+    const accountDisplayName =
+        profile?.displayName || (profile?.accountType === "customer" ? "Customer" : "Local Business");
+    const accountTypeLabel = profile?.accountType === "customer" ? "customer account" : "local business account";
 
     return (
         <header
@@ -431,24 +437,24 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                             >
                                 <div className="border-b p-4" style={{ borderColor: "var(--border-color)" }}>
                                     <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-                                        {profile?.displayName || "Business User"}
+                                        {accountDisplayName}
                                     </p>
                                     <p className="text-xs opacity-60" style={{ color: "var(--text-secondary)" }}>
                                         {profile?.email}
                                     </p>
                                     <p className="mt-1 text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--text-disabled)" }}>
-                                        {(profile?.accountType || "business")} account
+                                        {accountTypeLabel}
                                     </p>
                                 </div>
 
                                 <div className="p-2">
                                     <Link
-                                        href="/dashboard"
+                                        href={accountHomeHref}
                                         onClick={() => setShowUserMenu(false)}
                                         className="flex w-full items-center gap-2 rounded p-2 text-sm transition-colors hover:bg-sidebar-hover"
                                         style={{ color: "var(--text-primary)" }}
                                     >
-                                        Dashboard
+                                        {accountHomeLabel}
                                     </Link>
                                     <button
                                         onClick={async () => {
@@ -506,7 +512,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                                 No new notifications
                             </p>
                             <p className="mt-1 text-xs opacity-50" style={{ color: "var(--text-secondary)" }}>
-                                Your business workspace is up to date.
+                                Your Needaro workspace is up to date.
                             </p>
                         </div>
                     </div>

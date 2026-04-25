@@ -7,18 +7,23 @@ import { usePathname } from "next/navigation";
 import {
     ChevronDown,
     ChevronRight,
+    CreditCard,
     FileText,
     LayoutDashboard,
+    PlusCircle,
     Store,
     X,
 } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import { ActiveAccountType, useAuth } from "@/context/AuthContext";
 import logoImg from "@/app/logo.png";
 
 const NAV_ITEMS = [
     { label: "Welcome", href: "/", icon: LayoutDashboard },
-    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Requests", href: "/client", icon: FileText, allowedTypes: ["business"] as const },
+    { label: "Business Dashboard", href: "/dashboard", icon: LayoutDashboard, allowedTypes: ["business"] as ActiveAccountType[] },
+    { label: "Lead Inbox", href: "/client", icon: FileText, allowedTypes: ["business"] as ActiveAccountType[] },
+    { label: "My Requests", href: "/client", icon: FileText, allowedTypes: ["customer"] as ActiveAccountType[] },
+    { label: "Post Request", href: "/client/new", icon: PlusCircle, allowedTypes: ["customer"] as ActiveAccountType[] },
+    { label: "Business Plans", href: "/pricing", icon: CreditCard, allowedTypes: ["business"] as ActiveAccountType[] },
     { label: "Marketplace", href: "/marketplace", icon: Store },
 ];
 
@@ -34,6 +39,11 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const accountLabel = accountType === "business"
+        ? "local business account"
+        : accountType === "customer"
+          ? "customer account"
+          : "local quote marketplace";
 
     useEffect(() => {
         const check = () => setIsMobile(window.innerWidth < 769);
@@ -84,7 +94,7 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                                         Needaro
                                     </div>
                                     <div className="truncate text-[10px] font-mono" style={{ color: "var(--text-secondary)" }}>
-                                        local quote marketplace
+                                        {accountLabel}
                                     </div>
                                 </div>
                             </div>

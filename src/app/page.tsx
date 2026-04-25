@@ -83,7 +83,7 @@ export default function Home() {
                                     <div className="flex items-start justify-between gap-4">
                                         <div>
                                             <p className="font-black">{offer.shop}</p>
-                                            <p className="mt-1 text-sm text-slate-300">{offer.time} · {offer.warranty} · {offer.distance}</p>
+                                            <p className="mt-1 text-sm text-slate-300">{offer.time} - {offer.warranty} - {offer.distance}</p>
                                         </div>
                                         <p className="text-lg font-black">{offer.price}</p>
                                     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, createContext, useContext, useEffect, useState } from "react";
+import { ReactNode, createContext, useContext, useEffect, useRef, useState } from "react";
 import {
     User,
     createUserWithEmailAndPassword,
@@ -13,7 +13,8 @@ import {
 import { get, onValue, ref, set } from "firebase/database";
 import { auth, db, githubProvider, googleProvider } from "@/lib/firebase";
 
-export type AccountType = "business" | null;
+export type ActiveAccountType = "customer" | "business";
+export type AccountType = ActiveAccountType | null;
 
 interface UserProfile {
     uid: string;
@@ -32,10 +33,10 @@ interface AuthContextType {
     profile: UserProfile | null;
     accountType: AccountType;
     loading: boolean;
-    signInWithGitHub: () => Promise<void>;
-    signInWithGoogle: () => Promise<void>;
-    signInWithEmail: (email: string, password: string) => Promise<void>;
-    signUpWithEmail: (email: string, password: string, displayName: string) => Promise<void>;
+    signInWithGitHub: (accountType?: ActiveAccountType) => Promise<void>;
+    signInWithGoogle: (accountType?: ActiveAccountType) => Promise<void>;
+    signInWithEmail: (email: string, password: string, accountType?: ActiveAccountType) => Promise<void>;
+    signUpWithEmail: (email: string, password: string, displayName: string, accountType?: ActiveAccountType) => Promise<void>;
     syncProfile: () => Promise<void>;
     signOut: () => Promise<void>;
 }
@@ -53,11 +54,17 @@ const AuthContext = createContext<AuthContextType>({
     signOut: async () => {},
 });
 
+const DEFAULT_ACCOUNT_TYPE: ActiveAccountType = "customer";
+
+const isActiveAccountType = (value: unknown): value is ActiveAccountType =>
+    value === "customer" || value === "business";
+
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [accountType, setAccountType] = useState<AccountType>(null);
     const [loading, setLoading] = useState(true);
+    const pendingAccountTypeRef = useRef<ActiveAccountType | null>(null);
 
     const sanitizeForRealtimeDb = <T,>(value: T): T => {
         if (Array.isArray(value)) {
@@ -82,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     uid,
-                    display_name: displayName || "Business User",
+                    display_name: displayName || "Local Business",
                     email: email || "",
                     role: "client",
                     current_plan_id: currentPlanId,
@@ -98,24 +105,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    const upsertBusinessProfile = async (
+    const upsertProfile = async (
         firebaseUser: User,
+        requestedAccountType: ActiveAccountType = DEFAULT_ACCOUNT_TYPE,
         overrides: Partial<UserProfile> = {},
     ) => {
         const existingSnapshot = await get(ref(db, `users/${firebaseUser.uid}`));
         const existing = existingSnapshot.exists() ? (existingSnapshot.val() as Partial<UserProfile>) : {};
+        const resolvedAccountType = isActiveAccountType(existing.accountType)
+            ? existing.accountType
+            : requestedAccountType;
+        const defaultName = resolvedAccountType === "business" ? "Local Business" : "Customer";
 
         const displayName =
             overrides.displayName ||
             firebaseUser.displayName ||
             existing.displayName ||
             firebaseUser.email?.split("@")[0] ||
-            "Business User";
+            defaultName;
 
-        const companyName =
-            (typeof overrides.companyName === "string" && overrides.companyName.trim()) ||
-            (typeof existing.companyName === "string" && existing.companyName.trim()) ||
-            displayName;
+        const companyName = resolvedAccountType === "business"
+            ? (typeof overrides.companyName === "string" && overrides.companyName.trim()) ||
+              (typeof existing.companyName === "string" && existing.companyName.trim()) ||
+              displayName
+            : null;
         const requestedPlanId =
             typeof overrides.currentPlanId === "string"
                 ? overrides.currentPlanId
@@ -131,23 +144,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         }
 
-        const backendProfile = await syncWithBackend(
-            firebaseUser.uid,
-            displayName || "Business User",
-            firebaseUser.email || existing.email || "",
-            requestedPlanId,
-        );
+        const backendProfile = resolvedAccountType === "business"
+            ? await syncWithBackend(
+                  firebaseUser.uid,
+                  displayName || "Local Business",
+                  firebaseUser.email || existing.email || "",
+                  requestedPlanId,
+              )
+            : null;
         const resolvedPlanId =
-            typeof backendProfile?.current_plan_id === "string" && backendProfile.current_plan_id.trim()
-                ? backendProfile.current_plan_id
-                : requestedPlanId;
+            resolvedAccountType === "business"
+                ? typeof backendProfile?.current_plan_id === "string" && backendProfile.current_plan_id.trim()
+                    ? backendProfile.current_plan_id
+                    : requestedPlanId
+                : null;
 
         const profileData: UserProfile = {
             uid: firebaseUser.uid,
             email: firebaseUser.email || existing.email || null,
             displayName,
             photoURL: firebaseUser.photoURL || existing.photoURL || null,
-            accountType: "business",
+            accountType: resolvedAccountType,
             createdAt: existing.createdAt || Date.now(),
             companyName,
             currentPlanId: resolvedPlanId,
@@ -160,17 +177,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
 
         await set(ref(db, `users/${firebaseUser.uid}`), sanitizeForRealtimeDb(profileData));
-        await set(ref(db, `accounts/business/${firebaseUser.uid}`), sanitizeForRealtimeDb({
+        await set(ref(db, `accounts/${resolvedAccountType}/${firebaseUser.uid}`), sanitizeForRealtimeDb({
             uid: firebaseUser.uid,
             email: profileData.email,
             displayName: profileData.displayName,
             joinedAt: profileData.createdAt,
+            accountType: resolvedAccountType,
             companyName: profileData.companyName,
             currentPlanId: profileData.currentPlanId,
         }));
 
         setProfile(profileData);
-        setAccountType("business");
+        setAccountType(resolvedAccountType);
 
         return profileData;
     };
@@ -194,7 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 return;
             }
 
-            await upsertBusinessProfile(firebaseUser);
+            await upsertProfile(firebaseUser, pendingAccountTypeRef.current || DEFAULT_ACCOUNT_TYPE);
 
             const profileRef = ref(db, `users/${firebaseUser.uid}`);
             profileUnsubscribe = onValue(profileRef, (snapshot) => {
@@ -205,8 +223,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
 
                 const data = snapshot.val() as UserProfile;
-                setProfile({ ...data, accountType: "business" });
-                setAccountType("business");
+                const resolvedAccountType = isActiveAccountType(data.accountType) ? data.accountType : DEFAULT_ACCOUNT_TYPE;
+                setProfile({ ...data, accountType: resolvedAccountType });
+                setAccountType(resolvedAccountType);
             });
 
             setLoading(false);
@@ -220,24 +239,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
     }, []);
 
-    const signInWithGitHub = async () => {
-        const result = await signInWithPopup(auth, githubProvider);
-        await upsertBusinessProfile(result.user);
+    const signInWithGitHub = async (selectedAccountType: ActiveAccountType = DEFAULT_ACCOUNT_TYPE) => {
+        pendingAccountTypeRef.current = selectedAccountType;
+        try {
+            const result = await signInWithPopup(auth, githubProvider);
+            await upsertProfile(result.user, selectedAccountType);
+        } finally {
+            pendingAccountTypeRef.current = null;
+        }
     };
 
-    const signInWithGoogle = async () => {
-        const result = await signInWithPopup(auth, googleProvider);
-        await upsertBusinessProfile(result.user);
+    const signInWithGoogle = async (selectedAccountType: ActiveAccountType = DEFAULT_ACCOUNT_TYPE) => {
+        pendingAccountTypeRef.current = selectedAccountType;
+        try {
+            const result = await signInWithPopup(auth, googleProvider);
+            await upsertProfile(result.user, selectedAccountType);
+        } finally {
+            pendingAccountTypeRef.current = null;
+        }
     };
 
-    const signInWithEmail = async (email: string, password: string) => {
-        const result = await signInWithEmailAndPassword(auth, email, password);
-        await upsertBusinessProfile(result.user);
+    const signInWithEmail = async (
+        email: string,
+        password: string,
+        selectedAccountType: ActiveAccountType = DEFAULT_ACCOUNT_TYPE,
+    ) => {
+        pendingAccountTypeRef.current = selectedAccountType;
+        try {
+            const result = await signInWithEmailAndPassword(auth, email, password);
+            await upsertProfile(result.user, selectedAccountType);
+        } finally {
+            pendingAccountTypeRef.current = null;
+        }
     };
 
-    const signUpWithEmail = async (email: string, password: string, displayName: string) => {
-        const result = await createUserWithEmailAndPassword(auth, email, password);
-        await upsertBusinessProfile(result.user, { displayName, companyName: displayName });
+    const signUpWithEmail = async (
+        email: string,
+        password: string,
+        displayName: string,
+        selectedAccountType: ActiveAccountType = DEFAULT_ACCOUNT_TYPE,
+    ) => {
+        pendingAccountTypeRef.current = selectedAccountType;
+        try {
+            const result = await createUserWithEmailAndPassword(auth, email, password);
+            await upsertProfile(result.user, selectedAccountType, {
+                displayName,
+                companyName: selectedAccountType === "business" ? displayName : null,
+            });
+        } finally {
+            pendingAccountTypeRef.current = null;
+        }
     };
 
     const syncProfile = async () => {
@@ -245,7 +296,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        await upsertBusinessProfile(user);
+        await upsertProfile(user, profile?.accountType || DEFAULT_ACCOUNT_TYPE);
     };
 
     const handleSignOut = async () => {

@@ -5,15 +5,44 @@ import {
     AlertCircle,
     ArrowLeft,
     Building2,
+    CheckCircle2,
     Eye,
     EyeOff,
     Github,
     Loader2,
     Mail,
+    Store,
+    UserRound,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
+import { ActiveAccountType, useAuth } from "@/context/AuthContext";
+
+const destinationFor = (accountType: ActiveAccountType | null | undefined) =>
+    accountType === "business" ? "/dashboard" : "/client";
+
+const accountOptions: Array<{
+    type: ActiveAccountType;
+    title: string;
+    subtitle: string;
+    icon: typeof UserRound;
+    points: string[];
+}> = [
+    {
+        type: "customer",
+        title: "Customer account",
+        subtitle: "Post a local problem, compare offers, and choose the best nearby shop.",
+        icon: UserRound,
+        points: ["Post phone repair requests", "Compare price, speed, warranty", "Contact unlocks after choosing"],
+    },
+    {
+        type: "business",
+        title: "Local Business account",
+        subtitle: "Receive nearby customer requests, send quotes, and grow with paid plans later.",
+        icon: Store,
+        points: ["Lead inbox for local jobs", "Quote with price, time, warranty", "Profile, analytics, and plans"],
+    },
+];
 
 export default function LoginPage() {
     const router = useRouter();
@@ -24,9 +53,11 @@ export default function LoginPage() {
         signInWithGoogle,
         signInWithEmail,
         signUpWithEmail,
+        accountType,
     } = useAuth();
 
     const [emailMode, setEmailMode] = useState<"signin" | "signup" | null>(null);
+    const [selectedAccountType, setSelectedAccountType] = useState<ActiveAccountType>("customer");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [displayName, setDisplayName] = useState("");
@@ -35,10 +66,10 @@ export default function LoginPage() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (user && !authLoading) {
-            router.push("/dashboard");
+        if (user && !authLoading && accountType) {
+            router.push(destinationFor(accountType));
         }
-    }, [user, authLoading, router]);
+    }, [user, authLoading, accountType, router]);
 
     const handleProviderSignIn = async (provider: "google" | "github") => {
         setError(null);
@@ -46,11 +77,11 @@ export default function LoginPage() {
 
         try {
             if (provider === "google") {
-                await signInWithGoogle();
+                await signInWithGoogle(selectedAccountType);
             } else {
-                await signInWithGitHub();
+                await signInWithGitHub(selectedAccountType);
             }
-            router.push("/dashboard");
+            router.push(destinationFor(selectedAccountType));
         } catch (err: any) {
             setError(err?.message || `${provider} authentication failed`);
         } finally {
@@ -66,15 +97,15 @@ export default function LoginPage() {
         try {
             if (emailMode === "signup") {
                 if (!displayName.trim()) {
-                    setError("Business or contact name is required.");
+                    setError(selectedAccountType === "business" ? "Shop or owner name is required." : "Your name is required.");
                     return;
                 }
-                await signUpWithEmail(email, password, displayName.trim());
+                await signUpWithEmail(email, password, displayName.trim(), selectedAccountType);
             } else {
-                await signInWithEmail(email, password);
+                await signInWithEmail(email, password, selectedAccountType);
             }
 
-            router.push("/dashboard");
+            router.push(destinationFor(selectedAccountType));
         } catch (err: any) {
             if (err.code === "auth/user-not-found") {
                 setError("No account was found for that email.");
@@ -120,34 +151,34 @@ export default function LoginPage() {
                 )}
 
                 <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-                    <section className="rounded-[28px] border border-gcp-border bg-[radial-gradient(circle_at_top_left,rgba(66,133,244,0.12),transparent_45%),linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,255,255,0.82))] p-8 shadow-xl md:p-12">
-                        <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-gcp-blue/20 bg-gcp-blue/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-gcp-blue">
+                    <section className="rounded-[28px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,rgba(15,23,42,0.10),transparent_45%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(250,250,247,0.9))] p-8 shadow-xl md:p-12">
+                        <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-slate-600">
                             <Building2 size={14} />
-                            Business Workspace
+                            Needaro account system
                         </div>
 
                         <h1 className="max-w-2xl text-4xl font-heading font-bold leading-tight md:text-6xl">
-                            One business account. Email, Google, or GitHub all land in the same workspace.
+                            One marketplace. Two clear account flows.
                         </h1>
 
                         <p className="mt-6 max-w-2xl text-base leading-7 text-gcp-text-secondary md:text-lg">
-                            Needaro helps customers post local problems and compare offers from nearby businesses.
-                            Start with phone repair requests, shop offers, and simple lead validation.
+                            Customers post problems once. Local businesses compete with clear offers. Needaro keeps
+                            contact details protected until the customer chooses a shop.
                         </p>
 
                         <div className="mt-10 grid gap-4 md:grid-cols-3">
                             {[
                                 {
-                                    title: "Fast intake",
-                                    copy: "Post a repair problem once and let nearby shops compete with offers.",
+                                    title: "Customer",
+                                    copy: "Post phone repair issues, upload photos, and compare real offers.",
                                 },
                                 {
-                                    title: "Managed delivery",
-                                    copy: "Requests are planned, executed, reviewed, and routed by the internal AI workforce.",
+                                    title: "Business",
+                                    copy: "Receive warm nearby leads and send price, time, and warranty.",
                                 },
                                 {
-                                    title: "Simple access",
-                                    copy: "Email, Google, and GitHub all open the same business workspace with the same dashboard and billing flow.",
+                                    title: "Marketplace",
+                                    copy: "Start narrow with one city, one category, and fast quote replies.",
                                 },
                             ].map((item) => (
                                 <div key={item.title} className="rounded-2xl border border-gcp-border bg-white/80 p-5 shadow-sm">
@@ -162,15 +193,66 @@ export default function LoginPage() {
 
                     <section className="gcp-card p-8 shadow-2xl md:p-10">
                         <div className="mb-8">
-                            <p className="text-xs font-bold uppercase tracking-[0.28em] text-gcp-blue">
-                                Business Sign In
+                            <p className="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">
+                                Choose account type
                             </p>
                             <h2 className="mt-3 text-2xl font-heading font-bold text-gcp-text">
-                                Access your workspace
+                                Access Needaro
                             </h2>
                             <p className="mt-2 text-sm leading-6 text-gcp-text-secondary">
-                                Choose your preferred sign-in method. New accounts are created as business accounts automatically.
+                                Pick the role first, then sign in with Google, GitHub, or email.
                             </p>
+                        </div>
+
+                        <div className="mb-6 grid gap-3">
+                            {accountOptions.map((option) => {
+                                const OptionIcon = option.icon;
+                                const selected = selectedAccountType === option.type;
+
+                                return (
+                                    <button
+                                        key={option.type}
+                                        type="button"
+                                        onClick={() => setSelectedAccountType(option.type)}
+                                        className={`rounded-3xl border p-4 text-left transition-all ${
+                                            selected
+                                                ? "border-slate-950 bg-slate-950 text-white shadow-xl shadow-slate-900/10"
+                                                : "border-slate-200 bg-white text-slate-950 hover:border-slate-950"
+                                        }`}
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <div
+                                                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+                                                    selected ? "bg-white text-slate-950" : "bg-slate-100 text-slate-700"
+                                                }`}
+                                            >
+                                                <OptionIcon size={20} />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <h3 className="text-base font-black">{option.title}</h3>
+                                                    {selected && <CheckCircle2 size={18} />}
+                                                </div>
+                                                <p className={`mt-1 text-sm leading-6 ${selected ? "text-white/75" : "text-slate-500"}`}>
+                                                    {option.subtitle}
+                                                </p>
+                                                <div className="mt-3 flex flex-wrap gap-2">
+                                                    {option.points.map((point) => (
+                                                        <span
+                                                            key={point}
+                                                            className={`rounded-full px-3 py-1 text-[10px] font-bold ${
+                                                                selected ? "bg-white/10 text-white" : "bg-slate-100 text-slate-600"
+                                                            }`}
+                                                        >
+                                                            {point}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </button>
+                                );
+                            })}
                         </div>
 
                         {!emailMode ? (
@@ -190,7 +272,7 @@ export default function LoginPage() {
                                             <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
                                         </svg>
                                     )}
-                                    Continue with Google
+                                    Continue with Google as {selectedAccountType === "business" ? "Local Business" : "Customer"}
                                 </button>
 
                                 <button
@@ -203,7 +285,7 @@ export default function LoginPage() {
                                     ) : (
                                         <Github size={20} />
                                     )}
-                                    Continue with GitHub
+                                    Continue with GitHub as {selectedAccountType === "business" ? "Local Business" : "Customer"}
                                 </button>
 
                                 <button
@@ -214,7 +296,7 @@ export default function LoginPage() {
                                     className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gcp-blue px-6 py-4 text-base font-bold text-white transition-all hover:bg-gcp-blue-hover"
                                 >
                                     <Mail size={20} />
-                                    Continue with Email
+                                    Continue with Email as {selectedAccountType === "business" ? "Local Business" : "Customer"}
                                 </button>
                             </div>
                         ) : (
@@ -234,14 +316,14 @@ export default function LoginPage() {
                                 {emailMode === "signup" && (
                                     <div>
                                         <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-gcp-text-secondary">
-                                            Business or contact name
+                                            {selectedAccountType === "business" ? "Shop or owner name" : "Your name"}
                                         </label>
                                         <input
                                             type="text"
                                             value={displayName}
                                             onChange={(event) => setDisplayName(event.target.value)}
                                             className="gcp-input w-full"
-                                            placeholder="Acme Studio"
+                                            placeholder={selectedAccountType === "business" ? "New Road Mobile Care" : "Sangam Gautam"}
                                             required
                                         />
                                     </div>
@@ -256,7 +338,7 @@ export default function LoginPage() {
                                         value={email}
                                         onChange={(event) => setEmail(event.target.value)}
                                         className="gcp-input w-full"
-                                        placeholder="team@company.com"
+                                        placeholder={selectedAccountType === "business" ? "shop@needaro.com" : "you@example.com"}
                                         required
                                     />
                                 </div>
@@ -291,7 +373,11 @@ export default function LoginPage() {
                                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-gcp-blue px-4 py-3 text-sm font-bold uppercase tracking-widest text-white transition-all hover:bg-gcp-blue-hover disabled:opacity-50"
                                 >
                                     {loading === "email" ? <Loader2 size={18} className="animate-spin" /> : <Mail size={18} />}
-                                    {emailMode === "signup" ? "Create business account" : "Sign in"}
+                                    {emailMode === "signup"
+                                        ? selectedAccountType === "business"
+                                            ? "Create local business account"
+                                            : "Create customer account"
+                                        : "Sign in"}
                                 </button>
 
                                 <div className="pt-2 text-center">
@@ -304,7 +390,7 @@ export default function LoginPage() {
                                     >
                                         {emailMode === "signup"
                                             ? "Already have an account? Sign in"
-                                            : "Need a new workspace? Create an account"}
+                                            : "Need a new Needaro account? Create one"}
                                     </button>
                                 </div>
                             </form>

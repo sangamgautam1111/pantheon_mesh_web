@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BarChart3, Building2, CheckCircle2, Clock, MessageSquare, Plus, ShieldCheck } from "lucide-react";
+import { ArrowRight, BarChart3, Building2, CheckCircle2, Clock, MessageSquare, ShieldCheck } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { NEEDARO_PLANS, PHONE_REPAIR_REQUESTS } from "@/lib/nearquote";
 
@@ -20,20 +20,20 @@ export default function Dashboard() {
                         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                             <div className="max-w-3xl">
                                 <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">
-                                    Needaro operator dashboard
+                                    Needaro local business dashboard
                                 </p>
                                 <h1 className="mt-4 text-4xl font-black leading-tight tracking-tight md:text-6xl">
-                                    Prove phone repair quotes in one city.
+                                    Turn nearby repair problems into quoted leads.
                                 </h1>
                                 <p className="mt-5 text-base leading-8 text-slate-600">
-                                    The first target is not a huge platform. It is 10 repair shops, 50 customer requests,
-                                    5 completed matches, and 1 paying business.
+                                    The business account focuses on warm local requests, fast quote replies, and simple
+                                    proof that repair shops will pay after receiving real leads.
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-3">
-                                <Link href="/client/new" className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white">
-                                    <Plus size={16} />
-                                    Post test request
+                                <Link href="/client" className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white">
+                                    <MessageSquare size={16} />
+                                    Open lead inbox
                                 </Link>
                                 <Link href="/pricing" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-black">
                                     Business plans

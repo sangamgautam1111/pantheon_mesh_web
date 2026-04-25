@@ -3,6 +3,7 @@
 import { ChangeEvent, FormEvent, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Camera, CheckCircle2, Loader2, MapPin, MessageSquare, Phone, Sparkles, UploadCloud } from "lucide-react";
+import { RouteGuard } from "@/components/auth/RouteGuard";
 import { SAMPLE_OFFERS } from "@/lib/nearquote";
 
 type ProblemCard = {
@@ -79,7 +80,8 @@ export default function NewCustomerRequestPage() {
     };
 
     return (
-        <main className="min-h-screen bg-[#f8f7f2] px-4 py-8 text-slate-950 md:px-8">
+        <RouteGuard allowedTypes={["customer"]}>
+            <main className="min-h-screen bg-[#f8f7f2] px-4 py-8 text-slate-950 md:px-8">
             <div className="mx-auto max-w-7xl">
                 <Link
                     href="/client"
@@ -307,6 +309,7 @@ export default function NewCustomerRequestPage() {
                     </div>
                 </section>
             </div>
-        </main>
+            </main>
+        </RouteGuard>
     );
 }
