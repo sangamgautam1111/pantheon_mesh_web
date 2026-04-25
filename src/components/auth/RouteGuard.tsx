@@ -20,7 +20,7 @@ export function RouteGuard({ children, allowedTypes }: RouteGuardProps) {
         }
     }, [user, loading, router]);
 
-    const fallbackHref = accountType === "customer" ? "/client" : "/dashboard";
+    const fallbackHref = accountType === "customer" ? "/client" : "/marketplace";
     const accessLabel = allowedTypes?.includes("customer") && !allowedTypes.includes("business")
         ? "customer account"
         : allowedTypes?.includes("business") && !allowedTypes.includes("customer")

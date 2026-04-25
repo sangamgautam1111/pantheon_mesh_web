@@ -19,7 +19,7 @@ import { useRouter } from "next/navigation";
 import { ActiveAccountType, useAuth } from "@/context/AuthContext";
 
 const destinationFor = (accountType: ActiveAccountType | null | undefined) =>
-    accountType === "business" ? "/dashboard" : "/client";
+    accountType === "business" ? "/marketplace" : "/client";
 
 const accountOptions: Array<{
     type: ActiveAccountType;

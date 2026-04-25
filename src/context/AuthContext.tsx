@@ -113,8 +113,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ) => {
         const existingSnapshot = await get(ref(db, `users/${firebaseUser.uid}`));
         const existing = existingSnapshot.exists() ? (existingSnapshot.val() as Partial<UserProfile>) : {};
-        const resolvedAccountType =
-            requestedAccountType || (isActiveAccountType(existing.accountType) ? existing.accountType : DEFAULT_ACCOUNT_TYPE);
+        
+        // Lock the account type: if they already have one, force them to keep it.
+        const resolvedAccountType = isActiveAccountType(existing.accountType)
+            ? existing.accountType
+            : (requestedAccountType || DEFAULT_ACCOUNT_TYPE);
+
         const defaultName = resolvedAccountType === "business" ? "Local Business" : "Customer";
 
         const displayName =
@@ -205,15 +209,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         let profileUnsubscribe: (() => void) | undefined;
 
-        // Handle redirect result
-        getRedirectResult(auth).then(async (result) => {
-            if (result?.user) {
-                const pending = sessionStorage.getItem("pendingAccountType") as ActiveAccountType | null;
-                await upsertProfile(result.user, pending || undefined);
-                sessionStorage.removeItem("pendingAccountType");
-            }
-        }).catch((error) => {
+        // Handle redirect errors without duplicating profile creation
+        getRedirectResult(auth).catch((error) => {
             console.error("Redirect sign-in error:", error);
+            sessionStorage.removeItem("pendingAccountType");
         });
 
         const authUnsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
