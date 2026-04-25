@@ -20,13 +20,11 @@ import logoImg from "@/app/logo.png";
 
 const NAV_ITEMS = [
     { label: "Welcome", href: "/", icon: LayoutDashboard },
-    { label: "Business Dashboard", href: "/dashboard", icon: LayoutDashboard, allowedTypes: ["business"] as ActiveAccountType[] },
-    { label: "Lead Inbox", href: "/client", icon: FileText, allowedTypes: ["business"] as ActiveAccountType[] },
-    { label: "My Requests", href: "/client", icon: FileText, allowedTypes: ["customer"] as ActiveAccountType[] },
-    { label: "Post Request", href: "/client/new", icon: PlusCircle, allowedTypes: ["customer"] as ActiveAccountType[] },
+    { label: "My Needs", href: "/client", icon: FileText, allowedTypes: ["customer"] as ActiveAccountType[] },
+    { label: "Post a Need", href: "/client/new", icon: PlusCircle, allowedTypes: ["customer"] as ActiveAccountType[] },
     { label: "Messages", href: "/messages", icon: MessageSquare, allowedTypes: ["customer", "business"] as ActiveAccountType[] },
-    { label: "Business Plans", href: "/pricing", icon: CreditCard, allowedTypes: ["business"] as ActiveAccountType[] },
     { label: "Marketplace", href: "/marketplace", icon: Store, allowedTypes: ["business"] as ActiveAccountType[] },
+    { label: "Business Plans", href: "/pricing", icon: CreditCard, allowedTypes: ["business"] as ActiveAccountType[] },
 ];
 
 

@@ -66,7 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [accountType, setAccountType] = useState<AccountType>(null);
     const [loading, setLoading] = useState(true);
-    const pendingAccountTypeRef = useRef<ActiveAccountType | null>(null);
 
     const sanitizeForRealtimeDb = <T,>(value: T): T => {
         if (Array.isArray(value)) {
@@ -209,7 +208,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Handle redirect result
         getRedirectResult(auth).then(async (result) => {
             if (result?.user) {
-                await upsertProfile(result.user, pendingAccountTypeRef.current || undefined);
+                const pending = sessionStorage.getItem("pendingAccountType") as ActiveAccountType | null;
+                await upsertProfile(result.user, pending || undefined);
+                sessionStorage.removeItem("pendingAccountType");
             }
         }).catch((error) => {
             console.error("Redirect sign-in error:", error);
@@ -231,7 +232,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 return;
             }
 
-            const syncedProfile = await upsertProfile(firebaseUser, pendingAccountTypeRef.current || undefined);
+            const pending = sessionStorage.getItem("pendingAccountType") as ActiveAccountType | null;
+            const syncedProfile = await upsertProfile(firebaseUser, pending || undefined);
+            sessionStorage.removeItem("pendingAccountType");
 
             const profileRef = ref(db, `users/${firebaseUser.uid}`);
             profileUnsubscribe = onValue(profileRef, (snapshot) => {
@@ -259,23 +262,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const signInWithGitHub = async (selectedAccountType: ActiveAccountType = DEFAULT_ACCOUNT_TYPE) => {
-        pendingAccountTypeRef.current = selectedAccountType;
+        sessionStorage.setItem("pendingAccountType", selectedAccountType);
         try {
             await signInWithRedirect(auth, githubProvider);
         } catch (error) {
             console.error("GitHub redirect failed:", error);
-            pendingAccountTypeRef.current = null;
+            sessionStorage.removeItem("pendingAccountType");
             throw error;
         }
     };
 
     const signInWithGoogle = async (selectedAccountType: ActiveAccountType = DEFAULT_ACCOUNT_TYPE) => {
-        pendingAccountTypeRef.current = selectedAccountType;
+        sessionStorage.setItem("pendingAccountType", selectedAccountType);
         try {
             await signInWithRedirect(auth, googleProvider);
         } catch (error) {
             console.error("Google redirect failed:", error);
-            pendingAccountTypeRef.current = null;
+            sessionStorage.removeItem("pendingAccountType");
             throw error;
         }
     };
@@ -285,12 +288,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password: string,
         selectedAccountType: ActiveAccountType = DEFAULT_ACCOUNT_TYPE,
     ) => {
-        pendingAccountTypeRef.current = selectedAccountType;
         try {
             const result = await signInWithEmailAndPassword(auth, email, password);
             await upsertProfile(result.user, selectedAccountType);
         } finally {
-            pendingAccountTypeRef.current = null;
+            // No cleanup needed
         }
     };
 
@@ -300,7 +302,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         displayName: string,
         selectedAccountType: ActiveAccountType = DEFAULT_ACCOUNT_TYPE,
     ) => {
-        pendingAccountTypeRef.current = selectedAccountType;
         try {
             const result = await createUserWithEmailAndPassword(auth, email, password);
             await upsertProfile(result.user, selectedAccountType, {
@@ -308,7 +309,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 companyName: selectedAccountType === "business" ? displayName : null,
             });
         } finally {
-            pendingAccountTypeRef.current = null;
+            // No cleanup needed
         }
     };
 

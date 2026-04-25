@@ -152,16 +152,30 @@ export default function Marketplace() {
                         </div>
                     )}
 
-                    <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-                        <div className="space-y-4">
+                    <section className="mt-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {visibleNeeds.map((need) => (
                                 <article
                                     key={need.id}
-                                    className={`rounded-[30px] border bg-white p-6 shadow-sm transition-all ${
-                                        selectedNeedId === need.id ? "border-slate-950 shadow-xl" : "border-slate-200"
+                                    className={`group flex flex-col rounded-2xl border bg-white overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                                        selectedNeedId === need.id ? "border-slate-950 ring-2 ring-slate-950" : "border-slate-200"
                                     }`}
+                                    onClick={() => {
+                                        setSelectedNeedId(need.id);
+                                        setMessage("");
+                                        // Scroll to offer form on mobile
+                                        if (window.innerWidth < 1024) {
+                                            document.getElementById("offer-form")?.scrollIntoView({ behavior: "smooth" });
+                                        }
+                                    }}
                                 >
-                                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                    <div className="aspect-[4/3] bg-slate-100 relative overflow-hidden">
+                                        {/* Placeholder for Need image */}
+                                        <div className="absolute inset-0 bg-gradient-to-tr from-slate-200 to-slate-100 flex items-center justify-center">
+                                            <Briefcase size={32} className="text-slate-300" />
+                                        </div>
+                                    </div>
+                                    <div className="p-4 flex flex-col flex-1">
                                         <div>
                                             <div className="mb-3 flex flex-wrap gap-2">
                                                 <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-slate-600">
@@ -171,33 +185,26 @@ export default function Marketplace() {
                                                     {need.urgency}
                                                 </span>
                                             </div>
-                                            <h2 className="text-2xl font-black">{need.title}</h2>
-                                            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">{need.issue}</p>
-                                            <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold text-slate-500">
+                                            <h2 className="text-lg font-bold leading-tight group-hover:underline decoration-2 underline-offset-2">{need.title}</h2>
+                                            <p className="mt-2 text-sm text-slate-600 line-clamp-2 flex-1">{need.issue}</p>
+                                            
+                                            <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
                                                 <span className="inline-flex items-center gap-1">
                                                     <MapPin size={13} />
                                                     {need.location}
                                                 </span>
-                                                <span>{need.budget || "No budget yet"}</span>
-                                                <span>{need.offers || 0} Offers</span>
+                                                <span className="text-slate-900">{need.budget || "No budget"}</span>
                                             </div>
                                         </div>
-                                        <button
-                                            onClick={() => {
-                                                setSelectedNeedId(need.id);
-                                                setMessage("");
-                                            }}
-                                            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white"
-                                        >
-                                            <Send size={15} />
-                                            Send Offer
-                                        </button>
                                     </div>
                                 </article>
                             ))}
                         </div>
+                    </section>
 
-                        <aside className="h-fit rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+                    {/* Offer form modal or section at the bottom for selected need */}
+                    {selectedNeedId && (
+                        <section id="offer-form" className="mt-12 max-w-2xl mx-auto">
                             <div className="mb-5 flex items-start gap-3">
                                 <ShieldCheck size={22} />
                                 <div>
@@ -208,62 +215,54 @@ export default function Marketplace() {
                                 </div>
                             </div>
 
-                            {selectedNeedId ? (
-                                <form onSubmit={submitQuote} className="space-y-4">
-                                    <div className="grid gap-4 md:grid-cols-2">
-                                        <input
-                                            value={draft.price}
-                                            onChange={(event) => updateDraft("price", event.target.value)}
-                                            placeholder="Price, e.g. Rs. 4,500"
-                                            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950"
-                                            required
-                                        />
-                                        <input
-                                            value={draft.time}
-                                            onChange={(event) => updateDraft("time", event.target.value)}
-                                            placeholder="Time, e.g. Today"
-                                            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950"
-                                            required
-                                        />
-                                        <input
-                                            value={draft.warranty}
-                                            onChange={(event) => updateDraft("warranty", event.target.value)}
-                                            placeholder="Warranty or service terms"
-                                            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950"
-                                        />
-                                        <input
-                                            value={draft.distance}
-                                            onChange={(event) => updateDraft("distance", event.target.value)}
-                                            placeholder="Distance, e.g. 1.2 km"
-                                            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950"
-                                        />
-                                    </div>
-                                    <textarea
-                                        value={draft.note}
-                                        onChange={(event) => updateDraft("note", event.target.value)}
-                                        placeholder="Write a helpful note for the customer."
-                                        className="min-h-[130px] w-full rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 outline-none focus:border-slate-950"
+                            <form onSubmit={submitQuote} className="space-y-4">
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <input
+                                        value={draft.price}
+                                        onChange={(event) => updateDraft("price", event.target.value)}
+                                        placeholder="Price, e.g. Rs. 4,500"
+                                        className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950"
                                         required
                                     />
-                                    <button
-                                        type="submit"
-                                        disabled={saving}
-                                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white disabled:bg-slate-300"
-                                    >
-                                        {saving ? <Clock size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-                                        Send Offer
-                                    </button>
-                                </form>
-                            ) : (
-                                <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
-                                    <Send className="mx-auto mb-4 text-slate-300" size={34} />
-                                    <p className="text-sm font-semibold text-slate-500">
-                                        Choose a Need from the marketplace to send an Offer.
-                                    </p>
+                                    <input
+                                        value={draft.time}
+                                        onChange={(event) => updateDraft("time", event.target.value)}
+                                        placeholder="Time, e.g. Today"
+                                        className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950"
+                                        required
+                                    />
+                                    <input
+                                        value={draft.warranty}
+                                        onChange={(event) => updateDraft("warranty", event.target.value)}
+                                        placeholder="Warranty or service terms"
+                                        className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950"
+                                    />
+                                    <input
+                                        value={draft.distance}
+                                        onChange={(event) => updateDraft("distance", event.target.value)}
+                                        placeholder="Distance, e.g. 1.2 km"
+                                        className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950"
+                                    />
                                 </div>
-                            )}
-                        </aside>
-                    </section>
+                                <textarea
+                                    value={draft.note}
+                                    onChange={(event) => updateDraft("note", event.target.value)}
+                                    placeholder="Write a helpful note for the customer."
+                                    className="min-h-[130px] w-full rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 outline-none focus:border-slate-950"
+                                    required
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={saving}
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white disabled:bg-slate-300"
+                                >
+                                    {saving ? <Clock size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                                    Send Offer
+                                </button>
+                            </form>
+                        </section>
+                    )}
+
                 </div>
             </main>
         </RouteGuard>
