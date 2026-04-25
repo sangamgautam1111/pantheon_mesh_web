@@ -1,32 +1,32 @@
 "use client";
 
-import { Bot, ClipboardCheck, PenTool, SearchCheck, Wrench } from "lucide-react";
+import { Bot, ClipboardCheck, MessageSquare, SearchCheck, Store } from "lucide-react";
 
 const TEAMS = [
     {
         icon: <Bot size={18} />,
-        title: "Planner",
-        description: "Breaks the request into deliverable steps and routes the work to the right internal specialists.",
+        title: "Problem Cleaner",
+        description: "Turns messy customer messages into clear quote cards for local businesses.",
     },
     {
         icon: <SearchCheck size={18} />,
-        title: "Researcher",
-        description: "Gathers context, source material, and structured evidence for factual or comparative tasks.",
+        title: "Matcher",
+        description: "Matches requests to nearby businesses by category, area, urgency, and service fit.",
     },
     {
-        icon: <PenTool size={18} />,
-        title: "Writer",
-        description: "Produces content-heavy outputs like emails, landing page copy, briefs, and documentation.",
+        icon: <MessageSquare size={18} />,
+        title: "Quote Helper",
+        description: "Helps shops write professional replies with price range, time, warranty, and next step.",
     },
     {
-        icon: <Wrench size={18} />,
-        title: "Builder",
-        description: "Handles implementation-style work such as edits, light development tasks, and automation prep.",
+        icon: <Store size={18} />,
+        title: "Business Verifier",
+        description: "Supports manual shop approval, category checks, and trust signals.",
     },
     {
         icon: <ClipboardCheck size={18} />,
-        title: "Reviewer",
-        description: "Checks outputs for clarity, completeness, and requirement alignment before delivery.",
+        title: "Safety Reviewer",
+        description: "Keeps contact details protected until the customer chooses an offer.",
     },
 ];
 
@@ -34,10 +34,10 @@ export default function AgentsPage() {
     return (
         <div className="max-w-6xl p-8">
             <div className="mb-12">
-                <h1 className="text-4xl font-heading font-bold text-gcp-text">Managed AI Team</h1>
+                <h1 className="text-4xl font-heading font-bold text-gcp-text">Needaro AI Helpers</h1>
                 <p className="mt-4 max-w-3xl text-lg leading-8 text-gcp-text-secondary">
-                    These are the core roles working behind the Pantheon Mesh business workspace.
-                    Every request moves through a managed sequence of planning, execution, and review.
+                    These are the helper roles behind the local quote marketplace. They support the request,
+                    matching, reply, verification, and safety workflow.
                 </p>
             </div>
 

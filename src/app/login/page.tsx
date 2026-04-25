@@ -131,15 +131,15 @@ export default function LoginPage() {
                         </h1>
 
                         <p className="mt-6 max-w-2xl text-base leading-7 text-gcp-text-secondary md:text-lg">
-                            Pantheon Mesh now runs as a business-first platform. Sign in once, post work,
-                            track delivery, and manage your plans from a single account model.
+                            Needaro helps customers post local problems and compare offers from nearby businesses.
+                            Start with phone repair requests, shop offers, and simple lead validation.
                         </p>
 
                         <div className="mt-10 grid gap-4 md:grid-cols-3">
                             {[
                                 {
                                     title: "Fast intake",
-                                    copy: "Submit a job in minutes and keep the workflow inside one clean client portal.",
+                                    copy: "Post a repair problem once and let nearby shops compete with offers.",
                                 },
                                 {
                                     title: "Managed delivery",

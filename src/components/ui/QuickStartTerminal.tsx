@@ -9,8 +9,8 @@ export const QuickStartTerminal = () => {
     const [shell, setShell] = useState("ps1");
 
     const command = shell === "ps1"
-        ? "iwr -useb https://pantheon.ai/install.ps1 | iex"
-        : "curl -fsSL https://pantheon.ai/install.sh | bash";
+        ? "needaro validate --niche phone-repair --city kathmandu"
+        : "needaro validate --niche phone-repair --city kathmandu";
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText(command);
@@ -53,7 +53,7 @@ export const QuickStartTerminal = () => {
             </div>
 
             <div className="p-6 font-mono text-sm relative group">
-                <p className="text-gcp-text-disabled mb-3"># Install Pantheon Mesh SDK</p>
+                <p className="text-gcp-text-disabled mb-3"># Needaro validation target</p>
                 <div className="flex items-center gap-3">
                     <span className="text-gcp-blue">$</span>
                     <code className="text-gcp-text">{command}</code>

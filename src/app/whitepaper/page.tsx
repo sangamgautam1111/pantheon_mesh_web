@@ -1,231 +1,84 @@
-"use client";
-
 import Link from "next/link";
-import { motion } from "framer-motion";
-import {
-    ArrowDownCircle,
-    ArrowLeft,
-    Cpu,
-    FileText,
-    Globe,
-    Layers3,
-    Lock,
-    ShieldCheck,
-    Zap,
-} from "lucide-react";
-import { NeuralBackground } from "@/components/ui/NeuralBackground";
+import { ArrowRight, Building2, MapPin, ShieldCheck, Sparkles } from "lucide-react";
 
-export default function Whitepaper() {
+const SECTIONS = [
+    {
+        title: "Core idea",
+        text: "Customers post a local problem once. Needaro AI cleans it into a quote card. Nearby businesses send offers. The customer chooses the best offer by price, distance, speed, warranty, and trust.",
+    },
+    {
+        title: "First market",
+        text: "Start with phone repair in one city. It is common, urgent, price-sensitive, local, competitive, and easy to explain with text and photos.",
+    },
+    {
+        title: "Business model",
+        text: "Customers use the app free. Shops pay SaaS subscriptions for more quote replies, better visibility, AI quote tools, analytics, and stronger profiles.",
+    },
+    {
+        title: "Validation target",
+        text: "Before scaling, prove 10 onboarded repair shops, 50 customer requests, 5 completed matches, and 1 paying business.",
+    },
+];
+
+export default function WhitepaperPage() {
     return (
-        <div className="relative min-h-screen transition-colors duration-200" style={{ color: "var(--text-primary)" }}>
-            <div className="fixed inset-0 opacity-[0.05] pointer-events-none">
-                <NeuralBackground />
-            </div>
-
-            <nav
-                className="fixed top-0 left-0 right-0 z-50 flex h-12 items-center justify-between border-b px-6 backdrop-blur-md transition-colors"
-                style={{ background: "var(--topbar-bg)", borderColor: "var(--border-color)" }}
-            >
-                <Link href="/" className="group flex items-center gap-2 transition-opacity hover:opacity-80">
-                    <ArrowLeft size={16} className="text-gcp-blue" />
-                    <span
-                        className="text-xs font-medium uppercase tracking-wider"
-                        style={{ color: "var(--text-secondary)" }}
-                    >
-                        Return to Hub
-                    </span>
-                </Link>
-                <div className="flex items-center gap-2">
-                    <FileText size={16} className="text-gcp-blue" />
-                    <span
-                        className="text-xs font-medium uppercase tracking-[0.15em]"
-                        style={{ color: "var(--text-primary)" }}
-                    >
-                        Business Delivery Architecture
-                    </span>
-                </div>
-            </nav>
-
-            <main className="relative z-10 mx-auto max-w-4xl px-6 pt-24 pb-32">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-16 border-b pb-12"
-                    style={{ borderColor: "var(--border-color)" }}
-                >
-                    <div
-                        className="gcp-badge mb-6 inline-flex items-center gap-2 px-2.5 py-1"
-                        style={{
-                            background: "var(--sidebar-active)",
-                            color: "var(--gcp-blue)",
-                            border: "1px solid var(--gcp-blue)",
-                        }}
-                    >
-                        VERSION 14.0.0 - BUSINESS
-                    </div>
-
-                    <h1
-                        className="mb-6 text-5xl font-heading font-bold tracking-tight md:text-6xl"
-                        style={{ color: "var(--text-primary)" }}
-                    >
-                        The <span className="text-gcp-blue">Managed AI</span> Delivery Stack.
-                    </h1>
-
-                    <p className="mb-8 max-w-2xl text-xl leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                        Pantheon Mesh is a business-first execution platform for recurring digital work, combining managed
-                        model routing, structured review, and one unified client workspace.
+        <main className="min-h-screen bg-[#f8f7f2] p-6 text-slate-950 md:p-10">
+            <div className="mx-auto max-w-6xl">
+                <section className="rounded-[34px] border border-slate-200 bg-white p-7 shadow-xl md:p-10">
+                    <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">
+                        Whitepaper v1
                     </p>
-
-                    <div className="flex gap-4">
-                        <Link href="/pricing" className="gcp-btn-primary flex items-center gap-2">
-                            Open Pricing <ArrowDownCircle size={16} />
+                    <h1 className="mt-4 max-w-4xl text-4xl font-black leading-tight tracking-tight md:text-6xl">
+                        Needaro AI: a reverse marketplace for local service quotes.
+                    </h1>
+                    <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
+                        The internet has many directories. Customers do not want directories. They want outcomes:
+                        trusted nearby businesses that can solve their exact problem with clear prices.
+                    </p>
+                    <div className="mt-8 flex flex-wrap gap-3">
+                        <Link href="/client/new" className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white">
+                            Build the request flow
+                            <ArrowRight size={16} />
+                        </Link>
+                        <Link href="/pricing" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-black">
+                            Business plans
                         </Link>
                     </div>
-                </motion.div>
+                </section>
 
-                <div className="space-y-20">
-                    <section>
-                        <h2
-                            className="mb-6 flex items-center gap-3 text-2xl font-heading font-medium"
-                            style={{ color: "var(--text-primary)" }}
-                        >
-                            <span className="text-gcp-blue">01.</span> Abstract
-                        </h2>
-                        <div className="prose prose-sm max-w-none text-lg leading-loose" style={{ color: "var(--text-secondary)" }}>
-                            Pantheon Mesh is designed for businesses that want common digital work completed faster, more
-                            predictably, and with less coordination overhead than traditional freelance workflows. A request
-                            enters one workspace, is routed through an internal AI team, reviewed against the brief, and
-                            returned with status history the client can inspect at any time.
+                <section className="mt-6 grid gap-5 md:grid-cols-2">
+                    {SECTIONS.map((section, index) => (
+                        <div key={section.title} className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+                            <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white">
+                                {index === 0 && <Sparkles size={20} />}
+                                {index === 1 && <MapPin size={20} />}
+                                {index === 2 && <Building2 size={20} />}
+                                {index === 3 && <ShieldCheck size={20} />}
+                            </div>
+                            <h2 className="text-2xl font-black">{section.title}</h2>
+                            <p className="mt-3 text-sm leading-7 text-slate-600">{section.text}</p>
                         </div>
-                    </section>
+                    ))}
+                </section>
 
-                    <section>
-                        <h2
-                            className="mb-6 flex items-center gap-3 text-2xl font-heading font-medium"
-                            style={{ color: "var(--text-primary)" }}
-                        >
-                            <span className="text-gcp-blue">02.</span> Execution Layer
-                        </h2>
-                        <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-2">
-                            <div className="text-lg leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                                Each request is decomposed into a practical workflow: planning, specialist execution,
-                                review, and fallback handling. The platform chooses the best provider path for the task,
-                                keeps the number of agent turns bounded, and preserves a single delivery record for the client.
-                            </div>
-                            <div
-                                className="rounded-lg border p-6 font-mono text-sm"
-                                style={{
-                                    background: "var(--bg-surface-variant)",
-                                    borderColor: "var(--border-color)",
-                                    color: "var(--gcp-green)",
-                                }}
-                            >
-                                <div className="mb-2 text-xs opacity-50 text-gcp-text-secondary">
-                                    // Internal execution handoff
-                                </div>
-                                {"{ stage: 'route_request',\n  workflow: 'planner -> worker -> reviewer',\n  budget_guard: 'enabled',\n  delivery_mode: 'business_workspace' }"}
-                            </div>
+                <section className="mt-6 rounded-[30px] border border-slate-200 bg-slate-950 p-7 text-white shadow-sm md:p-8">
+                    <h2 className="text-3xl font-black">Final positioning</h2>
+                    <div className="mt-5 grid gap-4 md:grid-cols-3">
+                        <div className="rounded-3xl bg-white/10 p-5">
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-200">Customers</p>
+                            <p className="mt-3 text-sm font-semibold leading-6">Post your problem. Get prices from nearby businesses. Choose the best offer.</p>
                         </div>
-                    </section>
-
-                    <section className="gcp-card relative overflow-hidden border-gcp-blue/20 bg-gcp-blue/[0.02] p-10 shadow-2xl">
-                        <div className="absolute top-0 right-0 h-32 w-32 translate-x-16 -translate-y-16 rounded-full bg-gcp-blue/5 blur-3xl" />
-                        <div className="relative z-10 flex items-start gap-8">
-                            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-gcp-blue/20 bg-gcp-blue/10 text-gcp-blue shadow-inner">
-                                <Lock size={28} />
-                            </div>
-                            <div>
-                                <h2 className="mb-6 text-3xl font-heading font-bold" style={{ color: "var(--text-primary)" }}>
-                                    03. Control and Review Layer
-                                </h2>
-                                <div className="mb-8 text-lg leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                                    Pantheon Mesh keeps quality and cost under control with explicit routing policies,
-                                    budget-aware execution, and a required review pass before work is marked complete.
-                                    The client sees one outcome stream, while the platform handles provider choice,
-                                    fallback behavior, and delivery validation behind the scenes.
-                                </div>
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="rounded-lg border border-gcp-border bg-gcp-surface p-4 shadow-sm">
-                                        <div className="mb-2 text-[10px] font-black uppercase tracking-widest text-gcp-blue">
-                                            Review Gate
-                                        </div>
-                                        <div className="text-2xl font-black text-gcp-text">
-                                            Required
-                                            <span className="ml-1 text-sm font-normal text-gcp-text-disabled">
-                                                BEFORE DELIVERY
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="rounded-lg border border-gcp-border bg-gcp-surface p-4 shadow-sm">
-                                        <div className="mb-2 text-[10px] font-black uppercase tracking-widest text-gcp-green">
-                                            Budget Control
-                                        </div>
-                                        <div className="text-2xl font-black text-gcp-text">
-                                            Bounded
-                                            <span className="ml-1 text-sm font-normal text-gcp-text-disabled">
-                                                PER WORKFLOW
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div className="rounded-3xl bg-white/10 p-5">
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-200">Businesses</p>
+                            <p className="mt-3 text-sm font-semibold leading-6">Get nearby customers who already need your service.</p>
                         </div>
-                    </section>
-
-                    <section>
-                        <h2
-                            className="mb-6 flex items-center gap-3 text-2xl font-heading font-medium"
-                            style={{ color: "var(--text-primary)" }}
-                        >
-                            <span className="text-gcp-blue">04.</span> Business Workspace
-                        </h2>
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                            <div className="md:col-span-2 text-lg leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                                The product surface is intentionally simple: sign in, submit work, monitor progress,
-                                review completed jobs, and scale capacity through plan upgrades. Email, Google, and GitHub
-                                all route into the same business account experience.
-                            </div>
-                            <div
-                                className="flex flex-col items-center justify-center gap-3 rounded-lg border p-5 text-center"
-                                style={{ background: "var(--bg-surface-variant)", borderColor: "var(--border-color)" }}
-                            >
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gcp-yellow/10 text-gcp-yellow">
-                                    <Layers3 size={20} />
-                                </div>
-                                <div className="text-sm font-bold tracking-widest text-gcp-yellow">UNIFIED PORTAL</div>
-                                <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                                    One account, one workflow, one delivery history
-                                </div>
-                            </div>
+                        <div className="rounded-3xl bg-white/10 p-5">
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-200">Founder</p>
+                            <p className="mt-3 text-sm font-semibold leading-6">One category. One city. One painful problem. Validate manually first.</p>
                         </div>
-                    </section>
-
-                    <section className="border-t pt-12" style={{ borderColor: "var(--border-color)" }}>
-                        <div className="flex flex-wrap justify-between gap-8 grayscale opacity-50">
-                            <div className="flex items-center gap-2">
-                                <Globe size={18} /> Managed Routing
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Cpu size={18} /> AI Execution
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <ShieldCheck size={18} /> Review Coverage
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Lock size={18} /> Business Controls
-                            </div>
-                        </div>
-                    </section>
-                </div>
-            </main>
-
-            <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
-                <Link href="/pricing">
-                    <button className="gcp-btn-primary flex items-center gap-3 rounded-full px-8 py-4 text-lg shadow-2xl">
-                        Open Pricing <Zap size={20} />
-                    </button>
-                </Link>
+                    </div>
+                </section>
             </div>
-        </div>
+        </main>
     );
 }

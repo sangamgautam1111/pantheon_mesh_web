@@ -1,115 +1,101 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { Clock, FileText, CheckCircle2, Layers3, Sparkles } from "lucide-react";
-
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-interface Job {
-    id: string;
-    title: string;
-    budget_usd: number;
-    minimum_budget_usd?: number | null;
-    status: string;
-    description: string;
-    created_at: string;
-    thumbnail_data_url?: string | null;
-}
+import Link from "next/link";
+import { ArrowRight, Building2, Clock, MapPin, ShieldCheck } from "lucide-react";
+import { PHONE_REPAIR_REQUESTS, SAMPLE_OFFERS } from "@/lib/nearquote";
 
 export default function Marketplace() {
-    const [jobs, setJobs] = useState<Job[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        fetchJobs();
-    }, []);
-
-    const fetchJobs = async () => {
-        try {
-            const response = await fetch(`${API}/v1/marketplace/jobs`);
-            const data = await response.json();
-            setJobs(Array.isArray(data) ? data : Array.isArray(data.jobs) ? data.jobs : []);
-        } catch (error) {
-            console.error("Failed to fetch jobs:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     return (
-        <div className="max-w-6xl p-8">
-            <div className="mb-12">
-                <h1 className="text-4xl font-heading font-bold text-gcp-text">Explore Available Jobs</h1>
-                <p className="mt-4 max-w-3xl text-lg leading-8 text-gcp-text-secondary">
-                    Browse recent client jobs and see the kinds of work moving through Pantheon Mesh.
-                </p>
-            </div>
+        <main className="min-h-screen bg-[#f8f7f2] p-6 text-slate-950 md:p-10">
+            <div className="mx-auto max-w-7xl">
+                <section className="mb-8 rounded-[34px] border border-slate-200 bg-white p-7 shadow-xl md:p-10">
+                    <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">
+                        Local service marketplace
+                    </p>
+                    <h1 className="mt-4 max-w-4xl text-4xl font-black leading-tight tracking-tight md:text-6xl">
+                        Businesses compete for exact local problems.
+                    </h1>
+                    <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
+                        Needaro is buyer-first. Customers do not browse endless shop lists. They post the problem,
+                        then compare real offers.
+                    </p>
+                </section>
 
-            <div className="mb-10 grid gap-4 md:grid-cols-3">
-                {[
-                    { icon: <Layers3 size={24} />, label: "Verified client requests" },
-                    { icon: <CheckCircle2 size={24} />, label: "Protected minimum budgets" },
-                    { icon: <Sparkles size={24} />, label: "AI delivery lanes" },
-                ].map((item) => (
-                    <div key={item.label} className="gcp-card flex items-center gap-4 p-6">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gcp-surface-v text-gcp-text">
-                            {item.icon}
-                        </div>
-                        <span className="text-base font-semibold text-gcp-text">{item.label}</span>
-                    </div>
-                ))}
-            </div>
-
-            <h2 className="mb-6 text-2xl font-bold text-gcp-text">Recent Jobs</h2>
-            
-            {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 opacity-50">
-                    <Clock className="mb-4 animate-spin text-gcp-text" size={32} />
-                    <p className="text-sm">Loading available jobs...</p>
-                </div>
-            ) : jobs.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gcp-border py-20 opacity-50">
-                    <FileText className="mb-4 text-gcp-text-disabled" size={48} />
-                    <p className="text-lg font-medium text-gcp-text">No jobs posted yet.</p>
-                    <p className="text-sm">Posted jobs from clients will be shown here.</p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-                    {jobs.map((job) => (
-                        <div key={job.id} className="gcp-card-hover flex flex-col p-6">
-                            {job.thumbnail_data_url && (
-                                <img
-                                    src={job.thumbnail_data_url}
-                                    alt=""
-                                    className="mb-5 h-44 w-full rounded-2xl border border-gcp-border object-cover"
-                                />
-                            )}
-                            <div className="mb-4 flex items-start justify-between">
-                                <h3 className="text-lg font-bold text-gcp-text line-clamp-2">{job.title}</h3>
-                                <span className="rounded bg-gcp-surface-v px-2 py-1 text-xs font-mono font-bold text-gcp-text">
-                                    ${job.budget_usd.toFixed(2)}
-                                </span>
-                            </div>
-                            <p className="mb-6 flex-1 text-sm leading-6 text-gcp-text-secondary line-clamp-3">
-                                {job.description || "No description provided."}
-                            </p>
-                            {typeof job.minimum_budget_usd === "number" && (
-                                <div className="mb-4 inline-flex rounded-full border border-gcp-border bg-gcp-surface-v px-3 py-1 text-[11px] font-semibold text-gcp-text">
-                                    Minimum floor ${job.minimum_budget_usd.toFixed(2)}
-                                </div>
-                            )}
-                            <div className="mt-auto flex items-center justify-between border-t border-gcp-border pt-4">
-                                <span className="text-xs text-gcp-text-disabled">
-                                    {job.created_at ? new Date(job.created_at).toLocaleDateString() : "Just now"}
-                                </span>
-                                <button className="gcp-btn-primary py-1.5 px-4 text-xs font-semibold">
-                                    View Details
-                                </button>
-                            </div>
+                <section className="mb-8 grid gap-4 md:grid-cols-3">
+                    {[
+                        { icon: Building2, label: "Verified businesses", copy: "Manual approval first." },
+                        { icon: ShieldCheck, label: "Protected contact details", copy: "Contact unlocks after choosing." },
+                        { icon: Clock, label: "30-minute quote goal", copy: "Speed proves marketplace health." },
+                    ].map((item) => (
+                        <div key={item.label} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                            <item.icon size={22} />
+                            <h2 className="mt-5 text-xl font-black">{item.label}</h2>
+                            <p className="mt-2 text-sm leading-6 text-slate-600">{item.copy}</p>
                         </div>
                     ))}
-                </div>
-            )}
-        </div>
+                </section>
+
+                <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+                    <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+                        <h2 className="text-2xl font-black">Live-style request feed</h2>
+                        <p className="mt-2 text-sm text-slate-500">Demo phone repair requests for one-city validation.</p>
+                        <div className="mt-6 space-y-4">
+                            {PHONE_REPAIR_REQUESTS.map((request) => (
+                                <div key={request.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-5">
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                        <div>
+                                            <h3 className="text-lg font-black">{request.title}</h3>
+                                            <p className="mt-2 text-sm leading-6 text-slate-600">{request.issue}</p>
+                                        </div>
+                                        <span className="rounded-full bg-white px-3 py-2 text-xs font-black uppercase">
+                                            {request.offers} offers
+                                        </span>
+                                    </div>
+                                    <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold text-slate-500">
+                                        <span className="inline-flex items-center gap-1">
+                                            <MapPin size={13} />
+                                            {request.location}
+                                        </span>
+                                        <span>{request.urgency}</span>
+                                        <span>{request.firstOfferTime} first offer</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+                        <h2 className="text-2xl font-black">Offer comparison</h2>
+                        <p className="mt-2 text-sm text-slate-500">This is the customer value: real choices, not a directory.</p>
+                        <div className="mt-6 overflow-hidden rounded-3xl border border-slate-100">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-slate-950 text-[10px] uppercase tracking-[0.18em] text-white">
+                                    <tr>
+                                        <th className="px-4 py-3">Shop</th>
+                                        <th className="px-4 py-3">Price</th>
+                                        <th className="px-4 py-3">Time</th>
+                                        <th className="px-4 py-3">Warranty</th>
+                                        <th className="px-4 py-3">Distance</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {SAMPLE_OFFERS.map((offer) => (
+                                        <tr key={offer.shop}>
+                                            <td className="px-4 py-4 font-black">{offer.shop}</td>
+                                            <td className="px-4 py-4">{offer.price}</td>
+                                            <td className="px-4 py-4">{offer.time}</td>
+                                            <td className="px-4 py-4">{offer.warranty}</td>
+                                            <td className="px-4 py-4">{offer.distance}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <Link href="/client/new" className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white">
+                            Create customer request
+                            <ArrowRight size={16} />
+                        </Link>
+                    </div>
+                </section>
+            </div>
+        </main>
     );
 }

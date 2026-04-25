@@ -65,14 +65,14 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
 
     const openAssistant = useCallback(() => {
         setChatOpen(true);
-        window.dispatchEvent(new Event("pantheon-open-assistant"));
+        window.dispatchEvent(new Event("needaro-open-assistant"));
     }, [setChatOpen]);
 
     const STATIC_PAGES: SearchResult[] = [
         { type: "page", label: "Dashboard", href: "/dashboard" },
-        { type: "page", label: "Job Center", href: "/client" },
+        { type: "page", label: "Request Center", href: "/client" },
+        { type: "page", label: "Post Phone Repair Request", href: "/client/new" },
         { type: "page", label: "Marketplace", href: "/marketplace" },
-        { type: "page", label: "Pricing", href: "/pricing" },
         { type: "doc", label: "Manifesto", href: "/manifesto" },
         { type: "doc", label: "Whitepaper", href: "/whitepaper" },
     ];
@@ -222,7 +222,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                     <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-black/10 bg-white shadow-sm">
                         <Image
                             src={logoImg}
-                            alt="Pantheon Mesh"
+                            alt="Needaro"
                             width={32}
                             height={32}
                             className="h-full w-full rounded-full object-cover"
@@ -232,7 +232,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                         className="truncate text-sm font-semibold tracking-tight"
                         style={{ color: "var(--text-primary)" }}
                     >
-                        Pantheon Mesh
+                        Needaro
                     </span>
                 </Link>
             </div>
@@ -260,12 +260,12 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                             onKeyDown={handleKeyDown}
                             className="flex-1 bg-transparent text-sm outline-none"
                             style={{ color: "var(--text-primary)" }}
-                            placeholder="Search jobs, pricing, pages, and docs..."
+                            placeholder="Search requests, shops, plans, and docs..."
                             autoFocus
                         />
                     ) : (
                         <span className="flex-1 text-sm" style={{ color: "var(--text-disabled)" }}>
-                            Search business pages, docs, and workflows
+                            Search Needaro pages, requests, and shops
                         </span>
                     )}
                     {searchOpen && searchQuery && (
@@ -311,7 +311,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                                     No results for "{searchQuery}"
                                 </p>
                                 <p className="mt-1 text-xs opacity-50" style={{ color: "var(--text-disabled)" }}>
-                                Try searching for jobs, pricing, or pages
+                                Try searching for requests, shops, plans, or docs
                                 </p>
                             </div>
                         )}

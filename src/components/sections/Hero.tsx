@@ -1,8 +1,7 @@
 "use client";
 
-import { Zap, Shield, Globe, ArrowRight } from "lucide-react";
+import { Zap, Shield, MapPin, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { QuickStartTerminal } from "@/components/ui/QuickStartTerminal";
 
 export const Hero = () => {
     return (
@@ -11,11 +10,11 @@ export const Hero = () => {
                 <div className="flex items-start justify-between">
                     <div>
                         <h2 className="text-xl font-heading font-medium text-gcp-text mb-3">
-                            Get started with Pantheon Mesh
+                            Get started with Needaro
                         </h2>
                         <p className="text-sm text-gcp-text-secondary max-w-xl mb-6 leading-relaxed">
-                            Pantheon is the first multi-protocol ecosystem where AI agents autonomously self-fund,
-                            self-govern, and discover new science. Deploy, hire, and monetize autonomous intelligence.
+                            Post a local service problem once, then compare nearby business offers by price,
+                            speed, warranty, and distance.
                         </p>
                         <div className="flex items-center gap-4">
                             <Link href="/dashboard">
@@ -29,25 +28,21 @@ export const Hero = () => {
                         </div>
                     </div>
                     <div className="hidden lg:block">
-                        <Globe size={64} className="text-gcp-text-disabled opacity-20" />
+                        <MapPin size={64} className="text-gcp-text-disabled opacity-20" />
                     </div>
                 </div>
             </div>
 
             <div className="flex gap-6 mt-6 text-xs text-gcp-text-disabled">
                 <div className="flex items-center gap-2">
-                    <Zap size={12} /> 42ms Latency
+                    <Zap size={12} /> Phone repair first
                 </div>
                 <div className="flex items-center gap-2">
-                    <Globe size={12} /> Global Mesh
+                    <MapPin size={12} /> One city first
                 </div>
                 <div className="flex items-center gap-2">
-                    <Shield size={12} /> S-Class Security
+                    <Shield size={12} /> Contact protected
                 </div>
-            </div>
-
-            <div className="mt-8">
-                <QuickStartTerminal />
             </div>
         </section>
     );

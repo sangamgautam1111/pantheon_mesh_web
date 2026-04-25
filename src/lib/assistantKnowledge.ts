@@ -1,110 +1,90 @@
-import { BUSINESS_PLANS } from "@/lib/businessPlans";
-
 export type AssistantKnowledgeDoc = {
     id: string;
     title: string;
-    category: "overview" | "jobs" | "plans" | "pricing" | "quality" | "marketplace";
+    category: "overview" | "customer" | "business" | "pricing" | "safety" | "marketplace" | "launch";
     route?: string;
     text: string;
 };
 
-const planDocs: AssistantKnowledgeDoc[] = BUSINESS_PLANS.map((plan) => ({
-    id: `plan-${plan.id}`,
-    title: `${plan.name} plan`,
-    category: "plans",
-    route: plan.id === "free" ? "/pricing" : "/pricing",
-    text: [
-        `${plan.name} costs ${plan.price}${plan.cadence}.`,
-        plan.description,
-        `It allows ${plan.jobsPerMonth} with ${plan.activeJobs}.`,
-        `Typical delivery target is ${plan.deliveryTarget}.`,
-        `Model lane: ${plan.modelLane}.`,
-        `Bidding execution: ${plan.biddingAgents}.`,
-        `Review depth: ${plan.reviewDepth}.`,
-        `Best for: ${plan.bestFor}.`,
-        `Included features: ${plan.features.join("; ")}.`,
-    ].join(" "),
-}));
-
 export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
     {
-        id: "overview-dashboard",
-        title: "Business dashboard",
+        id: "needaro-thesis",
+        title: "Needaro business thesis",
         category: "overview",
-        route: "/dashboard",
+        route: "/",
         text:
-            "The dashboard shows submitted jobs, active jobs, completed jobs, committed budget, jobs with thumbnails, recent job history, and quick paths to jobs, pricing, marketplace, and the assistant.",
+            "Needaro.com is an AI-powered local service marketplace. Customers post a local problem once, AI turns it into a clean quote request, nearby businesses send offers, and the customer chooses by price, distance, speed, rating, and warranty.",
     },
     {
-        id: "job-center",
-        title: "Jobs page",
-        category: "jobs",
-        route: "/client",
-        text:
-            "The Jobs page is the active jobs and history center. It shows posted work, status, price, thumbnails, and plan capacity. To create a new job, businesses use the guided intake at /client/new.",
-    },
-    {
-        id: "guided-job-intake",
-        title: "Guided job intake",
-        category: "jobs",
+        id: "first-market",
+        title: "First market",
+        category: "launch",
         route: "/client/new",
         text:
-            "New jobs use a Fiverr-style guided intake. Step 1 collects the job title, raw assets or reference files, readable file previews, asset links, the goal, and standard or rush timeline. Before Step 2 opens, DeepSeek classifies the primary work type so workflow and API orchestration jobs route to Data & Automation even when the output is video or content. Step 2 routes the job to a plan-based model cluster and shows the bidding toggle when the plan supports bidding. Step 3 calculates the protected project minimum, shows market comparison, and lets the client send the job to models.",
+            "Needaro starts narrow: phone repair in one city. Phone repair is common, local, price-sensitive, competitive, photo-friendly, and does not require Needaro to perform the repair itself.",
     },
     {
-        id: "model-routing",
-        title: "Model routing",
-        category: "jobs",
+        id: "customer-flow",
+        title: "Customer flow",
+        category: "customer",
         route: "/client/new",
         text:
-            "Model routing depends on the current plan and the DeepSeek-selected work type. Development, Media, Writing, Design, and Data & Automation each have their own plan-based clusters. For Data & Automation, Free handles basic cleanup, Starter handles simple scraping, Growth handles n8n, webhook, API, and tool orchestration with up to 6 bidding agents, and Scale handles enterprise pipelines with up to 10 bidding agents.",
+            "The customer posts a problem with description, location, urgency, optional phone model, optional budget, and optional photo or video. Needaro AI creates a Problem Card with category, issue, device, known status, missing info, and quote needed. Businesses then send offers.",
     },
     {
-        id: "pricing-summary",
-        title: "Pricing summary",
-        category: "pricing",
-        route: "/pricing",
+        id: "business-flow",
+        title: "Business flow",
+        category: "business",
+        route: "/marketplace",
         text:
-            "Pricing is based on job capacity, delivery speed, model lane, review depth, and bidding execution. Free is for trying the workspace, Starter is for frequent work, Growth adds up to 6 bidding agents, and Scale adds up to 10 bidding agents for higher-volume operations.",
+            "Businesses sign up, select category and service area, receive nearby matching requests, send quotes with price, repair time, warranty, note, and availability, then win customers when chosen.",
     },
     {
-        id: "minimum-price-engine",
-        title: "Minimum project pricing",
-        category: "pricing",
-        route: "/client/new",
-        text:
-            "The minimum project price is calculated entirely by DeepSeek R1, the sole authoritative pricing brain. DeepSeek receives the job title, requirements, readable file previews, raw asset count and size, file types, asset links, timeline urgency, current plan, selected model routing, and real-time marketplace pricing intelligence. Before DeepSeek makes its decision, the system gathers market data from three sources in parallel: live web search (Tavily/Serper/Brave for real Fiverr and Upwork prices), a Groq market scout, and an OpenRouter market scout. DeepSeek cross-references all intelligence sources and generates the project minimum, human market cost, and a fully dynamic market comparison table with rows tailored to the specific job type. No hardcoded price templates are used. Pantheon targets a very low AI-labor price while keeping hidden compute and delivery cost protected.",
-    },
-    {
-        id: "bidding-execution",
-        title: "Bidding execution",
-        category: "pricing",
-        route: "/pricing",
-        text:
-            "Free and Starter do not use bidding agents. Growth includes up to 6 bidding agents for eligible job execution. Scale includes up to 10 bidding agents for eligible job execution. Bidding lets agents compete, which can reduce the protected minimum price while still keeping compute and delivery cost safe.",
-    },
-    {
-        id: "quality-workflow",
-        title: "Job quality",
-        category: "quality",
-        text:
-            "Pantheon Mesh is different from a raw AI chat subscription because clients get job intake, minimum pricing, bidding execution on eligible plans, review, tracking, and delivery history in one workspace.",
-    },
-    {
-        id: "why-pantheon",
-        title: "Why clients choose Pantheon",
-        category: "overview",
-        route: "/dashboard",
-        text:
-            "Clients may already have access to ChatGPT, Claude, vibe coding tools, or other AI tools, but Pantheon is positioned as an AI labor workflow rather than a blank chat box. Pantheon helps the client price the work, post it as a job, attach visual context, route it through the right model lane, use bidding agents on Growth and Scale, review delivery, and keep a history of work and spend.",
-    },
-    {
-        id: "marketplace-overview",
-        title: "Marketplace",
+        id: "offers",
+        title: "Offer comparison",
         category: "marketplace",
         route: "/marketplace",
         text:
-            "The marketplace shows live business work categories and recent posted jobs. It helps businesses understand the kinds of outcomes moving through Pantheon Mesh right now.",
+            "Customers compare offers by price, repair time, warranty, distance, shop note, and trust signals. After choosing, Needaro unlocks map, call, message, and booking details.",
     },
-    ...planDocs,
+    {
+        id: "business-model",
+        title: "Business model",
+        category: "pricing",
+        route: "/pricing",
+        text:
+            "Customers use Needaro free. Businesses pay monthly for more quote replies, better visibility, AI quote tools, analytics, and stronger profiles. Plans are Free Rs.0 for 5 replies, Starter Rs.500 for 30 replies, Pro Rs.1000 for unlimited replies and profile, and Premium Rs.2500 for priority visibility and analytics.",
+    },
+    {
+        id: "pay-per-lead-later",
+        title: "Pay per lead later",
+        category: "pricing",
+        route: "/pricing",
+        text:
+            "A later model is pay-per-lead when a customer chooses a shop. Do not start with full customer payments. In version 1, customers pay the shop directly.",
+    },
+    {
+        id: "launch-plan",
+        title: "Manual launch plan",
+        category: "launch",
+        route: "/dashboard",
+        text:
+            "Manual validation target: onboard 10 phone repair shops, collect 50 customer requests, create 5 real matches, and get 1 paying business. Visit or message shops manually and help them reply fast before automating.",
+    },
+    {
+        id: "safety",
+        title: "Safety and privacy",
+        category: "safety",
+        route: "/client/new",
+        text:
+            "Needaro should hide customer contact details until the customer chooses an offer. Businesses should be manually approved early. Collect only necessary data and avoid risky regulated categories at first.",
+    },
+    {
+        id: "moat",
+        title: "Defensibility",
+        category: "overview",
+        route: "/dashboard",
+        text:
+            "Needaro's moat is not code. It is the local business network, customer demand history, trust and verification, AI request intelligence, and business SaaS tools.",
+    },
 ];

@@ -4,10 +4,10 @@ import { Search, Sparkles, TrendingUp } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const DISCOVERIES = [
-    { id: "XL-402", domain: "Bio-Genetics", text: "Autonomous path for 240% increase in synthetic hemoglobin." },
-    { id: "NT-911", domain: "Space-Tech", text: "Lattice structure optimized for ion-thruster heat dissipation." },
-    { id: "RE-001", domain: "Green-Energy", text: "Molecular catalyst identified for seawater hydrogen separation." },
-    { id: "IQ-992", domain: "Neural-Mesh", text: "Mesh-Routing convergence reduced to 12ms latency." }
+    { id: "NQ-101", domain: "Phone repair", text: "iPhone screen request received near New Road." },
+    { id: "NQ-102", domain: "Offer", text: "Repair shop replied with Rs. 4,500 and 1-month warranty." },
+    { id: "NQ-103", domain: "Match", text: "Customer chose a shop after comparing three offers." },
+    { id: "NQ-104", domain: "Validation", text: "Useful quote received within 12 minutes." }
 ];
 
 export const DiscoveryFeed = () => {
@@ -28,7 +28,7 @@ export const DiscoveryFeed = () => {
         <section className="py-8 max-w-5xl">
             <div className="flex items-center gap-2 mb-4">
                 <Sparkles size={16} className="text-gcp-yellow-dark" />
-                <h2 className="text-base font-heading font-medium text-gcp-text">Neural Discoveries</h2>
+                <h2 className="text-base font-heading font-medium text-gcp-text">Needaro Activity</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -42,7 +42,7 @@ export const DiscoveryFeed = () => {
                             {item.text}
                         </p>
                         <div className="flex items-center gap-1 mt-3 text-xs text-gcp-text-disabled">
-                            <TrendingUp size={12} /> Autonomous discovery
+                            <TrendingUp size={12} /> Local quote activity
                         </div>
                     </div>
                 ))}

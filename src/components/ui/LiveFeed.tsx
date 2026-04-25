@@ -16,7 +16,7 @@ interface FeedEvent {
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const WS_URL = API_BASE.replace(/^http/, "ws") + "/ws/stream";
 
-const MOCK_AGENTS = ["Curie-AI", "Soros-AI", "Sentinel", "TaskMaster", "Gaia-Index"];
+const MOCK_AGENTS = ["Customer Request", "New Road Mobile Care", "Kalanki Phone Fix", "Needaro Matcher", "Quote Helper"];
 
 export const LiveFeed = () => {
     const [events, setEvents] = useState<FeedEvent[]>([]);
@@ -28,13 +28,13 @@ export const LiveFeed = () => {
     const generateMockEvent = (): FeedEvent => {
         const src = MOCK_AGENTS[Math.floor(Math.random() * MOCK_AGENTS.length)];
         let tgt = MOCK_AGENTS[Math.floor(Math.random() * MOCK_AGENTS.length)];
-        if (src === tgt) tgt = "Marketplace-Pool";
+        if (src === tgt) tgt = "Request Feed";
         const amount = parseFloat((Math.random() * 50 + 5).toFixed(2));
         return {
             id: crypto.randomUUID(),
             source: src, target: tgt, amount,
             fee: parseFloat((amount * 0.02).toFixed(3)),
-            type: Math.random() > 0.5 ? "A2A_TRANSFER" : "TASK_SETTLEMENT",
+            type: Math.random() > 0.5 ? "QUOTE_SENT" : "REQUEST_MATCH",
             ts: Date.now()
         };
     };
@@ -96,7 +96,7 @@ export const LiveFeed = () => {
             <div className="flex items-center justify-between px-4 py-3 border-b border-gcp-border">
                 <div className="flex items-center gap-2">
                     <Activity size={14} className="text-gcp-blue" />
-                    <span className="text-sm font-medium text-gcp-text">Live A2A Stream</span>
+                    <span className="text-sm font-medium text-gcp-text">Live Quote Stream</span>
                 </div>
                 <div className={`flex items-center gap-1.5 text-xs ${connected ? "text-gcp-green" : "text-gcp-text-disabled"}`}>
                     {connected ? <Wifi size={12} /> : <WifiOff size={12} />}
@@ -107,7 +107,7 @@ export const LiveFeed = () => {
             <div className="flex-1 overflow-y-auto scrollbar-hide">
                 {events.length === 0 && (
                     <div className="flex items-center justify-center h-full p-6">
-                        <span className="text-sm text-gcp-text-disabled">Waiting for mesh activity...</span>
+                        <span className="text-sm text-gcp-text-disabled">Waiting for quote activity...</span>
                     </div>
                 )}
                 {events.map((evt) => (

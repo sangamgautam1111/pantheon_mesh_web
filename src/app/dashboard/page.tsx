@@ -1,386 +1,128 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-    Activity,
-    ArrowRight,
-    CheckCircle2,
-    Clock3,
-    Coins,
-    FileImage,
-    FileText,
-    LogOut,
-    Plus,
-    Sparkles,
-} from "lucide-react";
+import { ArrowRight, BarChart3, Building2, CheckCircle2, Clock, MessageSquare, Plus, ShieldCheck } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
-import { useAuth } from "@/context/AuthContext";
-import { useGuide } from "@/context/GuideProvider";
-import { BUSINESS_PLANS } from "@/lib/businessPlans";
-
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-interface Job {
-    id: string;
-    title: string;
-    budget_usd: number;
-    status: string;
-    created_at: string;
-    completed_at?: string | null;
-    thumbnail_data_url?: string | null;
-}
+import { NEEDARO_PLANS, PHONE_REPAIR_REQUESTS } from "@/lib/nearquote";
 
 export default function Dashboard() {
-    const { user, profile, signOut } = useAuth();
-    const { setChatOpen } = useGuide();
-    const router = useRouter();
-    const [jobs, setJobs] = useState<Job[]>([]);
-    const [loadingJobs, setLoadingJobs] = useState(true);
-
-    useEffect(() => {
-        const loadJobs = async () => {
-            if (!user?.uid) {
-                setJobs([]);
-                setLoadingJobs(false);
-                return;
-            }
-
-            setLoadingJobs(true);
-            try {
-                const response = await fetch(`${API}/v1/client/${user.uid}/jobs`);
-                const data = await response.json();
-                const nextJobs = Array.isArray(data) ? data : Array.isArray(data.jobs) ? data.jobs : [];
-                setJobs(nextJobs);
-            } catch (error) {
-                console.error("Failed to load jobs:", error);
-                setJobs([]);
-            } finally {
-                setLoadingJobs(false);
-            }
-        };
-
-        void loadJobs();
-    }, [user?.uid]);
-
-    const metrics = useMemo(() => {
-        const totalBudget = jobs.reduce((sum, job) => sum + job.budget_usd, 0);
-        const activeJobs = jobs.filter((job) => job.status !== "completed").length;
-        const completedJobs = jobs.filter((job) => job.status === "completed").length;
-        const jobsWithAssets = jobs.filter((job) => Boolean(job.thumbnail_data_url)).length;
-
-        return {
-            totalJobs: jobs.length,
-            activeJobs,
-            completedJobs,
-            totalBudget,
-            jobsWithAssets,
-        };
-    }, [jobs]);
-
-    const currentPlan = BUSINESS_PLANS.find((plan) => plan.id === profile?.currentPlanId) ?? BUSINESS_PLANS[0];
-    const featuredPlans = BUSINESS_PLANS.filter((plan) => ["free", "growth", "scale"].includes(plan.id));
-    const openAssistant = () => {
-        setChatOpen(true);
-        window.dispatchEvent(new Event("pantheon-open-assistant"));
-    };
+    const totalRequests = PHONE_REPAIR_REQUESTS.length;
+    const requestsWithOffer = PHONE_REPAIR_REQUESTS.filter((request) => request.offers > 0).length;
+    const chosenRequests = PHONE_REPAIR_REQUESTS.filter((request) => request.status === "chosen").length;
+    const usefulQuoteRate = Math.round((requestsWithOffer / totalRequests) * 100);
+    const starterPlan = NEEDARO_PLANS.find((plan) => plan.id === "starter") ?? NEEDARO_PLANS[1];
 
     return (
         <RouteGuard allowedTypes={["business"]}>
-            <div className="w-full p-6 md:p-8">
-                <section className="overflow-hidden rounded-[28px] border border-gcp-border bg-gcp-surface p-6 shadow-xl md:p-8">
-                    <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                        <div className="max-w-3xl">
-                            <h1 className="text-3xl font-heading font-bold leading-tight text-gcp-text md:text-5xl">
-                                Track your jobs and budget.
-                            </h1>
-                            <p className="mt-4 max-w-2xl text-sm leading-7 text-gcp-text-secondary md:text-base">
-                                Post work, watch delivery status, see your committed budget, and upgrade when you need
-                                more jobs or faster turnaround.
-                            </p>
-                            <div className="mt-6 flex flex-wrap gap-3">
-                                <button
-                                    onClick={() => router.push("/client")}
-                                    className="gcp-btn-primary inline-flex items-center gap-2"
-                                >
-                                    <Plus size={14} />
-                                    Post a Job
-                                </button>
-                                <button
-                                    onClick={() => router.push("/pricing")}
-                                    className="gcp-btn-text inline-flex items-center gap-2"
-                                >
-                                    View Pricing
-                                    <ArrowRight size={14} />
-                                </button>
-                                <button
-                                    onClick={openAssistant}
-                                    className="gcp-btn-text inline-flex items-center gap-2"
-                                >
-                                    <Sparkles size={14} />
-                                    Ask Assistant
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="min-w-[260px] rounded-3xl border border-gcp-border bg-gcp-surface p-5">
-                            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-gcp-text-disabled">
-                                Account
-                            </p>
-                            <div className="mt-3 flex items-center gap-3">
-                                {profile?.photoURL ? (
-                                    <img
-                                        src={profile.photoURL}
-                                        alt=""
-                                        className="h-12 w-12 rounded-full border border-gcp-border object-cover"
-                                    />
-                                ) : (
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-gcp-border bg-gcp-surface-v text-sm font-bold text-gcp-text">
-                                        {(profile?.companyName || profile?.displayName || "W").charAt(0).toUpperCase()}
-                                    </div>
-                                )}
-                                <div className="min-w-0">
-                                    <p className="truncate text-base font-bold text-gcp-text">
-                                        {profile?.companyName || profile?.displayName || "Workspace"}
-                                    </p>
-                                    <p className="truncate text-xs text-gcp-text-secondary">{profile?.email}</p>
-                                </div>
-                            </div>
-                            <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
-                                <div className="rounded-2xl border border-gcp-border bg-gcp-surface p-4">
-                                    <p className="text-[10px] font-black uppercase tracking-wider text-gcp-text-disabled">
-                                        Current plan
-                                    </p>
-                                    <p className="mt-2 font-semibold text-gcp-text">{currentPlan.name}</p>
-                                </div>
-                                <div className="rounded-2xl border border-gcp-border bg-gcp-surface p-4">
-                                    <p className="text-[10px] font-black uppercase tracking-wider text-gcp-text-disabled">
-                                        Delivery lane
-                                    </p>
-                                    <p className="mt-2 font-semibold text-gcp-text">{currentPlan.deliveryTarget}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <section className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-                    {[
-                        {
-                            label: "Submitted Jobs",
-                            value: String(metrics.totalJobs),
-                            icon: <FileText size={18} className="text-gcp-text" />,
-                        },
-                        {
-                            label: "Active Jobs",
-                            value: String(metrics.activeJobs),
-                            icon: <Activity size={18} className="text-gcp-text" />,
-                        },
-                        {
-                            label: "Completed Jobs",
-                            value: String(metrics.completedJobs),
-                            icon: <CheckCircle2 size={18} className="text-gcp-text" />,
-                        },
-                        {
-                            label: "Committed Budget",
-                            value: `$${metrics.totalBudget.toFixed(2)}`,
-                            icon: <Coins size={18} className="text-gcp-text" />,
-                        },
-                        {
-                            label: "Jobs With Thumbnails",
-                            value: String(metrics.jobsWithAssets),
-                            icon: <FileImage size={18} className="text-gcp-text" />,
-                        },
-                    ].map((item) => (
-                        <div key={item.label} className="gcp-card p-5">
-                            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-gcp-surface-v">
-                                {item.icon}
-                            </div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gcp-text-disabled">
-                                {item.label}
-                            </p>
-                            <p className="mt-3 text-2xl font-heading font-bold text-gcp-text">{item.value}</p>
-                        </div>
-                    ))}
-                </section>
-
-                <section className="mt-8 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-                    <div className="gcp-card p-6 md:p-8">
-                        <div className="mb-5 flex items-center justify-between gap-4">
-                            <div>
-                                <h2 className="text-xl font-heading font-bold text-gcp-text">Recent jobs</h2>
-                                <p className="mt-1 text-sm text-gcp-text-secondary">
-                                    Your latest requests, budgets, and delivery progress.
+            <main className="w-full bg-[#f8f7f2] p-6 text-slate-950 md:p-8">
+                <div className="mx-auto max-w-7xl">
+                    <section className="rounded-[34px] border border-slate-200 bg-white p-7 shadow-xl md:p-10">
+                        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                            <div className="max-w-3xl">
+                                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">
+                                    Needaro operator dashboard
+                                </p>
+                                <h1 className="mt-4 text-4xl font-black leading-tight tracking-tight md:text-6xl">
+                                    Prove phone repair quotes in one city.
+                                </h1>
+                                <p className="mt-5 text-base leading-8 text-slate-600">
+                                    The first target is not a huge platform. It is 10 repair shops, 50 customer requests,
+                                    5 completed matches, and 1 paying business.
                                 </p>
                             </div>
-                            <Link href="/client" className="text-sm font-medium text-gcp-text hover:underline">
-                                Open Job Center
-                            </Link>
+                            <div className="flex flex-wrap gap-3">
+                                <Link href="/client/new" className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white">
+                                    <Plus size={16} />
+                                    Post test request
+                                </Link>
+                                <Link href="/pricing" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-black">
+                                    Business plans
+                                    <ArrowRight size={16} />
+                                </Link>
+                            </div>
                         </div>
+                    </section>
 
-                        {loadingJobs ? (
-                            <div className="flex min-h-[320px] items-center justify-center text-sm text-gcp-text-secondary">
-                                Loading your workspace...
+                    <section className="mt-6 grid gap-4 md:grid-cols-4">
+                        {[
+                            { label: "Requests posted", value: String(totalRequests), icon: MessageSquare },
+                            { label: "Useful quote rate", value: `${usefulQuoteRate}%`, icon: CheckCircle2 },
+                            { label: "Chosen matches", value: String(chosenRequests), icon: ShieldCheck },
+                            { label: "First paid plan", value: starterPlan.price, icon: Building2 },
+                        ].map((item) => (
+                            <div key={item.label} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                                <item.icon size={20} />
+                                <p className="mt-5 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{item.label}</p>
+                                <p className="mt-2 text-3xl font-black">{item.value}</p>
                             </div>
-                        ) : jobs.length === 0 ? (
-                            <div className="flex min-h-[320px] flex-col items-center justify-center rounded-3xl border border-dashed border-gcp-border text-center">
-                                <FileText size={36} className="mb-4 text-gcp-text-disabled" />
-                                <p className="text-sm font-medium text-gcp-text-secondary">No jobs posted yet.</p>
-                                <p className="mt-2 max-w-sm text-xs leading-6 text-gcp-text-disabled">
-                                    Start by posting a request. You can now attach a thumbnail or reference image right
-                                    in the job form.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {jobs.slice(0, 6).map((job) => (
-                                    <div
-                                        key={job.id}
-                                        className="flex flex-col gap-4 rounded-3xl border border-gcp-border p-4 md:flex-row md:items-center md:justify-between"
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            {job.thumbnail_data_url ? (
-                                                <img
-                                                    src={job.thumbnail_data_url}
-                                                    alt=""
-                                                    className="h-16 w-16 rounded-2xl border border-gcp-border object-cover"
-                                                />
-                                            ) : (
-                                                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-dashed border-gcp-border bg-gcp-surface-v">
-                                                    <FileImage size={18} className="text-gcp-text-disabled" />
-                                                </div>
-                                            )}
-                                            <div className="min-w-0">
-                                                <p className="truncate text-sm font-semibold text-gcp-text">{job.title}</p>
-                                                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gcp-text-secondary">
-                                                    <span className="font-mono">{job.id}</span>
-                                                    <span>•</span>
-                                                    <span>{new Date(job.created_at).toLocaleDateString()}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-3 md:justify-end">
-                                            <span className="text-sm font-semibold text-gcp-text">
-                                                ${job.budget_usd.toFixed(2)}
-                                            </span>
-                                            <span className="rounded-full border border-gcp-border bg-gcp-surface-v px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-gcp-text">
-                                                {job.status.toUpperCase()}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                        ))}
+                    </section>
 
-                    <div className="space-y-6">
-                        <div className="gcp-card p-6 md:p-8">
-                            <div className="mb-5 flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gcp-surface-v">
-                                    <Clock3 size={18} className="text-gcp-text" />
-                                </div>
+                    <section className="mt-6 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+                        <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+                            <div className="mb-5 flex items-center justify-between gap-4">
                                 <div>
-                                    <h2 className="text-xl font-heading font-bold text-gcp-text">Your plan</h2>
-                                    <p className="mt-1 text-sm text-gcp-text-secondary">
-                                        Your plan controls job limits, speed, model quality, and review depth.
-                                    </p>
+                                    <h2 className="text-2xl font-black">Marketplace health</h2>
+                                    <p className="mt-1 text-sm text-slate-500">The main metric is quote speed and usefulness.</p>
                                 </div>
+                                <BarChart3 size={24} />
                             </div>
                             <div className="space-y-4">
-                                {featuredPlans.map((plan) => (
-                                    <div
-                                        key={plan.id}
-                                        className={`rounded-3xl border p-5 ${
-                                            plan.featured ? "border-gcp-text bg-gcp-surface-v" : "border-gcp-border bg-gcp-surface"
-                                        }`}
-                                    >
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gcp-text-disabled">
-                                                    {plan.name}
-                                                </p>
-                                                <p className="mt-2 text-2xl font-bold text-gcp-text">
-                                                    {plan.price}
-                                                    <span className="ml-1 text-sm font-normal text-gcp-text-disabled">
-                                                        {plan.cadence}
-                                                    </span>
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                                            <div className="rounded-2xl bg-gcp-surface-v p-3">
-                                                <p className="text-[10px] font-black uppercase tracking-wider text-gcp-text-disabled">
-                                                    Jobs / month
-                                                </p>
-                                                <p className="mt-1 font-semibold text-gcp-text">{plan.jobsPerMonth}</p>
-                                            </div>
-                                            <div className="rounded-2xl bg-gcp-surface-v p-3">
-                                                <p className="text-[10px] font-black uppercase tracking-wider text-gcp-text-disabled">
-                                                    Delivery
-                                                </p>
-                                                <p className="mt-1 font-semibold text-gcp-text">{plan.deliveryTarget}</p>
-                                            </div>
-                                            <div className="rounded-2xl bg-gcp-surface-v p-3">
-                                                <p className="text-[10px] font-black uppercase tracking-wider text-gcp-text-disabled">
-                                                    Bidding
-                                                </p>
-                                                <p className="mt-1 font-semibold text-gcp-text">{plan.biddingAgents}</p>
-                                            </div>
-                                        </div>
+                                {[
+                                    ["Requests with at least 1 offer", `${requestsWithOffer}/${totalRequests}`],
+                                    ["Average first offer goal", "Under 30 minutes"],
+                                    ["Manual shop onboarding target", "10 phone repair shops"],
+                                    ["First revenue proof", "1 shop pays after leads"],
+                                ].map(([label, value]) => (
+                                    <div key={label} className="flex items-center justify-between gap-4 rounded-2xl bg-slate-50 p-4">
+                                        <span className="text-sm font-semibold text-slate-600">{label}</span>
+                                        <span className="text-sm font-black">{value}</span>
                                     </div>
                                 ))}
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => router.push("/pricing")}
-                                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gcp-text px-4 py-3 text-sm font-semibold text-gcp-surface transition-colors hover:opacity-90"
-                            >
-                                Compare all plans
-                                <ArrowRight size={14} />
-                            </button>
                         </div>
 
-                        <div className="gcp-card p-6 md:p-8">
-                            <div className="mb-4 flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gcp-surface-v">
-                                    <Sparkles size={18} className="text-gcp-text" />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-heading font-bold text-gcp-text">Need help?</h2>
-                                    <p className="mt-1 text-sm text-gcp-text-secondary">
-                                        The assistant now stays as a helper, not your dashboard.
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="space-y-3 text-sm leading-6 text-gcp-text-secondary">
-                                <p>Ask where to post work, what each plan unlocks, or how the minimum budget is applied.</p>
-                                <p>Use the dashboard for overview, the job center for posting, and pricing when you want to upgrade.</p>
-                            </div>
-                            <div className="mt-5 flex flex-wrap gap-3">
-                                <button
-                                    type="button"
-                                    onClick={openAssistant}
-                                    className="gcp-btn-primary inline-flex items-center gap-2"
-                                >
-                                    Open Assistant
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={async () => {
-                                        await signOut();
-                                        router.push("/login");
-                                    }}
-                                    className="gcp-btn-text inline-flex items-center gap-2"
-                                >
-                                    <LogOut size={14} />
-                                    Sign Out
-                                </button>
+                        <div className="rounded-[30px] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm">
+                            <h2 className="text-2xl font-black">Manual validation plan</h2>
+                            <div className="mt-5 space-y-3">
+                                {[
+                                    "Visit or message 20 phone repair shops.",
+                                    "Manually approve 10 shops.",
+                                    "Post in local groups: broken phone? get nearby prices.",
+                                    "Help shops reply fast until the flow is proven.",
+                                    "Only charge after shops receive real leads.",
+                                ].map((step, index) => (
+                                    <div key={step} className="flex gap-3 rounded-2xl bg-white/10 p-4">
+                                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-xs font-black text-slate-950">
+                                            {index + 1}
+                                        </span>
+                                        <p className="text-sm font-semibold leading-6 text-slate-100">{step}</p>
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                    </div>
-                </section>
-            </div>
+                    </section>
+
+                    <section className="mt-6 rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+                        <div className="mb-5 flex items-center gap-3">
+                            <Clock size={20} />
+                            <h2 className="text-2xl font-black">Recent phone repair requests</h2>
+                        </div>
+                        <div className="grid gap-4 lg:grid-cols-3">
+                            {PHONE_REPAIR_REQUESTS.map((request) => (
+                                <div key={request.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-5">
+                                    <p className="text-sm font-black">{request.title}</p>
+                                    <p className="mt-2 text-sm leading-6 text-slate-600">{request.issue}</p>
+                                    <div className="mt-4 flex items-center justify-between text-xs font-bold text-slate-500">
+                                        <span>{request.location}</span>
+                                        <span>{request.offers} offers</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                </div>
+            </main>
         </RouteGuard>
     );
 }

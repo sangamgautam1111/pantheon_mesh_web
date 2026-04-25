@@ -51,11 +51,11 @@ function clampPanelPosition(position: PanelPosition, size: PanelSize): PanelPosi
 }
 
 const SUGGESTIONS = [
-    "How do I post a job?",
-    "Which plan fits my work volume?",
-    "Show me pricing",
-    "Open the job center",
-    "How does quality review work?",
+    "Post a phone repair request",
+    "Explain Needaro MVP",
+    "How do shops make offers?",
+    "What should I validate first?",
+    "Open business plans",
 ];
 
 export const AiGuide = () => {
@@ -65,7 +65,7 @@ export const AiGuide = () => {
         {
             id: "welcome",
             role: "assistant",
-            text: "Hi, I'm Mesh Assist. Tell me what you're trying to do and I'll help with jobs, pricing, delivery, or the right page.",
+            text: "Hi, I'm Needaro Assist. Tell me the local service problem or business question, and I will help with requests, offers, plans, or launch steps.",
         },
     ]);
     const [input, setInput] = useState("");
@@ -172,8 +172,10 @@ export const AiGuide = () => {
 
     useEffect(() => {
         const openAssistant = () => setOpen(true);
-        window.addEventListener("pantheon-open-assistant", openAssistant);
-        return () => window.removeEventListener("pantheon-open-assistant", openAssistant);
+        window.addEventListener("needaro-open-assistant", openAssistant);
+        return () => {
+            window.removeEventListener("needaro-open-assistant", openAssistant);
+        };
     }, [setOpen]);
 
     const handleSend = async (text?: string) => {
@@ -301,14 +303,14 @@ export const AiGuide = () => {
                         width: isMobile ? 56 : 64,
                         height: isMobile ? 56 : 64,
                     }}
-                    title="Mesh Assist"
+                    title="Needaro Assist"
                 >
                     <div className="flex h-10 w-10 items-center justify-center p-1">
-                        <Image src={chatIcon} alt="Mesh Assist" className="h-full w-full object-contain brightness-0 invert" />
+                        <Image src={chatIcon} alt="Needaro Assist" className="h-full w-full object-contain brightness-0 invert" />
                     </div>
                     {!isMobile && (
                         <div className="pointer-events-none absolute right-20 whitespace-nowrap rounded-lg border border-gray-100 bg-white px-4 py-2 text-sm font-bold text-[#0f1114] opacity-0 shadow-2xl transition-opacity group-hover:opacity-100">
-                            Mesh Assist - Ask about jobs, pricing, or delivery
+                            Needaro Assist - Ask about requests, offers, or launch
                         </div>
                     )}
                 </button>
@@ -340,7 +342,7 @@ export const AiGuide = () => {
                             </div>
                             <div>
                                 <div className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                                    Mesh Assist
+                                    Needaro Assist
                                 </div>
                                 <div className="text-xs" style={{ color: "var(--text-disabled)" }}>
                                     Drag header. Resize corner.
@@ -463,7 +465,7 @@ export const AiGuide = () => {
                                 value={input}
                                 onChange={(event) => setInput(event.target.value)}
                                 onKeyDown={handleKeyDown}
-                                placeholder="Ask about jobs, pricing, delivery, or navigation..."
+                                placeholder="Ask about requests, shops, offers, or launch..."
                                 className="flex-1 bg-transparent text-sm outline-none"
                                 style={{ color: "var(--text-primary)" }}
                             />
@@ -481,8 +483,8 @@ export const AiGuide = () => {
                         <div
                             onPointerDown={handleResizeStart}
                             className="absolute bottom-1 right-1 z-10 h-6 w-6 cursor-nwse-resize rounded-br-xl"
-                            aria-label="Resize Mesh Assist"
-                            title="Resize Mesh Assist"
+                            aria-label="Resize Needaro Assist"
+                            title="Resize Needaro Assist"
                         >
                             <div className="absolute bottom-2 right-2 h-3 w-3 border-b-2 border-r-2 border-slate-400" />
                         </div>

@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 import {
     ChevronDown,
     ChevronRight,
-    CreditCard,
     FileText,
     LayoutDashboard,
     Store,
@@ -19,8 +18,7 @@ import logoImg from "@/app/logo.png";
 const NAV_ITEMS = [
     { label: "Welcome", href: "/", icon: LayoutDashboard },
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Jobs", href: "/client", icon: FileText, allowedTypes: ["business"] as const },
-    { label: "Pricing", href: "/pricing", icon: CreditCard, allowedTypes: ["business"] as const },
+    { label: "Requests", href: "/client", icon: FileText, allowedTypes: ["business"] as const },
     { label: "Marketplace", href: "/marketplace", icon: Store },
 ];
 
@@ -72,7 +70,7 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                                 <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-black/10 bg-white shadow-sm">
                                     <Image
                                         src={logoImg}
-                                        alt="Pantheon Mesh"
+                                        alt="Needaro"
                                         width={32}
                                         height={32}
                                         className="h-full w-full rounded-full object-cover"
@@ -83,10 +81,10 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                                         className="truncate text-sm font-semibold transition-colors"
                                         style={{ color: "var(--text-primary)" }}
                                     >
-                                        Pantheon Mesh
+                                        Needaro
                                     </div>
                                     <div className="truncate text-[10px] font-mono" style={{ color: "var(--text-secondary)" }}>
-                                        business workspace
+                                        local quote marketplace
                                     </div>
                                 </div>
                             </div>
