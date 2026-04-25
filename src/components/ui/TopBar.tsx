@@ -73,9 +73,9 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
         { type: "page", label: "My Needs", href: "/client" },
         { type: "page", label: "Post a Need", href: "/client/new" },
         { type: "page", label: "Messages", href: "/messages" },
+        { type: "page", label: "Marketplace", href: "/marketplace" },
         ...(profile?.accountType === "customer" ? [] : [
             { type: "page", label: "Business Plans", href: "/pricing" },
-            { type: "page", label: "Marketplace", href: "/marketplace" },
         ]),
     ];
 

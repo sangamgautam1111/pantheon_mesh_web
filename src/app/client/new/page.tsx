@@ -65,7 +65,10 @@ export default function NewCustomerRequestPage() {
         setError("");
         try {
             const data = await cleanNeedWithAI(description);
-            setCard(data);
+            setCard({
+                ...data,
+                category: data.category && data.category !== "Other" ? data.category : category,
+            });
         } catch (nextError) {
             setCard(createFallbackNeedCard(description, category));
             setError(nextError instanceof Error ? nextError.message : "Could not create a Need Card.");
@@ -83,12 +86,13 @@ export default function NewCustomerRequestPage() {
         try {
             const finalCard = card || createFallbackNeedCard(description, category);
             const title = finalCard.title || description.slice(0, 72) || "New Need";
+            const resolvedCategory = finalCard.category && finalCard.category !== "Other" ? finalCard.category : category;
             await createNeed({
                 customerId: user.uid,
                 customerName: profile?.displayName || profile?.email || "Customer",
                 title,
                 description,
-                category: finalCard.category || category,
+                category: resolvedCategory,
                 location: location || "Area not set",
                 urgency,
                 budget: resolvedBudget,

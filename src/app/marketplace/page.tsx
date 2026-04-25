@@ -41,7 +41,8 @@ function NeedMedia({ src }: { src?: string | null }) {
 }
 
 export default function Marketplace() {
-    const { user, profile } = useAuth();
+    const { user, profile, accountType } = useAuth();
+    const isBusiness = accountType === "business";
     const [needs, setNeeds] = useState<NeedRecord[]>([]);
     const [selectedNeedId, setSelectedNeedId] = useState<string | null>(null);
     const [draft, setDraft] = useState<QuoteDraft>(emptyDraft);
@@ -96,7 +97,7 @@ export default function Marketplace() {
 
     const submitQuote = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (!user || !selectedNeedId) return;
+        if (!user || !selectedNeedId || !isBusiness) return;
 
         setSaving(true);
         setMessage("");
@@ -122,7 +123,7 @@ export default function Marketplace() {
     };
 
     return (
-        <RouteGuard allowedTypes={["business"]}>
+        <RouteGuard allowedTypes={["customer", "business"]}>
             <main className="min-h-screen bg-[#f8f7f2] p-6 text-slate-950 md:p-10">
                 <div className="mx-auto max-w-7xl">
                     <section className="mb-6 rounded-[34px] border border-slate-200 bg-white p-7 shadow-xl md:p-10">
@@ -132,11 +133,12 @@ export default function Marketplace() {
                                     Marketplace
                                 </p>
                                 <h1 className="mt-4 max-w-4xl text-4xl font-black leading-tight tracking-tight md:text-6xl">
-                                    Browse customer Needs. Send useful Offers.
+                                    {isBusiness ? "Browse customer Needs. Send useful Offers." : "Browse Needs from nearby customers."}
                                 </h1>
                                 <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
-                                    This is the business side of Needero. Customers post Needs. Your business replies with
-                                    price, time, warranty, and a simple note.
+                                    {isBusiness
+                                        ? "This is the business side of Needero. Customers post Needs. Your business replies with price, time, warranty, and a simple note."
+                                        : "Customers can view the marketplace, but only local business accounts can send Offers."}
                                 </p>
                             </div>
                             <button
@@ -152,8 +154,8 @@ export default function Marketplace() {
                     <section className="mb-6 grid gap-4 md:grid-cols-4">
                         {[
                             { icon: Briefcase, label: "Visible Needs", value: String(visibleNeeds.length) },
-                            { icon: Send, label: "Main action", value: "Send Offer" },
-                            { icon: Bell, label: "Business model", value: "Subscription" },
+                            { icon: Send, label: "Main action", value: isBusiness ? "Send Offer" : "Compare Offers" },
+                            { icon: Bell, label: isBusiness ? "Business model" : "Customer fee", value: isBusiness ? "Subscription" : "$0" },
                             { icon: MapPin, label: "Area", value: locationStatus },
                         ].map((item) => (
                             <div key={item.label} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -181,8 +183,7 @@ export default function Marketplace() {
                                     onClick={() => {
                                         setSelectedNeedId(need.id);
                                         setMessage("");
-                                        // Scroll to offer form on mobile
-                                        if (window.innerWidth < 1024) {
+                                        if (window.innerWidth < 1024 && isBusiness) {
                                             document.getElementById("offer-form")?.scrollIntoView({ behavior: "smooth" });
                                         }
                                     }}
@@ -217,8 +218,21 @@ export default function Marketplace() {
                         </div>
                     </section>
 
-                    {/* Offer form modal or section at the bottom for selected need */}
-                    {selectedNeedId && (
+                    {selectedNeedId && !isBusiness && (
+                        <section className="mx-auto mt-12 max-w-2xl rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                            <div className="flex items-start gap-3">
+                                <ShieldCheck size={22} />
+                                <div>
+                                    <h2 className="text-2xl font-black">Read-only marketplace view</h2>
+                                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                                        Customer accounts can browse Needs and understand demand. Sending a quote is only available from a local business account.
+                                    </p>
+                                </div>
+                            </div>
+                        </section>
+                    )}
+
+                    {selectedNeedId && isBusiness && (
                         <section id="offer-form" className="mt-12 max-w-2xl mx-auto">
                             <div className="mb-5 flex items-start gap-3">
                                 <ShieldCheck size={22} />

@@ -23,7 +23,7 @@ const NAV_ITEMS = [
     { label: "My Needs", href: "/client", icon: FileText, allowedTypes: ["customer"] as ActiveAccountType[] },
     { label: "Post a Need", href: "/client/new", icon: PlusCircle, allowedTypes: ["customer"] as ActiveAccountType[] },
     { label: "Messages", href: "/messages", icon: MessageSquare, allowedTypes: ["customer", "business"] as ActiveAccountType[] },
-    { label: "Marketplace", href: "/marketplace", icon: Store, allowedTypes: ["business"] as ActiveAccountType[] },
+    { label: "Marketplace", href: "/marketplace", icon: Store, allowedTypes: ["customer", "business"] as ActiveAccountType[] },
     { label: "Business Plans", href: "/pricing", icon: CreditCard, allowedTypes: ["business"] as ActiveAccountType[] },
 ];
 

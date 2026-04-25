@@ -47,6 +47,11 @@ const formatBudget = (need: BackendRecord) => {
     return "No budget yet";
 };
 
+const parseCurrencyAmount = (value: string) => {
+    const match = value.replace(/,/g, "").match(/\d+(?:\.\d+)?/);
+    return match ? Number(match[0]) : 0;
+};
+
 export const normalizeNeedCard = (raw: unknown, messyText = "", category = "Other"): NeedCard => {
     const data = raw && typeof raw === "object" ? (raw as BackendRecord) : {};
     const fallback = createFallbackNeedCard(messyText || String(data.description || ""), category);
@@ -169,7 +174,7 @@ export async function createNeed(input: {
             location: input.location,
             urgency: input.urgency,
             budget_type: input.budget,
-            budget_value: parseFloat(input.budget.replace(/[^0-9.]/g, "")) || 0,
+            budget_value: parseCurrencyAmount(input.budget),
             photo_url: input.photoPreview,
             ai_clean_card: input.cleanCard,
         }),
