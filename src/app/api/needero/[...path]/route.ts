@@ -6,12 +6,14 @@ type ProxyContext = {
     params: Promise<{ path?: string[] }>;
 };
 
+const DEFAULT_BACKEND_URL = "https://pantheon-api-mlqrumx6cq-uc.a.run.app";
+
 const getBackendBaseUrl = () => {
     const raw =
         process.env.API_URL ||
         process.env.NEEDERO_API_URL ||
         process.env.NEXT_PUBLIC_API_URL ||
-        "http://localhost:8000";
+        DEFAULT_BACKEND_URL;
 
     return raw.replace(/\/+$/, "");
 };

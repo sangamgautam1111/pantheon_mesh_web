@@ -67,7 +67,7 @@ export default function RequestCenterPage() {
     const totalOffers = visibleNeeds.reduce((sum, need) => sum + (need.offers || 0), 0);
 
     return (
-        <RouteGuard allowedTypes={["customer", "business"]}>
+        <RouteGuard allowedTypes={["customer"]}>
             <main className="min-h-screen bg-[#f8f7f2] px-4 py-6 text-slate-950 md:px-8">
                 <div className="mx-auto max-w-7xl">
                     <section className="rounded-[34px] border border-slate-200 bg-white p-7 shadow-xl md:p-9">
