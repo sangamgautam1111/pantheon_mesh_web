@@ -4,7 +4,7 @@ import { ClientLayout } from "./ClientLayout";
 import { ReactNode } from "react";
 
 export const metadata: Metadata = {
-    title: "Needaro - Local Quotes From Nearby Businesses",
+    title: "Needero - Local Offers From Nearby Businesses",
     description: "Post a local problem once and compare offers from nearby businesses.",
 };
 
@@ -17,7 +17,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                         __html: `
                     (function() {
                         try {
-                            var t = localStorage.getItem('needaro-theme') || 'light';
+                            var t = localStorage.getItem('needero-theme') || localStorage.getItem('needaro-theme') || 'light';
                             document.documentElement.setAttribute('data-theme', t);
                         } catch(e) {}
                     })();

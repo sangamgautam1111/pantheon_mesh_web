@@ -24,6 +24,12 @@ import {
     createFallbackNeedCard,
 } from "@/lib/nearquote";
 
+type UploadedMedia = {
+    dataUrl: string;
+    type: string;
+    name: string;
+};
+
 export default function NewCustomerRequestPage() {
     const router = useRouter();
     const { user, profile } = useAuth();
@@ -33,7 +39,7 @@ export default function NewCustomerRequestPage() {
     const [urgency, setUrgency] = useState(URGENCY_OPTIONS[1]);
     const [budget, setBudget] = useState(BUDGET_OPTIONS[0]);
     const [customBudget, setCustomBudget] = useState("");
-    const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+    const [uploadedMedia, setUploadedMedia] = useState<UploadedMedia | null>(null);
     const [card, setCard] = useState<NeedCard | null>(null);
     const [loading, setLoading] = useState(false);
     const [posting, setPosting] = useState(false);
@@ -46,7 +52,11 @@ export default function NewCustomerRequestPage() {
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = () => setPhotoPreview(typeof reader.result === "string" ? reader.result : null);
+        reader.onload = () => {
+            if (typeof reader.result === "string") {
+                setUploadedMedia({ dataUrl: reader.result, type: file.type || "file", name: file.name });
+            }
+        };
         reader.readAsDataURL(file);
     };
 
@@ -82,7 +92,7 @@ export default function NewCustomerRequestPage() {
                 location: location || "Area not set",
                 urgency,
                 budget: resolvedBudget,
-                photoPreview,
+                photoPreview: uploadedMedia?.dataUrl || null,
                 cleanCard: finalCard,
             });
             router.push("/client");
@@ -220,8 +230,12 @@ export default function NewCustomerRequestPage() {
                                             <p className="mt-1 text-sm text-slate-500">Optional. Helps businesses quote faster.</p>
                                         </div>
                                     </div>
-                                    {photoPreview && (
-                                        <img src={photoPreview} alt="" className="mt-4 h-44 w-full rounded-2xl object-cover" />
+                                    {uploadedMedia && (
+                                        uploadedMedia.type.startsWith("video/") ? (
+                                            <video src={uploadedMedia.dataUrl} controls className="mt-4 h-44 w-full rounded-2xl object-cover" />
+                                        ) : (
+                                            <img src={uploadedMedia.dataUrl} alt={uploadedMedia.name} className="mt-4 h-44 w-full rounded-2xl object-cover" />
+                                        )
                                     )}
                                 </label>
 
@@ -269,8 +283,8 @@ export default function NewCustomerRequestPage() {
                                             {[
                                                 ["Need", card.title],
                                                 ["Category", card.category],
-                                                ["Problem", card.problem],
-                                                ["Known details", card.knownDetails],
+                                                ["Problem", card.problem || card.summaryForBusinesses],
+                                                ["Known details", card.knownDetails || card.summaryForBusinesses],
                                                 ["Area", location || "Not set"],
                                                 ["Urgency", urgency],
                                                 ["Budget", resolvedBudget],
@@ -326,4 +340,3 @@ export default function NewCustomerRequestPage() {
         </RouteGuard>
     );
 }
-

@@ -14,20 +14,19 @@ export async function POST(req: Request) {
         const urgency = getText(body.urgency);
         const lower = description.toLowerCase();
 
-        const repairType = lower.includes("screen") || lower.includes("display")
-            ? "screen/display repair"
-            : lower.includes("battery")
-              ? "battery repair"
-              : lower.includes("charge")
-                ? "charging repair"
-                : "phone diagnosis";
+        const quoteType = lower.includes("screen") || lower.includes("display")
+            ? "repair quote"
+            : lower.includes("logo") || lower.includes("design")
+              ? "design quote"
+              : lower.includes("clean") || lower.includes("leak") || lower.includes("ac")
+                ? "home service quote"
+                : "local service quote";
 
         return NextResponse.json({
-            service_category: "Phone repair",
-            quote_type: repairType,
+            service_category: "Local Need",
+            quote_type: quoteType,
             customer_pays_platform: 0,
-            business_lead_fee_idea_npr: "Rs. 20 - Rs. 100 after chosen offer",
-            customer_payment_note: "For MVP, customer pays the shop directly. Needaro does not collect repair payment.",
+            customer_payment_note: "Customers do not pay Needero. The customer pays the chosen business directly.",
             request_quality: {
                 has_location: Boolean(location),
                 has_urgency: Boolean(urgency),

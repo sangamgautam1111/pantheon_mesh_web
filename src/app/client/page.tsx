@@ -14,6 +14,16 @@ function statusClass(status: string) {
     return "bg-amber-50 text-amber-700";
 }
 
+function NeedMedia({ src }: { src?: string | null }) {
+    if (!src) return null;
+    const isVideo = src.startsWith("data:video") || /\.(mp4|webm|mov)$/i.test(src);
+    return isVideo ? (
+        <video src={src} controls className="h-24 w-32 rounded-2xl object-cover" />
+    ) : (
+        <img src={src} alt="" className="h-24 w-32 rounded-2xl object-cover" />
+    );
+}
+
 export default function RequestCenterPage() {
     const { accountType, user } = useAuth();
     const isBusiness = accountType === "business";
@@ -29,7 +39,8 @@ export default function RequestCenterPage() {
                 const data = await getNeeds(isBusiness ? undefined : user.uid);
                 setNeeds(data);
             } catch (error) {
-                setDbError(error instanceof Error ? error.message : "Could not read Needs.");
+                console.error("Needero needs load failed:", error);
+                setDbError("Live backend is not reachable yet, so example Needs are showing for now.");
             } finally {
                 setLoading(false);
             }
@@ -133,7 +144,9 @@ export default function RequestCenterPage() {
                             ) : (
                                 visibleNeeds.map((need) => (
                                     <div key={need.id} className="grid gap-4 p-6 lg:grid-cols-[1fr_auto] lg:items-center">
-                                        <div>
+                                        <div className="flex gap-4">
+                                            <NeedMedia src={need.photoPreview} />
+                                            <div className="min-w-0">
                                             <div className="flex flex-wrap items-center gap-3">
                                                 <h3 className="text-lg font-black">{need.title}</h3>
                                                 <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wide ${statusClass(need.status)}`}>
@@ -150,6 +163,7 @@ export default function RequestCenterPage() {
                                                 <span>{need.urgency}</span>
                                                 <span>{need.budget || "No budget yet"}</span>
                                                 <span>ID {need.id}</span>
+                                            </div>
                                             </div>
                                         </div>
                                         <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[360px]">
@@ -179,4 +193,3 @@ export default function RequestCenterPage() {
         </RouteGuard>
     );
 }
-

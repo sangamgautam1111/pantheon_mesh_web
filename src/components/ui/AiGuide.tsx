@@ -51,10 +51,10 @@ function clampPanelPosition(position: PanelPosition, size: PanelSize): PanelPosi
 }
 
 const SUGGESTIONS = [
-    "Post a phone repair request",
-    "Explain Needaro MVP",
-    "How do shops make offers?",
-    "What should I validate first?",
+    "Post a Need",
+    "Explain Needero",
+    "How do businesses send Offers?",
+    "Open Marketplace",
     "Open business plans",
 ];
 
@@ -65,7 +65,7 @@ export const AiGuide = () => {
         {
             id: "welcome",
             role: "assistant",
-            text: "Hi, I'm Needaro Assist. Tell me the local service problem or business question, and I will help with requests, offers, plans, or launch steps.",
+            text: "Hi, I'm Needero Assist. Tell me what you need help with, or ask about Needs, Offers, messages, marketplace, or plans.",
         },
     ]);
     const [input, setInput] = useState("");
@@ -303,14 +303,14 @@ export const AiGuide = () => {
                         width: isMobile ? 56 : 64,
                         height: isMobile ? 56 : 64,
                     }}
-                    title="Needaro Assist"
+                    title="Needero Assist"
                 >
                     <div className="flex h-10 w-10 items-center justify-center p-1">
-                        <Image src={chatIcon} alt="Needaro Assist" className="h-full w-full object-contain brightness-0 invert" />
+                        <Image src={chatIcon} alt="Needero Assist" className="h-full w-full object-contain brightness-0 invert" />
                     </div>
                     {!isMobile && (
                         <div className="pointer-events-none absolute right-20 whitespace-nowrap rounded-lg border border-gray-100 bg-white px-4 py-2 text-sm font-bold text-[#0f1114] opacity-0 shadow-2xl transition-opacity group-hover:opacity-100">
-                            Needaro Assist - Ask about requests, offers, or launch
+                            Needero Assist - Ask about Needs or Offers
                         </div>
                     )}
                 </button>
@@ -342,7 +342,7 @@ export const AiGuide = () => {
                             </div>
                             <div>
                                 <div className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                                    Needaro Assist
+                                    Needero Assist
                                 </div>
                                 <div className="text-xs" style={{ color: "var(--text-disabled)" }}>
                                     Drag header. Resize corner.
@@ -483,8 +483,8 @@ export const AiGuide = () => {
                         <div
                             onPointerDown={handleResizeStart}
                             className="absolute bottom-1 right-1 z-10 h-6 w-6 cursor-nwse-resize rounded-br-xl"
-                            aria-label="Resize Needaro Assist"
-                            title="Resize Needaro Assist"
+                            aria-label="Resize Needero Assist"
+                            title="Resize Needero Assist"
                         >
                             <div className="absolute bottom-2 right-2 h-3 w-3 border-b-2 border-r-2 border-slate-400" />
                         </div>

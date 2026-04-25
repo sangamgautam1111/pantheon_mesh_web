@@ -17,26 +17,32 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "A request title or description is required." }, { status: 400 });
         }
 
-        let category = "Phone repair";
-        let reason = "Needaro MVP defaults to phone repair in one city.";
+        let category = "Other";
+        let reason = "Needero detected a general local Need.";
 
         if (/\b(laptop|computer|pc|macbook)\b/.test(combined)) {
-            category = "Laptop repair";
-            reason = "Detected laptop/computer repair language. This is a later expansion category.";
+            category = "Repair & maintenance";
+            reason = "Detected laptop or computer repair language.";
+        } else if (/\b(ac|air conditioner|plumber|electrician|clean|paint|leak|appliance)\b/.test(combined)) {
+            category = "Home services";
+            reason = "Detected home service language.";
         } else if (/\b(bike|scooter|motorcycle)\b/.test(combined)) {
-            category = "Bike or scooter repair";
-            reason = "Detected vehicle repair language. This is a later expansion category.";
+            category = "Transport & moving";
+            reason = "Detected vehicle or transport help language.";
+        } else if (/\b(logo|banner|print|design|menu|poster)\b/.test(combined)) {
+            category = "Design & printing";
+            reason = "Detected design or printing language.";
         } else if (/\b(phone|iphone|samsung|redmi|screen|display|battery|charging|touch)\b/.test(combined)) {
-            category = "Phone repair";
-            reason = "Detected phone repair issue suitable for the first Needaro niche.";
+            category = "Repair & maintenance";
+            reason = "Detected phone repair language.";
         }
 
         return NextResponse.json({
             service_category: category,
             label: category,
-            confidence: category === "Phone repair" ? 0.86 : 0.62,
+            confidence: category === "Other" ? 0.55 : 0.82,
             reason,
-            strategy: "needaro-local-service-classifier",
+            strategy: "needero-local-need-classifier",
         });
     } catch {
         return NextResponse.json({ error: "Invalid classification request." }, { status: 400 });

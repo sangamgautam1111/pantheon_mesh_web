@@ -21,7 +21,7 @@ import { useGuide } from "@/context/GuideProvider";
 import { useAuth } from "@/context/AuthContext";
 import logoImg from "@/app/logo.png";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API = "/api/needero";
 
 interface SearchResult {
     type: string;
@@ -41,7 +41,7 @@ const TYPE_LABELS: Record<string, string> = {
     page: "Pages",
     plan: "Plans",
     doc: "Documentation",
-    job: "Jobs",
+    job: "Needs",
 };
 
 interface TopBarProps {
@@ -69,7 +69,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
     }, [setChatOpen]);
 
     const STATIC_PAGES: SearchResult[] = [
-        { type: "page", label: "Local Business Dashboard", href: "/dashboard" },
+        { type: "page", label: "Local Business Marketplace", href: "/marketplace" },
         { type: "page", label: "My Needs", href: "/client" },
         { type: "page", label: "Post a Need", href: "/client/new" },
         { type: "page", label: "Messages", href: "/messages" },
@@ -77,8 +77,6 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
             { type: "page", label: "Business Plans", href: "/pricing" },
             { type: "page", label: "Marketplace", href: "/marketplace" },
         ]),
-        { type: "doc", label: "Manifesto", href: "/manifesto" },
-        { type: "doc", label: "Whitepaper", href: "/whitepaper" },
     ];
 
     const performSearch = useCallback(async (query: string) => {
@@ -207,8 +205,8 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
     }, {});
 
     const groupOrder = ["page", "doc", "job"];
-    const accountHomeHref = profile?.accountType === "customer" ? "/client" : "/dashboard";
-    const accountHomeLabel = profile?.accountType === "customer" ? "My Requests" : "Business Dashboard";
+    const accountHomeHref = profile?.accountType === "customer" ? "/client" : "/marketplace";
+    const accountHomeLabel = profile?.accountType === "customer" ? "My Needs" : "Marketplace";
     const accountDisplayName =
         profile?.displayName || (profile?.accountType === "customer" ? "Customer" : "Local Business");
     const accountTypeLabel = profile?.accountType === "customer" ? "customer account" : "local business account";

@@ -23,6 +23,23 @@ const emptyDraft: QuoteDraft = {
     note: "",
 };
 
+function NeedMedia({ src }: { src?: string | null }) {
+    if (!src) {
+        return (
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-tr from-slate-200 to-slate-100">
+                <Briefcase size={32} className="text-slate-300" />
+            </div>
+        );
+    }
+
+    const isVideo = src.startsWith("data:video") || /\.(mp4|webm|mov)$/i.test(src);
+    return isVideo ? (
+        <video src={src} controls className="h-full w-full object-cover" />
+    ) : (
+        <img src={src} alt="" className="h-full w-full object-cover" />
+    );
+}
+
 export default function Marketplace() {
     const { user, profile } = useAuth();
     const [needs, setNeeds] = useState<NeedRecord[]>([]);
@@ -41,6 +58,7 @@ export default function Marketplace() {
                 setNeeds(data);
             } catch (error) {
                 console.error("Marketplace fetch failed:", error);
+                setMessage("Live backend is not reachable yet, so example Needs are showing for now.");
             } finally {
                 setLoading(false);
             }
@@ -170,10 +188,7 @@ export default function Marketplace() {
                                     }}
                                 >
                                     <div className="aspect-[4/3] bg-slate-100 relative overflow-hidden">
-                                        {/* Placeholder for Need image */}
-                                        <div className="absolute inset-0 bg-gradient-to-tr from-slate-200 to-slate-100 flex items-center justify-center">
-                                            <Briefcase size={32} className="text-slate-300" />
-                                        </div>
+                                        <NeedMedia src={need.photoPreview} />
                                     </div>
                                     <div className="p-4 flex flex-col flex-1">
                                         <div>
@@ -268,4 +283,3 @@ export default function Marketplace() {
         </RouteGuard>
     );
 }
-

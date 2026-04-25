@@ -11,12 +11,12 @@ type ChatTurn = {
 const MAX_HISTORY_MESSAGES = 6;
 
 const NAVIGATION_TARGETS: Array<{ path: string; label: string; keywords: string[] }> = [
-    { path: "/", label: "Open Needaro home", keywords: ["home", "overview", "needaro", "needaro.com"] },
-    { path: "/client/new", label: "Post a customer request", keywords: ["post", "request", "problem", "phone repair", "customer", "cracked", "screen"] },
-    { path: "/client", label: "Open request center", keywords: ["request center", "requests", "history", "customer requests"] },
+    { path: "/", label: "Open Needero home", keywords: ["home", "overview", "needero", "needero.com"] },
+    { path: "/client/new", label: "Post a Need", keywords: ["post", "need", "request", "problem", "customer"] },
+    { path: "/client", label: "Open My Needs", keywords: ["my needs", "needs", "history", "customer requests"] },
     { path: "/marketplace", label: "Open marketplace", keywords: ["marketplace", "offers", "shops", "businesses"] },
-    { path: "/pricing", label: "Open business plans", keywords: ["pricing", "plans", "business plan", "subscription", "rs. 500", "rs. 1000"] },
-    { path: "/dashboard", label: "Open operator dashboard", keywords: ["dashboard", "metrics", "launch", "validation"] },
+    { path: "/pricing", label: "Open business plans", keywords: ["pricing", "plans", "business plan", "subscription", "$19", "$49"] },
+    { path: "/messages", label: "Open messages", keywords: ["messages", "chat", "inbox"] },
 ];
 
 function normalizeText(text: string) {
@@ -97,11 +97,11 @@ async function generateGroqReply(message: string, history: ChatTurn[], knowledge
         {
             role: "system",
             content:
-                "You are Needaro Assist. Needaro.com is an AI-powered local service marketplace. Be simple, direct, and practical. The current MVP is phone repair in one city: customers post a problem, AI creates a problem card, nearby shops send offers, customers choose by price, speed, warranty, and distance.",
+                "You are Needero Assist. Needero is a simple local marketplace. Customers post a Need, nearby businesses send Offers, and customers choose the best one. Use simple language for non-technical users. Do not describe phone repair as the only category.",
         },
         {
             role: "system",
-            content: `Needaro knowledge:\n${knowledgeBlock}`,
+            content: `Needero knowledge:\n${knowledgeBlock}`,
         },
         ...history.map((turn) => ({ role: turn.role, content: turn.text })),
         { role: "user", content: message },
@@ -140,22 +140,22 @@ function fallbackReply(message: string, docs: ReturnType<typeof retrieveKnowledg
     const query = normalizeText(message);
 
     if (query.includes("business model") || query.includes("money") || query.includes("pricing")) {
-        return "Needaro makes money from local businesses, not customers. Customers post problems free. Shops start free, then pay monthly for more quote replies, better visibility, AI quote tools, analytics, and stronger profiles.";
+        return "Needero makes money from local businesses, not customers. Customers post Needs for free. Businesses can use Free, Pro, or Premium subscriptions for more replies, better visibility, AI quote help, and analytics.";
     }
 
     if (query.includes("mvp") || query.includes("first") || query.includes("start")) {
-        return "Start narrow: phone repair in one city. Target 10 repair shops, 50 customer requests, 5 real matches, and 1 paying business before expanding.";
+        return "Start simple: real local businesses, real customer Needs, fast Offers, and one paying business after value is proven.";
     }
 
     if (query.includes("customer") || query.includes("request")) {
-        return "Customer flow: describe the phone problem, add location and urgency, optionally upload a photo, let AI clean it into a Problem Card, compare shop offers, then choose one.";
+        return "Customer flow: describe the Need, add area and urgency, optionally upload a photo or video, let AI clean it into a Need Card, compare Offers, then choose one business.";
     }
 
     if (docs[0]) {
         return `${docs[0].text} What part should I help you open or refine next?`;
     }
 
-    return "Needaro is a local quote marketplace: post your problem, get prices from nearby businesses, choose the best offer. The MVP starts with phone repair in one city.";
+    return "Needero is a local marketplace: post a Need, get Offers from nearby businesses, choose the best one.";
 }
 
 export async function POST(req: NextRequest) {

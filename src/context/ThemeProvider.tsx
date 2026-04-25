@@ -18,7 +18,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        const stored = localStorage.getItem("needaro-theme") as Theme | null;
+        const stored = (localStorage.getItem("needero-theme") || localStorage.getItem("needaro-theme")) as Theme | null;
         const initial = stored || "light";
         setTheme(initial);
         document.documentElement.setAttribute("data-theme", initial);
@@ -29,7 +29,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         const next = theme === "dark" ? "light" : "dark";
         setTheme(next);
         document.documentElement.setAttribute("data-theme", next);
-        localStorage.setItem("needaro-theme", next);
+        localStorage.setItem("needero-theme", next);
     };
 
     if (!mounted) return <>{children}</>;

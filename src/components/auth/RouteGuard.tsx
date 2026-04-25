@@ -25,7 +25,7 @@ export function RouteGuard({ children, allowedTypes }: RouteGuardProps) {
         ? "customer account"
         : allowedTypes?.includes("business") && !allowedTypes.includes("customer")
           ? "local business account"
-          : "Needaro account";
+          : "Needero account";
 
     if (loading) {
         return (
@@ -33,7 +33,7 @@ export function RouteGuard({ children, allowedTypes }: RouteGuardProps) {
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 size={32} className="animate-spin text-gcp-blue" />
                     <p className="text-sm font-medium text-gcp-text-secondary">
-                        Authenticating Needaro workspace...
+                        Authenticating Needero workspace...
                     </p>
                 </div>
             </div>

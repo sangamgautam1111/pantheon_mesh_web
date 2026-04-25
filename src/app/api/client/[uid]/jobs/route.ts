@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { PHONE_REPAIR_REQUESTS } from "@/lib/nearquote";
+import { SAMPLE_NEEDS } from "@/lib/nearquote";
 
 export async function GET() {
     return NextResponse.json({
-        requests: PHONE_REPAIR_REQUESTS,
-        jobs: PHONE_REPAIR_REQUESTS.map((request) => ({
+        requests: SAMPLE_NEEDS,
+        jobs: SAMPLE_NEEDS.map((request) => ({
             id: request.id,
             title: request.title,
             description: request.issue,
@@ -12,6 +12,6 @@ export async function GET() {
             status: request.status,
             created_at: new Date().toISOString(),
         })),
-        detail: "Needaro MVP demo request feed.",
+        detail: "Needero demo Need feed.",
     });
 }

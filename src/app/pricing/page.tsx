@@ -1,5 +1,6 @@
 "use client";
 
+import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -10,7 +11,7 @@ const PLANS = [
         id: "free",
         name: "Free",
         price: "$0/month",
-        bestFor: "New businesses testing Needaro",
+        bestFor: "New businesses testing Needero",
         features: [
             "Basic business profile",
             "5 offer replies/month",
@@ -48,9 +49,10 @@ const PLANS = [
 ];
 
 export default function PricingPage() {
-    const { user, profile } = useAuth();
+    const { user, profile, syncProfile } = useAuth();
     const router = useRouter();
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+    const [error, setError] = useState("");
 
     const handleSelectPlan = async (planId: string) => {
         if (!user) {
@@ -59,8 +61,9 @@ export default function PricingPage() {
         }
 
         setLoadingPlan(planId);
+        setError("");
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/account/upgrade`, {
+            const res = await fetch("/api/needero/v1/account/upgrade", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -70,17 +73,21 @@ export default function PricingPage() {
             });
 
             if (res.ok) {
-                // Success
-                window.location.reload();
+                await syncProfile();
+            } else {
+                const data = await res.json().catch(() => null);
+                setError(data?.detail || data?.error || "Could not update this plan right now.");
             }
         } catch (error) {
             console.error("Failed to upgrade plan:", error);
+            setError("Needero could not update this plan right now.");
         } finally {
             setLoadingPlan(null);
         }
     };
 
     return (
+        <RouteGuard allowedTypes={["business"]}>
         <div className="container mx-auto px-4 py-16">
             <div className="text-center mb-16">
                 <h1 className="text-4xl md:text-5xl font-bold mb-6 text-[var(--text-primary)]">
@@ -90,6 +97,11 @@ export default function PricingPage() {
                     Choose the plan that fits your business needs. Connect with local customers
                     and grow your revenue with Needero.
                 </p>
+                {error && (
+                    <p className="mx-auto mt-5 max-w-xl rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                        {error}
+                    </p>
+                )}
             </div>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -150,12 +162,13 @@ export default function PricingPage() {
                                     ? "Updating..."
                                     : isCurrentPlan
                                       ? "Current Plan"
-                                      : "Select Plan"}
+                                      : `Buy ${plan.name}`}
                             </button>
                         </div>
                     );
                 })}
             </div>
         </div>
+        </RouteGuard>
     );
 }

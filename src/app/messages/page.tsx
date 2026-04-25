@@ -121,8 +121,8 @@ export default function MessagesPage() {
                                 Chat after an Offer is chosen.
                             </h1>
                             <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
-                                Send text, files, images, and map location. Every message is saved in Firebase under the
-                                thread.
+                                Send text, files, images, and map location. Every message is saved in the Needero
+                                conversation.
                             </p>
                         </div>
 
@@ -152,7 +152,7 @@ export default function MessagesPage() {
                                                 <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                                                     <div className={`max-w-[78%] rounded-3xl px-4 py-3 ${mine ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-950"}`}>
                                                         <p className="text-[10px] font-black uppercase tracking-wide opacity-60">
-                                                            {message.senderName} · {formatSender(message.senderType)}
+                                                            {message.senderName} - {formatSender(message.senderType)}
                                                         </p>
                                                         {message.text && <p className="mt-2 text-sm leading-6">{message.text}</p>}
                                                         {message.mapLocation && (
@@ -164,6 +164,9 @@ export default function MessagesPage() {
                                                             <div key={attachment.name} className="mt-2 rounded-2xl bg-white/10 p-2 text-xs font-semibold">
                                                                 {attachment.type.startsWith("image/") && attachment.dataUrl ? (
                                                                     <img src={attachment.dataUrl} alt={attachment.name} className="mb-2 max-h-40 rounded-xl object-cover" />
+                                                                ) : null}
+                                                                {attachment.type.startsWith("video/") && attachment.dataUrl ? (
+                                                                    <video src={attachment.dataUrl} controls className="mb-2 max-h-40 rounded-xl object-cover" />
                                                                 ) : null}
                                                                 {attachment.name}
                                                             </div>
@@ -227,4 +230,3 @@ export default function MessagesPage() {
         </RouteGuard>
     );
 }
-

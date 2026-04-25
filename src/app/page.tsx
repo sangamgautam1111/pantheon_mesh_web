@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Briefcase, MessageSquare, Search, Send, ShieldCheck, Store, Sparkles } from "lucide-react";
+import { ArrowRight, Briefcase, MessageSquare, Send, ShieldCheck, Store, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { NEEDARO_METRICS, SAMPLE_NEEDS } from "@/lib/nearquote";
+import { SAMPLE_NEEDS } from "@/lib/nearquote";
 
 const SIMPLE_STEPS = [
     "Post a Need",
@@ -63,7 +63,9 @@ export default function Home() {
                         <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-300">
                             Reverse Marketplace
                         </p>
-                        <h2 className="mt-4 text-3xl font-black">Like Fiverr, but businesses come to you.</h2>
+                        <h2 className="mt-4 text-3xl font-black">
+                            Post a Need. Get Offers from nearby businesses. Choose the best one.
+                        </h2>
                         <div className="mt-6 space-y-3">
                             {[
                                 "Describe your problem in plain words",
@@ -125,7 +127,7 @@ export default function Home() {
                                 <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{need.category}</p>
                                 <h3 className="mt-3 text-lg font-black">{need.title}</h3>
                                 <p className="mt-2 text-sm leading-6 text-slate-600">{need.issue}</p>
-                                <p className="mt-4 text-xs font-bold text-slate-500">{need.location} · {need.offers} Offers</p>
+                                <p className="mt-4 text-xs font-bold text-slate-500">{need.location} - {need.offers} Offers</p>
                             </div>
                         ))}
                     </div>
@@ -134,4 +136,3 @@ export default function Home() {
         </main>
     );
 }
-

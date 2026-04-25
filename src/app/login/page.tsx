@@ -71,6 +71,13 @@ export default function LoginPage() {
         }
     }, [user, authLoading, accountType, router]);
 
+    useEffect(() => {
+        const role = new URLSearchParams(window.location.search).get("role");
+        if (role === "business" || role === "customer") {
+            setSelectedAccountType(role);
+        }
+    }, []);
+
     const handleProviderSignIn = async (provider: "google" | "github") => {
         setError(null);
         setLoading(provider);
@@ -81,9 +88,10 @@ export default function LoginPage() {
             } else {
                 await signInWithGitHub(selectedAccountType);
             }
-            router.push(destinationFor(selectedAccountType));
         } catch (err: any) {
-            setError(err?.message || `${provider} authentication failed`);
+            setError(err?.code === "auth/popup-closed-by-user"
+                ? "Choose a Google or GitHub account to continue."
+                : err?.message || `${provider} authentication failed`);
         } finally {
             setLoading(null);
         }
@@ -323,7 +331,7 @@ export default function LoginPage() {
                                             value={displayName}
                                             onChange={(event) => setDisplayName(event.target.value)}
                                             className="gcp-input w-full"
-                                            placeholder={selectedAccountType === "business" ? "New Road Mobile Care" : "Sangam Gautam"}
+                                            placeholder={selectedAccountType === "business" ? "Your business name" : "Your name"}
                                             required
                                         />
                                     </div>

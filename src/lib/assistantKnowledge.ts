@@ -8,20 +8,12 @@ export type AssistantKnowledgeDoc = {
 
 export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
     {
-        id: "needaro-thesis",
-        title: "Needaro business thesis",
+        id: "needero-simple-thesis",
+        title: "Needero in one line",
         category: "overview",
         route: "/",
         text:
-            "Needaro.com is an AI-powered local service marketplace. Customers post a local problem once, AI turns it into a clean quote request, nearby businesses send offers, and the customer chooses by price, distance, speed, rating, and warranty.",
-    },
-    {
-        id: "first-market",
-        title: "First market",
-        category: "launch",
-        route: "/client/new",
-        text:
-            "Needaro starts narrow: phone repair in one city. Phone repair is common, local, price-sensitive, competitive, photo-friendly, and does not require Needaro to perform the repair itself.",
+            "Needero is a simple local marketplace: customers post a Need, nearby businesses send Offers, and the customer chooses the best one. Customers do not pay Needero.",
     },
     {
         id: "customer-flow",
@@ -29,62 +21,54 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "customer",
         route: "/client/new",
         text:
-            "The customer posts a problem with description, location, urgency, optional phone model, optional budget, and optional photo or video. Needaro AI creates a Problem Card with category, issue, device, known status, missing info, and quote needed. Businesses then send offers.",
+            "Customer flow: Post a Need, add area, urgency, optional budget, and optional image or video. Needero turns the text into a clean Need Card. Businesses send Offers. The customer compares price, time, warranty, distance, and note, then chooses one business.",
     },
     {
         id: "business-flow",
-        title: "Business flow",
+        title: "Local business flow",
         category: "business",
         route: "/marketplace",
         text:
-            "Businesses sign up, select category and service area, receive nearby matching requests, send quotes with price, repair time, warranty, note, and availability, then win customers when chosen.",
+            "Local businesses browse nearby Needs in Marketplace and reply with clear Offers: price, time, warranty, distance, and a helpful note. The marketplace is the key business workspace.",
     },
     {
-        id: "offers",
-        title: "Offer comparison",
+        id: "messages",
+        title: "Messages",
         category: "marketplace",
-        route: "/marketplace",
+        route: "/messages",
         text:
-            "Customers compare offers by price, repair time, warranty, distance, shop note, and trust signals. After choosing, Needaro unlocks map, call, message, and booking details.",
+            "Messages help customers and businesses talk after contact is allowed. Messages can include text, images, files, and map location, and are saved to the backend conversation record.",
     },
     {
-        id: "business-model",
-        title: "Business model",
+        id: "business-plans",
+        title: "Business plans",
         category: "pricing",
         route: "/pricing",
         text:
-            "Customers use Needaro free. Businesses pay monthly for more quote replies, better visibility, AI quote tools, analytics, and stronger profiles. Plans are Free Rs.0 for 5 replies, Starter Rs.500 for 30 replies, Pro Rs.1000 for unlimited replies and profile, and Premium Rs.2500 for priority visibility and analytics.",
+            "Business plans are only for local business accounts. Free is $0/month with a basic profile, 5 offer replies per month, and relevant Need visibility. Pro is $19/month with unlimited offer replies, AI quote helper, verified profile, basic analytics, and higher placement. Premium is $49/month with Pro features plus priority placement, featured profile, instant lead alerts, advanced analytics, Top Rated eligibility, and stronger recommendation boost.",
     },
     {
-        id: "pay-per-lead-later",
-        title: "Pay per lead later",
+        id: "customer-pricing",
+        title: "Customer pricing",
         category: "pricing",
-        route: "/pricing",
+        route: "/client/new",
         text:
-            "A later model is pay-per-lead when a customer chooses a shop. Do not start with full customer payments. In version 1, customers pay the shop directly.",
+            "Customers can post Needs for free. Needero should not show business subscription plans to customer accounts.",
     },
     {
-        id: "launch-plan",
-        title: "Manual launch plan",
-        category: "launch",
-        route: "/dashboard",
-        text:
-            "Manual validation target: onboard 10 phone repair shops, collect 50 customer requests, create 5 real matches, and get 1 paying business. Visit or message shops manually and help them reply fast before automating.",
-    },
-    {
-        id: "safety",
-        title: "Safety and privacy",
+        id: "privacy",
+        title: "Privacy first",
         category: "safety",
         route: "/client/new",
         text:
-            "Needaro should hide customer contact details until the customer chooses an offer. Businesses should be manually approved early. Collect only necessary data and avoid risky regulated categories at first.",
+            "Customer contact details should stay hidden until the customer chooses an Offer. Show approximate area first, not exact private home location.",
     },
     {
-        id: "moat",
-        title: "Defensibility",
-        category: "overview",
-        route: "/dashboard",
+        id: "launch",
+        title: "Launch focus",
+        category: "launch",
+        route: "/marketplace",
         text:
-            "Needaro's moat is not code. It is the local business network, customer demand history, trust and verification, AI request intelligence, and business SaaS tools.",
+            "Needero can start broad in UI but should validate locally: onboard real local businesses, get real posted Needs, make sure Offers arrive fast, and only charge businesses after they see value.",
     },
 ];

@@ -1,14 +1,14 @@
 "use client";
 
-import { ReactNode, createContext, useContext, useEffect, useRef, useState } from "react";
+import { ReactNode, createContext, useContext, useEffect, useState } from "react";
 import {
     User,
     createUserWithEmailAndPassword,
+    getRedirectResult,
     onAuthStateChanged,
     signInWithEmailAndPassword,
     signInWithPopup,
     signInWithRedirect,
-    getRedirectResult,
     signOut as firebaseSignOut,
     updateProfile,
 } from "firebase/auth";
@@ -57,9 +57,31 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 const DEFAULT_ACCOUNT_TYPE: ActiveAccountType = "customer";
+const PENDING_ACCOUNT_TYPE_KEY = "needero-pending-account-type";
 
 const isActiveAccountType = (value: unknown): value is ActiveAccountType =>
     value === "customer" || value === "business";
+
+const getPendingAccountType = () => {
+    if (typeof window === "undefined") {
+        return null;
+    }
+
+    const value = window.localStorage.getItem(PENDING_ACCOUNT_TYPE_KEY);
+    return isActiveAccountType(value) ? value : null;
+};
+
+const setPendingAccountType = (value: ActiveAccountType) => {
+    if (typeof window !== "undefined") {
+        window.localStorage.setItem(PENDING_ACCOUNT_TYPE_KEY, value);
+    }
+};
+
+const clearPendingAccountType = () => {
+    if (typeof window !== "undefined") {
+        window.localStorage.removeItem(PENDING_ACCOUNT_TYPE_KEY);
+    }
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
@@ -85,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const syncWithBackend = async (uid: string, displayName: string, email: string, currentPlanId: string) => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/auth/sync`, {
+            const response = await fetch("/api/needero/v1/auth/sync", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -111,13 +133,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         requestedAccountType?: ActiveAccountType,
         overrides: Partial<UserProfile> = {},
     ) => {
-        const existingSnapshot = await get(ref(db, `users/${firebaseUser.uid}`));
-        const existing = existingSnapshot.exists() ? (existingSnapshot.val() as Partial<UserProfile>) : {};
+        let existing: Partial<UserProfile> = {};
+        try {
+            const existingSnapshot = await get(ref(db, `users/${firebaseUser.uid}`));
+            existing = existingSnapshot.exists() ? (existingSnapshot.val() as Partial<UserProfile>) : {};
+        } catch (error) {
+            console.warn("Unable to read existing profile. Continuing with Firebase Auth user:", error);
+        }
         
-        // Lock the account type: if they already have one, force them to keep it.
-        const resolvedAccountType = isActiveAccountType(existing.accountType)
+        const resolvedAccountType = requestedAccountType || (isActiveAccountType(existing.accountType)
             ? existing.accountType
-            : (requestedAccountType || DEFAULT_ACCOUNT_TYPE);
+            : DEFAULT_ACCOUNT_TYPE);
 
         const defaultName = resolvedAccountType === "business" ? "Local Business" : "Customer";
 
@@ -148,14 +174,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         }
 
-        const backendProfile = resolvedAccountType === "business"
-            ? await syncWithBackend(
-                  firebaseUser.uid,
-                  displayName || "Local Business",
-                  firebaseUser.email || existing.email || "",
-                  requestedPlanId,
-              )
-            : null;
+        const backendProfile =
+            resolvedAccountType === "business"
+                ? await syncWithBackend(
+                      firebaseUser.uid,
+                      displayName || "Local Business",
+                      firebaseUser.email || existing.email || "",
+                      requestedPlanId,
+                  )
+                : null;
         const resolvedPlanId =
             resolvedAccountType === "business"
                 ? typeof backendProfile?.current_plan_id === "string" && backendProfile.current_plan_id.trim()
@@ -209,10 +236,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         let profileUnsubscribe: (() => void) | undefined;
 
-        // Handle redirect errors without duplicating profile creation
         getRedirectResult(auth).catch((error) => {
             console.error("Redirect sign-in error:", error);
-            sessionStorage.removeItem("pendingAccountType");
+            clearPendingAccountType();
         });
 
         const authUnsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -231,9 +257,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 return;
             }
 
-            const pending = sessionStorage.getItem("pendingAccountType") as ActiveAccountType | null;
-            const syncedProfile = await upsertProfile(firebaseUser, pending || undefined);
-            sessionStorage.removeItem("pendingAccountType");
+            const pending = getPendingAccountType();
+            let syncedProfile: UserProfile;
+            try {
+                syncedProfile = await upsertProfile(firebaseUser, pending || undefined);
+            } catch (error) {
+                console.warn("Profile sync failed after auth. Keeping signed-in session:", error);
+                const fallbackAccountType = pending || DEFAULT_ACCOUNT_TYPE;
+                syncedProfile = {
+                    uid: firebaseUser.uid,
+                    email: firebaseUser.email,
+                    displayName: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Customer",
+                    photoURL: firebaseUser.photoURL,
+                    accountType: fallbackAccountType,
+                    createdAt: Date.now(),
+                    companyName: fallbackAccountType === "business"
+                        ? firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Local Business"
+                        : null,
+                    currentPlanId: fallbackAccountType === "business" ? "free" : null,
+                    totalSpent: 0,
+                };
+                setProfile(syncedProfile);
+                setAccountType(fallbackAccountType);
+            }
+            clearPendingAccountType();
 
             const profileRef = ref(db, `users/${firebaseUser.uid}`);
             profileUnsubscribe = onValue(profileRef, (snapshot) => {
@@ -247,6 +294,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const resolvedAccountType = isActiveAccountType(data.accountType) ? data.accountType : DEFAULT_ACCOUNT_TYPE;
                 setProfile({ ...data, accountType: resolvedAccountType });
                 setAccountType(resolvedAccountType);
+            }, (error) => {
+                console.warn("Unable to listen to Firebase profile. Keeping signed-in session:", error);
+                setProfile(syncedProfile);
+                setAccountType(syncedProfile.accountType);
             });
 
             setLoading(false);
@@ -261,23 +312,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const signInWithGitHub = async (selectedAccountType: ActiveAccountType = DEFAULT_ACCOUNT_TYPE) => {
-        sessionStorage.setItem("pendingAccountType", selectedAccountType);
+        setPendingAccountType(selectedAccountType);
         try {
-            await signInWithRedirect(auth, githubProvider);
+            const result = await signInWithPopup(auth, githubProvider);
+            await upsertProfile(result.user, selectedAccountType);
+            clearPendingAccountType();
         } catch (error) {
-            console.error("GitHub redirect failed:", error);
-            sessionStorage.removeItem("pendingAccountType");
+            const code = typeof error === "object" && error && "code" in error ? String((error as { code?: string }).code) : "";
+            if (code === "auth/popup-blocked" || code === "auth/cancelled-popup-request") {
+                await signInWithRedirect(auth, githubProvider);
+                return;
+            }
+            clearPendingAccountType();
             throw error;
         }
     };
 
     const signInWithGoogle = async (selectedAccountType: ActiveAccountType = DEFAULT_ACCOUNT_TYPE) => {
-        sessionStorage.setItem("pendingAccountType", selectedAccountType);
+        setPendingAccountType(selectedAccountType);
         try {
-            await signInWithRedirect(auth, googleProvider);
+            const result = await signInWithPopup(auth, googleProvider);
+            await upsertProfile(result.user, selectedAccountType);
+            clearPendingAccountType();
         } catch (error) {
-            console.error("Google redirect failed:", error);
-            sessionStorage.removeItem("pendingAccountType");
+            const code = typeof error === "object" && error && "code" in error ? String((error as { code?: string }).code) : "";
+            if (code === "auth/popup-blocked" || code === "auth/cancelled-popup-request") {
+                await signInWithRedirect(auth, googleProvider);
+                return;
+            }
+            clearPendingAccountType();
             throw error;
         }
     };
@@ -322,6 +385,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const handleSignOut = async () => {
         await firebaseSignOut(auth);
+        clearPendingAccountType();
         setUser(null);
         setProfile(null);
         setAccountType(null);
