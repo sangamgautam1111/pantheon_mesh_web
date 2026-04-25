@@ -19,6 +19,12 @@ export type OfferRecord = BusinessOffer & {
     needId: string;
     status: "sent" | "chosen" | "declined";
     createdAt?: string;
+    serviceType?: string;
+    included?: string;
+    extraCharges?: string;
+    availability?: string;
+    delayRefundRule?: string;
+    businessNote?: string;
 };
 
 const readError = async (response: Response, fallback: string) => {
@@ -109,19 +115,44 @@ const mapNeed = (need: BackendRecord): NeedRecord => {
     };
 };
 
-const mapOffer = (offer: BackendRecord): OfferRecord => ({
-    id: String(offer.id || offer.offer_id || crypto.randomUUID()),
-    needId: String(offer.need_id || offer.needId || ""),
-    businessId: String(offer.business_id || offer.businessId || ""),
-    businessName: String(offer.business_name || offer.businessName || "Local Business"),
-    price: String(offer.price || ""),
-    time: String(offer.delivery_time || offer.time || ""),
-    warranty: String(offer.warranty || ""),
-    distance: String(offer.distance || "Nearby"),
-    note: String(offer.note || ""),
-    status: offer.status === "chosen" || offer.status === "declined" ? offer.status : "sent",
-    createdAt: offer.created_at || offer.createdAt,
-});
+const parseOfferNote = (rawNote: unknown) => {
+    if (typeof rawNote !== "string") return { note: "", details: {} as BackendRecord };
+    try {
+        const parsed = JSON.parse(rawNote);
+        if (parsed && typeof parsed === "object") {
+            return {
+                note: String(parsed.businessNote || parsed.note || ""),
+                details: parsed as BackendRecord,
+            };
+        }
+    } catch {
+        // Older offers stored plain text notes.
+    }
+    return { note: rawNote, details: {} as BackendRecord };
+};
+
+const mapOffer = (offer: BackendRecord): OfferRecord => {
+    const parsedNote = parseOfferNote(offer.note);
+    return {
+        id: String(offer.id || offer.offer_id || crypto.randomUUID()),
+        needId: String(offer.need_id || offer.needId || ""),
+        businessId: String(offer.business_id || offer.businessId || ""),
+        businessName: String(offer.business_name || offer.businessName || "Local Business"),
+        price: String(offer.price || ""),
+        time: String(offer.delivery_time || offer.time || ""),
+        warranty: String(offer.warranty || ""),
+        distance: String(parsedNote.details.distance || offer.distance || "Nearby"),
+        note: parsedNote.note,
+        status: offer.status === "chosen" || offer.status === "declined" ? offer.status : "sent",
+        createdAt: offer.created_at || offer.createdAt,
+        serviceType: String(parsedNote.details.serviceType || ""),
+        included: String(parsedNote.details.included || ""),
+        extraCharges: String(parsedNote.details.extraCharges || ""),
+        availability: String(parsedNote.details.availability || ""),
+        delayRefundRule: String(parsedNote.details.delayRefundRule || ""),
+        businessNote: parsedNote.note,
+    };
+};
 
 export async function cleanNeedWithAI(messyText: string): Promise<NeedCard> {
     const response = await fetch(`${API_URL}/v1/ai/clean-need`, {
@@ -190,11 +221,26 @@ export async function createOffer(input: {
     businessId: string;
     businessName: string;
     price: string;
+    serviceType?: string;
     time: string;
     warranty: string;
     distance: string;
+    included?: string;
+    extraCharges?: string;
+    availability?: string;
+    delayRefundRule?: string;
     note: string;
 }) {
+    const structuredNote = JSON.stringify({
+        serviceType: input.serviceType || "",
+        included: input.included || "",
+        extraCharges: input.extraCharges || "",
+        distance: input.distance || "",
+        availability: input.availability || "",
+        delayRefundRule: input.delayRefundRule || "",
+        businessNote: input.note || "",
+    });
+
     const response = await fetch(`${API_URL}/v1/offers`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -205,7 +251,7 @@ export async function createOffer(input: {
             price: input.price,
             delivery_time: input.time,
             warranty: input.warranty,
-            note: input.note,
+            note: structuredNote,
         }),
     });
     if (!response.ok) {

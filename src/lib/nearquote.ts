@@ -136,72 +136,6 @@ export const NEEDARO_PLANS: NeederoPlan[] = [
     },
 ];
 
-export const SAMPLE_NEEDS: ServiceRequest[] = [
-    {
-        id: "NEED-1001",
-        title: "Cracked iPhone screen",
-        location: "New Road, Kathmandu",
-        urgency: "Today",
-        category: "Repair & maintenance",
-        issue: "Screen cracked, touch still works. Customer wants repair offers nearby.",
-        budget: "Rs. 2,000-5,000",
-        status: "quoted",
-        offers: 3,
-        firstOfferTime: "12 min",
-    },
-    {
-        id: "NEED-1002",
-        title: "Need a home deep clean",
-        location: "Baneshwor",
-        urgency: "This week",
-        category: "Home services",
-        issue: "Two-bedroom flat needs cleaning before guests arrive.",
-        budget: "No budget yet",
-        status: "open",
-        offers: 1,
-        firstOfferTime: "18 min",
-    },
-    {
-        id: "NEED-1003",
-        title: "Logo and menu print for cafe",
-        location: "Lalitpur",
-        urgency: "Flexible",
-        category: "Design & printing",
-        issue: "Small cafe needs a clean logo refresh and 50 printed menus.",
-        budget: "Rs. 5,000+",
-        status: "chosen",
-        offers: 4,
-        firstOfferTime: "8 min",
-    },
-];
-
-export const SAMPLE_OFFERS: BusinessOffer[] = [
-    {
-        businessName: "Nearby Pro Service",
-        price: "Rs. 4,500",
-        time: "2 hours",
-        warranty: "1 month",
-        distance: "1.2 km",
-        note: "We can handle this today. Final price after quick inspection.",
-    },
-    {
-        businessName: "Fast Local Help",
-        price: "Rs. 4,200",
-        time: "Tomorrow",
-        warranty: "No warranty",
-        distance: "0.8 km",
-        note: "Budget option available. Message us for details.",
-    },
-    {
-        businessName: "Trusted Neighborhood Shop",
-        price: "Rs. 5,000",
-        time: "Today",
-        warranty: "3 months",
-        distance: "2.1 km",
-        note: "Includes better materials and after-service support.",
-    },
-];
-
 export const NEEDARO_METRICS = [
     { label: "Customer price", value: "Free" },
     { label: "Business model", value: "SaaS plans" },
@@ -231,4 +165,3 @@ export function createFallbackNeedCard(description: string, category = "Other"):
         fallback: true,
     };
 }
-

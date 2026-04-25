@@ -1,21 +1,33 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Briefcase, MessageSquare, Send, ShieldCheck, Store, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { SAMPLE_NEEDS } from "@/lib/nearquote";
-
-const SIMPLE_STEPS = [
-    "Post a Need",
-    "AI makes it clear",
-    "Businesses send Offers",
-    "Choose the best one",
-];
+import { NeedRecord, getNeeds } from "@/lib/neederoDatabase";
 
 export default function Home() {
     const { accountType } = useAuth();
+    const [needs, setNeeds] = useState<NeedRecord[]>([]);
+    const [loadError, setLoadError] = useState("");
     const primaryHref = accountType === "business" ? "/marketplace" : "/client/new";
     const primaryLabel = accountType === "business" ? "Browse Needs" : "Post a Need";
+    const liveNeeds = useMemo(() => needs.slice(0, 3), [needs]);
+
+    useEffect(() => {
+        const loadNeeds = async () => {
+            try {
+                setLoadError("");
+                setNeeds(await getNeeds());
+            } catch (error) {
+                console.error("Home live Needs failed:", error);
+                setLoadError("Live Need feed is not reachable yet.");
+                setNeeds([]);
+            }
+        };
+
+        void loadNeeds();
+    }, []);
 
     return (
         <main className="w-full bg-[#f8f7f2] px-4 py-6 text-slate-950 md:px-8 md:py-8">
@@ -119,18 +131,24 @@ export default function Home() {
                 <section className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-sm">
                     <div className="mb-5 flex items-center gap-3">
                         <Store size={22} />
-                        <h2 className="text-2xl font-black">Example Needs</h2>
+                        <h2 className="text-2xl font-black">Live Needs</h2>
                     </div>
-                    <div className="grid gap-4 md:grid-cols-3">
-                        {SAMPLE_NEEDS.map((need) => (
-                            <div key={need.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-5">
-                                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{need.category}</p>
-                                <h3 className="mt-3 text-lg font-black">{need.title}</h3>
-                                <p className="mt-2 text-sm leading-6 text-slate-600">{need.issue}</p>
-                                <p className="mt-4 text-xs font-bold text-slate-500">{need.location} - {need.offers} Offers</p>
-                            </div>
-                        ))}
-                    </div>
+                    {liveNeeds.length === 0 ? (
+                        <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm font-semibold text-slate-500">
+                            {loadError || "No customer Needs posted yet. When customers post, real Needs will appear here."}
+                        </div>
+                    ) : (
+                        <div className="grid gap-4 md:grid-cols-3">
+                            {liveNeeds.map((need) => (
+                                <div key={need.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-5">
+                                    <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{need.category}</p>
+                                    <h3 className="mt-3 text-lg font-black">{need.title}</h3>
+                                    <p className="mt-2 text-sm leading-6 text-slate-600">{need.issue}</p>
+                                    <p className="mt-4 text-xs font-bold text-slate-500">{need.location} - {need.offers} Offers</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </section>
             </div>
         </main>

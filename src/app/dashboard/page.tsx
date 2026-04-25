@@ -1,16 +1,36 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, BarChart3, Building2, CheckCircle2, Clock, MessageSquare, ShieldCheck } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
-import { NEEDARO_PLANS, SAMPLE_NEEDS } from "@/lib/nearquote";
+import { NeedRecord, getNeeds } from "@/lib/neederoDatabase";
+import { NEEDARO_PLANS } from "@/lib/nearquote";
 
 export default function Dashboard() {
-    const totalRequests = SAMPLE_NEEDS.length;
-    const requestsWithOffer = SAMPLE_NEEDS.filter((request) => request.offers > 0).length;
-    const chosenRequests = SAMPLE_NEEDS.filter((request) => request.status === "chosen").length;
-    const usefulQuoteRate = Math.round((requestsWithOffer / totalRequests) * 100);
+    const [needs, setNeeds] = useState<NeedRecord[]>([]);
+    const [loadError, setLoadError] = useState("");
     const starterPlan = NEEDARO_PLANS.find((plan) => plan.id === "pro") ?? NEEDARO_PLANS[1];
+    const totalRequests = needs.length;
+    const requestsWithOffer = needs.filter((request) => request.offers > 0).length;
+    const chosenRequests = needs.filter((request) => request.status === "chosen").length;
+    const usefulQuoteRate = totalRequests > 0 ? Math.round((requestsWithOffer / totalRequests) * 100) : 0;
+    const recentNeeds = useMemo(() => needs.slice(0, 3), [needs]);
+
+    useEffect(() => {
+        const loadNeeds = async () => {
+            try {
+                setLoadError("");
+                setNeeds(await getNeeds());
+            } catch (error) {
+                console.error("Dashboard live Needs failed:", error);
+                setLoadError("Live Needs are not reachable yet.");
+                setNeeds([]);
+            }
+        };
+
+        void loadNeeds();
+    }, []);
 
     return (
         <RouteGuard allowedTypes={["business"]}>
@@ -31,7 +51,7 @@ export default function Dashboard() {
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-3">
-                                <Link href="/client" className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white">
+                                <Link href="/marketplace" className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white">
                                     <MessageSquare size={16} />
                                     Open lead inbox
                                 </Link>
@@ -71,7 +91,7 @@ export default function Dashboard() {
                                 {[
                                     ["Requests with at least 1 offer", `${requestsWithOffer}/${totalRequests}`],
                                     ["Average first offer goal", "Under 30 minutes"],
-                                    ["Manual shop onboarding target", "10 phone repair shops"],
+                                    ["Manual shop onboarding target", "10 local businesses"],
                                     ["First revenue proof", "1 shop pays after leads"],
                                 ].map(([label, value]) => (
                                     <div key={label} className="flex items-center justify-between gap-4 rounded-2xl bg-slate-50 p-4">
@@ -106,20 +126,26 @@ export default function Dashboard() {
                     <section className="mt-6 rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
                         <div className="mb-5 flex items-center gap-3">
                             <Clock size={20} />
-                            <h2 className="text-2xl font-black">Recent Needs from customers</h2>
+                            <h2 className="text-2xl font-black">Recent live Needs from customers</h2>
                         </div>
-                        <div className="grid gap-4 lg:grid-cols-3">
-                            {SAMPLE_NEEDS.map((request) => (
-                                <div key={request.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-5">
-                                    <p className="text-sm font-black">{request.title}</p>
-                                    <p className="mt-2 text-sm leading-6 text-slate-600">{request.issue}</p>
-                                    <div className="mt-4 flex items-center justify-between text-xs font-bold text-slate-500">
-                                        <span>{request.location}</span>
-                                        <span>{request.offers} offers</span>
+                        {recentNeeds.length === 0 ? (
+                            <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm font-semibold text-slate-500">
+                                {loadError || "No customer Needs posted yet. Real posts will appear here automatically."}
+                            </div>
+                        ) : (
+                            <div className="grid gap-4 lg:grid-cols-3">
+                                {recentNeeds.map((request) => (
+                                    <div key={request.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-5">
+                                        <p className="text-sm font-black">{request.title}</p>
+                                        <p className="mt-2 text-sm leading-6 text-slate-600">{request.issue}</p>
+                                        <div className="mt-4 flex items-center justify-between text-xs font-bold text-slate-500">
+                                            <span>{request.location}</span>
+                                            <span>{request.offers} offers</span>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </section>
                 </div>
             </main>

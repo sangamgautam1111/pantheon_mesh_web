@@ -6,7 +6,6 @@ import { ArrowRight, Briefcase, CheckCircle2, Clock, MapPin, MessageSquare, Plus
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import { NeedRecord, getNeeds } from "@/lib/neederoDatabase";
-import { SAMPLE_NEEDS } from "@/lib/nearquote";
 
 function statusClass(status: string) {
     if (status === "chosen") return "bg-emerald-50 text-emerald-700";
@@ -40,7 +39,8 @@ export default function RequestCenterPage() {
                 setNeeds(data);
             } catch (error) {
                 console.error("Needero needs load failed:", error);
-                setDbError("Live backend is not reachable yet, so example Needs are showing for now.");
+                setDbError("Could not load live Needs yet. Please wait for the backend deploy or try again.");
+                setNeeds([]);
             } finally {
                 setLoading(false);
             }
@@ -50,17 +50,11 @@ export default function RequestCenterPage() {
     }, [user, isBusiness]);
 
     const visibleNeeds = useMemo(() => {
-        const liveNeeds = needs.length > 0 ? needs : SAMPLE_NEEDS.map((need) => ({
-            ...need,
-            description: need.issue,
-            customerName: "Demo customer",
-        }));
-
         if (isBusiness) {
-            return liveNeeds;
+            return needs;
         }
 
-        return liveNeeds.filter((need) => !need.customerId || need.customerId === user?.uid);
+        return needs.filter((need) => need.customerId === user?.uid);
     }, [isBusiness, needs, user?.uid]);
 
     const openNeeds = visibleNeeds.filter((need) => need.status !== "chosen").length;
@@ -138,7 +132,7 @@ export default function RequestCenterPage() {
                                 <div className="p-10 text-center">
                                     <Briefcase className="mx-auto mb-4 text-slate-300" size={36} />
                                     <p className="text-sm font-semibold text-slate-500">
-                                        {isBusiness ? "No Needs yet." : "You have not posted a Need yet."}
+                                                {dbError || (isBusiness ? "No live Needs yet." : "You have not posted a Need yet.")}
                                     </p>
                                 </div>
                             ) : (
@@ -176,10 +170,10 @@ export default function RequestCenterPage() {
                                                 <p className="mt-2 text-xl font-black">{need.firstOfferTime || "Waiting"}</p>
                                             </div>
                                             <Link
-                                                href={isBusiness ? "/marketplace" : "/messages"}
+                                                href={isBusiness ? "/marketplace" : `/marketplace?needId=${encodeURIComponent(need.id)}`}
                                                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white"
                                             >
-                                                {isBusiness ? "Send Offer" : "Messages"}
+                                                {isBusiness ? "Send Offer" : "View Quotes"}
                                                 <ArrowRight size={15} />
                                             </Link>
                                         </div>

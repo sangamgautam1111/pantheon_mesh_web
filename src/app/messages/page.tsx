@@ -1,7 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
-import { Image as ImageIcon, Loader2, MapPin, Paperclip, Send } from "lucide-react";
+import { Image as ImageIcon, Loader2, MapPin, Paperclip, Send, ShoppingBag } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -23,7 +23,26 @@ export default function MessagesPage() {
     const [mapLocation, setMapLocation] = useState<{ latitude: number; longitude: number } | null>(null);
     const [saving, setSaving] = useState(false);
     const [status, setStatus] = useState("");
-    const threadId = useMemo(() => `needero-demo-${user?.uid || "guest"}`, [user?.uid]);
+    const [orderContext, setOrderContext] = useState({
+        needId: "",
+        businessId: "",
+        businessName: "",
+        orderStarted: false,
+    });
+    const threadId = useMemo(
+        () => orderContext.needId || `needero-inbox-${user?.uid || "guest"}`,
+        [orderContext.needId, user?.uid],
+    );
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        setOrderContext({
+            needId: params.get("needId") || "",
+            businessId: params.get("businessId") || "",
+            businessName: params.get("businessName") || "",
+            orderStarted: params.get("order") === "1",
+        });
+    }, []);
 
     useEffect(() => {
         if (!user) return;
@@ -126,12 +145,16 @@ export default function MessagesPage() {
                             </p>
                         </div>
 
-                        <div className="grid min-h-[620px] lg:grid-cols-[0.75fr_1.25fr]">
+                        <div className="grid min-h-[620px] lg:grid-cols-[0.65fr_1.2fr_0.65fr]">
                             <aside className="border-b border-slate-100 bg-slate-50 p-5 lg:border-b-0 lg:border-r">
                                 <div className="rounded-3xl border border-slate-200 bg-white p-5">
-                                    <p className="text-sm font-black">Demo conversation</p>
+                                    <p className="text-sm font-black">
+                                        {orderContext.businessName || "Needero conversation"}
+                                    </p>
                                     <p className="mt-2 text-sm leading-6 text-slate-500">
-                                        This will become the real inbox list after offers and bookings are fully connected.
+                                        {orderContext.needId
+                                            ? `Need thread: ${orderContext.needId}`
+                                            : "Open an ordered quote from Marketplace to start a focused thread."}
                                     </p>
                                 </div>
                             </aside>
@@ -223,6 +246,41 @@ export default function MessagesPage() {
                                     </p>
                                 </form>
                             </section>
+
+                            <aside className="border-t border-slate-100 bg-slate-50 p-5 lg:border-l lg:border-t-0">
+                                <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white">
+                                            <ShoppingBag size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-black">Order</p>
+                                            <p className="text-xs font-semibold text-slate-500">
+                                                {orderContext.orderStarted ? "In progress" : "No active order"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-5 space-y-3 text-sm">
+                                        <div className="rounded-2xl bg-slate-50 p-3">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Business</p>
+                                            <p className="mt-1 font-bold">{orderContext.businessName || "Not selected"}</p>
+                                        </div>
+                                        <div className="rounded-2xl bg-slate-50 p-3">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Need</p>
+                                            <p className="mt-1 break-all font-bold">{orderContext.needId || "Open from Marketplace"}</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className="mt-5 w-full rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white"
+                                    >
+                                        Pay
+                                    </button>
+                                    <p className="mt-3 text-xs leading-5 text-slate-400">
+                                        Payment flow will connect here after the order/chat flow is finalized.
+                                    </p>
+                                </div>
+                            </aside>
                         </div>
                     </section>
                 </div>
