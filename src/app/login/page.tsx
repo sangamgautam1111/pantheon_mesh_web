@@ -31,16 +31,16 @@ const accountOptions: Array<{
     {
         type: "customer",
         title: "Customer account",
-        subtitle: "Post a local problem, compare offers, and choose the best nearby shop.",
+        subtitle: "Post a Need, compare Offers, and choose the best nearby business.",
         icon: UserRound,
-        points: ["Post phone repair requests", "Compare price, speed, warranty", "Contact unlocks after choosing"],
+        points: ["Post Needs for free", "Compare price, time, warranty", "Contact unlocks after choosing"],
     },
     {
         type: "business",
         title: "Local Business account",
-        subtitle: "Receive nearby customer requests, send quotes, and grow with paid plans later.",
+        subtitle: "Browse nearby Needs, send Offers, and grow with a business subscription.",
         icon: Store,
-        points: ["Lead inbox for local jobs", "Quote with price, time, warranty", "Profile, analytics, and plans"],
+        points: ["Marketplace lead inbox", "Send price, time, warranty", "Profile, analytics, and plans"],
     },
 ];
 
@@ -154,7 +154,7 @@ export default function LoginPage() {
                     <section className="rounded-[28px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,rgba(15,23,42,0.10),transparent_45%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(250,250,247,0.9))] p-8 shadow-xl md:p-12">
                         <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-slate-600">
                             <Building2 size={14} />
-                            Needaro account system
+                            Needero account system
                         </div>
 
                         <h1 className="max-w-2xl text-4xl font-heading font-bold leading-tight md:text-6xl">
@@ -162,7 +162,7 @@ export default function LoginPage() {
                         </h1>
 
                         <p className="mt-6 max-w-2xl text-base leading-7 text-gcp-text-secondary md:text-lg">
-                            Customers post problems once. Local businesses compete with clear offers. Needaro keeps
+                            Customers post Needs once. Local businesses compete with clear Offers. Needero keeps
                             contact details protected until the customer chooses a shop.
                         </p>
 
@@ -170,7 +170,7 @@ export default function LoginPage() {
                             {[
                                 {
                                     title: "Customer",
-                                    copy: "Post phone repair issues, upload photos, and compare real offers.",
+                                    copy: "Post any local Need, upload photos, and compare real Offers.",
                                 },
                                 {
                                     title: "Business",
@@ -178,7 +178,7 @@ export default function LoginPage() {
                                 },
                                 {
                                     title: "Marketplace",
-                                    copy: "Start narrow with one city, one category, and fast quote replies.",
+                                    copy: "Start with local Needs, nearby businesses, Offers, and messages.",
                                 },
                             ].map((item) => (
                                 <div key={item.title} className="rounded-2xl border border-gcp-border bg-white/80 p-5 shadow-sm">
@@ -197,7 +197,7 @@ export default function LoginPage() {
                                 Choose account type
                             </p>
                             <h2 className="mt-3 text-2xl font-heading font-bold text-gcp-text">
-                                Access Needaro
+                                Access Needero
                             </h2>
                             <p className="mt-2 text-sm leading-6 text-gcp-text-secondary">
                                 Pick the role first, then sign in with Google, GitHub, or email.
@@ -338,7 +338,7 @@ export default function LoginPage() {
                                         value={email}
                                         onChange={(event) => setEmail(event.target.value)}
                                         className="gcp-input w-full"
-                                        placeholder={selectedAccountType === "business" ? "shop@needaro.com" : "you@example.com"}
+                                        placeholder={selectedAccountType === "business" ? "shop@needero.com" : "you@example.com"}
                                         required
                                     />
                                 </div>
@@ -390,7 +390,7 @@ export default function LoginPage() {
                                     >
                                         {emailMode === "signup"
                                             ? "Already have an account? Sign in"
-                                            : "Need a new Needaro account? Create one"}
+                                            : "Need a new Needero account? Create one"}
                                     </button>
                                 </div>
                             </form>

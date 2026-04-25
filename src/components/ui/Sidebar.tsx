@@ -10,6 +10,7 @@ import {
     CreditCard,
     FileText,
     LayoutDashboard,
+    MessageSquare,
     PlusCircle,
     Store,
     X,
@@ -23,8 +24,9 @@ const NAV_ITEMS = [
     { label: "Lead Inbox", href: "/client", icon: FileText, allowedTypes: ["business"] as ActiveAccountType[] },
     { label: "My Requests", href: "/client", icon: FileText, allowedTypes: ["customer"] as ActiveAccountType[] },
     { label: "Post Request", href: "/client/new", icon: PlusCircle, allowedTypes: ["customer"] as ActiveAccountType[] },
+    { label: "Messages", href: "/messages", icon: MessageSquare, allowedTypes: ["customer", "business"] as ActiveAccountType[] },
     { label: "Business Plans", href: "/pricing", icon: CreditCard, allowedTypes: ["business"] as ActiveAccountType[] },
-    { label: "Marketplace", href: "/marketplace", icon: Store },
+    { label: "Marketplace", href: "/marketplace", icon: Store, allowedTypes: ["business"] as ActiveAccountType[] },
 ];
 
 
@@ -80,7 +82,7 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                                 <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-black/10 bg-white shadow-sm">
                                     <Image
                                         src={logoImg}
-                                        alt="Needaro"
+                                        alt="Needero"
                                         width={32}
                                         height={32}
                                         className="h-full w-full rounded-full object-cover"
@@ -91,7 +93,7 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                                         className="truncate text-sm font-semibold transition-colors"
                                         style={{ color: "var(--text-primary)" }}
                                     >
-                                        Needaro
+                                        Needero
                                     </div>
                                     <div className="truncate text-[10px] font-mono" style={{ color: "var(--text-secondary)" }}>
                                         {accountLabel}

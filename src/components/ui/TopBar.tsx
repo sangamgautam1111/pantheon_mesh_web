@@ -70,10 +70,13 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
 
     const STATIC_PAGES: SearchResult[] = [
         { type: "page", label: "Local Business Dashboard", href: "/dashboard" },
-        { type: "page", label: "Request Center", href: "/client" },
-        { type: "page", label: "Post Customer Request", href: "/client/new" },
-        { type: "page", label: "Business Plans", href: "/pricing" },
-        { type: "page", label: "Marketplace", href: "/marketplace" },
+        { type: "page", label: "My Needs", href: "/client" },
+        { type: "page", label: "Post a Need", href: "/client/new" },
+        { type: "page", label: "Messages", href: "/messages" },
+        ...(profile?.accountType === "customer" ? [] : [
+            { type: "page", label: "Business Plans", href: "/pricing" },
+            { type: "page", label: "Marketplace", href: "/marketplace" },
+        ]),
         { type: "doc", label: "Manifesto", href: "/manifesto" },
         { type: "doc", label: "Whitepaper", href: "/whitepaper" },
     ];
@@ -228,7 +231,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                     <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-black/10 bg-white shadow-sm">
                         <Image
                             src={logoImg}
-                            alt="Needaro"
+                            alt="Needero"
                             width={32}
                             height={32}
                             className="h-full w-full rounded-full object-cover"
@@ -238,7 +241,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                         className="truncate text-sm font-semibold tracking-tight"
                         style={{ color: "var(--text-primary)" }}
                     >
-                        Needaro
+                        Needero
                     </span>
                 </Link>
             </div>
@@ -271,7 +274,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                         />
                     ) : (
                         <span className="flex-1 text-sm" style={{ color: "var(--text-disabled)" }}>
-                            Search Needaro pages, requests, and shops
+                            Search Needero pages, Needs, and businesses
                         </span>
                     )}
                     {searchOpen && searchQuery && (
@@ -512,7 +515,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                                 No new notifications
                             </p>
                             <p className="mt-1 text-xs opacity-50" style={{ color: "var(--text-secondary)" }}>
-                                Your Needaro workspace is up to date.
+                                Your Needero workspace is up to date.
                             </p>
                         </div>
                     </div>

@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { ArrowRight, BarChart3, Building2, CheckCircle2, Clock, MessageSquare, ShieldCheck } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
-import { NEEDARO_PLANS, PHONE_REPAIR_REQUESTS } from "@/lib/nearquote";
+import { NEEDARO_PLANS, SAMPLE_NEEDS } from "@/lib/nearquote";
 
 export default function Dashboard() {
-    const totalRequests = PHONE_REPAIR_REQUESTS.length;
-    const requestsWithOffer = PHONE_REPAIR_REQUESTS.filter((request) => request.offers > 0).length;
-    const chosenRequests = PHONE_REPAIR_REQUESTS.filter((request) => request.status === "chosen").length;
+    const totalRequests = SAMPLE_NEEDS.length;
+    const requestsWithOffer = SAMPLE_NEEDS.filter((request) => request.offers > 0).length;
+    const chosenRequests = SAMPLE_NEEDS.filter((request) => request.status === "chosen").length;
     const usefulQuoteRate = Math.round((requestsWithOffer / totalRequests) * 100);
-    const starterPlan = NEEDARO_PLANS.find((plan) => plan.id === "starter") ?? NEEDARO_PLANS[1];
+    const starterPlan = NEEDARO_PLANS.find((plan) => plan.id === "pro") ?? NEEDARO_PLANS[1];
 
     return (
         <RouteGuard allowedTypes={["business"]}>
@@ -106,10 +106,10 @@ export default function Dashboard() {
                     <section className="mt-6 rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
                         <div className="mb-5 flex items-center gap-3">
                             <Clock size={20} />
-                            <h2 className="text-2xl font-black">Recent phone repair requests</h2>
+                            <h2 className="text-2xl font-black">Recent Needs from customers</h2>
                         </div>
                         <div className="grid gap-4 lg:grid-cols-3">
-                            {PHONE_REPAIR_REQUESTS.map((request) => (
+                            {SAMPLE_NEEDS.map((request) => (
                                 <div key={request.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-5">
                                     <p className="text-sm font-black">{request.title}</p>
                                     <p className="mt-2 text-sm leading-6 text-slate-600">{request.issue}</p>

@@ -1,101 +1,272 @@
-import Link from "next/link";
-import { ArrowRight, Building2, Clock, MapPin, ShieldCheck } from "lucide-react";
-import { PHONE_REPAIR_REQUESTS, SAMPLE_OFFERS } from "@/lib/nearquote";
+"use client";
+
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { Bell, Briefcase, CheckCircle2, Clock, MapPin, Navigation, Send, ShieldCheck } from "lucide-react";
+import { RouteGuard } from "@/components/auth/RouteGuard";
+import { useAuth } from "@/context/AuthContext";
+import { createOffer, NeedRecord, getNeeds } from "@/lib/neederoDatabase";
+import { SAMPLE_NEEDS } from "@/lib/nearquote";
+
+type QuoteDraft = {
+    price: string;
+    time: string;
+    warranty: string;
+    distance: string;
+    note: string;
+};
+
+const emptyDraft: QuoteDraft = {
+    price: "",
+    time: "",
+    warranty: "",
+    distance: "",
+    note: "",
+};
 
 export default function Marketplace() {
+    const { user, profile } = useAuth();
+    const [needs, setNeeds] = useState<NeedRecord[]>([]);
+    const [selectedNeedId, setSelectedNeedId] = useState<string | null>(null);
+    const [draft, setDraft] = useState<QuoteDraft>(emptyDraft);
+    const [locationStatus, setLocationStatus] = useState("Location not shared yet");
+    const [saving, setSaving] = useState(false);
+    const [message, setMessage] = useState("");
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchNeeds = async () => {
+            setLoading(true);
+            try {
+                const data = await getNeeds();
+                setNeeds(data);
+            } catch (error) {
+                console.error("Marketplace fetch failed:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchNeeds();
+    }, []);
+
+    const visibleNeeds = useMemo<NeedRecord[]>(() => {
+        if (needs.length > 0) return needs;
+        if (loading) return [];
+        return SAMPLE_NEEDS.map((need) => ({
+            ...need,
+            description: need.issue,
+            customerName: "Demo customer",
+        }));
+    }, [needs, loading]);
+
+    const requestLocation = () => {
+        if (!navigator.geolocation) {
+            setLocationStatus("Location is not available in this browser.");
+            return;
+        }
+
+        setLocationStatus("Checking your area...");
+        navigator.geolocation.getCurrentPosition(
+            () => setLocationStatus("Using your approximate area for better Need recommendations."),
+            () => setLocationStatus("Location was not allowed. You can still browse all Needs."),
+            { enableHighAccuracy: false, timeout: 8000 },
+        );
+    };
+
+    const updateDraft = (key: keyof QuoteDraft, value: string) => {
+        setDraft((current) => ({ ...current, [key]: value }));
+    };
+
+    const submitQuote = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        if (!user || !selectedNeedId) return;
+
+        setSaving(true);
+        setMessage("");
+        try {
+            await createOffer({
+                needId: selectedNeedId,
+                businessId: user.uid,
+                businessName: profile?.companyName || profile?.displayName || "Local Business",
+                price: draft.price,
+                time: draft.time,
+                warranty: draft.warranty,
+                distance: draft.distance || "Nearby",
+                note: draft.note,
+            });
+            setDraft(emptyDraft);
+            setSelectedNeedId(null);
+            setMessage("Offer sent. The customer can now compare it.");
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : "Could not send offer. Check database rules.");
+        } finally {
+            setSaving(false);
+        }
+    };
+
     return (
-        <main className="min-h-screen bg-[#f8f7f2] p-6 text-slate-950 md:p-10">
-            <div className="mx-auto max-w-7xl">
-                <section className="mb-8 rounded-[34px] border border-slate-200 bg-white p-7 shadow-xl md:p-10">
-                    <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">
-                        Local service marketplace
-                    </p>
-                    <h1 className="mt-4 max-w-4xl text-4xl font-black leading-tight tracking-tight md:text-6xl">
-                        Businesses compete for exact local problems.
-                    </h1>
-                    <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
-                        Needaro is buyer-first. Customers do not browse endless shop lists. They post the problem,
-                        then compare real offers.
-                    </p>
-                </section>
-
-                <section className="mb-8 grid gap-4 md:grid-cols-3">
-                    {[
-                        { icon: Building2, label: "Verified businesses", copy: "Manual approval first." },
-                        { icon: ShieldCheck, label: "Protected contact details", copy: "Contact unlocks after choosing." },
-                        { icon: Clock, label: "30-minute quote goal", copy: "Speed proves marketplace health." },
-                    ].map((item) => (
-                        <div key={item.label} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                            <item.icon size={22} />
-                            <h2 className="mt-5 text-xl font-black">{item.label}</h2>
-                            <p className="mt-2 text-sm leading-6 text-slate-600">{item.copy}</p>
+        <RouteGuard allowedTypes={["business"]}>
+            <main className="min-h-screen bg-[#f8f7f2] p-6 text-slate-950 md:p-10">
+                <div className="mx-auto max-w-7xl">
+                    <section className="mb-6 rounded-[34px] border border-slate-200 bg-white p-7 shadow-xl md:p-10">
+                        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                            <div>
+                                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">
+                                    Marketplace
+                                </p>
+                                <h1 className="mt-4 max-w-4xl text-4xl font-black leading-tight tracking-tight md:text-6xl">
+                                    Browse customer Needs. Send useful Offers.
+                                </h1>
+                                <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
+                                    This is the business side of Needero. Customers post Needs. Your business replies with
+                                    price, time, warranty, and a simple note.
+                                </p>
+                            </div>
+                            <button
+                                onClick={requestLocation}
+                                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-4 text-sm font-black text-white"
+                            >
+                                <Navigation size={17} />
+                                Use my area
+                            </button>
                         </div>
-                    ))}
-                </section>
+                    </section>
 
-                <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-                    <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
-                        <h2 className="text-2xl font-black">Live-style request feed</h2>
-                        <p className="mt-2 text-sm text-slate-500">Demo phone repair requests for one-city validation.</p>
-                        <div className="mt-6 space-y-4">
-                            {PHONE_REPAIR_REQUESTS.map((request) => (
-                                <div key={request.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-5">
-                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <section className="mb-6 grid gap-4 md:grid-cols-4">
+                        {[
+                            { icon: Briefcase, label: "Visible Needs", value: String(visibleNeeds.length) },
+                            { icon: Send, label: "Main action", value: "Send Offer" },
+                            { icon: Bell, label: "Business model", value: "Subscription" },
+                            { icon: MapPin, label: "Area", value: locationStatus },
+                        ].map((item) => (
+                            <div key={item.label} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                                <item.icon size={20} />
+                                <p className="mt-5 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{item.label}</p>
+                                <p className="mt-2 text-sm font-black leading-6">{item.value}</p>
+                            </div>
+                        ))}
+                    </section>
+
+                    {message && (
+                        <div className="mb-6 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700">
+                            {message}
+                        </div>
+                    )}
+
+                    <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+                        <div className="space-y-4">
+                            {visibleNeeds.map((need) => (
+                                <article
+                                    key={need.id}
+                                    className={`rounded-[30px] border bg-white p-6 shadow-sm transition-all ${
+                                        selectedNeedId === need.id ? "border-slate-950 shadow-xl" : "border-slate-200"
+                                    }`}
+                                >
+                                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                         <div>
-                                            <h3 className="text-lg font-black">{request.title}</h3>
-                                            <p className="mt-2 text-sm leading-6 text-slate-600">{request.issue}</p>
+                                            <div className="mb-3 flex flex-wrap gap-2">
+                                                <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-slate-600">
+                                                    {need.category}
+                                                </span>
+                                                <span className="rounded-full bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-amber-700">
+                                                    {need.urgency}
+                                                </span>
+                                            </div>
+                                            <h2 className="text-2xl font-black">{need.title}</h2>
+                                            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">{need.issue}</p>
+                                            <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold text-slate-500">
+                                                <span className="inline-flex items-center gap-1">
+                                                    <MapPin size={13} />
+                                                    {need.location}
+                                                </span>
+                                                <span>{need.budget || "No budget yet"}</span>
+                                                <span>{need.offers || 0} Offers</span>
+                                            </div>
                                         </div>
-                                        <span className="rounded-full bg-white px-3 py-2 text-xs font-black uppercase">
-                                            {request.offers} offers
-                                        </span>
+                                        <button
+                                            onClick={() => {
+                                                setSelectedNeedId(need.id);
+                                                setMessage("");
+                                            }}
+                                            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white"
+                                        >
+                                            <Send size={15} />
+                                            Send Offer
+                                        </button>
                                     </div>
-                                    <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold text-slate-500">
-                                        <span className="inline-flex items-center gap-1">
-                                            <MapPin size={13} />
-                                            {request.location}
-                                        </span>
-                                        <span>{request.urgency}</span>
-                                        <span>{request.firstOfferTime} first offer</span>
-                                    </div>
-                                </div>
+                                </article>
                             ))}
                         </div>
-                    </div>
 
-                    <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
-                        <h2 className="text-2xl font-black">Offer comparison</h2>
-                        <p className="mt-2 text-sm text-slate-500">This is the customer value: real choices, not a directory.</p>
-                        <div className="mt-6 overflow-hidden rounded-3xl border border-slate-100">
-                            <table className="w-full text-left text-sm">
-                                <thead className="bg-slate-950 text-[10px] uppercase tracking-[0.18em] text-white">
-                                    <tr>
-                                        <th className="px-4 py-3">Shop</th>
-                                        <th className="px-4 py-3">Price</th>
-                                        <th className="px-4 py-3">Time</th>
-                                        <th className="px-4 py-3">Warranty</th>
-                                        <th className="px-4 py-3">Distance</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {SAMPLE_OFFERS.map((offer) => (
-                                        <tr key={offer.shop}>
-                                            <td className="px-4 py-4 font-black">{offer.shop}</td>
-                                            <td className="px-4 py-4">{offer.price}</td>
-                                            <td className="px-4 py-4">{offer.time}</td>
-                                            <td className="px-4 py-4">{offer.warranty}</td>
-                                            <td className="px-4 py-4">{offer.distance}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <Link href="/client/new" className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white">
-                            Create customer request
-                            <ArrowRight size={16} />
-                        </Link>
-                    </div>
-                </section>
-            </div>
-        </main>
+                        <aside className="h-fit rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+                            <div className="mb-5 flex items-start gap-3">
+                                <ShieldCheck size={22} />
+                                <div>
+                                    <h2 className="text-2xl font-black">Offer form</h2>
+                                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                                        Keep it simple. Customers compare price, time, warranty, distance, and trust.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {selectedNeedId ? (
+                                <form onSubmit={submitQuote} className="space-y-4">
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        <input
+                                            value={draft.price}
+                                            onChange={(event) => updateDraft("price", event.target.value)}
+                                            placeholder="Price, e.g. Rs. 4,500"
+                                            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950"
+                                            required
+                                        />
+                                        <input
+                                            value={draft.time}
+                                            onChange={(event) => updateDraft("time", event.target.value)}
+                                            placeholder="Time, e.g. Today"
+                                            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950"
+                                            required
+                                        />
+                                        <input
+                                            value={draft.warranty}
+                                            onChange={(event) => updateDraft("warranty", event.target.value)}
+                                            placeholder="Warranty or service terms"
+                                            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950"
+                                        />
+                                        <input
+                                            value={draft.distance}
+                                            onChange={(event) => updateDraft("distance", event.target.value)}
+                                            placeholder="Distance, e.g. 1.2 km"
+                                            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950"
+                                        />
+                                    </div>
+                                    <textarea
+                                        value={draft.note}
+                                        onChange={(event) => updateDraft("note", event.target.value)}
+                                        placeholder="Write a helpful note for the customer."
+                                        className="min-h-[130px] w-full rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 outline-none focus:border-slate-950"
+                                        required
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={saving}
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white disabled:bg-slate-300"
+                                    >
+                                        {saving ? <Clock size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                                        Send Offer
+                                    </button>
+                                </form>
+                            ) : (
+                                <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+                                    <Send className="mx-auto mb-4 text-slate-300" size={34} />
+                                    <p className="text-sm font-semibold text-slate-500">
+                                        Choose a Need from the marketplace to send an Offer.
+                                    </p>
+                                </div>
+                            )}
+                        </aside>
+                    </section>
+                </div>
+            </main>
+        </RouteGuard>
     );
 }
+

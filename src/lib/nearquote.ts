@@ -1,5 +1,5 @@
-export type NeedaroPlan = {
-    id: "free" | "starter" | "pro" | "premium";
+export type NeederoPlan = {
+    id: "free" | "pro" | "premium";
     name: string;
     price: string;
     cadence: string;
@@ -11,6 +11,21 @@ export type NeedaroPlan = {
     features: string[];
 };
 
+export type NeedStatus = "open" | "quoted" | "chosen" | "closed";
+
+export type NeedCard = {
+    category: string;
+    title: string;
+    problem: string;
+    knownDetails: string;
+    missingInfo: string[];
+    questions: string[];
+    summaryForBusinesses: string;
+    tags: string[];
+    fallback?: boolean;
+    model?: string;
+};
+
 export type ServiceRequest = {
     id: string;
     title: string;
@@ -18,125 +33,142 @@ export type ServiceRequest = {
     urgency: string;
     category: string;
     issue: string;
-    device?: string;
-    status: "open" | "quoted" | "chosen";
+    budget?: string;
+    status: NeedStatus;
     offers: number;
     firstOfferTime: string;
+    customerId?: string;
+    customerName?: string;
+    createdAt?: number;
+    photoPreview?: string | null;
 };
 
 export type BusinessOffer = {
-    shop: string;
+    id?: string;
+    businessId?: string;
+    businessName: string;
     price: string;
     time: string;
     warranty: string;
     distance: string;
     note: string;
+    createdAt?: number;
 };
 
-export const NEEDARO_PLANS: NeedaroPlan[] = [
+export const NEED_CATEGORIES = [
+    "Repair & maintenance",
+    "Home services",
+    "Beauty & wellness",
+    "Lessons & tutoring",
+    "Events & photography",
+    "Design & printing",
+    "Business services",
+    "Transport & moving",
+    "Local shopping",
+    "Other",
+];
+
+export const URGENCY_OPTIONS = ["ASAP", "Today", "Tomorrow", "This week", "Flexible"];
+
+export const BUDGET_OPTIONS = [
+    "No budget yet",
+    "Under Rs. 2,000",
+    "Rs. 2,000-5,000",
+    "Rs. 5,000+",
+    "Custom",
+];
+
+export const NEEDARO_PLANS: NeederoPlan[] = [
     {
         id: "free",
         name: "Free",
-        price: "Rs. 0",
+        price: "$0",
         cadence: "/month",
-        quoteReplies: "5 replies/month",
-        visibility: "Standard listing",
-        aiTools: "Basic templates",
+        quoteReplies: "5 offer replies/month",
+        visibility: "Basic visibility",
+        aiTools: "Simple quote templates",
         analytics: "Not included",
-        bestFor: "Trying leads",
+        bestFor: "New businesses testing Needero",
         features: [
-            "Reply to 5 customer requests per month",
-            "Basic shop profile",
+            "Basic business profile",
+            "5 offer replies each month",
+            "Appear in relevant local Needs",
             "Manual quote replies",
-            "Appear in matching phone repair requests",
-        ],
-    },
-    {
-        id: "starter",
-        name: "Starter",
-        price: "Rs. 500",
-        cadence: "/month",
-        quoteReplies: "30 replies/month",
-        visibility: "Better request access",
-        aiTools: "Reply helper",
-        analytics: "Basic",
-        bestFor: "Small repair shops",
-        features: [
-            "Reply to 30 customer requests per month",
-            "AI professional quote helper",
-            "Stronger business profile",
-            "Basic request and quote analytics",
         ],
     },
     {
         id: "pro",
         name: "Pro",
-        price: "Rs. 1,000",
+        price: "$19",
         cadence: "/month",
-        quoteReplies: "Unlimited replies",
-        visibility: "Verified profile",
-        aiTools: "Quote helper + templates",
-        analytics: "Conversion dashboard",
-        bestFor: "Active shops",
+        quoteReplies: "Unlimited offer replies",
+        visibility: "Higher placement",
+        aiTools: "AI quote helper",
+        analytics: "Basic analytics",
+        bestFor: "Active businesses that want more customers",
         features: [
-            "Unlimited quote replies",
+            "Unlimited offer replies",
+            "AI quote helper",
             "Verified business profile",
-            "AI quote helper and saved templates",
-            "Conversion, response speed, and missed request analytics",
+            "Basic analytics",
+            "Higher placement in relevant offer lists",
         ],
     },
     {
         id: "premium",
         name: "Premium",
-        price: "Rs. 2,500",
+        price: "$49",
         cadence: "/month",
-        quoteReplies: "Unlimited replies",
-        visibility: "Priority visibility",
-        aiTools: "Advanced AI tools",
-        analytics: "Full analytics",
-        bestFor: "Top local shops",
+        quoteReplies: "Unlimited offer replies",
+        visibility: "Priority placement",
+        aiTools: "AI quote helper + alerts",
+        analytics: "Advanced analytics",
+        bestFor: "Serious businesses that want maximum visibility",
         features: [
-            "Priority visibility for matching requests",
-            "Unlimited quote replies",
-            "Advanced AI quote helper",
-            "Full analytics for leads, quotes, chosen offers, and response speed",
+            "Everything in Pro",
+            "Priority placement",
+            "Featured business profile",
+            "Instant lead alerts",
+            "Advanced analytics",
+            "Top Rated badge eligibility",
+            "Stronger recommendation boost",
         ],
     },
 ];
 
-export const PHONE_REPAIR_REQUESTS: ServiceRequest[] = [
+export const SAMPLE_NEEDS: ServiceRequest[] = [
     {
-        id: "NQ-1001",
-        title: "iPhone 11 cracked screen",
+        id: "NEED-1001",
+        title: "Cracked iPhone screen",
         location: "New Road, Kathmandu",
         urgency: "Today",
-        category: "Phone repair",
-        issue: "Screen cracked, touch still works",
-        device: "iPhone 11",
+        category: "Repair & maintenance",
+        issue: "Screen cracked, touch still works. Customer wants repair offers nearby.",
+        budget: "Rs. 2,000-5,000",
         status: "quoted",
         offers: 3,
         firstOfferTime: "12 min",
     },
     {
-        id: "NQ-1002",
-        title: "Samsung A52 black display",
-        location: "Kalanki",
-        urgency: "Within 24 hours",
-        category: "Phone repair",
-        issue: "Sound works, display is black",
-        device: "Samsung A52",
+        id: "NEED-1002",
+        title: "Need a home deep clean",
+        location: "Baneshwor",
+        urgency: "This week",
+        category: "Home services",
+        issue: "Two-bedroom flat needs cleaning before guests arrive.",
+        budget: "No budget yet",
         status: "open",
         offers: 1,
         firstOfferTime: "18 min",
     },
     {
-        id: "NQ-1003",
-        title: "Redmi charging port issue",
-        location: "Baneshwor",
-        urgency: "This week",
-        category: "Phone repair",
-        issue: "Phone charges only when cable is angled",
-        device: "Redmi Note series",
+        id: "NEED-1003",
+        title: "Logo and menu print for cafe",
+        location: "Lalitpur",
+        urgency: "Flexible",
+        category: "Design & printing",
+        issue: "Small cafe needs a clean logo refresh and 50 printed menus.",
+        budget: "Rs. 5,000+",
         status: "chosen",
         offers: 4,
         firstOfferTime: "8 min",
@@ -145,38 +177,58 @@ export const PHONE_REPAIR_REQUESTS: ServiceRequest[] = [
 
 export const SAMPLE_OFFERS: BusinessOffer[] = [
     {
-        shop: "New Road Mobile Care",
+        businessName: "Nearby Pro Service",
         price: "Rs. 4,500",
         time: "2 hours",
         warranty: "1 month",
         distance: "1.2 km",
-        note: "Original-quality display available today.",
+        note: "We can handle this today. Final price after quick inspection.",
     },
     {
-        shop: "Kathmandu Phone Fix",
+        businessName: "Fast Local Help",
         price: "Rs. 4,200",
         time: "Tomorrow",
         warranty: "No warranty",
         distance: "0.8 km",
-        note: "Budget display option. Final price after inspection.",
+        note: "Budget option available. Message us for details.",
     },
     {
-        shop: "Trusted Repair Hub",
+        businessName: "Trusted Neighborhood Shop",
         price: "Rs. 5,000",
         time: "Today",
         warranty: "3 months",
         distance: "2.1 km",
-        note: "Warranty included with tested display replacement.",
+        note: "Includes better materials and after-service support.",
     },
 ];
 
 export const NEEDARO_METRICS = [
-    { label: "First niche", value: "Phone repair" },
-    { label: "Launch city", value: "One city first" },
-    { label: "Validation target", value: "50 requests" },
-    { label: "Supply target", value: "10 shops" },
+    { label: "Customer price", value: "Free" },
+    { label: "Business model", value: "SaaS plans" },
+    { label: "Core object", value: "Need" },
+    { label: "Main action", value: "Send offer" },
 ];
 
 export function normalizeNeedaroPlan(planId: string | null | undefined) {
     return NEEDARO_PLANS.find((plan) => plan.id === planId) ?? NEEDARO_PLANS[0];
 }
+
+export function makeCategorySlug(category: string) {
+    return category.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "other";
+}
+
+export function createFallbackNeedCard(description: string, category = "Other"): NeedCard {
+    const clean = description.trim();
+    return {
+        category,
+        title: clean.length > 70 ? `${clean.slice(0, 67)}...` : clean || "New local Need",
+        problem: clean || "Customer needs help from a nearby business.",
+        knownDetails: clean || "No details added yet.",
+        missingInfo: ["Area", "Urgency", "Budget if available"].filter(Boolean),
+        questions: ["Where should businesses be near?", "When do you need this done?"],
+        summaryForBusinesses: clean || "Please send a clear price, time, warranty or service details, and your availability.",
+        tags: [category],
+        fallback: true,
+    };
+}
+

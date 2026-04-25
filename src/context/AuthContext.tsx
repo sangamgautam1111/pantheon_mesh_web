@@ -7,6 +7,8 @@ import {
     onAuthStateChanged,
     signInWithEmailAndPassword,
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
     signOut as firebaseSignOut,
     updateProfile,
 } from "firebase/auth";
@@ -107,14 +109,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const upsertProfile = async (
         firebaseUser: User,
-        requestedAccountType: ActiveAccountType = DEFAULT_ACCOUNT_TYPE,
+        requestedAccountType?: ActiveAccountType,
         overrides: Partial<UserProfile> = {},
     ) => {
         const existingSnapshot = await get(ref(db, `users/${firebaseUser.uid}`));
         const existing = existingSnapshot.exists() ? (existingSnapshot.val() as Partial<UserProfile>) : {};
-        const resolvedAccountType = isActiveAccountType(existing.accountType)
-            ? existing.accountType
-            : requestedAccountType;
+        const resolvedAccountType =
+            requestedAccountType || (isActiveAccountType(existing.accountType) ? existing.accountType : DEFAULT_ACCOUNT_TYPE);
         const defaultName = resolvedAccountType === "business" ? "Local Business" : "Customer";
 
         const displayName =
@@ -176,16 +177,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                       : 0,
         };
 
-        await set(ref(db, `users/${firebaseUser.uid}`), sanitizeForRealtimeDb(profileData));
-        await set(ref(db, `accounts/${resolvedAccountType}/${firebaseUser.uid}`), sanitizeForRealtimeDb({
-            uid: firebaseUser.uid,
-            email: profileData.email,
-            displayName: profileData.displayName,
-            joinedAt: profileData.createdAt,
-            accountType: resolvedAccountType,
-            companyName: profileData.companyName,
-            currentPlanId: profileData.currentPlanId,
-        }));
+        try {
+            await set(ref(db, `users/${firebaseUser.uid}`), sanitizeForRealtimeDb(profileData));
+        } catch (error) {
+            console.warn("Unable to save primary user profile. Check Firebase Realtime Database rules:", error);
+        }
+
+        try {
+            await set(ref(db, `accounts/${resolvedAccountType}/${firebaseUser.uid}`), sanitizeForRealtimeDb({
+                uid: firebaseUser.uid,
+                email: profileData.email,
+                displayName: profileData.displayName,
+                joinedAt: profileData.createdAt,
+                accountType: resolvedAccountType,
+                companyName: profileData.companyName,
+                currentPlanId: profileData.currentPlanId,
+            }));
+        } catch (error) {
+            console.warn("Unable to save account mirror. Sign-in can continue:", error);
+        }
 
         setProfile(profileData);
         setAccountType(resolvedAccountType);
@@ -195,6 +205,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         let profileUnsubscribe: (() => void) | undefined;
+
+        // Handle redirect result
+        getRedirectResult(auth).then(async (result) => {
+            if (result?.user) {
+                await upsertProfile(result.user, pendingAccountTypeRef.current || undefined);
+            }
+        }).catch((error) => {
+            console.error("Redirect sign-in error:", error);
+        });
 
         const authUnsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             setLoading(true);
@@ -212,13 +231,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 return;
             }
 
-            await upsertProfile(firebaseUser, pendingAccountTypeRef.current || DEFAULT_ACCOUNT_TYPE);
+            const syncedProfile = await upsertProfile(firebaseUser, pendingAccountTypeRef.current || undefined);
 
             const profileRef = ref(db, `users/${firebaseUser.uid}`);
             profileUnsubscribe = onValue(profileRef, (snapshot) => {
                 if (!snapshot.exists()) {
-                    setProfile(null);
-                    setAccountType(null);
+                    setProfile(syncedProfile);
+                    setAccountType(syncedProfile.accountType);
                     return;
                 }
 
@@ -242,20 +261,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const signInWithGitHub = async (selectedAccountType: ActiveAccountType = DEFAULT_ACCOUNT_TYPE) => {
         pendingAccountTypeRef.current = selectedAccountType;
         try {
-            const result = await signInWithPopup(auth, githubProvider);
-            await upsertProfile(result.user, selectedAccountType);
-        } finally {
+            await signInWithRedirect(auth, githubProvider);
+        } catch (error) {
+            console.error("GitHub redirect failed:", error);
             pendingAccountTypeRef.current = null;
+            throw error;
         }
     };
 
     const signInWithGoogle = async (selectedAccountType: ActiveAccountType = DEFAULT_ACCOUNT_TYPE) => {
         pendingAccountTypeRef.current = selectedAccountType;
         try {
-            const result = await signInWithPopup(auth, googleProvider);
-            await upsertProfile(result.user, selectedAccountType);
-        } finally {
+            await signInWithRedirect(auth, googleProvider);
+        } catch (error) {
+            console.error("Google redirect failed:", error);
             pendingAccountTypeRef.current = null;
+            throw error;
         }
     };
 
