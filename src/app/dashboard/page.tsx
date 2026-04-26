@@ -43,11 +43,11 @@ export default function Dashboard() {
                                     Needaro local business dashboard
                                 </p>
                                 <h1 className="mt-4 text-4xl font-black leading-tight tracking-tight md:text-6xl">
-                                    Turn nearby repair problems into quoted leads.
+                                    Your Local Leads Pipeline.
                                 </h1>
                                 <p className="mt-5 text-base leading-8 text-slate-600">
-                                    The business account focuses on warm local requests, fast quote replies, and simple
-                                    proof that repair shops will pay after receiving real leads.
+                                    Track matching Needs, submitted Quotes, customer chats, selected Bookings, active
+                                    work, completed jobs, and paid outcomes from one simple business account.
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-3">
@@ -91,8 +91,8 @@ export default function Dashboard() {
                                 {[
                                     ["Requests with at least 1 offer", `${requestsWithOffer}/${totalRequests}`],
                                     ["Average first offer goal", "Under 30 minutes"],
-                                    ["Manual shop onboarding target", "10 local businesses"],
-                                    ["First revenue proof", "1 shop pays after leads"],
+                                    ["Manual onboarding target", "10 local businesses"],
+                                    ["First revenue proof", "1 business pays after leads"],
                                 ].map(([label, value]) => (
                                     <div key={label} className="flex items-center justify-between gap-4 rounded-2xl bg-slate-50 p-4">
                                         <span className="text-sm font-semibold text-slate-600">{label}</span>

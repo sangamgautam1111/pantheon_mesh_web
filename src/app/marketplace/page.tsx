@@ -7,6 +7,7 @@ import {
     Briefcase,
     CheckCircle2,
     Clock,
+    MessageSquare,
     MapPin,
     MessageCircle,
     Navigation,
@@ -19,6 +20,7 @@ import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import {
     OfferRecord,
+    createBookingFromQuote,
     createOffer,
     getNeeds,
     getOffers,
@@ -53,6 +55,58 @@ const emptyDraft: QuoteDraft = {
 };
 
 const serviceTypes = ["Visit Shop", "Home Visit", "Pickup & Return", "Delivery"];
+const quoteTabs = ["All Quotes", "Recommended", "Cheapest", "Fastest", "Selected"] as const;
+
+type QuoteTab = (typeof quoteTabs)[number];
+type ScoredOffer = OfferRecord & {
+    score: number;
+    label: "Best Match" | "Fastest" | "Best Value" | "Cheapest" | "Selected";
+};
+
+const parseAmount = (value: string) => {
+    const match = value.replace(/,/g, "").match(/\d+(?:\.\d+)?/);
+    return match ? Number(match[0]) : Number.POSITIVE_INFINITY;
+};
+
+const parseSpeedScore = (value: string) => {
+    const text = value.toLowerCase();
+    if (text.includes("asap") || text.includes("now")) return 35;
+    if (text.includes("hour") || text.includes("today")) return 28;
+    if (text.includes("tomorrow")) return 18;
+    if (text.includes("week")) return 10;
+    return 14;
+};
+
+const scoreOffers = (offers: OfferRecord[]): ScoredOffer[] => {
+    const prices = offers.map((offer) => parseAmount(offer.price)).filter(Number.isFinite);
+    const minPrice = prices.length ? Math.min(...prices) : Number.POSITIVE_INFINITY;
+
+    return offers
+        .map((offer) => {
+            const amount = parseAmount(offer.price);
+            const priceScore = Number.isFinite(amount) && Number.isFinite(minPrice) ? Math.max(0, 35 - (amount - minPrice) * 0.2) : 12;
+            const completenessScore = [
+                offer.serviceType,
+                offer.time,
+                offer.warranty,
+                offer.included,
+                offer.distance,
+                offer.availability,
+                offer.delayRefundRule,
+                offer.businessNote,
+            ].filter(Boolean).length * 4;
+            const statusBonus = offer.status === "selected" || offer.status === "chosen" ? 100 : 0;
+            const score = Math.round(statusBonus + priceScore + parseSpeedScore(offer.time || offer.availability || "") + completenessScore);
+            let label: ScoredOffer["label"] = "Best Match";
+            if (offer.status === "selected" || offer.status === "chosen") label = "Selected";
+            else if (Number.isFinite(amount) && amount === minPrice) label = "Cheapest";
+            else if (parseSpeedScore(offer.time || "") >= 28) label = "Fastest";
+            else if (score >= 70) label = "Best Value";
+
+            return { ...offer, score, label };
+        })
+        .sort((a, b) => b.score - a.score);
+};
 
 function NeedMedia({ src }: { src?: string | null }) {
     if (!src) {
@@ -74,12 +128,16 @@ function NeedMedia({ src }: { src?: string | null }) {
 function QuoteCard({
     offer,
     canOrder,
+    canChat,
     ordering,
+    onChat,
     onOrder,
 }: {
-    offer: OfferRecord;
+    offer: ScoredOffer;
     canOrder: boolean;
+    canChat: boolean;
     ordering: boolean;
+    onChat: () => void;
     onOrder: () => void;
 }) {
     const rows = [
@@ -94,11 +152,18 @@ function QuoteCard({
     ];
 
     return (
-        <article className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+        <article className={`rounded-[26px] border bg-white p-5 shadow-sm ${offer.label === "Best Match" || offer.label === "Selected" ? "border-slate-950" : "border-slate-200"}`}>
             <div className="flex items-start justify-between gap-4">
                 <div>
-                    <p className="text-sm font-black text-slate-950">{offer.businessName}</p>
-                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Business quote</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-black text-slate-950">{offer.businessName}</p>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-700">
+                            {offer.label}
+                        </span>
+                    </div>
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        Structured Quote • Score {offer.score}
+                    </p>
                 </div>
                 <div className="rounded-2xl bg-slate-950 px-4 py-2 text-right text-white">
                     <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/50">Price</p>
@@ -122,15 +187,28 @@ function QuoteCard({
                 </div>
             )}
 
-            {canOrder && (
-                <button
-                    onClick={onOrder}
-                    disabled={ordering}
-                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white shadow-lg shadow-slate-900/10 transition-all hover:-translate-y-0.5 disabled:bg-slate-300"
-                >
-                    {ordering ? <Clock size={16} className="animate-spin" /> : <ShoppingBag size={16} />}
-                    Order this quote
-                </button>
+            {(canOrder || canChat) && (
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                    {canChat && (
+                        <button
+                            onClick={onChat}
+                            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-black text-slate-950 transition-all hover:border-slate-950"
+                        >
+                            <MessageSquare size={16} />
+                            Chat about Quote
+                        </button>
+                    )}
+                    {canOrder && (
+                        <button
+                            onClick={onOrder}
+                            disabled={ordering}
+                            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white shadow-lg shadow-slate-900/10 transition-all hover:-translate-y-0.5 disabled:bg-slate-300"
+                        >
+                            {ordering ? <Clock size={16} className="animate-spin" /> : <ShoppingBag size={16} />}
+                            Choose Offer
+                        </button>
+                    )}
+                </div>
             )}
         </article>
     );
@@ -148,6 +226,7 @@ export default function Marketplace() {
     const [saving, setSaving] = useState(false);
     const [orderingOfferId, setOrderingOfferId] = useState<string | null>(null);
     const [message, setMessage] = useState("");
+    const [quoteTab, setQuoteTab] = useState<QuoteTab>("Recommended");
     const [loading, setLoading] = useState(true);
     const [offersLoading, setOffersLoading] = useState(false);
 
@@ -155,6 +234,22 @@ export default function Marketplace() {
         () => needs.find((need) => need.id === selectedNeedId) || null,
         [needs, selectedNeedId],
     );
+    const scoredOffers = useMemo(() => scoreOffers(offers), [offers]);
+    const visibleOffers = useMemo(() => {
+        if (quoteTab === "Cheapest") {
+            return [...scoredOffers].sort((a, b) => parseAmount(a.price) - parseAmount(b.price));
+        }
+        if (quoteTab === "Fastest") {
+            return [...scoredOffers].sort((a, b) => parseSpeedScore(b.time || b.availability || "") - parseSpeedScore(a.time || a.availability || ""));
+        }
+        if (quoteTab === "Selected") {
+            return scoredOffers.filter((offer) => offer.status === "selected" || offer.status === "chosen");
+        }
+        if (quoteTab === "Recommended") {
+            return scoredOffers.slice(0, Math.max(1, scoredOffers.length));
+        }
+        return scoredOffers;
+    }, [quoteTab, scoredOffers]);
 
     const loadNeeds = async () => {
         setLoading(true);
@@ -240,7 +335,7 @@ export default function Marketplace() {
                 note: draft.note,
             });
             setDraft(emptyDraft);
-            setMessage("Quote posted. The customer can now compare it.");
+            setMessage("Quote submitted. It is now inside the customer Quote Inbox.");
             await loadOffers(selectedNeedId);
             await loadNeeds();
         } catch (error) {
@@ -250,24 +345,38 @@ export default function Marketplace() {
         }
     };
 
-    const orderQuote = async (offer: OfferRecord) => {
+    const chatAboutQuote = (offer: OfferRecord) => {
+        if (!selectedNeed) return;
+        router.push(
+            `/messages?needId=${encodeURIComponent(selectedNeed.id)}&quoteId=${encodeURIComponent(offer.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName)}&order=0`,
+        );
+    };
+
+    const chooseQuote = async (offer: OfferRecord) => {
         if (!user || !selectedNeed || accountType !== "customer") return;
 
         setOrderingOfferId(offer.id);
         setMessage("");
         try {
+            const booking = await createBookingFromQuote({
+                needId: selectedNeed.id,
+                quoteId: offer.id,
+                customerId: user.uid,
+            });
             await sendThreadMessage({
                 needId: selectedNeed.id,
+                quoteId: offer.id,
+                bookingId: booking.id,
                 senderId: user.uid,
                 senderName: profile?.displayName || profile?.email || "Customer",
                 senderType: "customer",
-                text: `Order started for "${selectedNeed.title}" with ${offer.businessName}. Quote price: ${offer.price}.`,
+                text: `Booking started from this Quote. Need: "${selectedNeed.title}". Quote price: ${offer.price}.`,
             });
             router.push(
-                `/messages?needId=${encodeURIComponent(selectedNeed.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName)}&order=1`,
+                `/messages?needId=${encodeURIComponent(selectedNeed.id)}&quoteId=${encodeURIComponent(offer.id)}&bookingId=${encodeURIComponent(booking.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName)}&order=1`,
             );
         } catch (error) {
-            setMessage(error instanceof Error ? error.message : "Could not start the order chat.");
+            setMessage(error instanceof Error ? error.message : "Could not create this Booking.");
         } finally {
             setOrderingOfferId(null);
         }
@@ -284,14 +393,14 @@ export default function Marketplace() {
                     <section className="mb-6 rounded-[34px] border border-slate-200 bg-white p-7 shadow-xl md:p-10">
                         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                             <div>
-                                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Marketplace</p>
+                                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Needero marketplace pipeline</p>
                                 <h1 className="mt-4 max-w-4xl text-4xl font-black leading-tight tracking-tight md:text-6xl">
-                                    {isBusiness ? "Browse live Needs. Post clear quotes." : "Browse live Needs and Offers."}
+                                    {isBusiness ? "Your Local Leads Pipeline." : "Compare live Needs and structured Offers."}
                                 </h1>
                                 <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
                                     {isBusiness
-                                        ? "Open a Need, see the quote thread, then post a detailed price card like a professional business comment."
-                                        : "Customer accounts can browse live Needs. If it is your Need, you can order from the quotes businesses posted."}
+                                        ? "Open matching Needs, submit structured Quotes, then move selected work into chat, booking, payment hold, progress, and solved."
+                                        : "Browse public Needs and Offers. If you own the Need, you can chat with businesses, choose a Quote, and create a Booking."}
                                 </p>
                             </div>
                             <button
@@ -307,8 +416,8 @@ export default function Marketplace() {
                     <section className="mb-6 grid gap-4 md:grid-cols-4">
                         {[
                             { icon: Briefcase, label: "Live Needs", value: loading ? "..." : String(needs.length) },
-                            { icon: MessageCircle, label: "Quote flow", value: "Comments" },
-                            { icon: Bell, label: isBusiness ? "Business action" : "Customer action", value: isBusiness ? "Post quotes" : "Order quote" },
+                            { icon: MessageCircle, label: "Pipeline", value: "Need → Quote → Booking" },
+                            { icon: Bell, label: isBusiness ? "Business action" : "Customer action", value: isBusiness ? "Submit Quotes" : "Choose Offer" },
                             { icon: MapPin, label: "Area", value: locationStatus },
                         ].map((item) => (
                             <div key={item.label} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -388,7 +497,7 @@ export default function Marketplace() {
                             <div className="border-b border-slate-200 bg-white p-5">
                                 <div className="flex items-start justify-between gap-4">
                                     <div>
-                                        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Quote thread</p>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Quote Inbox</p>
                                         <h2 className="mt-2 text-2xl font-black">{selectedNeed.title}</h2>
                                         <p className="mt-2 text-sm leading-6 text-slate-600">{selectedNeed.issue}</p>
                                     </div>
@@ -405,6 +514,19 @@ export default function Marketplace() {
                                     <span className="rounded-full bg-slate-100 px-3 py-1">{selectedNeed.urgency}</span>
                                     <span className="rounded-full bg-slate-100 px-3 py-1">{selectedNeed.budget || "No budget"}</span>
                                 </div>
+                                <div className="mt-5 flex flex-wrap gap-2">
+                                    {quoteTabs.map((tab) => (
+                                        <button
+                                            key={tab}
+                                            onClick={() => setQuoteTab(tab)}
+                                            className={`rounded-full px-4 py-2 text-xs font-black transition-all ${
+                                                quoteTab === tab ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                            }`}
+                                        >
+                                            {tab}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
                             <div className="flex-1 space-y-4 overflow-y-auto p-5">
@@ -412,26 +534,28 @@ export default function Marketplace() {
                                     <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-sm font-bold text-slate-500">
                                         Loading quotes...
                                     </div>
-                                ) : offers.length === 0 ? (
+                                ) : visibleOffers.length === 0 ? (
                                     <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center">
                                         <MessageCircle className="mx-auto mb-3 text-slate-300" size={36} />
-                                        <p className="text-sm font-bold text-slate-500">No business quotes yet.</p>
+                                        <p className="text-sm font-bold text-slate-500">No Quotes in this pipeline view yet.</p>
                                     </div>
                                 ) : (
-                                    offers.map((offer) => (
+                                    visibleOffers.map((offer) => (
                                         <QuoteCard
                                             key={offer.id}
                                             offer={offer}
                                             canOrder={canOrderSelectedNeed}
+                                            canChat={canOrderSelectedNeed}
                                             ordering={orderingOfferId === offer.id}
-                                            onOrder={() => void orderQuote(offer)}
+                                            onChat={() => chatAboutQuote(offer)}
+                                            onOrder={() => void chooseQuote(offer)}
                                         />
                                     ))
                                 )}
 
                                 {!canOrderSelectedNeed && accountType === "customer" && (
                                     <div className="rounded-3xl border border-slate-200 bg-white p-5 text-sm font-semibold leading-6 text-slate-500">
-                                        You can browse this quote thread. The Order button appears only for the customer who owns this Need.
+                                        You can browse public Quote details. Chat and Choose Offer unlock only for the customer who owns this Need.
                                     </div>
                                 )}
                             </div>
@@ -441,8 +565,8 @@ export default function Marketplace() {
                                     <div className="mb-4 flex items-center gap-3">
                                         <ShieldCheck size={20} />
                                         <div>
-                                            <h3 className="text-lg font-black">Post a business quote</h3>
-                                            <p className="text-sm text-slate-500">Works like a professional comment under the Need.</p>
+                                            <h3 className="text-lg font-black">Submit a structured Quote</h3>
+                                            <p className="text-sm text-slate-500">Submit a structured Offer into the customer Quote Inbox.</p>
                                         </div>
                                     </div>
                                     <div className="grid gap-3 md:grid-cols-2">

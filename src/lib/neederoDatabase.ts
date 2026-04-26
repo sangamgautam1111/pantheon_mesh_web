@@ -17,7 +17,7 @@ export type NeedRecord = ServiceRequest & {
 export type OfferRecord = BusinessOffer & {
     id: string;
     needId: string;
-    status: "sent" | "chosen" | "declined";
+    status: "submitted" | "viewed" | "shortlisted" | "chatting" | "selected" | "declined" | "expired" | "sent" | "chosen";
     createdAt?: string;
     serviceType?: string;
     included?: string;
@@ -25,6 +25,22 @@ export type OfferRecord = BusinessOffer & {
     availability?: string;
     delayRefundRule?: string;
     businessNote?: string;
+};
+
+export type BookingRecord = {
+    id: string;
+    needId: string;
+    quoteId: string;
+    customerId: string;
+    customerName?: string;
+    businessId: string;
+    businessName: string;
+    serviceType?: string;
+    scheduledTime?: string;
+    paymentStatus: string;
+    workStatus: string;
+    status: string;
+    quoteSnapshot?: BackendRecord;
 };
 
 const readError = async (response: Response, fallback: string) => {
@@ -40,7 +56,20 @@ const readError = async (response: Response, fallback: string) => {
 };
 
 const normalizeStatus = (value: unknown): NeedStatus => {
-    if (value === "quoted" || value === "chosen" || value === "closed") return value;
+    if (
+        value === "draft" ||
+        value === "open" ||
+        value === "quoting" ||
+        value === "quoted" ||
+        value === "quote_chosen" ||
+        value === "booked" ||
+        value === "in_progress" ||
+        value === "solved" ||
+        value === "chosen" ||
+        value === "closed"
+    ) {
+        return value;
+    }
     return "open";
 };
 
@@ -133,6 +162,10 @@ const parseOfferNote = (rawNote: unknown) => {
 
 const mapOffer = (offer: BackendRecord): OfferRecord => {
     const parsedNote = parseOfferNote(offer.note);
+    const rawStatus = String(offer.status || "submitted");
+    const status = (["submitted", "viewed", "shortlisted", "chatting", "selected", "declined", "expired", "sent", "chosen"].includes(rawStatus)
+        ? rawStatus
+        : "submitted") as OfferRecord["status"];
     return {
         id: String(offer.id || offer.offer_id || crypto.randomUUID()),
         needId: String(offer.need_id || offer.needId || ""),
@@ -143,7 +176,7 @@ const mapOffer = (offer: BackendRecord): OfferRecord => {
         warranty: String(offer.warranty || ""),
         distance: String(parsedNote.details.distance || offer.distance || "Nearby"),
         note: parsedNote.note,
-        status: offer.status === "chosen" || offer.status === "declined" ? offer.status : "sent",
+        status,
         createdAt: offer.created_at || offer.createdAt,
         serviceType: String(parsedNote.details.serviceType || ""),
         included: String(parsedNote.details.included || ""),
@@ -153,6 +186,22 @@ const mapOffer = (offer: BackendRecord): OfferRecord => {
         businessNote: parsedNote.note,
     };
 };
+
+const mapBooking = (booking: BackendRecord): BookingRecord => ({
+    id: String(booking.id || booking.booking_id || ""),
+    needId: String(booking.need_id || booking.needId || ""),
+    quoteId: String(booking.quote_id || booking.quoteId || ""),
+    customerId: String(booking.customer_id || booking.customerId || ""),
+    customerName: booking.customer_name || booking.customerName,
+    businessId: String(booking.business_id || booking.businessId || ""),
+    businessName: String(booking.business_name || booking.businessName || "Local Business"),
+    serviceType: booking.service_type || booking.serviceType,
+    scheduledTime: booking.scheduled_time || booking.scheduledTime,
+    paymentStatus: String(booking.payment_status || booking.paymentStatus || "awaiting_payment"),
+    workStatus: String(booking.work_status || booking.workStatus || "pending_confirmation"),
+    status: String(booking.status || "pending_confirmation"),
+    quoteSnapshot: booking.quote_snapshot || booking.quoteSnapshot,
+});
 
 export async function cleanNeedWithAI(messyText: string): Promise<NeedCard> {
     const response = await fetch(`${API_URL}/v1/ai/clean-need`, {
@@ -269,6 +318,27 @@ export async function getOffers(needId: string): Promise<OfferRecord[]> {
     return Array.isArray(data.offers) ? data.offers.map(mapOffer) : [];
 }
 
+export async function createBookingFromQuote(input: {
+    needId: string;
+    quoteId: string;
+    customerId: string;
+}): Promise<BookingRecord> {
+    const response = await fetch(`${API_URL}/v1/bookings/from-quote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            need_id: input.needId,
+            quote_id: input.quoteId,
+            customer_id: input.customerId,
+        }),
+    });
+    if (!response.ok) {
+        throw new Error(await readError(response, "Needero could not create this Booking right now."));
+    }
+    const data = await response.json();
+    return mapBooking(data.booking || { id: data.booking_id, need_id: input.needId, quote_id: input.quoteId, customer_id: input.customerId });
+}
+
 export type MessageAttachment = {
     name: string;
     type: string;
@@ -278,6 +348,8 @@ export type MessageAttachment = {
 export type ThreadMessage = {
     id: string;
     needId: string;
+    quoteId?: string;
+    bookingId?: string;
     senderId: string;
     senderName: string;
     senderType: "customer" | "business";
@@ -287,8 +359,10 @@ export type ThreadMessage = {
     createdAt: string;
 };
 
-export async function getMessages(needId: string): Promise<ThreadMessage[]> {
-    const response = await fetch(`${API_URL}/v1/messages/${needId}`, { cache: "no-store" });
+export async function getMessages(needId: string, quoteId?: string): Promise<ThreadMessage[]> {
+    const url = new URL(`${API_URL}/v1/messages/${encodeURIComponent(needId)}`, window.location.origin);
+    if (quoteId) url.searchParams.set("quote_id", quoteId);
+    const response = await fetch(`${url.pathname}${url.search}`, { cache: "no-store" });
     if (!response.ok) {
         throw new Error(await readError(response, "Needero could not load messages right now."));
     }
@@ -297,6 +371,8 @@ export async function getMessages(needId: string): Promise<ThreadMessage[]> {
         ? data.messages.map((message: BackendRecord) => ({
               id: String(message.id || message.message_id || crypto.randomUUID()),
               needId: String(message.need_id || needId),
+              quoteId: message.quote_id || message.quoteId,
+              bookingId: message.booking_id || message.bookingId,
               senderId: String(message.sender_id || ""),
               senderName: String(message.sender_name || "User"),
               senderType: message.sender_type === "business" ? "business" : "customer",
@@ -310,6 +386,8 @@ export async function getMessages(needId: string): Promise<ThreadMessage[]> {
 
 export async function sendThreadMessage(input: {
     needId: string;
+    quoteId?: string;
+    bookingId?: string;
     senderId: string;
     senderName: string;
     senderType: "customer" | "business";
@@ -322,6 +400,8 @@ export async function sendThreadMessage(input: {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             need_id: input.needId,
+            quote_id: input.quoteId || null,
+            booking_id: input.bookingId || null,
             sender_id: input.senderId,
             receiver_id: "thread",
             sender_name: input.senderName,

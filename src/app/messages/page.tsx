@@ -25,6 +25,8 @@ export default function MessagesPage() {
     const [status, setStatus] = useState("");
     const [orderContext, setOrderContext] = useState({
         needId: "",
+        quoteId: "",
+        bookingId: "",
         businessId: "",
         businessName: "",
         orderStarted: false,
@@ -38,6 +40,8 @@ export default function MessagesPage() {
         const params = new URLSearchParams(window.location.search);
         setOrderContext({
             needId: params.get("needId") || "",
+            quoteId: params.get("quoteId") || "",
+            bookingId: params.get("bookingId") || "",
             businessId: params.get("businessId") || "",
             businessName: params.get("businessName") || "",
             orderStarted: params.get("order") === "1",
@@ -48,7 +52,7 @@ export default function MessagesPage() {
         if (!user) return;
         const fetchMessages = async () => {
             try {
-                const data = await getMessages(threadId);
+                const data = await getMessages(threadId, orderContext.quoteId || undefined);
                 setMessages(data);
             } catch (error) {
                 console.error("Failed to fetch messages:", error);
@@ -57,7 +61,7 @@ export default function MessagesPage() {
         fetchMessages();
         const interval = setInterval(fetchMessages, 5000); // Poll every 5s for MVP
         return () => clearInterval(interval);
-    }, [threadId, user]);
+    }, [orderContext.quoteId, threadId, user]);
 
     const handleFiles = (event: ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(event.target.files || []).slice(0, 3);
@@ -110,6 +114,8 @@ export default function MessagesPage() {
         try {
             await sendThreadMessage({
                 needId: threadId,
+                quoteId: orderContext.quoteId || undefined,
+                bookingId: orderContext.bookingId || undefined,
                 senderId: user.uid,
                 senderName: profile?.displayName || profile?.email || formatSender(accountType),
                 senderType: accountType,
@@ -137,11 +143,11 @@ export default function MessagesPage() {
                                 Messages
                             </p>
                             <h1 className="mt-3 text-4xl font-black tracking-tight md:text-6xl">
-                                Chat after an Offer is chosen.
+                                Quote-based chat and Booking pipeline.
                             </h1>
                             <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
-                                Send text, files, images, and map location. Every message is saved in the Needero
-                                conversation.
+                                Every conversation stays attached to a Need and Quote, so booking, payment, work status,
+                                and customer confirmation can stay organized.
                             </p>
                         </div>
 
@@ -153,9 +159,14 @@ export default function MessagesPage() {
                                     </p>
                                     <p className="mt-2 text-sm leading-6 text-slate-500">
                                         {orderContext.needId
-                                            ? `Need thread: ${orderContext.needId}`
-                                            : "Open an ordered quote from Marketplace to start a focused thread."}
+                                            ? `Need: ${orderContext.needId}`
+                                            : "Open a Quote from Marketplace to start a focused thread."}
                                     </p>
+                                    {orderContext.quoteId && (
+                                        <p className="mt-2 break-all text-xs font-bold text-slate-400">
+                                            Quote: {orderContext.quoteId}
+                                        </p>
+                                    )}
                                 </div>
                             </aside>
 
@@ -165,7 +176,7 @@ export default function MessagesPage() {
                                         <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
                                             <Send className="mx-auto mb-4 text-slate-300" size={34} />
                                             <p className="text-sm font-semibold text-slate-500">
-                                                No messages yet. Send a test message below.
+                                                No messages yet. Ask a question about this Quote or confirm booking details.
                                             </p>
                                         </div>
                                     ) : (
@@ -254,9 +265,9 @@ export default function MessagesPage() {
                                             <ShoppingBag size={20} />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-black">Order</p>
+                                            <p className="text-sm font-black">Booking</p>
                                             <p className="text-xs font-semibold text-slate-500">
-                                                {orderContext.orderStarted ? "In progress" : "No active order"}
+                                                {orderContext.orderStarted ? "Pending confirmation" : "Quote chat"}
                                             </p>
                                         </div>
                                     </div>
@@ -269,15 +280,29 @@ export default function MessagesPage() {
                                             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Need</p>
                                             <p className="mt-1 break-all font-bold">{orderContext.needId || "Open from Marketplace"}</p>
                                         </div>
+                                        <div className="rounded-2xl bg-slate-50 p-3">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Quote</p>
+                                            <p className="mt-1 break-all font-bold">{orderContext.quoteId || "Not selected"}</p>
+                                        </div>
+                                        <div className="rounded-2xl bg-slate-50 p-3">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Booking</p>
+                                            <p className="mt-1 break-all font-bold">{orderContext.bookingId || "Created after Choose Offer"}</p>
+                                        </div>
+                                        <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Pipeline</p>
+                                            <p className="mt-1 text-sm font-bold leading-6">
+                                                Quote selected → Awaiting payment → Booked → In progress → Solved → Payment released
+                                            </p>
+                                        </div>
                                     </div>
                                     <button
                                         type="button"
                                         className="mt-5 w-full rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white"
                                     >
-                                        Pay
+                                        Pay / Hold Payment
                                     </button>
                                     <p className="mt-3 text-xs leading-5 text-slate-400">
-                                        Payment flow will connect here after the order/chat flow is finalized.
+                                        Payment is not active yet. This button is the reserved entry point for protected payment hold.
                                     </p>
                                 </div>
                             </aside>

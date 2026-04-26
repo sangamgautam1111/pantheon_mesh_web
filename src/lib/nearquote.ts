@@ -11,7 +11,7 @@ export type NeederoPlan = {
     features: string[];
 };
 
-export type NeedStatus = "open" | "quoted" | "chosen" | "closed";
+export type NeedStatus = "draft" | "open" | "quoting" | "quoted" | "quote_chosen" | "booked" | "in_progress" | "solved" | "chosen" | "closed";
 
 export type NeedCard = {
     category: string;
