@@ -71,4 +71,28 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         text:
             "Needero can start broad in UI but should validate locally: onboard real local businesses, get real posted Needs, make sure Offers arrive fast, and only charge businesses after they see value.",
     },
+    {
+        id: "system-architecture",
+        title: "System Architecture",
+        category: "overview",
+        route: "/",
+        text:
+            "Needero uses a dual-repository architecture. The Backend (Pantheon-Mesh) uses FastAPI and Cloud SQL PostgreSQL for processing relational data (Needs, Offers, Messages). The Frontend (pantheon_mesh_web) is built on Next.js and uses Firebase for authentication and basic profile storage.",
+    },
+    {
+        id: "auth-role-management",
+        title: "Auth & Role Management",
+        category: "safety",
+        route: "/profile",
+        text:
+            "Needero strictly segregates 'Customer' and 'Business' roles. We use signInWithRedirect for Google/GitHub logins, caching the pending account type in sessionStorage. This ensures users are properly directed to their respective dashboards (/client for Customers, /marketplace for Businesses).",
+    },
+    {
+        id: "profile-editing-workflow",
+        title: "Profile Editing",
+        category: "overview",
+        route: "/profile",
+        text:
+            "Users can edit their profiles via a unified modal on /profile. Customer profiles capture basic contact info and saved addresses, while Business profiles capture comprehensive details like services, opening hours, and warranty policies to act as a mini website.",
+    }
 ];

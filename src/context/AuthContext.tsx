@@ -28,6 +28,14 @@ interface UserProfile {
     companyName?: string | null;
     currentPlanId?: string | null;
     totalSpent?: number;
+    phoneNumber?: string | null;
+    location?: string | null;
+    savedAddress?: string | null;
+    category?: string | null;
+    openingHours?: string | null;
+    services?: string | null;
+    warrantyPolicy?: string | null;
+    shopPhotos?: string[] | null;
 }
 
 interface AuthContextType {
@@ -40,6 +48,7 @@ interface AuthContextType {
     signInWithEmail: (email: string, password: string, accountType?: ActiveAccountType) => Promise<void>;
     signUpWithEmail: (email: string, password: string, displayName: string, accountType?: ActiveAccountType) => Promise<void>;
     syncProfile: () => Promise<void>;
+    updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
     signOut: () => Promise<void>;
 }
 
@@ -53,6 +62,7 @@ const AuthContext = createContext<AuthContextType>({
     signInWithEmail: async () => {},
     signUpWithEmail: async () => {},
     syncProfile: async () => {},
+    updateUserProfile: async () => {},
     signOut: async () => {},
 });
 
@@ -383,6 +393,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await upsertProfile(user, profile?.accountType || DEFAULT_ACCOUNT_TYPE);
     };
 
+    const updateUserProfile = async (updates: Partial<UserProfile>) => {
+        if (!user || !profile) return;
+        const newProfile = { ...profile, ...updates };
+
+        if (updates.displayName !== undefined && updates.displayName !== user.displayName) {
+            try {
+                await updateProfile(user, { displayName: updates.displayName || "" });
+            } catch (error) {
+                console.warn("Unable to update Firebase display name:", error);
+            }
+        }
+
+        if (updates.photoURL !== undefined && updates.photoURL !== user.photoURL) {
+            try {
+                await updateProfile(user, { photoURL: updates.photoURL || "" });
+            } catch (error) {
+                console.warn("Unable to update Firebase photo URL:", error);
+            }
+        }
+
+        try {
+            await set(ref(db, `users/${user.uid}`), sanitizeForRealtimeDb(newProfile));
+            setProfile(newProfile);
+        } catch (error) {
+            console.error("Unable to update profile in database", error);
+            throw error;
+        }
+    };
+
     const handleSignOut = async () => {
         await firebaseSignOut(auth);
         clearPendingAccountType();
@@ -403,6 +442,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 signInWithEmail,
                 signUpWithEmail,
                 syncProfile,
+                updateUserProfile,
                 signOut: handleSignOut,
             }}
         >
