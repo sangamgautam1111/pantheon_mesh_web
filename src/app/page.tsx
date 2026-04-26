@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Briefcase, MessageSquare, Send, ShieldCheck, Store, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { NeedRecord, getNeeds } from "@/lib/neederoDatabase";
 
 export default function Home() {
-    const { accountType } = useAuth();
+    const router = useRouter();
+    const { accountType, user, loading } = useAuth();
     const [needs, setNeeds] = useState<NeedRecord[]>([]);
     const [loadError, setLoadError] = useState("");
     const primaryHref = accountType === "business" ? "/marketplace" : "/client/new";
@@ -15,7 +17,14 @@ export default function Home() {
     const liveNeeds = useMemo(() => needs.slice(0, 3), [needs]);
 
     useEffect(() => {
+        if (!loading && !user) {
+            router.replace("/login");
+        }
+    }, [loading, router, user]);
+
+    useEffect(() => {
         const loadNeeds = async () => {
+            if (!user) return;
             try {
                 setLoadError("");
                 setNeeds(await getNeeds());
@@ -27,7 +36,18 @@ export default function Home() {
         };
 
         void loadNeeds();
-    }, []);
+    }, [user]);
+
+    if (loading || !user) {
+        return (
+            <main className="flex min-h-screen items-center justify-center bg-[#f8f7f2] px-4 text-slate-950">
+                <div className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-xl">
+                    <p className="text-sm font-black uppercase tracking-[0.24em] text-slate-400">Needero</p>
+                    <h1 className="mt-3 text-3xl font-black">Redirecting to login...</h1>
+                </div>
+            </main>
+        );
+    }
 
     return (
         <main className="w-full bg-[#f8f7f2] px-4 py-6 text-slate-950 md:px-8 md:py-8">

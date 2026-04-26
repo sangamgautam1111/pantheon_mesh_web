@@ -373,7 +373,7 @@ export default function Marketplace() {
                 text: `Booking started from this Quote. Need: "${selectedNeed.title}". Quote price: ${offer.price}.`,
             });
             router.push(
-                `/messages?needId=${encodeURIComponent(selectedNeed.id)}&quoteId=${encodeURIComponent(offer.id)}&bookingId=${encodeURIComponent(booking.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName)}&order=1`,
+                `/pay?needId=${encodeURIComponent(selectedNeed.id)}&quoteId=${encodeURIComponent(offer.id)}&bookingId=${encodeURIComponent(booking.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName)}`,
             );
         } catch (error) {
             setMessage(error instanceof Error ? error.message : "Could not create this Booking.");

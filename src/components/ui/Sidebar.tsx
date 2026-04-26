@@ -13,6 +13,7 @@ import {
     MessageSquare,
     PlusCircle,
     Store,
+    UserRound,
     X,
 } from "lucide-react";
 import { ActiveAccountType, useAuth } from "@/context/AuthContext";
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
     { label: "Post a Need", href: "/client/new", icon: PlusCircle, allowedTypes: ["customer"] as ActiveAccountType[] },
     { label: "Messages", href: "/messages", icon: MessageSquare, allowedTypes: ["customer", "business"] as ActiveAccountType[] },
     { label: "Marketplace", href: "/marketplace", icon: Store, allowedTypes: ["customer", "business"] as ActiveAccountType[] },
+    { label: "Profile", href: "/profile", icon: UserRound, allowedTypes: ["customer", "business"] as ActiveAccountType[] },
     { label: "Business Plans", href: "/pricing", icon: CreditCard, allowedTypes: ["business"] as ActiveAccountType[] },
 ];
 

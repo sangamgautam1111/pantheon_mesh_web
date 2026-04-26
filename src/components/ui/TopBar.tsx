@@ -73,6 +73,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
         { type: "page", label: "My Needs", href: "/client" },
         { type: "page", label: "Post a Need", href: "/client/new" },
         { type: "page", label: "Messages", href: "/messages" },
+        { type: "page", label: "Profile", href: "/profile" },
         { type: "page", label: "Marketplace", href: "/marketplace" },
         ...(profile?.accountType === "customer" ? [] : [
             { type: "page", label: "Business Plans", href: "/pricing" },
@@ -456,6 +457,14 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                                         style={{ color: "var(--text-primary)" }}
                                     >
                                         {accountHomeLabel}
+                                    </Link>
+                                    <Link
+                                        href="/profile"
+                                        onClick={() => setShowUserMenu(false)}
+                                        className="flex w-full items-center gap-2 rounded p-2 text-sm transition-colors hover:bg-sidebar-hover"
+                                        style={{ color: "var(--text-primary)" }}
+                                    >
+                                        Profile
                                     </Link>
                                     <button
                                         onClick={async () => {
