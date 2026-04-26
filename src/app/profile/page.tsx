@@ -20,12 +20,12 @@ import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect, useRef } from "react";
 
 const COUNTRIES = [
-    { code: "NP", name: "Nepal", currency: "NPR", dial: "+977" },
+    { code: "NP", name: "Nepal", currency: "USD", dial: "+977" },
     { code: "US", name: "USA", currency: "USD", dial: "+1" },
-    { code: "IN", name: "India", currency: "INR", dial: "+91" },
-    { code: "GB", name: "UK", currency: "GBP", dial: "+44" },
-    { code: "AE", name: "UAE", currency: "AED", dial: "+971" },
-    { code: "AU", name: "Australia", currency: "AUD", dial: "+61" },
+    { code: "IN", name: "India", currency: "USD", dial: "+91" },
+    { code: "GB", name: "UK", currency: "USD", dial: "+44" },
+    { code: "AE", name: "UAE", currency: "USD", dial: "+971" },
+    { code: "AU", name: "Australia", currency: "USD", dial: "+61" },
 ];
 
 type ChecklistItem = {
@@ -117,7 +117,7 @@ export default function ProfilePage() {
         country: profile?.country || "",
         city: profile?.city || "",
         area: profile?.area || "",
-        currency: profile?.currency || "NPR",
+        currency: "USD",
         currentAddress: profile?.currentAddress || "",
         category: profile?.category || "",
         openingHours: profile?.openingHours || "",
@@ -139,11 +139,10 @@ export default function ProfilePage() {
                 .then(res => res.json())
                 .then(data => {
                     if (data.country_name) {
-                        const fallbackCurrency = COUNTRIES.find(c => c.name === data.country_name)?.currency || data.currency || "USD";
                         setDetectedLocation({
                             country: data.country_name,
                             city: data.city || "",
-                            currency: fallbackCurrency
+                            currency: "USD"
                         });
                         setShowLocationPrompt(true);
                     }

@@ -101,6 +101,6 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "overview",
         route: "/profile",
         text:
-            "Needero detects user country via IP automatically, assigning default currency (e.g. NPR for Nepal, USD for USA). It limits marketplace visibility logically (city first, country next) and stores monetary values securely in minor units (e.g. 5000 for $50.00).",
+            "Needero detects user country via IP automatically, but explicitly operates 100% in USD ($) across all countries to standardize transactions and avoid conversion issues. It limits marketplace visibility logically (city first, country next) and stores monetary values securely in minor units (e.g. 5000 for $50.00).",
     }
 ];
