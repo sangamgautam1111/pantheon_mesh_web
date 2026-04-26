@@ -94,5 +94,13 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         route: "/profile",
         text:
             "Users can edit their profiles via a unified modal on /profile. Customer profiles capture basic contact info and saved addresses, while Business profiles capture comprehensive details like services, opening hours, and warranty policies to act as a mini website.",
+    },
+    {
+        id: "global-location-currency",
+        title: "Global Location & Currency System",
+        category: "overview",
+        route: "/profile",
+        text:
+            "Needero detects user country via IP automatically, assigning default currency (e.g. NPR for Nepal, USD for USA). It limits marketplace visibility logically (city first, country next) and stores monetary values securely in minor units (e.g. 5000 for $50.00).",
     }
 ];

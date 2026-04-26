@@ -31,6 +31,11 @@ interface UserProfile {
     phoneNumber?: string | null;
     location?: string | null;
     savedAddress?: string | null;
+    country?: string | null;
+    city?: string | null;
+    area?: string | null;
+    currency?: string | null;
+    currentAddress?: string | null;
     category?: string | null;
     openingHours?: string | null;
     services?: string | null;
