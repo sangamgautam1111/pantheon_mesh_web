@@ -44,6 +44,8 @@ interface UserProfile {
     services?: string | null;
     warrantyPolicy?: string | null;
     shopPhotos?: string[] | null;
+    deliveryAddress?: string | null;
+    deliveryCoords?: { lat: number; lng: number } | null;
 }
 
 interface AuthContextType {

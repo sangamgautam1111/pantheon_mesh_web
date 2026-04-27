@@ -18,7 +18,13 @@ import {
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { Country, State, City } from "country-state-city";
+
+const DeliveryMap = dynamic(() => import("@/components/profile/DeliveryMap"), { 
+    ssr: false,
+    loading: () => <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"><div className="bg-white p-8 rounded-3xl font-black animate-pulse">LOADING MAP SYSTEM...</div></div>
+});
 
 interface ICountry {
     name: string;
@@ -127,6 +133,9 @@ export default function ProfilePage() {
         openingHours: profile?.openingHours || "",
         services: profile?.services || "",
         warrantyPolicy: profile?.warrantyPolicy || "",
+        deliveryAddress: profile?.deliveryAddress || "",
+        deliveryCoords: profile?.deliveryCoords || null as {lat: number, lng: number} | null,
+        manualLocation: false,
     });
 
     const [isSaving, setIsSaving] = useState(false);
@@ -212,7 +221,9 @@ export default function ProfilePage() {
                 category: profile.category || "",
                 openingHours: profile.openingHours || "",
                 services: profile.services || "",
-                warrantyPolicy: profile.warrantyPolicy || "",
+                warrantyPolicy: profile?.warrantyPolicy || "",
+                deliveryAddress: profile.deliveryAddress || "",
+                deliveryCoords: profile.deliveryCoords || null,
             }));
         }
     }, [profile, isEditing]);
@@ -660,6 +671,35 @@ export default function ProfilePage() {
                                             </div>
                                         </>
                                     )}
+
+                                    {!isBusiness && (
+                                        <div className="md:col-span-2 border-t border-slate-100 pt-4 mt-2">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <label className="text-sm font-bold text-slate-700">Precise Delivery Location</label>
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => setIsMapOpen(true)}
+                                                    className="text-xs font-black text-slate-950 flex items-center gap-1 hover:underline"
+                                                >
+                                                    <MapPin size={14} />
+                                                    {editForm.deliveryCoords ? "Change on Map" : "Pin on Map"}
+                                                </button>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <input 
+                                                    className="flex-1 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-950 bg-slate-50 text-sm" 
+                                                    value={editForm.deliveryAddress} 
+                                                    onChange={(e) => setEditForm({...editForm, deliveryAddress: e.target.value})} 
+                                                    placeholder="Search or pin on map for precise delivery..."
+                                                />
+                                            </div>
+                                            {editForm.deliveryCoords && (
+                                                <p className="mt-2 text-[10px] font-bold text-emerald-600">
+                                                    Coordinates saved: {editForm.deliveryCoords.lat.toFixed(6)}, {editForm.deliveryCoords.lng.toFixed(6)}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <button 
@@ -672,6 +712,22 @@ export default function ProfilePage() {
                             </div>
                         </div>
                     </div>
+                )}
+
+                {isMapOpen && (
+                    <DeliveryMap 
+                        initialCoords={editForm.deliveryCoords}
+                        initialAddress={editForm.deliveryAddress}
+                        onClose={() => setIsMapOpen(false)}
+                        onSelect={(data) => {
+                            setEditForm({
+                                ...editForm,
+                                deliveryAddress: data.address,
+                                deliveryCoords: data.coords
+                            });
+                            setIsMapOpen(false);
+                        }}
+                    />
                 )}
             </main>
         </RouteGuard>
