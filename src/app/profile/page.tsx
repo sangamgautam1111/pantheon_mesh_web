@@ -18,15 +18,16 @@ import {
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect, useRef } from "react";
+import { Country, State, City } from "country-state-city";
 
-const COUNTRIES = [
-    { code: "NP", name: "Nepal", currency: "USD", dial: "+977" },
-    { code: "US", name: "USA", currency: "USD", dial: "+1" },
-    { code: "IN", name: "India", currency: "USD", dial: "+91" },
-    { code: "GB", name: "UK", currency: "USD", dial: "+44" },
-    { code: "AE", name: "UAE", currency: "USD", dial: "+971" },
-    { code: "AU", name: "Australia", currency: "USD", dial: "+61" },
-];
+interface ICountry {
+    name: string;
+    isoCode: string;
+    phonecode: string;
+    flag: string;
+}
+
+// Removed hardcoded countryDialCodes in favor of country-state-city package
 
 type ChecklistItem = {
     label: string;
@@ -115,6 +116,9 @@ export default function ProfilePage() {
         dialCode: profile?.phoneNumber?.split(" ")[0] || "+977",
         phoneNumberRaw: profile?.phoneNumber?.split(" ").slice(1).join(" ") || "",
         country: profile?.country || "",
+        countryCode: profile?.countryCode || "",
+        state: profile?.state || "",
+        stateCode: profile?.stateCode || "",
         city: profile?.city || "",
         area: profile?.area || "",
         currency: "USD",
@@ -133,14 +137,31 @@ export default function ProfilePage() {
     const [hasPromptedLocation, setHasPromptedLocation] = useState(false);
     const [isChangingCountry, setIsChangingCountry] = useState(false);
 
+    const countries = Country.getAllCountries();
+    const [states, setStates] = useState<any[]>([]);
+    const [cities, setCities] = useState<any[]>([]);
+
+    const topCountryCode = profile?.countryCode || detectedLocation?.countryCode || "US";
+    const sortedCountries = [...countries].sort((a, b) => a.name.localeCompare(b.name));
+    const displayCountries = [...sortedCountries];
+    if (topCountryCode) {
+        const idx = displayCountries.findIndex(c => c.isoCode === topCountryCode);
+        if (idx !== -1) {
+            const [top] = displayCountries.splice(idx, 1);
+            displayCountries.unshift(top);
+        }
+    }
+
     useEffect(() => {
         if (profile && !profile.country && !hasPromptedLocation) {
             fetch("https://ipapi.co/json/")
                 .then(res => res.json())
                 .then(data => {
                     if (data.country_name) {
+                        const foundCountry = countries.find(c => c.name === data.country_name);
                         setDetectedLocation({
                             country: data.country_name,
+                            countryCode: foundCountry?.isoCode || "",
                             city: data.city || "",
                             currency: "USD"
                         });
@@ -150,7 +171,25 @@ export default function ProfilePage() {
                 .catch(() => console.log("Location auto-detect blocked or failed"))
                 .finally(() => setHasPromptedLocation(true));
         }
-    }, [profile, hasPromptedLocation]);
+    }, [profile, hasPromptedLocation, countries]);
+
+    // Load states when country changes
+    useEffect(() => {
+        if (editForm.countryCode) {
+            setStates(State.getStatesOfCountry(editForm.countryCode));
+        } else {
+            setStates([]);
+        }
+    }, [editForm.countryCode]);
+
+    // Load cities when state changes
+    useEffect(() => {
+        if (editForm.countryCode && editForm.stateCode) {
+            setCities(City.getCitiesOfState(editForm.countryCode, editForm.stateCode));
+        } else {
+            setCities([]);
+        }
+    }, [editForm.countryCode, editForm.stateCode]);
 
     // Initialize edit form whenever modal opens or profile changes
     useEffect(() => {
@@ -163,6 +202,9 @@ export default function ProfilePage() {
                 dialCode: profile.phoneNumber?.split(" ")[0] || prev.dialCode,
                 phoneNumberRaw: profile.phoneNumber?.split(" ").slice(1).join(" ") || prev.phoneNumberRaw,
                 country: profile.country || prev.country,
+                countryCode: profile.countryCode || prev.countryCode,
+                state: profile.state || prev.state,
+                stateCode: profile.stateCode || prev.stateCode,
                 city: profile.city || prev.city,
                 area: profile.area || prev.area,
                 currency: profile.currency || prev.currency,
@@ -179,6 +221,7 @@ export default function ProfilePage() {
         if (!detectedLocation) return;
         await updateUserProfile({
             country: detectedLocation.country,
+            countryCode: detectedLocation.countryCode,
             city: detectedLocation.city,
             currency: detectedLocation.currency,
         });
@@ -233,7 +276,7 @@ export default function ProfilePage() {
         { label: "Verify email", done: Boolean(profile?.email), weight: 10 },
     ];
 
-    const locationDisplay = [profile?.city, profile?.country].filter(Boolean).join(", ") || "No location set";
+    const locationDisplay = [profile?.city, profile?.state, profile?.country].filter(Boolean).join(", ") || "No location set";
 
     return (
         <RouteGuard allowedTypes={["customer", "business"]}>
@@ -262,12 +305,12 @@ export default function ProfilePage() {
                                     <div className="mt-3 flex flex-wrap gap-2 text-sm font-bold text-slate-600">
                                         {profile?.country && (
                                             <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-800">
-                                                🌍 {profile.country}
+                                                {countries.find(c => c.name === profile.country)?.flag || "🌍"} {profile.country}
                                             </span>
                                         )}
                                         {profile?.currency && (
                                             <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-800">
-                                                💵 {profile.currency}
+                                                $ {profile.currency}
                                             </span>
                                         )}
                                     </div>
@@ -389,14 +432,15 @@ export default function ProfilePage() {
                                     <select 
                                         className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-950 mb-6"
                                         onChange={(e) => {
-                                            const selected = COUNTRIES.find(c => c.name === e.target.value);
+                                            const selected = countries.find(c => c.name === e.target.value);
                                             if (selected) {
-                                                setDetectedLocation({ country: selected.name, city: "", currency: selected.currency });
+                                                setDetectedLocation({ country: selected.name, countryCode: selected.isoCode, city: "", currency: "USD" });
                                             }
                                         }}
-                                        defaultValue={detectedLocation?.country || "USA"}
+                                        defaultValue={detectedLocation?.country || ""}
                                     >
-                                        {COUNTRIES.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
+                                        <option value="" disabled>Select Country</option>
+                                        {displayCountries.map(c => <option key={c.isoCode} value={c.name}>{c.flag} {c.name}</option>)}
                                     </select>
                                     <div className="flex flex-col gap-3">
                                         <button 
@@ -491,25 +535,63 @@ export default function ProfilePage() {
                                         <label className="text-sm font-bold text-slate-700">Country</label>
                                         <select 
                                             className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-950"
-                                            value={editForm.country}
+                                            value={editForm.countryCode}
                                             onChange={(e) => {
-                                                const c = COUNTRIES.find(x => x.name === e.target.value);
+                                                const c = countries.find(x => x.isoCode === e.target.value);
                                                 if (c) {
-                                                    setEditForm({...editForm, country: c.name, currency: c.currency, dialCode: c.dial});
+                                                    setEditForm({
+                                                        ...editForm, 
+                                                        country: c.name, 
+                                                        countryCode: c.isoCode,
+                                                        state: "",
+                                                        stateCode: "",
+                                                        city: "",
+                                                        currency: "USD", 
+                                                        dialCode: `+${c.phonecode}`
+                                                    });
                                                 }
                                             }}
                                         >
                                             <option value="" disabled>Select Country</option>
-                                            {COUNTRIES.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
+                                            {displayCountries.map(c => <option key={c.isoCode} value={c.isoCode}>{c.flag} {c.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-bold text-slate-700">State / Province</label>
+                                        <select 
+                                            className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-950 disabled:bg-slate-50"
+                                            value={editForm.stateCode}
+                                            disabled={!editForm.countryCode}
+                                            onChange={(e) => {
+                                                const s = states.find(x => x.isoCode === e.target.value);
+                                                if (s) {
+                                                    setEditForm({...editForm, state: s.name, stateCode: s.isoCode, city: ""});
+                                                }
+                                            }}
+                                        >
+                                            <option value="">Select State</option>
+                                            {states.map(s => <option key={s.isoCode} value={s.isoCode}>{s.name}</option>)}
                                         </select>
                                     </div>
                                     <div>
                                         <label className="text-sm font-bold text-slate-700">City</label>
+                                        <select 
+                                            className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-950 disabled:bg-slate-50"
+                                            value={editForm.city}
+                                            disabled={!editForm.stateCode}
+                                            onChange={(e) => setEditForm({...editForm, city: e.target.value})}
+                                        >
+                                            <option value="">Select City</option>
+                                            {cities.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-bold text-slate-700">Area</label>
                                         <input 
                                             className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-950" 
-                                            value={editForm.city} 
-                                            onChange={(e) => setEditForm({...editForm, city: e.target.value})} 
-                                            placeholder="e.g. Kathmandu"
+                                            value={editForm.area} 
+                                            onChange={(e) => setEditForm({...editForm, area: e.target.value})} 
+                                            placeholder="e.g. New Road"
                                         />
                                     </div>
 
@@ -517,12 +599,12 @@ export default function ProfilePage() {
                                         <label className="text-sm font-bold text-slate-700">Phone Number</label>
                                         <div className="mt-1 flex gap-2">
                                             <select 
-                                                className="w-1/3 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-950 bg-slate-50"
+                                                className="w-1/3 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-950 bg-slate-50 text-xs"
                                                 value={editForm.dialCode}
                                                 onChange={(e) => setEditForm({...editForm, dialCode: e.target.value})}
                                             >
-                                                {COUNTRIES.map(c => (
-                                                    <option key={c.code} value={c.dial}>{c.name} ({c.dial})</option>
+                                                {displayCountries.map(c => (
+                                                    <option key={c.isoCode} value={`+${c.phonecode}`}>{c.flag} {c.name} (+{c.phonecode})</option>
                                                 ))}
                                             </select>
                                             <input 

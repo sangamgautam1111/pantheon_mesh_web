@@ -72,9 +72,9 @@ export const URGENCY_OPTIONS = ["ASAP", "Today", "Tomorrow", "This week", "Flexi
 
 export const BUDGET_OPTIONS = [
     "No budget yet",
-    "Under Rs. 2,000",
-    "Rs. 2,000-5,000",
-    "Rs. 5,000+",
+    "Under $50",
+    "$50 - $200",
+    "$200+",
     "Custom",
 ];
 

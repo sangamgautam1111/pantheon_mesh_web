@@ -12,6 +12,7 @@
   "dependencies": {
     "@pinecone-database/pinecone": "^7.1.0",
     "clsx": "^2.1.0",
+    "country-state-city": "^3.2.1",
     "ethers": "^6.16.0",
     "firebase": "^12.10.0",
     "framer-motion": "latest",

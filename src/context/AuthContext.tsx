@@ -32,6 +32,9 @@ interface UserProfile {
     location?: string | null;
     savedAddress?: string | null;
     country?: string | null;
+    countryCode?: string | null;
+    state?: string | null;
+    stateCode?: string | null;
     city?: string | null;
     area?: string | null;
     currency?: string | null;

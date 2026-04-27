@@ -23,6 +23,8 @@ import {
     URGENCY_OPTIONS,
     createFallbackNeedCard,
 } from "@/lib/nearquote";
+import { Country, State, City } from "country-state-city";
+import { useEffect } from "react";
 
 type UploadedMedia = {
     dataUrl: string;
@@ -44,6 +46,69 @@ export default function NewCustomerRequestPage() {
     const [loading, setLoading] = useState(false);
     const [posting, setPosting] = useState(false);
     const [error, setError] = useState("");
+
+    // Location structured states
+    const [countryCode, setCountryCode] = useState(profile?.countryCode || "");
+    const [stateCode, setStateCode] = useState(profile?.stateCode || "");
+    const [city, setCity] = useState(profile?.city || "");
+    const [area, setArea] = useState(profile?.area || "");
+    const [states, setStates] = useState<any[]>([]);
+    const [cities, setCities] = useState<any[]>([]);
+
+    const countries = Country.getAllCountries();
+
+    // Auto-detect location if not in profile
+    useEffect(() => {
+        if (!profile?.countryCode) {
+            fetch("https://ipapi.co/json/")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.country_code) {
+                        setCountryCode(data.country_code);
+                        if (data.city) setCity(data.city);
+                    }
+                })
+                .catch(() => console.log("Location detection skipped"));
+        }
+    }, [profile]);
+
+    // Load states when country changes
+    useEffect(() => {
+        if (countryCode) {
+            const countryStates = State.getStatesOfCountry(countryCode);
+            setStates(countryStates);
+            // If the current stateCode doesn't belong to this country, reset it
+            if (!countryStates.find(s => s.isoCode === stateCode)) {
+                setStateCode("");
+                setCity("");
+            }
+        } else {
+            setStates([]);
+            setStateCode("");
+            setCity("");
+        }
+    }, [countryCode]);
+
+    // Load cities when state changes
+    useEffect(() => {
+        if (countryCode && stateCode) {
+            const stateCities = City.getCitiesOfState(countryCode, stateCode);
+            setCities(stateCities);
+            if (!stateCities.find(c => c.name === city)) {
+                setCity("");
+            }
+        } else {
+            setCities([]);
+            setCity("");
+        }
+    }, [countryCode, stateCode]);
+
+    const fullLocationString = [
+        area,
+        city,
+        states.find(s => s.isoCode === stateCode)?.name,
+        countries.find(c => c.isoCode === countryCode)?.name
+    ].filter(Boolean).join(", ") || "Location not set";
 
     const resolvedBudget = budget === "Custom" ? customBudget.trim() || "Custom" : budget;
 
@@ -93,7 +158,11 @@ export default function NewCustomerRequestPage() {
                 title,
                 description,
                 category: resolvedCategory,
-                location: location || "Area not set",
+                location: fullLocationString,
+                countryCode,
+                stateCode,
+                city,
+                area,
                 urgency,
                 budget: resolvedBudget,
                 photoPreview: uploadedMedia?.dataUrl || null,
@@ -168,16 +237,76 @@ export default function NewCustomerRequestPage() {
                                 <div className="mt-5 grid gap-4 md:grid-cols-2">
                                     <label className="block">
                                         <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
-                                            Area
+                                            Country
+                                        </span>
+                                        <select
+                                            value={countryCode}
+                                            onChange={(e) => setCountryCode(e.target.value)}
+                                            className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-slate-950/5"
+                                        >
+                                            <option value="">Select Country</option>
+                                            {countries.map((c) => (
+                                                <option key={c.isoCode} value={c.isoCode}>
+                                                    {c.flag} {c.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </label>
+
+                                    <label className="block">
+                                        <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+                                            State / Province
+                                        </span>
+                                        <select
+                                            value={stateCode}
+                                            onChange={(e) => setStateCode(e.target.value)}
+                                            disabled={!countryCode}
+                                            className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-slate-950/5 disabled:opacity-50"
+                                        >
+                                            <option value="">Select State</option>
+                                            {states.map((s) => (
+                                                <option key={s.isoCode} value={s.isoCode}>
+                                                    {s.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </label>
+                                </div>
+
+                                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                                    <label className="block">
+                                        <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+                                            City
+                                        </span>
+                                        <select
+                                            value={city}
+                                            onChange={(e) => setCity(e.target.value)}
+                                            disabled={!stateCode}
+                                            className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-slate-950/5 disabled:opacity-50"
+                                        >
+                                            <option value="">Select City</option>
+                                            {cities.map((c) => (
+                                                <option key={c.name} value={c.name}>
+                                                    {c.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </label>
+
+                                    <label className="block">
+                                        <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+                                            Specific Area (Optional)
                                         </span>
                                         <input
-                                            value={location}
-                                            onChange={(event) => setLocation(event.target.value)}
-                                            placeholder="New Road, Baneshwor, Kalanki..."
+                                            value={area}
+                                            onChange={(event) => setArea(event.target.value)}
+                                            placeholder="e.g. New Road, Baneshwor..."
                                             className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-slate-950/5"
                                         />
                                     </label>
+                                </div>
 
+                                <div className="mt-5">
                                     <label className="block">
                                         <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
                                             Urgency
@@ -216,7 +345,7 @@ export default function NewCustomerRequestPage() {
                                         <input
                                             value={customBudget}
                                             onChange={(event) => setCustomBudget(event.target.value)}
-                                            placeholder="Rs. 3,000"
+                                            placeholder="$ 100"
                                             disabled={budget !== "Custom"}
                                             className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-slate-950/5 disabled:opacity-40"
                                         />
@@ -289,7 +418,7 @@ export default function NewCustomerRequestPage() {
                                                 ["Category", card.category],
                                                 ["Problem", card.problem || card.summaryForBusinesses],
                                                 ["Known details", card.knownDetails || card.summaryForBusinesses],
-                                                ["Area", location || "Not set"],
+                                                ["Area", fullLocationString],
                                                 ["Urgency", urgency],
                                                 ["Budget", resolvedBudget],
                                             ].map(([label, value]) => (
