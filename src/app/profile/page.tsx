@@ -139,6 +139,7 @@ export default function ProfilePage() {
     });
 
     const [isSaving, setIsSaving] = useState(false);
+    const [isMapOpen, setIsMapOpen] = useState(false);
 
     // Auto-detection state
     const [showLocationPrompt, setShowLocationPrompt] = useState(false);
