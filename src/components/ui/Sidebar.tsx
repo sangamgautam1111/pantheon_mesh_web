@@ -5,8 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
-    ChevronDown,
-    ChevronRight,
     CreditCard,
     FileText,
     LayoutDashboard,
@@ -20,15 +18,14 @@ import { ActiveAccountType, useAuth } from "@/context/AuthContext";
 import logoImg from "@/app/logo.png";
 
 const NAV_ITEMS = [
-    { label: "Welcome", href: "/", icon: LayoutDashboard },
+    { label: "Home", href: "/", icon: LayoutDashboard },
     { label: "My Needs", href: "/client", icon: FileText, allowedTypes: ["customer"] as ActiveAccountType[] },
     { label: "Post a Need", href: "/client/new", icon: PlusCircle, allowedTypes: ["customer"] as ActiveAccountType[] },
     { label: "Marketplace", href: "/marketplace", icon: Store, allowedTypes: ["customer", "business"] as ActiveAccountType[] },
+    { label: "Messages", href: "/messages", icon: MessageSquare, allowedTypes: ["customer", "business"] as ActiveAccountType[] },
     { label: "Profile", href: "/profile", icon: UserRound, allowedTypes: ["customer", "business"] as ActiveAccountType[] },
     { label: "Business Plans", href: "/pricing", icon: CreditCard, allowedTypes: ["business"] as ActiveAccountType[] },
 ];
-
-
 
 interface SidebarProps {
     mobileOpen: boolean;
@@ -38,14 +35,7 @@ interface SidebarProps {
 export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
     const { accountType } = useAuth();
     const pathname = usePathname();
-    const [collapsed, setCollapsed] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
-    const { user } = useAuth();
-    const accountLabel = accountType === "business"
-        ? "local business account"
-        : accountType === "customer"
-          ? "customer account"
-          : "local quote marketplace";
 
     useEffect(() => {
         const check = () => setIsMobile(window.innerWidth < 769);
@@ -54,102 +44,79 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
         return () => window.removeEventListener("resize", check);
     }, []);
 
-    const sidebarVisible = isMobile ? mobileOpen : true;
-    if (!sidebarVisible) {
-        return null;
-    }
+    // On desktop, Fiverr uses top nav only — no persistent sidebar
+    if (!isMobile) return null;
 
+    // Mobile drawer
     return (
         <>
-            {isMobile && mobileOpen && (
+            {/* Overlay */}
+            {mobileOpen && (
                 <div
-                    className="fixed inset-0 z-40"
-                    style={{ background: "var(--overlay-bg)" }}
+                    className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
                     onClick={onClose}
                 />
             )}
 
+            {/* Drawer */}
             <aside
-                className={`fixed bottom-0 left-0 top-12 z-40 flex flex-col border-r transition-all duration-200 ${
-                    isMobile ? "w-[280px] shadow-2xl" : collapsed ? "w-[52px]" : "w-[256px]"
-                }`}
-                style={{ background: "var(--sidebar-bg)", borderColor: "var(--border-color)" }}
+                className="fixed bottom-0 left-0 top-0 z-50 flex flex-col bg-white shadow-2xl transition-transform duration-300"
+                style={{
+                    width: "280px",
+                    transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
+                }}
             >
-                {(!collapsed || isMobile) && (
-                    <div className="border-b px-4 py-3" style={{ borderColor: "var(--border-color)" }}>
-                        <div className="group flex cursor-pointer items-center justify-between rounded-lg p-2 transition-all hover:bg-white/[0.03]">
-                            <div className="flex items-center gap-3 overflow-hidden">
-                                <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-black/10 bg-white shadow-sm">
-                                    <Image
-                                        src={logoImg}
-                                        alt="Needero"
-                                        width={32}
-                                        height={32}
-                                        className="h-full w-full rounded-full object-cover"
-                                    />
-                                </div>
-                                <div className="min-w-0">
-                                    <div
-                                        className="truncate text-sm font-semibold transition-colors"
-                                        style={{ color: "var(--text-primary)" }}
-                                    >
-                                        Needero
-                                    </div>
-                                    <div className="truncate text-[10px] font-mono" style={{ color: "var(--text-secondary)" }}>
-                                        {accountLabel}
-                                    </div>
-                                </div>
-                            </div>
-                            <ChevronDown size={14} className="flex-shrink-0 transition-colors" style={{ color: "var(--text-disabled)" }} />
+                {/* Header */}
+                <div className="flex items-center justify-between border-b px-4 py-4" style={{ borderColor: "#e4e5e7" }}>
+                    <Link href="/" onClick={onClose} className="flex items-center gap-2">
+                        <div className="h-8 w-8 overflow-hidden rounded-lg">
+                            <Image src={logoImg} alt="Needero" width={32} height={32} className="h-full w-full object-cover rounded-lg" />
                         </div>
-                    </div>
-                )}
+                        <span className="font-heading font-extrabold text-xl tracking-tight" style={{ color: "#404145" }}>
+                            Needle<span style={{ color: "#1DBF73" }}>ro</span>
+                        </span>
+                    </Link>
+                    <button onClick={onClose} className="rounded-full p-1.5 transition-colors hover:bg-gray-100" style={{ color: "#74767e" }}>
+                        <X size={20} />
+                    </button>
+                </div>
 
-                <nav className="flex-1 overflow-y-auto py-2 scrollbar-hide">
+                {/* Nav */}
+                <nav className="flex-1 overflow-y-auto p-3">
                     {NAV_ITEMS.map((item) => {
-                        if (item.allowedTypes && (!accountType || !item.allowedTypes.includes(accountType))) {
-                            return null;
-                        }
-
+                        if (item.allowedTypes && (!accountType || !item.allowedTypes.includes(accountType))) return null;
                         const active = pathname === item.href;
-
                         return (
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                onClick={() => isMobile && onClose()}
-                                className={`mx-2 flex items-center gap-4 rounded px-3 py-2 text-base transition-colors ${
-                                    collapsed && !isMobile ? "justify-center" : ""
-                                } ${active ? "font-medium" : ""}`}
+                                onClick={onClose}
+                                className="flex items-center gap-3 rounded-lg px-3 py-3 mb-1 text-sm font-medium transition-all"
                                 style={{
-                                    background: active ? "var(--sidebar-active)" : "transparent",
-                                    color: active ? "var(--text-primary)" : "var(--text-secondary)",
+                                    background: active ? "#e9f9f0" : "transparent",
+                                    color: active ? "#1DBF73" : "#404145",
+                                    fontWeight: active ? 600 : 500,
                                 }}
-                                title={collapsed && !isMobile ? item.label : undefined}
                             >
                                 <item.icon
-                                    size={24}
-                                    style={{ color: active ? "var(--text-primary)" : "var(--text-disabled)" }}
+                                    size={18}
+                                    style={{ color: active ? "#1DBF73" : "#74767e", flexShrink: 0 }}
                                 />
-                                {(!collapsed || isMobile) && <span>{item.label}</span>}
+                                {item.label}
+                                {active && (
+                                    <div className="ml-auto h-2 w-2 rounded-full" style={{ background: "#1DBF73" }} />
+                                )}
                             </Link>
                         );
                     })}
-
-
                 </nav>
 
-                {!isMobile && (
-                    <div className="p-2" style={{ borderTop: "1px solid var(--border-color)" }}>
-                        <button
-                            onClick={() => setCollapsed((current) => !current)}
-                            className="flex w-full items-center justify-center rounded p-2 transition-colors"
-                            style={{ color: "var(--text-disabled)" }}
-                        >
-                            {collapsed ? <ChevronRight size={16} /> : <X size={16} />}
-                        </button>
-                    </div>
-                )}
+                {/* Footer */}
+                <div className="border-t p-4" style={{ borderColor: "#e4e5e7" }}>
+                    <p className="text-xs text-center" style={{ color: "#b5b6ba" }}>
+                        Needero — Local Service Marketplace
+                    </p>
+                </div>
             </aside>
         </>
     );

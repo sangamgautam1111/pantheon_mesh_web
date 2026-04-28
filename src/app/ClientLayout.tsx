@@ -13,21 +13,12 @@ import { GuideOverlay } from "@/components/ui/GuideOverlay";
 export function ClientLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
-    
-    // Improved auth page check to handle trailing slashes and potential case issues
+
     const authPaths = ["/login", "/signup", "/forgot-password"];
     const isAuthPage = authPaths.some(path => {
         const cleanPath = pathname?.replace(/\/$/, "") || "";
         return cleanPath === path;
     });
-
-    useEffect(() => {
-        const check = () => setIsMobile(window.innerWidth < 769);
-        check();
-        window.addEventListener("resize", check);
-        return () => window.removeEventListener("resize", check);
-    }, []);
 
     return (
         <ThemeProvider>
@@ -35,15 +26,16 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 <GuideProvider>
                     {!isAuthPage && <TopBar onMenuToggle={() => setMobileMenuOpen(prev => !prev)} />}
                     {!isAuthPage && <Sidebar mobileOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />}
-                    <main
-                        className={`${!isAuthPage ? "mt-12" : ""} min-h-screen transition-all duration-200`}
-                        style={{
-                            marginLeft: !isAuthPage && !isMobile ? 256 : 0,
-                            background: "var(--bg-primary)",
-                        }}
+                    {/* 
+                        Fiverr-style: no sidebar on desktop, so no marginLeft.
+                        Only add top padding for the fixed topbar height (64px).
+                    */}
+                    <div
+                        className={`${!isAuthPage ? "pt-16" : ""} min-h-screen`}
+                        style={{ background: "var(--bg-primary)" }}
                     >
                         {children}
-                    </main>
+                    </div>
                     <AiGuide />
                     <GuideOverlay />
                 </GuideProvider>

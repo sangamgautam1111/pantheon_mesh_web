@@ -2,24 +2,33 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Briefcase, CheckCircle2, Clock, MapPin, MessageSquare, Plus, Search } from "lucide-react";
+import {
+    ArrowRight, Briefcase, CheckCircle2, Clock, MapPin,
+    MessageSquare, Plus, Search, Star, RefreshCw
+} from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import { NeedRecord, getNeeds } from "@/lib/neederoDatabase";
 
-function statusClass(status: string) {
-    if (status === "chosen") return "bg-emerald-50 text-emerald-700";
-    if (status === "quoted") return "bg-slate-950 text-white";
-    return "bg-amber-50 text-amber-700";
+function statusConfig(status: string) {
+    switch (status) {
+        case "chosen":
+            return { label: "Booked", cls: "nd-badge nd-badge-green" };
+        case "quoted":
+            return { label: "Offers Received", cls: "nd-badge nd-badge-blue" };
+        case "open":
+        default:
+            return { label: "Awaiting Offers", cls: "nd-badge nd-badge-amber" };
+    }
 }
 
 function NeedMedia({ src }: { src?: string | null }) {
     if (!src) return null;
     const isVideo = src.startsWith("data:video") || /\.(mp4|webm|mov)$/i.test(src);
     return isVideo ? (
-        <video src={src} controls className="h-24 w-32 rounded-2xl object-cover" />
+        <video src={src} controls className="h-20 w-24 rounded-xl object-cover flex-shrink-0" />
     ) : (
-        <img src={src} alt="" className="h-24 w-32 rounded-2xl object-cover" />
+        <img src={src} alt="" className="h-20 w-24 rounded-xl object-cover flex-shrink-0" />
     );
 }
 
@@ -29,161 +38,273 @@ export default function RequestCenterPage() {
     const [needs, setNeeds] = useState<NeedRecord[]>([]);
     const [dbError, setDbError] = useState("");
     const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState<string>("all");
 
-    useEffect(() => {
-        const fetchNeeds = async () => {
-            if (!user) return;
-            setLoading(true);
-            try {
-                const data = await getNeeds(isBusiness ? undefined : user.uid);
-                setNeeds(data);
-            } catch (error) {
-                console.error("Needero needs load failed:", error);
-                setDbError("Could not load live Needs yet. Please wait for the backend deploy or try again.");
-                setNeeds([]);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchNeeds = async () => {
+        if (!user) return;
+        setLoading(true);
+        try {
+            const data = await getNeeds(isBusiness ? undefined : user.uid);
+            setNeeds(data);
+            setDbError("");
+        } catch (error) {
+            console.error("Needero needs load failed:", error);
+            setDbError("Could not load live Needs yet. Please wait for the backend deploy or try again.");
+            setNeeds([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        fetchNeeds();
-    }, [user, isBusiness]);
+    useEffect(() => { fetchNeeds(); }, [user, isBusiness]);
 
     const visibleNeeds = useMemo(() => {
-        if (isBusiness) {
-            return needs;
+        let list = isBusiness ? needs : needs.filter((n) => n.customerId === user?.uid);
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            list = list.filter(n =>
+                n.title.toLowerCase().includes(q) ||
+                n.category.toLowerCase().includes(q) ||
+                n.location.toLowerCase().includes(q)
+            );
         }
+        if (statusFilter !== "all") {
+            list = list.filter(n => n.status === statusFilter);
+        }
+        return list;
+    }, [isBusiness, needs, user?.uid, searchQuery, statusFilter]);
 
-        return needs.filter((need) => need.customerId === user?.uid);
-    }, [isBusiness, needs, user?.uid]);
+    const openNeeds = needs.filter(n => n.status !== "chosen").length;
+    const totalOffers = needs.reduce((s, n) => s + (n.offers || 0), 0);
+    const bookedNeeds = needs.filter(n => n.status === "chosen").length;
 
-    const openNeeds = visibleNeeds.filter((need) => need.status !== "chosen").length;
-    const totalOffers = visibleNeeds.reduce((sum, need) => sum + (need.offers || 0), 0);
+    const FILTERS = [
+        { key: "all", label: "All" },
+        { key: "open", label: "Awaiting Offers" },
+        { key: "quoted", label: "Offers Received" },
+        { key: "chosen", label: "Booked" },
+    ];
 
     return (
         <RouteGuard allowedTypes={["customer"]}>
-            <main className="min-h-screen bg-[#f8f7f2] px-4 py-6 text-slate-950 md:px-8">
-                <div className="mx-auto max-w-7xl">
-                    <section className="rounded-[34px] border border-slate-200 bg-white p-7 shadow-xl md:p-9">
-                        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                            <div className="max-w-3xl">
-                                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-slate-600">
-                                    <MessageSquare size={14} />
-                                    {isBusiness ? "Lead inbox" : "My Needs"}
-                                </div>
-                                <h1 className="text-4xl font-black tracking-tight md:text-6xl">
-                                    {isBusiness ? "Nearby Needs from customers." : "Post Needs and compare Offers."}
+            <div style={{ background: "#fafafa", minHeight: "100vh" }}>
+                {/* ── PAGE HEADER ── */}
+                <div style={{ background: "#ffffff", borderBottom: "1px solid #e4e5e7" }}>
+                    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#1DBF73" }}>
+                                    {isBusiness ? "Lead Inbox" : "My Orders"}
+                                </p>
+                                <h1 className="font-heading text-3xl font-bold" style={{ color: "#404145" }}>
+                                    {isBusiness ? "Customer Needs Near You" : "My Needs"}
                                 </h1>
-                                <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
+                                <p className="mt-1 text-sm" style={{ color: "#74767e" }}>
                                     {isBusiness
-                                        ? "Browse posted Needs, then send clear Offers with price, timing, warranty, and a useful note."
-                                        : "Needero is free for customers. Post a Need, wait for Offers, choose the best business, then unlock contact."}
+                                        ? "Browse and submit Offers to open Needs in your area."
+                                        : "Track your posted Needs and the Offers you've received."}
                                 </p>
                             </div>
-                            <Link
-                                href={isBusiness ? "/marketplace" : "/client/new"}
-                                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-4 text-sm font-black text-white shadow-lg shadow-slate-900/15 transition-all hover:-translate-y-0.5"
-                            >
-                                <Plus size={17} />
-                                {isBusiness ? "Browse Marketplace" : "Post a Need"}
-                            </Link>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={fetchNeeds}
+                                    className="nd-btn nd-btn-ghost rounded-full gap-2"
+                                    title="Refresh"
+                                >
+                                    <RefreshCw size={15} />
+                                    Refresh
+                                </button>
+                                <Link
+                                    href={isBusiness ? "/marketplace" : "/client/new"}
+                                    className="nd-btn nd-btn-primary rounded-full gap-2"
+                                >
+                                    <Plus size={16} />
+                                    {isBusiness ? "Browse Marketplace" : "Post a Need"}
+                                </Link>
+                            </div>
                         </div>
-                    </section>
 
+                        {/* Stats row */}
+                        <div className="mt-6 flex flex-wrap gap-6">
+                            {[
+                                { label: "Total Needs", value: needs.length, icon: Briefcase },
+                                { label: "Open", value: openNeeds, icon: Clock },
+                                { label: "Offers received", value: totalOffers, icon: MessageSquare },
+                                { label: "Booked", value: bookedNeeds, icon: CheckCircle2 },
+                            ].map((s) => (
+                                <div key={s.label} className="flex items-center gap-3">
+                                    <div
+                                        className="h-9 w-9 rounded-xl flex items-center justify-center"
+                                        style={{ background: "#e9f9f0" }}
+                                    >
+                                        <s.icon size={16} style={{ color: "#1DBF73" }} />
+                                    </div>
+                                    <div>
+                                        <p className="text-xl font-bold leading-none" style={{ color: "#404145" }}>{s.value}</p>
+                                        <p className="text-xs mt-0.5" style={{ color: "#74767e" }}>{s.label}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── FILTERS + SEARCH ── */}
+                <div style={{ background: "#ffffff", borderBottom: "1px solid #e4e5e7" }}>
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6">
+                        <div className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                            {/* Status filters */}
+                            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                                {FILTERS.map((f) => (
+                                    <button
+                                        key={f.key}
+                                        onClick={() => setStatusFilter(f.key)}
+                                        className="nd-chip flex-shrink-0 text-sm"
+                                        style={statusFilter === f.key ? {
+                                            background: "#1DBF73",
+                                            color: "#ffffff",
+                                            borderColor: "#1DBF73",
+                                        } : {}}
+                                    >
+                                        {f.label}
+                                    </button>
+                                ))}
+                            </div>
+                            {/* Search */}
+                            <div className="relative flex-shrink-0">
+                                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#74767e" }} />
+                                <input
+                                    type="text"
+                                    placeholder="Search needs..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="nd-input rounded-full pl-9 pr-4 py-2 text-sm"
+                                    style={{ width: "220px" }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── CONTENT ── */}
+                <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
                     {dbError && (
-                        <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                        <div
+                            className="mb-4 rounded-xl border px-4 py-3 text-sm"
+                            style={{ borderColor: "#fde68a", background: "#fffbeb", color: "#92630a" }}
+                        >
                             {dbError}
                         </div>
                     )}
 
-                    <section className="mt-6 grid gap-4 md:grid-cols-4">
-                        {[
-                            { label: isBusiness ? "Visible Needs" : "My Needs", value: String(visibleNeeds.length), icon: Briefcase },
-                            { label: "Open", value: String(openNeeds), icon: MessageSquare },
-                            { label: isBusiness ? "Offer chances" : "Offers received", value: String(totalOffers), icon: CheckCircle2 },
-                            { label: "Goal", value: "Fast quotes", icon: Clock },
-                        ].map((item) => (
-                            <div key={item.label} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                                <item.icon size={19} />
-                                <p className="mt-5 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{item.label}</p>
-                                <p className="mt-2 text-2xl font-black">{item.value}</p>
-                            </div>
-                        ))}
-                    </section>
-
-                    <section className="mt-6 overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm">
-                        <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 md:flex-row md:items-center md:justify-between">
-                            <div>
-                                <h2 className="text-xl font-black">
-                                    {isBusiness ? "Customer Needs" : "Needs timeline"}
-                                </h2>
-                                <p className="mt-1 text-sm text-slate-500">
-                                    {isBusiness ? "Each Need can receive an Offer from your business." : "Every posted Need and its offer count appears here."}
-                                </p>
-                            </div>
-                            <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-400">
-                                <Search size={16} />
-                                Search Needs
-                            </div>
+                    {loading ? (
+                        <div className="space-y-4">
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="h-32 rounded-2xl animate-pulse" style={{ background: "#f3f4f6" }} />
+                            ))}
                         </div>
-
-                        <div className="divide-y divide-slate-100">
-                            {visibleNeeds.length === 0 ? (
-                                <div className="p-10 text-center">
-                                    <Briefcase className="mx-auto mb-4 text-slate-300" size={36} />
-                                    <p className="text-sm font-semibold text-slate-500">
-                                                {dbError || (isBusiness ? "No live Needs yet." : "You have not posted a Need yet.")}
-                                    </p>
-                                </div>
-                            ) : (
-                                visibleNeeds.map((need) => (
-                                    <div key={need.id} className="grid gap-4 p-6 lg:grid-cols-[1fr_auto] lg:items-center">
-                                        <div className="flex gap-4">
-                                            <NeedMedia src={need.photoPreview} />
-                                            <div className="min-w-0">
-                                            <div className="flex flex-wrap items-center gap-3">
-                                                <h3 className="text-lg font-black">{need.title}</h3>
-                                                <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wide ${statusClass(need.status)}`}>
-                                                    {need.status}
-                                                </span>
-                                            </div>
-                                            <p className="mt-2 text-sm leading-6 text-slate-600">{need.issue}</p>
-                                            <div className="mt-3 flex flex-wrap gap-3 text-xs font-semibold text-slate-500">
-                                                <span>{need.category}</span>
-                                                <span className="inline-flex items-center gap-1">
-                                                    <MapPin size={13} />
-                                                    {need.location}
-                                                </span>
-                                                <span>{need.urgency}</span>
-                                                <span>{need.budget || "No budget yet"}</span>
-                                                <span>ID {need.id}</span>
-                                            </div>
-                                            </div>
-                                        </div>
-                                        <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[360px]">
-                                            <div className="rounded-2xl bg-slate-50 p-4">
-                                                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Offers</p>
-                                                <p className="mt-2 text-xl font-black">{need.offers || 0}</p>
-                                            </div>
-                                            <div className="rounded-2xl bg-slate-50 p-4">
-                                                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">First offer</p>
-                                                <p className="mt-2 text-xl font-black">{need.firstOfferTime || "Waiting"}</p>
-                                            </div>
-                                            <Link
-                                                href={isBusiness ? "/marketplace" : `/marketplace?needId=${encodeURIComponent(need.id)}`}
-                                                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white"
-                                            >
-                                                {isBusiness ? "Send Offer" : "View Quotes"}
-                                                <ArrowRight size={15} />
-                                            </Link>
-                                        </div>
-                                    </div>
-                                ))
+                    ) : visibleNeeds.length === 0 ? (
+                        <div
+                            className="rounded-2xl border-2 border-dashed py-20 text-center"
+                            style={{ borderColor: "#e4e5e7" }}
+                        >
+                            <Briefcase size={40} className="mx-auto mb-4" style={{ color: "#d1d5db" }} />
+                            <p className="font-semibold text-lg mb-1" style={{ color: "#404145" }}>
+                                {searchQuery ? `No results for "${searchQuery}"` : "No Needs yet"}
+                            </p>
+                            <p className="text-sm mb-6" style={{ color: "#74767e" }}>
+                                {isBusiness
+                                    ? "No live Needs in your area yet."
+                                    : "Post your first Need to get Offers from local businesses."}
+                            </p>
+                            {!isBusiness && (
+                                <Link href="/client/new" className="nd-btn nd-btn-primary rounded-full inline-flex">
+                                    <Plus size={16} /> Post a Need
+                                </Link>
                             )}
                         </div>
-                    </section>
+                    ) : (
+                        <div className="space-y-4">
+                            {visibleNeeds.map((need) => {
+                                const status = statusConfig(need.status);
+                                return (
+                                    <article
+                                        key={need.id}
+                                        className="rounded-2xl bg-white border transition-shadow hover:shadow-md"
+                                        style={{ borderColor: "#e4e5e7" }}
+                                    >
+                                        <div className="p-5 flex flex-col sm:flex-row sm:items-start gap-4">
+                                            {/* Thumbnail */}
+                                            <NeedMedia src={need.photoPreview} />
+
+                                            {/* Main info */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                    <span className={status.cls}>{status.label}</span>
+                                                    <span className="nd-badge nd-badge-gray">{need.category}</span>
+                                                    {need.urgency === "Immediate" && (
+                                                        <span className="nd-badge nd-badge-red">🔥 Urgent</span>
+                                                    )}
+                                                </div>
+                                                <h3 className="text-base font-bold mb-1" style={{ color: "#404145" }}>
+                                                    {need.title}
+                                                </h3>
+                                                <p className="text-sm line-clamp-2 mb-3" style={{ color: "#74767e" }}>
+                                                    {need.issue}
+                                                </p>
+                                                <div className="flex flex-wrap items-center gap-4 text-xs" style={{ color: "#74767e" }}>
+                                                    <span className="flex items-center gap-1">
+                                                        <MapPin size={12} /> {need.location}
+                                                    </span>
+                                                    <span>{need.budget || "Open budget"}</span>
+                                                    <span className="font-mono text-[10px]" style={{ color: "#b5b6ba" }}>
+                                                        ID: {need.id.slice(0, 8)}…
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Right stats + action */}
+                                            <div className="flex sm:flex-col items-center sm:items-end gap-3 sm:gap-4 sm:text-right flex-shrink-0">
+                                                <div>
+                                                    <p className="text-2xl font-bold leading-none" style={{ color: "#404145" }}>
+                                                        {need.offers || 0}
+                                                    </p>
+                                                    <p className="text-xs mt-0.5" style={{ color: "#74767e" }}>
+                                                        {(need.offers || 0) === 1 ? "Offer" : "Offers"}
+                                                    </p>
+                                                </div>
+                                                <Link
+                                                    href={isBusiness ? "/marketplace" : `/marketplace?needId=${encodeURIComponent(need.id)}`}
+                                                    className="nd-btn nd-btn-primary nd-btn-sm rounded-full flex-shrink-0 gap-1"
+                                                >
+                                                    {isBusiness ? "Send Offer" : "View Offers"}
+                                                    <ArrowRight size={13} />
+                                                </Link>
+                                            </div>
+                                        </div>
+
+                                        {/* Progress bar for offers */}
+                                        {(need.offers || 0) > 0 && (
+                                            <div className="px-5 pb-4">
+                                                <div className="nd-progress-bar">
+                                                    <div
+                                                        className="nd-progress-fill"
+                                                        style={{ width: `${Math.min(100, ((need.offers || 0) / 10) * 100)}%` }}
+                                                    />
+                                                </div>
+                                                <p className="mt-1 text-[11px]" style={{ color: "#74767e" }}>
+                                                    {need.offers} of 10 max offers received
+                                                </p>
+                                            </div>
+                                        )}
+                                    </article>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
-            </main>
+            </div>
         </RouteGuard>
     );
 }
