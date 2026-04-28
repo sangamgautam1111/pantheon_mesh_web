@@ -238,6 +238,174 @@ export default function Marketplace() {
 
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
+    const selectedNeed = useMemo(
+        () => needs.find((need) => need.id === selectedNeedId) || null,
+        [needs, selectedNeedId],
+    );
+    const scoredOffers = useMemo(() => scoreOffers(offers), [offers]);
+    const filteredNeeds = useMemo(() => {
+        if (!searchQuery.trim()) return needs;
+        const query = searchQuery.toLowerCase();
+        return needs.filter(need => 
+            need.title.toLowerCase().includes(query) || 
+            (need.description && need.description.toLowerCase().includes(query)) ||
+            (need.issue && need.issue.toLowerCase().includes(query)) ||
+            need.category.toLowerCase().includes(query) ||
+            need.location.toLowerCase().includes(query)
+        );
+    }, [needs, searchQuery]);
+
+    const visibleOffers = useMemo(() => {
+        if (quoteTab === "Cheapest") {
+            return [...scoredOffers].sort((a, b) => parseAmount(a.price) - parseAmount(b.price));
+        }
+        if (quoteTab === "Fastest") {
+            return [...scoredOffers].sort((a, b) => parseSpeedScore(b.time || b.availability || "") - parseSpeedScore(a.time || a.availability || ""));
+        }
+        if (quoteTab === "Selected") {
+            return scoredOffers.filter((offer) => offer.status === "selected" || offer.status === "chosen");
+        }
+        if (quoteTab === "Recommended") {
+            return scoredOffers.slice(0, Math.max(1, scoredOffers.length));
+        }
+        return scoredOffers;
+    }, [quoteTab, scoredOffers]);
+
+    const loadNeeds = async () => {
+        setLoading(true);
+        setMessage("");
+        try {
+            const data = await getNeeds();
+            setNeeds(data);
+            const requestedNeedId = new URLSearchParams(window.location.search).get("needId");
+            if (requestedNeedId && data.some((need) => need.id === requestedNeedId)) {
+                setSelectedNeedId(requestedNeedId);
+            }
+        } catch (error) {
+            console.error("Marketplace fetch failed:", error);
+            setNeeds([]);
+            setMessage("Could not load live Needs yet. Please wait for the backend deploy or try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadOffers = async (needId: string) => {
+        setOffersLoading(true);
+        try {
+            setOffers(await getOffers(needId));
+        } catch (error) {
+            console.error("Offers fetch failed:", error);
+            setOffers([]);
+        } finally {
+            setOffersLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        void loadNeeds();
+    }, []);
+
+    useEffect(() => {
+        if (selectedNeedId) {
+            void loadOffers(selectedNeedId);
+        } else {
+            setOffers([]);
+        }
+    }, [selectedNeedId]);
+
+    const requestLocation = () => {
+        if (!navigator.geolocation) {
+            setLocationStatus("Location is not available in this browser.");
+            return;
+        }
+
+        setLocationStatus("Checking your area...");
+        navigator.geolocation.getCurrentPosition(
+            () => setLocationStatus("Using your approximate area for better Need recommendations."),
+            () => setLocationStatus("Location was not allowed. You can still browse all Needs."),
+            { enableHighAccuracy: false, timeout: 8000 },
+        );
+    };
+
+    const updateDraft = (key: keyof QuoteDraft, value: string) => {
+        setDraft((current) => ({ ...current, [key]: value }));
+    };
+
+    const submitQuote = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        if (!user || !selectedNeedId || !isBusiness) return;
+
+        setSaving(true);
+        setMessage("");
+        try {
+            await createOffer({
+                needId: selectedNeedId,
+                businessId: user.uid,
+                businessName: profile?.companyName || profile?.displayName || "Local Business",
+                price: draft.price,
+                serviceType: draft.serviceType,
+                time: draft.time,
+                warranty: draft.warranty,
+                included: draft.included,
+                extraCharges: draft.extraCharges,
+                distance: draft.distance || "Nearby",
+                availability: draft.availability,
+                delayRefundRule: draft.delayRefundRule,
+                note: draft.note,
+            });
+            setDraft(emptyDraft);
+            setMessage("Quote submitted. It is now inside the customer Quote Inbox.");
+            await loadOffers(selectedNeedId);
+            await loadNeeds();
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : "Could not send quote.");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const chatAboutQuote = (offer: OfferRecord) => {
+        if (!selectedNeed) return;
+        router.push(
+            `/messages?needId=${encodeURIComponent(selectedNeed.id)}&quoteId=${encodeURIComponent(offer.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName)}&order=0`,
+        );
+    };
+
+    const chooseQuote = async (offer: OfferRecord) => {
+        if (!user || !selectedNeed || accountType !== "customer") return;
+
+        setOrderingOfferId(offer.id);
+        setMessage("");
+        try {
+            const booking = await createBookingFromQuote({
+                needId: selectedNeed.id,
+                quoteId: offer.id,
+                customerId: user.uid,
+            });
+            await sendThreadMessage({
+                needId: selectedNeed.id,
+                quoteId: offer.id,
+                bookingId: booking.id,
+                senderId: user.uid,
+                senderName: profile?.displayName || profile?.email || "Customer",
+                senderType: "customer",
+                text: `Booking started from this Quote. Need: "${selectedNeed.title}". Quote price: ${offer.price}.`,
+            });
+            router.push(
+                `/pay?needId=${encodeURIComponent(selectedNeed.id)}&quoteId=${encodeURIComponent(offer.id)}&bookingId=${encodeURIComponent(booking.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName)}`,
+            );
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : "Could not create this Booking.");
+        } finally {
+            setOrderingOfferId(null);
+        }
+    };
+
+    const canOrderSelectedNeed = Boolean(
+        selectedNeed && accountType === "customer" && selectedNeed.customerId === user?.uid,
+    );
+
     return (
         <RouteGuard allowedTypes={["customer", "business"]}>
             <main className="min-h-screen bg-[#f8f7f2] p-6 text-slate-950 md:p-10">
