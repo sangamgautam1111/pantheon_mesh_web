@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # The Web Application (Next.js)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://needero_user:needero_pass@db:5432/needero_db
+      - NEXT_PUBLIC_FIREBASE_API_KEY=${NEXT_PUBLIC_FIREBASE_API_KEY}
+      - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}
+      - NEXT_PUBLIC_FIREBASE_PROJECT_ID=${NEXT_PUBLIC_FIREBASE_PROJECT_ID}
+    depends_on:
+      - db
+
+  # The Local Database (Replaces Cloud SQL)
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=needero_user
+      - POSTGRES_PASSWORD=needero_pass
+      - POSTGRES_DB=needero_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  # Reverse Proxy & SSL (Optional but recommended for VM)
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx/conf:/etc/nginx/conf.d
+  #     - ./nginx/certs:/etc/nginx/certs
+  #   depends_on:
+  #     - web
+
+volumes:
+  postgres_data:
