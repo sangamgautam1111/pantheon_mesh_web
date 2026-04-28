@@ -342,13 +342,18 @@ export default function NewCustomerRequestPage() {
                                         <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
                                             Custom budget
                                         </span>
-                                        <input
-                                            value={customBudget}
-                                            onChange={(event) => setCustomBudget(event.target.value)}
-                                            placeholder="$ 100"
-                                            disabled={budget !== "Custom"}
-                                            className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-slate-950/5 disabled:opacity-40"
-                                        />
+                                        <div className="relative mt-3">
+                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">
+                                                $
+                                            </span>
+                                            <input
+                                                value={customBudget}
+                                                onChange={(event) => setCustomBudget(event.target.value)}
+                                                placeholder="100"
+                                                disabled={budget !== "Custom"}
+                                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-8 pr-4 text-sm outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-slate-950/5 disabled:opacity-40"
+                                            />
+                                        </div>
                                     </label>
                                 </div>
 
@@ -430,18 +435,6 @@ export default function NewCustomerRequestPage() {
                                                 </div>
                                             ))}
 
-                                            <div className="rounded-2xl border border-slate-100 bg-white p-4">
-                                                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-                                                    Missing questions
-                                                </p>
-                                                <div className="mt-3 space-y-2">
-                                                    {(card.questions?.length ? card.questions : ["No major missing info."]).map((question) => (
-                                                        <p key={question} className="rounded-2xl bg-slate-950 px-3 py-2 text-xs font-bold text-white">
-                                                            {question}
-                                                        </p>
-                                                    ))}
-                                                </div>
-                                            </div>
                                         </div>
                                     ) : (
                                         <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">

@@ -771,7 +771,7 @@ export default function ProfilePage() {
                                         saveSuccess ? "bg-emerald-600" : "bg-slate-950 hover:bg-slate-800"
                                     } disabled:bg-slate-400`}
                                 >
-                                    {isSaving ? "Saving..." : saveSuccess ? "Profile Updated! ✨" : "Save Profile"}
+                                    {isSaving ? "Saving..." : saveSuccess ? "Profile Updated!" : "Save Profile"}
                                 </button>
                             </div>
                         </div>

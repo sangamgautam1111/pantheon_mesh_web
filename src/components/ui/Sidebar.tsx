@@ -41,6 +41,8 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [hasActivity, setHasActivity] = useState<boolean | null>(null);
+    const { user } = useAuth();
     const accountLabel = accountType === "business"
         ? "local business account"
         : accountType === "customer"
@@ -53,6 +55,29 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
         window.addEventListener("resize", check);
         return () => window.removeEventListener("resize", check);
     }, []);
+
+    useEffect(() => {
+        if (!user || !accountType) return;
+
+        const checkActivity = async () => {
+            try {
+                if (accountType === "customer") {
+                    const { getNeeds } = await import("@/lib/neederoDatabase");
+                    const needs = await getNeeds(user.uid);
+                    setHasActivity(needs.length > 0);
+                } else if (accountType === "business") {
+                    const { getOffersByBusinessId } = await import("@/lib/neederoDatabase");
+                    const offers = await getOffersByBusinessId(user.uid);
+                    setHasActivity(offers.length > 0);
+                }
+            } catch (error) {
+                console.error("Failed to check activity:", error);
+                setHasActivity(true); // Default to showing if check fails
+            }
+        };
+
+        checkActivity();
+    }, [user, accountType]);
 
     const sidebarVisible = isMobile ? mobileOpen : true;
     if (!sidebarVisible) {
@@ -108,6 +133,11 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                 <nav className="flex-1 overflow-y-auto py-2 scrollbar-hide">
                     {NAV_ITEMS.map((item) => {
                         if (item.allowedTypes && (!accountType || !item.allowedTypes.includes(accountType))) {
+                            return null;
+                        }
+
+                        // Special rule: Hide Messages if no activity found yet
+                        if (item.label === "Messages" && hasActivity === false) {
                             return null;
                         }
 

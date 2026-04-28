@@ -11,6 +11,7 @@ import {
     MapPin,
     MessageCircle,
     Navigation,
+    Search,
     Send,
     ShieldCheck,
     ShoppingBag,
@@ -229,12 +230,24 @@ export default function Marketplace() {
     const [quoteTab, setQuoteTab] = useState<QuoteTab>("Recommended");
     const [loading, setLoading] = useState(true);
     const [offersLoading, setOffersLoading] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
 
     const selectedNeed = useMemo(
         () => needs.find((need) => need.id === selectedNeedId) || null,
         [needs, selectedNeedId],
     );
     const scoredOffers = useMemo(() => scoreOffers(offers), [offers]);
+    const filteredNeeds = useMemo(() => {
+        if (!searchQuery.trim()) return needs;
+        const query = searchQuery.toLowerCase();
+        return needs.filter(need => 
+            need.title.toLowerCase().includes(query) || 
+            need.description.toLowerCase().includes(query) ||
+            need.category.toLowerCase().includes(query) ||
+            need.location.toLowerCase().includes(query)
+        );
+    }, [needs, searchQuery]);
+
     const visibleOffers = useMemo(() => {
         if (quoteTab === "Cheapest") {
             return [...scoredOffers].sort((a, b) => parseAmount(a.price) - parseAmount(b.price));
@@ -403,13 +416,33 @@ export default function Marketplace() {
                                         : "Browse public Needs and Offers. If you own the Need, you can chat with businesses, choose a Quote, and create a Booking."}
                                 </p>
                             </div>
-                            <button
-                                onClick={requestLocation}
-                                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-4 text-sm font-black text-white"
-                            >
-                                <Navigation size={17} />
-                                Use my area
-                            </button>
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center lg:flex-col lg:items-stretch">
+                                <div className="flex w-full items-center gap-2 md:w-auto">
+                                    <div className="relative flex-1 md:w-64">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                        <input
+                                            type="text"
+                                            placeholder="Search needs..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="h-[60px] w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm font-semibold outline-none focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-slate-950/5"
+                                        />
+                                    </div>
+                                    <button 
+                                        className="hidden h-[60px] rounded-2xl bg-slate-950 px-6 text-sm font-black text-white transition-all hover:bg-slate-800 md:block"
+                                        onClick={() => {}}
+                                    >
+                                        Search
+                                    </button>
+                                </div>
+                                <button
+                                    onClick={requestLocation}
+                                    className="inline-flex h-[60px] items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-4 text-sm font-black text-white shadow-lg shadow-slate-900/10 transition-all hover:-translate-y-0.5"
+                                >
+                                    <Navigation size={17} />
+                                    Use my area
+                                </button>
+                            </div>
                         </div>
                     </section>
 
@@ -435,20 +468,24 @@ export default function Marketplace() {
                     )}
 
                     <section className="mt-8">
-                        {needs.length === 0 && !loading ? (
+                        {filteredNeeds.length === 0 && !loading ? (
                             <div className="rounded-[30px] border border-dashed border-slate-300 bg-white p-10 text-center">
                                 <Briefcase className="mx-auto mb-4 text-slate-300" size={38} />
-                                <h2 className="text-2xl font-black">No live Needs loaded</h2>
+                                <h2 className="text-2xl font-black">{searchQuery ? "No matching Needs" : "No live Needs loaded"}</h2>
                                 <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
-                                    Needero is not showing demo marketplace data here anymore. Once customers post real Needs and the backend is live, they will appear in this feed.
+                                    {searchQuery 
+                                        ? `We couldn't find any Needs matching "${searchQuery}". Try a different keyword.`
+                                        : "Needero is not showing demo marketplace data here anymore. Once customers post real Needs and the backend is live, they will appear in this feed."}
                                 </p>
-                                <button onClick={loadNeeds} className="mt-5 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white">
-                                    Refresh live Needs
-                                </button>
+                                {!searchQuery && (
+                                    <button onClick={loadNeeds} className="mt-5 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white">
+                                        Refresh live Needs
+                                    </button>
+                                )}
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                {needs.map((need) => (
+                                {filteredNeeds.map((need) => (
                                     <article
                                         key={need.id}
                                         className={`group flex cursor-pointer flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md ${

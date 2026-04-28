@@ -318,6 +318,15 @@ export async function getOffers(needId: string): Promise<OfferRecord[]> {
     return Array.isArray(data.offers) ? data.offers.map(mapOffer) : [];
 }
 
+export async function getOffersByBusinessId(businessId: string): Promise<OfferRecord[]> {
+    const response = await fetch(`${API_URL}/v1/offers?business_id=${businessId}`, { cache: "no-store" });
+    if (!response.ok) {
+        throw new Error(await readError(response, "Needero could not load your Offers right now."));
+    }
+    const data = await response.json();
+    return Array.isArray(data.offers) ? data.offers.map(mapOffer) : [];
+}
+
 export async function createBookingFromQuote(input: {
     needId: string;
     quoteId: string;
