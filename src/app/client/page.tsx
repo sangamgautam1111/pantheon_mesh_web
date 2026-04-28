@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
     ArrowRight, Briefcase, CheckCircle2, Clock, MapPin,
-    MessageSquare, Plus, Search, Star, RefreshCw
+    MessageSquare, Plus, Search, Star, RefreshCw, Flame
 } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
@@ -244,7 +244,9 @@ export default function RequestCenterPage() {
                                                     <span className={status.cls}>{status.label}</span>
                                                     <span className="nd-badge nd-badge-gray">{need.category}</span>
                                                     {need.urgency === "Immediate" && (
-                                                        <span className="nd-badge nd-badge-red">🔥 Urgent</span>
+                                                        <span className="nd-badge nd-badge-red">
+                                                            <Flame size={12} className="mr-1 fill-current" /> Urgent
+                                                        </span>
                                                     )}
                                                 </div>
                                                 <h3 className="text-base font-bold mb-1" style={{ color: "#404145" }}>

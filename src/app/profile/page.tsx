@@ -13,6 +13,7 @@ import {
     Edit,
     X,
     UploadCloud,
+    Globe,
     type LucideIcon,
 } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
@@ -363,8 +364,8 @@ export default function ProfilePage() {
                                     </h1>
                                     <div className="mt-3 flex flex-wrap gap-2 text-sm font-bold text-slate-600">
                                         {profile?.country && (
-                                            <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-800">
-                                                {countries.find(c => c.name === profile.country)?.flag || "🌍"} {profile.country}
+                                            <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-slate-800">
+                                                <Globe size={14} className="text-slate-400" /> {profile.country}
                                             </span>
                                         )}
                                         {profile?.currency && (

@@ -7,9 +7,10 @@ import {
     Briefcase,
     CheckCircle2,
     Clock,
-    MessageSquare,
+    Flame,
     MapPin,
     MessageCircle,
+    MessageSquare,
     Navigation,
     Search,
     Send,
@@ -486,7 +487,9 @@ export default function Marketplace() {
                                     <div className="relative w-full overflow-hidden bg-gray-100" style={{aspectRatio:"4/3"}}>
                                         <NeedMedia src={need.photoPreview}/>
                                         {need.urgency==="Immediate"&&(
-                                            <span className="absolute top-2 left-2 nd-badge nd-badge-red" style={{fontSize:"10px",padding:"2px 8px"}}>🔥 Urgent</span>
+                                            <span className="absolute top-2 left-2 nd-badge nd-badge-red" style={{fontSize:"10px",padding:"2px 8px"}}>
+                                                <Flame size={10} className="mr-1 fill-current" /> Urgent
+                                            </span>
                                         )}
                                     </div>
                                     <div className="nd-gig-body">

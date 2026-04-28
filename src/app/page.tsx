@@ -3,21 +3,21 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Briefcase, CheckCircle, Clock, MessageSquare, Search, Send, ShieldCheck, Star, Sparkles, Zap } from "lucide-react";
+import { ArrowRight, Briefcase, CheckCircle, Clock, MessageSquare, Search, Send, ShieldCheck, Star, Sparkles, Zap, Flame, Wrench, Droplets, Palette, Truck, Leaf, Car, Monitor, GraduationCap } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { NeedRecord, getNeeds } from "@/lib/neederoDatabase";
 
 const CATEGORIES = [
-    { label: "Home Repair", emoji: "🔧" },
-    { label: "Plumbing", emoji: "🚿" },
-    { label: "Electrical", emoji: "⚡" },
-    { label: "Cleaning", emoji: "🧹" },
-    { label: "Painting", emoji: "🎨" },
-    { label: "Moving", emoji: "📦" },
-    { label: "Gardening", emoji: "🌿" },
-    { label: "Car Repair", emoji: "🚗" },
-    { label: "IT Support", emoji: "💻" },
-    { label: "Tutoring", emoji: "📚" },
+    { label: "Home Repair", icon: Wrench },
+    { label: "Plumbing", icon: Droplets },
+    { label: "Electrical", icon: Zap },
+    { label: "Cleaning", icon: Sparkles },
+    { label: "Painting", icon: Palette },
+    { label: "Moving", icon: Truck },
+    { label: "Gardening", icon: Leaf },
+    { label: "Car Repair", icon: Car },
+    { label: "IT Support", icon: Monitor },
+    { label: "Tutoring", icon: GraduationCap },
 ];
 
 const HOW_IT_WORKS = [
@@ -80,7 +80,7 @@ function NeedGigCard({ need }: { need: NeedRecord }) {
                         className="absolute top-2 left-2 nd-badge nd-badge-red text-xs"
                         style={{ fontSize: "10px", padding: "2px 8px" }}
                     >
-                        🔥 Urgent
+                        <Flame size={10} className="mr-1 fill-current" /> Urgent
                     </span>
                 )}
             </div>
@@ -248,16 +248,16 @@ export default function Home() {
             <section className="border-b" style={{ borderColor: "#e4e5e7", background: "#ffffff" }}>
                 <div className="mx-auto max-w-7xl px-4 py-4">
                     <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
-                        <Link href="/marketplace" className="nd-chip flex-shrink-0">
-                            🔍 All Categories
+                        <Link href="/marketplace" className="nd-chip flex-shrink-0 gap-1.5">
+                            <Search size={14} /> All Categories
                         </Link>
                         {CATEGORIES.map((cat) => (
                             <Link
                                 key={cat.label}
                                 href={`/marketplace?q=${encodeURIComponent(cat.label)}`}
-                                className="nd-chip flex-shrink-0"
+                                className="nd-chip flex-shrink-0 gap-1.5"
                             >
-                                {cat.emoji} {cat.label}
+                                <cat.icon size={14} /> {cat.label}
                             </Link>
                         ))}
                     </div>
