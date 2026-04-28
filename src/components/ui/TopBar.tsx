@@ -410,7 +410,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                     />
                 </button>
 
-                {user ? (
+                {user && profile ? (
                     <div className="relative">
                         <div className="relative ml-2">
                             <button
@@ -419,8 +419,13 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                                 title={profile?.displayName || "Account"}
                                 style={{ background: "var(--btn-primary-bg)", color: "var(--btn-primary-text)" }}
                             >
-                                {profile?.photoURL ? (
-                                    <img src={profile.photoURL} alt="" className="h-8 w-8 rounded-full object-cover" />
+                                {profile.photoURL ? (
+                                    <img 
+                                        key={profile.photoURL}
+                                        src={profile.photoURL} 
+                                        alt="" 
+                                        className="h-8 w-8 rounded-full object-cover" 
+                                    />
                                 ) : (
                                     (profile?.displayName || profile?.email || "B").charAt(0).toUpperCase()
                                 )}
