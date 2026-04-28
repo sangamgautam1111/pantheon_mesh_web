@@ -93,10 +93,16 @@ export default function NewCustomerRequestPage() {
     useEffect(() => {
         if (countryCode && stateCode) {
             const stateCities = City.getCitiesOfState(countryCode, stateCode);
-            setCities(stateCities);
+            if (stateCities.length > 0) {
+                setCities(stateCities);
+            } else {
+                setCities(City.getCitiesOfCountry(countryCode) || []);
+            }
             if (!stateCities.find(c => c.name === city)) {
                 setCity("");
             }
+        } else if (countryCode) {
+            setCities(City.getCitiesOfCountry(countryCode) || []);
         } else {
             setCities([]);
             setCity("");

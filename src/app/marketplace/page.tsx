@@ -232,172 +232,11 @@ export default function Marketplace() {
     const [offersLoading, setOffersLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
 
-    const selectedNeed = useMemo(
-        () => needs.find((need) => need.id === selectedNeedId) || null,
-        [needs, selectedNeedId],
-    );
-    const scoredOffers = useMemo(() => scoreOffers(offers), [offers]);
-    const filteredNeeds = useMemo(() => {
-        if (!searchQuery.trim()) return needs;
-        const query = searchQuery.toLowerCase();
-        return needs.filter(need => 
-            need.title.toLowerCase().includes(query) || 
-            need.description.toLowerCase().includes(query) ||
-            need.category.toLowerCase().includes(query) ||
-            need.location.toLowerCase().includes(query)
-        );
-    }, [needs, searchQuery]);
+    const hasSubmittedQuote = useMemo(() => {
+        return isBusiness && offers.some((o) => o.businessId === user?.uid);
+    }, [isBusiness, offers, user?.uid]);
 
-    const visibleOffers = useMemo(() => {
-        if (quoteTab === "Cheapest") {
-            return [...scoredOffers].sort((a, b) => parseAmount(a.price) - parseAmount(b.price));
-        }
-        if (quoteTab === "Fastest") {
-            return [...scoredOffers].sort((a, b) => parseSpeedScore(b.time || b.availability || "") - parseSpeedScore(a.time || a.availability || ""));
-        }
-        if (quoteTab === "Selected") {
-            return scoredOffers.filter((offer) => offer.status === "selected" || offer.status === "chosen");
-        }
-        if (quoteTab === "Recommended") {
-            return scoredOffers.slice(0, Math.max(1, scoredOffers.length));
-        }
-        return scoredOffers;
-    }, [quoteTab, scoredOffers]);
-
-    const loadNeeds = async () => {
-        setLoading(true);
-        setMessage("");
-        try {
-            const data = await getNeeds();
-            setNeeds(data);
-            const requestedNeedId = new URLSearchParams(window.location.search).get("needId");
-            if (requestedNeedId && data.some((need) => need.id === requestedNeedId)) {
-                setSelectedNeedId(requestedNeedId);
-            }
-        } catch (error) {
-            console.error("Marketplace fetch failed:", error);
-            setNeeds([]);
-            setMessage("Could not load live Needs yet. Please wait for the backend deploy or try again.");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const loadOffers = async (needId: string) => {
-        setOffersLoading(true);
-        try {
-            setOffers(await getOffers(needId));
-        } catch (error) {
-            console.error("Offers fetch failed:", error);
-            setOffers([]);
-        } finally {
-            setOffersLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        void loadNeeds();
-    }, []);
-
-    useEffect(() => {
-        if (selectedNeedId) {
-            void loadOffers(selectedNeedId);
-        } else {
-            setOffers([]);
-        }
-    }, [selectedNeedId]);
-
-    const requestLocation = () => {
-        if (!navigator.geolocation) {
-            setLocationStatus("Location is not available in this browser.");
-            return;
-        }
-
-        setLocationStatus("Checking your area...");
-        navigator.geolocation.getCurrentPosition(
-            () => setLocationStatus("Using your approximate area for better Need recommendations."),
-            () => setLocationStatus("Location was not allowed. You can still browse all Needs."),
-            { enableHighAccuracy: false, timeout: 8000 },
-        );
-    };
-
-    const updateDraft = (key: keyof QuoteDraft, value: string) => {
-        setDraft((current) => ({ ...current, [key]: value }));
-    };
-
-    const submitQuote = async (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        if (!user || !selectedNeedId || !isBusiness) return;
-
-        setSaving(true);
-        setMessage("");
-        try {
-            await createOffer({
-                needId: selectedNeedId,
-                businessId: user.uid,
-                businessName: profile?.companyName || profile?.displayName || "Local Business",
-                price: draft.price,
-                serviceType: draft.serviceType,
-                time: draft.time,
-                warranty: draft.warranty,
-                included: draft.included,
-                extraCharges: draft.extraCharges,
-                distance: draft.distance || "Nearby",
-                availability: draft.availability,
-                delayRefundRule: draft.delayRefundRule,
-                note: draft.note,
-            });
-            setDraft(emptyDraft);
-            setMessage("Quote submitted. It is now inside the customer Quote Inbox.");
-            await loadOffers(selectedNeedId);
-            await loadNeeds();
-        } catch (error) {
-            setMessage(error instanceof Error ? error.message : "Could not send quote.");
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const chatAboutQuote = (offer: OfferRecord) => {
-        if (!selectedNeed) return;
-        router.push(
-            `/messages?needId=${encodeURIComponent(selectedNeed.id)}&quoteId=${encodeURIComponent(offer.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName)}&order=0`,
-        );
-    };
-
-    const chooseQuote = async (offer: OfferRecord) => {
-        if (!user || !selectedNeed || accountType !== "customer") return;
-
-        setOrderingOfferId(offer.id);
-        setMessage("");
-        try {
-            const booking = await createBookingFromQuote({
-                needId: selectedNeed.id,
-                quoteId: offer.id,
-                customerId: user.uid,
-            });
-            await sendThreadMessage({
-                needId: selectedNeed.id,
-                quoteId: offer.id,
-                bookingId: booking.id,
-                senderId: user.uid,
-                senderName: profile?.displayName || profile?.email || "Customer",
-                senderType: "customer",
-                text: `Booking started from this Quote. Need: "${selectedNeed.title}". Quote price: ${offer.price}.`,
-            });
-            router.push(
-                `/pay?needId=${encodeURIComponent(selectedNeed.id)}&quoteId=${encodeURIComponent(offer.id)}&bookingId=${encodeURIComponent(booking.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName)}`,
-            );
-        } catch (error) {
-            setMessage(error instanceof Error ? error.message : "Could not create this Booking.");
-        } finally {
-            setOrderingOfferId(null);
-        }
-    };
-
-    const canOrderSelectedNeed = Boolean(
-        selectedNeed && accountType === "customer" && selectedNeed.customerId === user?.uid,
-    );
+    const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
     return (
         <RouteGuard allowedTypes={["customer", "business"]}>
@@ -430,7 +269,6 @@ export default function Marketplace() {
                                     </div>
                                     <button 
                                         className="hidden h-[60px] rounded-2xl bg-slate-950 px-6 text-sm font-black text-white transition-all hover:bg-slate-800 md:block"
-                                        onClick={() => {}}
                                     >
                                         Search
                                     </button>
@@ -526,106 +364,268 @@ export default function Marketplace() {
                 </div>
 
                 {selectedNeed && (
-                    <div className="fixed inset-0 z-[90] bg-slate-950/30 backdrop-blur-sm" onClick={() => setSelectedNeedId(null)}>
+                    <div className="fixed inset-0 z-[90] flex justify-end bg-slate-950/30 backdrop-blur-sm" onClick={() => setSelectedNeedId(null)}>
                         <aside
-                            className="absolute right-0 top-0 flex h-full w-full max-w-3xl flex-col overflow-hidden bg-[#f8f7f2] shadow-2xl md:rounded-l-[34px]"
+                            className={`flex h-full flex-col bg-[#f8f7f2] shadow-2xl transition-all duration-300 md:rounded-l-[34px] ${isSidebarExpanded ? "w-full" : "w-full max-w-4xl"}`}
                             onClick={(event) => event.stopPropagation()}
                         >
-                            <div className="border-b border-slate-200 bg-white p-5">
-                                <div className="flex items-start justify-between gap-4">
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Quote Inbox</p>
-                                        <h2 className="mt-2 text-2xl font-black">{selectedNeed.title}</h2>
-                                        <p className="mt-2 text-sm leading-6 text-slate-600">{selectedNeed.issue}</p>
-                                    </div>
-                                    <button
-                                        onClick={() => setSelectedNeedId(null)}
-                                        className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600"
-                                    >
-                                        <X size={18} />
-                                    </button>
-                                </div>
-                                <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-slate-600">
-                                    <span className="rounded-full bg-slate-100 px-3 py-1">{selectedNeed.category}</span>
-                                    <span className="rounded-full bg-slate-100 px-3 py-1">{selectedNeed.location}</span>
-                                    <span className="rounded-full bg-slate-100 px-3 py-1">{selectedNeed.urgency}</span>
-                                    <span className="rounded-full bg-slate-100 px-3 py-1">{selectedNeed.budget || "No budget"}</span>
-                                </div>
-                                <div className="mt-5 flex flex-wrap gap-2">
-                                    {quoteTabs.map((tab) => (
+                            {/* Sticky Header */}
+                            <div className="sticky top-0 z-10 border-b border-slate-200 bg-white p-5">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-3">
                                         <button
-                                            key={tab}
-                                            onClick={() => setQuoteTab(tab)}
-                                            className={`rounded-full px-4 py-2 text-xs font-black transition-all ${
-                                                quoteTab === tab ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                            }`}
+                                            onClick={() => setSelectedNeedId(null)}
+                                            className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"
                                         >
-                                            {tab}
+                                            <X size={18} />
                                         </button>
-                                    ))}
+                                        <button
+                                            onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
+                                            className="hidden h-10 px-4 items-center justify-center rounded-full bg-slate-100 text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-200 md:flex"
+                                        >
+                                            {isSidebarExpanded ? "Compact View" : "Full Screen"}
+                                        </button>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Quote Interaction</p>
+                                        <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="flex-1 space-y-4 overflow-y-auto p-5">
-                                {offersLoading ? (
-                                    <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-sm font-bold text-slate-500">
-                                        Loading quotes...
-                                    </div>
-                                ) : visibleOffers.length === 0 ? (
-                                    <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center">
-                                        <MessageCircle className="mx-auto mb-3 text-slate-300" size={36} />
-                                        <p className="text-sm font-bold text-slate-500">No Quotes in this pipeline view yet.</p>
-                                    </div>
-                                ) : (
-                                    visibleOffers.map((offer) => (
-                                        <QuoteCard
-                                            key={offer.id}
-                                            offer={offer}
-                                            canOrder={canOrderSelectedNeed}
-                                            canChat={canOrderSelectedNeed}
-                                            ordering={orderingOfferId === offer.id}
-                                            onChat={() => chatAboutQuote(offer)}
-                                            onOrder={() => void chooseQuote(offer)}
-                                        />
-                                    ))
-                                )}
-
-                                {!canOrderSelectedNeed && accountType === "customer" && (
-                                    <div className="rounded-3xl border border-slate-200 bg-white p-5 text-sm font-semibold leading-6 text-slate-500">
-                                        You can browse public Quote details. Chat and Choose Offer unlock only for the customer who owns this Need.
-                                    </div>
-                                )}
-                            </div>
-
-                            {isBusiness && (
-                                <form onSubmit={submitQuote} className="border-t border-slate-200 bg-white p-5">
-                                    <div className="mb-4 flex items-center gap-3">
-                                        <ShieldCheck size={20} />
-                                        <div>
-                                            <h3 className="text-lg font-black">Submit a structured Quote</h3>
-                                            <p className="text-sm text-slate-500">Submit a structured Offer into the customer Quote Inbox.</p>
+                            {/* Scrollable Content */}
+                            <div className="flex-1 overflow-y-auto pb-10">
+                                {/* Need Details - Fiverr Style */}
+                                <div className="bg-white px-6 py-10 md:px-10">
+                                    <div className="mx-auto max-w-4xl">
+                                        <div className="mb-8 flex flex-wrap gap-2">
+                                            <span className="rounded-full bg-slate-100 px-4 py-1.5 text-xs font-black text-slate-600 uppercase tracking-widest">{selectedNeed.category}</span>
+                                            <span className="rounded-full bg-amber-50 px-4 py-1.5 text-xs font-black text-amber-700 uppercase tracking-widest">{selectedNeed.urgency}</span>
+                                            <span className="rounded-full bg-blue-50 px-4 py-1.5 text-xs font-black text-blue-700 uppercase tracking-widest">{selectedNeed.location}</span>
+                                        </div>
+                                        
+                                        <h2 className="text-3xl font-black leading-tight tracking-tight md:text-5xl">{selectedNeed.title}</h2>
+                                        
+                                        <div className="mt-10 grid gap-10 lg:grid-cols-3">
+                                            <div className="lg:col-span-2">
+                                                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Problem Description</h3>
+                                                <p className="mt-4 text-lg leading-relaxed text-slate-700">{selectedNeed.issue}</p>
+                                                
+                                                {selectedNeed.photoPreview && (
+                                                    <div className="mt-8 overflow-hidden rounded-3xl border border-slate-100 shadow-lg">
+                                                        <NeedMedia src={selectedNeed.photoPreview} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            
+                                            <div className="space-y-6">
+                                                <div className="rounded-3xl bg-slate-50 p-6">
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Customer Budget</p>
+                                                    <p className="mt-2 text-3xl font-black text-slate-950">{selectedNeed.budget || "Flexible"}</p>
+                                                </div>
+                                                <div className="rounded-3xl border border-slate-200 p-6">
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Timeline</p>
+                                                    <p className="mt-2 text-sm font-bold text-slate-700">{selectedNeed.urgency === "Immediate" ? "Needs help ASAP" : "Flexible schedule"}</p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="grid gap-3 md:grid-cols-2">
-                                        <input value={draft.price} onChange={(event) => updateDraft("price", event.target.value)} placeholder="Price, e.g. $50" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950" required />
-                                        <select value={draft.serviceType} onChange={(event) => updateDraft("serviceType", event.target.value)} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none focus:border-slate-950">
-                                            {serviceTypes.map((type) => <option key={type}>{type}</option>)}
-                                        </select>
-                                        <input value={draft.time} onChange={(event) => updateDraft("time", event.target.value)} placeholder="Estimated arrival/completion, e.g. Today 4 PM" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950" required />
-                                        <input value={draft.warranty} onChange={(event) => updateDraft("warranty", event.target.value)} placeholder="Warranty, e.g. 7 days warranty" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950" />
-                                        <input value={draft.included} onChange={(event) => updateDraft("included", event.target.value)} placeholder="What is included" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950" />
-                                        <input value={draft.extraCharges} onChange={(event) => updateDraft("extraCharges", event.target.value)} placeholder="Extra charges, e.g. Home visit fee: $10" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950" />
-                                        <input value={draft.distance} onChange={(event) => updateDraft("distance", event.target.value)} placeholder="Location/distance, e.g. 1.2 km away" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950" />
-                                        <input value={draft.availability} onChange={(event) => updateDraft("availability", event.target.value)} placeholder="Availability, e.g. Available today" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950" />
-                                        <input value={draft.delayRefundRule} onChange={(event) => updateDraft("delayRefundRule", event.target.value)} placeholder="Delay refund rule" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-950 md:col-span-2" />
+                                </div>
+
+                                {/* Quotes Section */}
+                                <div className="mt-10 px-6 md:px-10">
+                                    <div className="mx-auto max-w-4xl">
+                                        <div className="mb-8 flex items-center justify-between">
+                                            <h3 className="text-xl font-black">Business Quotes ({offers.length})</h3>
+                                            <div className="flex gap-2">
+                                                {quoteTabs.map((tab) => (
+                                                    <button
+                                                        key={tab}
+                                                        onClick={() => setQuoteTab(tab)}
+                                                        className={`rounded-full px-4 py-2 text-[10px] font-black tracking-widest uppercase transition-all ${
+                                                            quoteTab === tab ? "bg-slate-950 text-white shadow-lg" : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-50"
+                                                        }`}
+                                                    >
+                                                        {tab}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="grid gap-6">
+                                            {offersLoading ? (
+                                                <div className="rounded-[30px] border border-slate-200 bg-white p-12 text-center">
+                                                    <Clock size={40} className="mx-auto mb-4 text-slate-200 animate-spin" />
+                                                    <p className="text-sm font-black uppercase tracking-widest text-slate-400">Loading live quotes...</p>
+                                                </div>
+                                            ) : visibleOffers.length === 0 ? (
+                                                <div className="rounded-[30px] border border-dashed border-slate-300 bg-white p-12 text-center">
+                                                    <MessageCircle size={40} className="mx-auto mb-4 text-slate-200" />
+                                                    <p className="text-sm font-black uppercase tracking-widest text-slate-400">No quotes submitted yet</p>
+                                                    <p className="mt-2 text-xs text-slate-500 font-semibold uppercase tracking-wider">Be the first business to help!</p>
+                                                </div>
+                                            ) : (
+                                                visibleOffers.map((offer) => (
+                                                    <QuoteCard
+                                                        key={offer.id}
+                                                        offer={offer}
+                                                        canOrder={canOrderSelectedNeed}
+                                                        canChat={canOrderSelectedNeed}
+                                                        ordering={orderingOfferId === offer.id}
+                                                        onChat={() => chatAboutQuote(offer)}
+                                                        onOrder={() => void chooseQuote(offer)}
+                                                    />
+                                                ))
+                                            )}
+                                        </div>
                                     </div>
-                                    <textarea value={draft.note} onChange={(event) => updateDraft("note", event.target.value)} placeholder="Business note, e.g. Original display available." className="mt-3 min-h-[90px] w-full rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 outline-none focus:border-slate-950" required />
-                                    <button type="submit" disabled={saving} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white disabled:bg-slate-300">
-                                        {saving ? <Clock size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-                                        Post Quote
-                                    </button>
-                                </form>
-                            )}
+                                </div>
+
+                                {/* Business Quote Form */}
+                                {isBusiness && !hasSubmittedQuote && (
+                                    <div className="mt-12 px-6 md:px-10">
+                                        <div className="mx-auto max-w-4xl rounded-[40px] border border-slate-950 bg-white p-8 shadow-2xl md:p-12">
+                                            <div className="mb-10 flex items-center gap-4">
+                                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white">
+                                                    <ShieldCheck size={24} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-2xl font-black">Post your Quote</h3>
+                                                    <p className="text-sm font-semibold text-slate-500">Submit a professional, structured offer to the customer.</p>
+                                                </div>
+                                            </div>
+
+                                            <form onSubmit={submitQuote} className="grid gap-6">
+                                                <div className="grid gap-6 md:grid-cols-2">
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Price ($)</label>
+                                                        <div className="relative">
+                                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400">$</span>
+                                                            <input 
+                                                                type="text"
+                                                                value={draft.price} 
+                                                                onChange={(event) => updateDraft("price", event.target.value)} 
+                                                                placeholder="50" 
+                                                                className="h-[60px] w-full rounded-2xl border border-slate-200 bg-slate-50 pl-8 pr-4 text-sm font-black outline-none focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-slate-950/5" 
+                                                                required 
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Service Type</label>
+                                                        <select 
+                                                            value={draft.serviceType} 
+                                                            onChange={(event) => updateDraft("serviceType", event.target.value)} 
+                                                            className="h-[60px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black outline-none focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-slate-950/5 appearance-none"
+                                                        >
+                                                            {serviceTypes.map((type) => <option key={type}>{type}</option>)}
+                                                        </select>
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Arrival Date & Time (24h)</label>
+                                                        <input 
+                                                            type="datetime-local"
+                                                            value={draft.time} 
+                                                            onChange={(event) => updateDraft("time", event.target.value)} 
+                                                            className="h-[60px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black outline-none focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-slate-950/5" 
+                                                            required 
+                                                        />
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Warranty (Optional)</label>
+                                                        <input 
+                                                            value={draft.warranty} 
+                                                            onChange={(event) => updateDraft("warranty", event.target.value)} 
+                                                            placeholder="e.g. 30 days" 
+                                                            className="h-[60px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black outline-none focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-slate-950/5" 
+                                                        />
+                                                    </div>
+
+                                                    <div className="space-y-2 md:col-span-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">What's Included</label>
+                                                        <input 
+                                                            value={draft.included} 
+                                                            onChange={(event) => updateDraft("included", event.target.value)} 
+                                                            placeholder="e.g. Parts, Labor, Cleaning" 
+                                                            className="h-[60px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black outline-none focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-slate-950/5" 
+                                                        />
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Extra Charges ($)</label>
+                                                        <div className="relative">
+                                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400">$</span>
+                                                            <input 
+                                                                value={draft.extraCharges} 
+                                                                onChange={(event) => updateDraft("extraCharges", event.target.value)} 
+                                                                placeholder="0" 
+                                                                className="h-[60px] w-full rounded-2xl border border-slate-200 bg-slate-50 pl-8 pr-4 text-sm font-black outline-none focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-slate-950/5" 
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Your Location/Distance</label>
+                                                        <input 
+                                                            value={draft.distance} 
+                                                            onChange={(event) => updateDraft("distance", event.target.value)} 
+                                                            placeholder="e.g. 5km away" 
+                                                            className="h-[60px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black outline-none focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-slate-950/5" 
+                                                        />
+                                                    </div>
+
+                                                    {draft.serviceType !== "Visit Shop" && (
+                                                        <div className="space-y-2 md:col-span-2">
+                                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Delay Refund Rule</label>
+                                                            <input 
+                                                                value={draft.delayRefundRule} 
+                                                                onChange={(event) => updateDraft("delayRefundRule", event.target.value)} 
+                                                                placeholder="e.g. 10% off if late by 30 mins" 
+                                                                className="h-[60px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black outline-none focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-slate-950/5" 
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Personal Message to Customer</label>
+                                                    <textarea 
+                                                        value={draft.note} 
+                                                        onChange={(event) => updateDraft("note", event.target.value)} 
+                                                        placeholder="Write a professional note explaining why you're the best fit..." 
+                                                        className="min-h-[120px] w-full rounded-[30px] border border-slate-200 bg-slate-50 p-6 text-sm font-semibold leading-relaxed outline-none focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-slate-950/5" 
+                                                        required 
+                                                    />
+                                                </div>
+
+                                                <button 
+                                                    type="submit" 
+                                                    disabled={saving} 
+                                                    className="mt-4 inline-flex h-[70px] w-full items-center justify-center gap-3 rounded-2xl bg-slate-950 px-8 text-lg font-black text-white shadow-2xl shadow-slate-900/20 transition-all hover:-translate-y-1 hover:shadow-slate-900/40 disabled:bg-slate-300"
+                                                >
+                                                    {saving ? <Clock size={20} className="animate-spin" /> : <Send size={20} />}
+                                                    Submit Quote to Customer
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {hasSubmittedQuote && (
+                                    <div className="mt-12 px-6 md:px-10">
+                                        <div className="mx-auto max-w-4xl rounded-[40px] border-2 border-slate-100 bg-slate-50 p-12 text-center">
+                                            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100 text-green-600 mb-6">
+                                                <CheckCircle2 size={40} />
+                                            </div>
+                                            <h3 className="text-2xl font-black text-slate-950">Quote Already Submitted</h3>
+                                            <p className="mt-4 text-lg font-semibold text-slate-500">You've already placed a quote for this Need. You can find it in the list above.</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </aside>
                     </div>
                 )}

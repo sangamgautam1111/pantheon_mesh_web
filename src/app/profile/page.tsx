@@ -227,7 +227,6 @@ export default function ProfilePage() {
             if (stateCities.length > 0) {
                 setCities(stateCities);
             } else {
-                // Fallback to all cities in country if state has no listed cities
                 setCities(City.getCitiesOfCountry(editForm.countryCode) || []);
             }
         } else if (editForm.countryCode) {
@@ -236,6 +235,20 @@ export default function ProfilePage() {
             setCities([]);
         }
     }, [editForm.countryCode, editForm.stateCode]);
+
+    // Handle photo upload with FileReader for permanent Base64 storage
+    const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                if (typeof reader.result === "string") {
+                    setEditForm(prev => ({ ...prev, photoURL: reader.result as string }));
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     // Initialize edit form whenever modal opens or profile changes
     useEffect(() => {
@@ -276,15 +289,6 @@ export default function ProfilePage() {
         setShowLocationPrompt(false);
     };
 
-    const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            // In a real app, upload to Firebase Storage and get URL.
-            // For MVP, we will generate a temporary object URL to simulate gallery upload.
-            const tempUrl = URL.createObjectURL(file);
-            setEditForm({ ...editForm, photoURL: tempUrl });
-        }
-    };
 
     const [saveSuccess, setSaveSuccess] = useState(false);
 
