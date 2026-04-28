@@ -141,6 +141,34 @@ export default function ProfilePage() {
     const [isSaving, setIsSaving] = useState(false);
     const [isMapOpen, setIsMapOpen] = useState(false);
 
+    // Sync form with profile when it loads or changes
+    useEffect(() => {
+        if (!isEditing && profile) {
+            setEditForm({
+                displayName: profile.displayName || "",
+                companyName: profile.companyName || "",
+                photoURL: profile.photoURL || "",
+                dialCode: profile.phoneNumber?.split(" ")[0] || "+977",
+                phoneNumberRaw: profile.phoneNumber?.split(" ").slice(1).join(" ") || "",
+                country: profile.country || "",
+                countryCode: profile.countryCode || "",
+                state: profile.state || "",
+                stateCode: profile.stateCode || "",
+                city: profile.city || "",
+                area: profile.area || "",
+                currency: profile.currency || "USD",
+                currentAddress: profile.currentAddress || "",
+                category: profile.category || "",
+                openingHours: profile.openingHours || "",
+                services: profile.services || "",
+                warrantyPolicy: profile.warrantyPolicy || "",
+                deliveryAddress: profile.deliveryAddress || "",
+                deliveryCoords: profile.deliveryCoords || null,
+                manualLocation: false,
+            });
+        }
+    }, [profile, isEditing]);
+
     // Auto-detection state
     const [showLocationPrompt, setShowLocationPrompt] = useState(false);
     const [detectedLocation, setDetectedLocation] = useState<{country: string, city: string, currency: string} | null>(null);

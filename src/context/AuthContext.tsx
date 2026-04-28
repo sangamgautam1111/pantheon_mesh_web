@@ -236,7 +236,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         try {
-            await set(ref(db, `accounts/${resolvedAccountType}/${firebaseUser.uid}`), sanitizeForRealtimeDb({
+            const mirrorData = sanitizeForRealtimeDb({
                 uid: firebaseUser.uid,
                 email: profileData.email,
                 displayName: profileData.displayName,
@@ -244,7 +244,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 accountType: resolvedAccountType,
                 companyName: profileData.companyName,
                 currentPlanId: profileData.currentPlanId,
-            }));
+                phoneNumber: profileData.phoneNumber,
+                country: profileData.country,
+                countryCode: profileData.countryCode,
+                state: profileData.state,
+                stateCode: profileData.stateCode,
+                city: profileData.city,
+                area: profileData.area,
+                currentAddress: profileData.currentAddress,
+                photoURL: profileData.photoURL,
+                deliveryAddress: profileData.deliveryAddress,
+                deliveryCoords: profileData.deliveryCoords,
+                category: profileData.category,
+                openingHours: profileData.openingHours,
+                services: profileData.services,
+                warrantyPolicy: profileData.warrantyPolicy,
+            });
+            
+            // Sync to the specific account type mirror
+            await set(ref(db, `accounts/${resolvedAccountType}/${firebaseUser.uid}`), mirrorData);
+            
+            // If the master profile has another account type already set, consider syncing there too
+            // but for now, ensuring the current role's mirror is full is the priority.
         } catch (error) {
             console.warn("Unable to save account mirror. Sign-in can continue:", error);
         }
@@ -428,9 +449,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             await set(ref(db, `users/${user.uid}`), sanitizeForRealtimeDb(newProfile));
             
-            // Sync with mirror node
-            const mirrorRef = ref(db, `accounts/${profile.accountType}/${user.uid}`);
-            await set(mirrorRef, sanitizeForRealtimeDb({
+            // Sync with ALL possible mirror nodes to ensure consistency across roles
+            const mirrorData = sanitizeForRealtimeDb({
                 uid: user.uid,
                 email: newProfile.email,
                 displayName: newProfile.displayName,
@@ -453,7 +473,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 openingHours: newProfile.openingHours,
                 services: newProfile.services,
                 warrantyPolicy: newProfile.warrantyPolicy,
-            }));
+            });
+
+            // Update both mirror paths to prevent stale data when switching roles
+            await Promise.all([
+                set(ref(db, `accounts/customer/${user.uid}`), mirrorData),
+                set(ref(db, `accounts/business/${user.uid}`), mirrorData)
+            ]);
 
             setProfile(newProfile);
         } catch (error) {
