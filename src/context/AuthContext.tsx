@@ -447,7 +447,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         try {
-            await set(ref(db, `users/${user.uid}`), sanitizeForRealtimeDb(newProfile));
+            // Remove form-specific fields that shouldn't be in the database
+            const cleanedProfile = { ...newProfile };
+            delete (cleanedProfile as any).dialCode;
+            delete (cleanedProfile as any).phoneNumberRaw;
+            delete (cleanedProfile as any).manualLocation;
+
+            await set(ref(db, `users/${user.uid}`), sanitizeForRealtimeDb(cleanedProfile));
             
             // Sync with ALL possible mirror nodes to ensure consistency across roles
             const mirrorData = sanitizeForRealtimeDb({
@@ -475,15 +481,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 warrantyPolicy: newProfile.warrantyPolicy,
             });
 
-            // Update both mirror paths to prevent stale data when switching roles
+            // Update both mirror paths to prevent stale data when switching roles.
+            // Catch errors individually so that one failing (e.g. permission error) doesn't break the whole profile update.
             await Promise.all([
-                set(ref(db, `accounts/customer/${user.uid}`), mirrorData),
-                set(ref(db, `accounts/business/${user.uid}`), mirrorData)
+                set(ref(db, `accounts/customer/${user.uid}`), mirrorData).catch(e => console.warn("Failed to update customer mirror", e)),
+                set(ref(db, `accounts/business/${user.uid}`), mirrorData).catch(e => console.warn("Failed to update business mirror", e))
             ]);
 
-            setProfile(newProfile);
+            setProfile(cleanedProfile);
         } catch (error) {
-            console.error("Unable to update profile in database", error);
+            console.error("Firebase update failed:", error);
             throw error;
         }
     };
