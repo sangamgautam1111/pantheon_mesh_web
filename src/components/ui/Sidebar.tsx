@@ -23,7 +23,6 @@ const NAV_ITEMS = [
     { label: "Welcome", href: "/", icon: LayoutDashboard },
     { label: "My Needs", href: "/client", icon: FileText, allowedTypes: ["customer"] as ActiveAccountType[] },
     { label: "Post a Need", href: "/client/new", icon: PlusCircle, allowedTypes: ["customer"] as ActiveAccountType[] },
-    { label: "Messages", href: "/messages", icon: MessageSquare, allowedTypes: ["customer", "business"] as ActiveAccountType[] },
     { label: "Marketplace", href: "/marketplace", icon: Store, allowedTypes: ["customer", "business"] as ActiveAccountType[] },
     { label: "Profile", href: "/profile", icon: UserRound, allowedTypes: ["customer", "business"] as ActiveAccountType[] },
     { label: "Business Plans", href: "/pricing", icon: CreditCard, allowedTypes: ["business"] as ActiveAccountType[] },
@@ -41,7 +40,6 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
-    const [hasActivity, setHasActivity] = useState<boolean | null>(null);
     const { user } = useAuth();
     const accountLabel = accountType === "business"
         ? "local business account"
@@ -55,30 +53,6 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
         window.addEventListener("resize", check);
         return () => window.removeEventListener("resize", check);
     }, []);
-
-    useEffect(() => {
-        if (!user || !accountType) return;
-
-        const checkActivity = async () => {
-            try {
-                if (accountType === "customer") {
-                    const { getNeeds } = await import("@/lib/neederoDatabase");
-                    const needs = await getNeeds(user.uid);
-                    // Hide if no needs have offers or bookings
-                    setHasActivity(needs.some(need => need.offers > 0));
-                } else if (accountType === "business") {
-                    const { getOffersByBusinessId } = await import("@/lib/neederoDatabase");
-                    const offers = await getOffersByBusinessId(user.uid);
-                    setHasActivity(offers.length > 0);
-                }
-            } catch (error) {
-                console.error("Failed to check activity:", error);
-                setHasActivity(true); // Default to showing if check fails
-            }
-        };
-
-        checkActivity();
-    }, [user, accountType]);
 
     const sidebarVisible = isMobile ? mobileOpen : true;
     if (!sidebarVisible) {
@@ -134,11 +108,6 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                 <nav className="flex-1 overflow-y-auto py-2 scrollbar-hide">
                     {NAV_ITEMS.map((item) => {
                         if (item.allowedTypes && (!accountType || !item.allowedTypes.includes(accountType))) {
-                            return null;
-                        }
-
-                        // Special rule: Hide Messages if no activity found yet
-                        if (item.label === "Messages" && hasActivity === false) {
                             return null;
                         }
 

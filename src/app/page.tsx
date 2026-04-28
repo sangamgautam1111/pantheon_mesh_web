@@ -71,14 +71,15 @@ export default function Home() {
                                 {primaryLabel}
                                 <ArrowRight size={16} />
                             </Link>
-                            <Link href="/client" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-black text-slate-900 transition-all hover:border-slate-950">
-                                My Needs
-                            </Link>
+                            {accountType === "customer" && (
+                                <Link href="/client" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-black text-slate-900 transition-all hover:border-slate-950">
+                                    My Needs
+                                </Link>
+                            )}
                         </div>
 
                         <div className="mt-10 grid gap-4 md:grid-cols-4">
                             {[
-                                { label: "Customer fee", value: "$0" },
                                 { label: "Lead quality", value: "AI Verified" },
                                 { label: "Privacy", value: "Protected" },
                                 { label: "Competition", value: "Real Offers" },
