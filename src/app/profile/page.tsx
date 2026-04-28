@@ -195,7 +195,15 @@ export default function ProfilePage() {
     // Load cities when state changes
     useEffect(() => {
         if (editForm.countryCode && editForm.stateCode) {
-            setCities(City.getCitiesOfState(editForm.countryCode, editForm.stateCode));
+            const stateCities = City.getCitiesOfState(editForm.countryCode, editForm.stateCode);
+            if (stateCities.length > 0) {
+                setCities(stateCities);
+            } else {
+                // Fallback to all cities in country if state has no listed cities
+                setCities(City.getCitiesOfCountry(editForm.countryCode) || []);
+            }
+        } else if (editForm.countryCode) {
+            setCities(City.getCitiesOfCountry(editForm.countryCode) || []);
         } else {
             setCities([]);
         }
@@ -250,15 +258,22 @@ export default function ProfilePage() {
         }
     };
 
+    const [saveSuccess, setSaveSuccess] = useState(false);
+
     const handleSave = async () => {
         setIsSaving(true);
+        setSaveSuccess(false);
         try {
             const finalPhoneNumber = editForm.phoneNumberRaw.trim() ? `${editForm.dialCode} ${editForm.phoneNumberRaw}` : "";
             await updateUserProfile({
                 ...editForm,
                 phoneNumber: finalPhoneNumber,
             });
-            setIsEditing(false);
+            setSaveSuccess(true);
+            setTimeout(() => {
+                setIsEditing(false);
+                setSaveSuccess(false);
+            }, 1500);
         } catch (error) {
             console.error("Failed to update profile", error);
             alert("Failed to update profile. Please try again.");
@@ -586,16 +601,34 @@ export default function ProfilePage() {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="text-sm font-bold text-slate-700">City</label>
-                                        <select 
-                                            className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-950 disabled:bg-slate-50"
-                                            value={editForm.city}
-                                            disabled={!editForm.stateCode}
-                                            onChange={(e) => setEditForm({...editForm, city: e.target.value})}
-                                        >
-                                            <option value="">Select City</option>
-                                            {cities.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
-                                        </select>
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-sm font-bold text-slate-700">City</label>
+                                            <button 
+                                                type="button"
+                                                onClick={() => setEditForm({...editForm, manualLocation: !editForm.manualLocation})}
+                                                className="text-[10px] font-black text-slate-400 uppercase hover:text-slate-900"
+                                            >
+                                                {editForm.manualLocation ? "Use List" : "Manual Entry"}
+                                            </button>
+                                        </div>
+                                        {editForm.manualLocation ? (
+                                            <input 
+                                                className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-950"
+                                                value={editForm.city}
+                                                onChange={(e) => setEditForm({...editForm, city: e.target.value})}
+                                                placeholder="Enter City Name"
+                                            />
+                                        ) : (
+                                            <select 
+                                                className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-950 disabled:bg-slate-50"
+                                                value={editForm.city}
+                                                disabled={!editForm.countryCode}
+                                                onChange={(e) => setEditForm({...editForm, city: e.target.value})}
+                                            >
+                                                <option value="">Select City</option>
+                                                {cities.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                                            </select>
+                                        )}
                                     </div>
                                     <div>
                                         <label className="text-sm font-bold text-slate-700">Area</label>
@@ -705,10 +738,12 @@ export default function ProfilePage() {
 
                                 <button 
                                     onClick={handleSave}
-                                    disabled={isSaving}
-                                    className="mt-6 w-full rounded-xl bg-slate-950 px-4 py-4 font-bold text-white transition-colors hover:bg-slate-800 disabled:bg-slate-400"
+                                    disabled={isSaving || saveSuccess}
+                                    className={`mt-6 w-full rounded-xl px-4 py-4 font-bold text-white transition-all ${
+                                        saveSuccess ? "bg-emerald-600" : "bg-slate-950 hover:bg-slate-800"
+                                    } disabled:bg-slate-400`}
                                 >
-                                    {isSaving ? "Saving..." : "Save Profile"}
+                                    {isSaving ? "Saving..." : saveSuccess ? "Profile Updated! ✨" : "Save Profile"}
                                 </button>
                             </div>
                         </div>

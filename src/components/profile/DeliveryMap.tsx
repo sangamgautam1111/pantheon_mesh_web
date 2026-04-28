@@ -37,17 +37,25 @@ export default function DeliveryMap({ initialCoords, initialAddress, onSelect, o
     const [address, setAddress] = useState(initialAddress);
     const [searchQuery, setSearchQuery] = useState("");
     const [isSearching, setIsSearching] = useState(false);
+    const [isLocating, setIsLocating] = useState(false);
+    const [isGeocoding, setIsGeocoding] = useState(false);
 
     // Reverse geocoding
     const fetchAddress = async (lat: number, lng: number) => {
+        setIsGeocoding(true);
         try {
             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
             const data = await res.json();
             if (data && data.display_name) {
                 setAddress(data.display_name);
+            } else {
+                setAddress(`Location at ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
             }
         } catch (error) {
             console.error("Geocoding error:", error);
+            setAddress(`Location at ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+        } finally {
+            setIsGeocoding(false);
         }
     };
 
@@ -70,8 +78,35 @@ export default function DeliveryMap({ initialCoords, initialAddress, onSelect, o
         }
     };
 
+    const handleLocateMe = () => {
+        if (!navigator.geolocation) {
+            alert("Geolocation is not supported by your browser");
+            return;
+        }
+        setIsLocating(true);
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const newCoords = { lat: position.coords.latitude, lng: position.coords.longitude };
+                setCoords(newCoords);
+                fetchAddress(newCoords.lat, newCoords.lng);
+                setIsLocating(false);
+            },
+            (error) => {
+                console.error("Geolocation error:", error);
+                alert("Unable to retrieve your location");
+                setIsLocating(false);
+            },
+            { enableHighAccuracy: true }
+        );
+    };
+
     const MapClickHandler = () => {
         useMapEvents({
+            click(e) {
+                const newCoords = { lat: e.latlng.lat, lng: e.latlng.lng };
+                setCoords(newCoords);
+                fetchAddress(newCoords.lat, newCoords.lng);
+            },
             contextmenu(e) {
                 const newCoords = { lat: e.latlng.lat, lng: e.latlng.lng };
                 setCoords(newCoords);
@@ -88,7 +123,7 @@ export default function DeliveryMap({ initialCoords, initialAddress, onSelect, o
                 <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white">
                     <div>
                         <h2 className="text-xl font-black text-slate-950">Select Delivery Point</h2>
-                        <p className="text-xs font-bold text-slate-500">Right-click on the map to pinpoint your location</p>
+                        <p className="text-xs font-bold text-slate-500">Click or search on the map to pinpoint your location</p>
                     </div>
                     <button 
                         onClick={onClose}
@@ -133,6 +168,20 @@ export default function DeliveryMap({ initialCoords, initialAddress, onSelect, o
                         <MapClickHandler />
                         <MapUpdater center={[coords.lat, coords.lng]} />
                     </MapContainer>
+
+                    {/* Locate Me Button */}
+                    <button 
+                        onClick={handleLocateMe}
+                        disabled={isLocating}
+                        className="absolute top-6 right-6 z-[1000] p-3 bg-white rounded-2xl shadow-lg border border-slate-100 text-slate-900 hover:bg-slate-50 transition-colors disabled:opacity-50"
+                        title="Use my current location"
+                    >
+                        {isLocating ? (
+                            <div className="h-5 w-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                            <MapPinIcon size={20} />
+                        )}
+                    </button>
                     
                     {/* Floating Address Indicator */}
                     <div className="absolute bottom-6 left-6 right-6 z-[1000]">
@@ -142,12 +191,17 @@ export default function DeliveryMap({ initialCoords, initialAddress, onSelect, o
                                     <MapPinIcon size={16} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Pinpointed Address</p>
-                                    <p className="text-sm font-bold text-slate-700 truncate">{address || "Pin a location on the map"}</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                                        {isGeocoding ? "IDENTIFYING LOCATION..." : "Pinpointed Address"}
+                                    </p>
+                                    <p className="text-sm font-bold text-slate-700 truncate">
+                                        {isGeocoding ? "Searching for address details..." : (address || "Pin a location on the map")}
+                                    </p>
                                 </div>
                                 <button 
                                     onClick={() => onSelect({ address, coords })}
-                                    className="px-6 py-2 bg-slate-950 text-white rounded-xl text-sm font-black hover:scale-105 transition-transform"
+                                    disabled={isGeocoding}
+                                    className="px-6 py-2 bg-slate-950 text-white rounded-xl text-sm font-black hover:scale-105 transition-transform disabled:bg-slate-400 disabled:scale-100"
                                 >
                                     Confirm
                                 </button>

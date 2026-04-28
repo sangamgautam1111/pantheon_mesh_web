@@ -211,6 +211,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 : null;
 
         const profileData: UserProfile = {
+            ...existing,
             uid: firebaseUser.uid,
             email: firebaseUser.email || existing.email || null,
             displayName,
@@ -225,6 +226,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     : typeof existing.totalSpent === "number"
                       ? existing.totalSpent
                       : 0,
+            ...overrides,
         };
 
         try {
@@ -425,6 +427,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         try {
             await set(ref(db, `users/${user.uid}`), sanitizeForRealtimeDb(newProfile));
+            
+            // Sync with mirror node
+            const mirrorRef = ref(db, `accounts/${profile.accountType}/${user.uid}`);
+            await set(mirrorRef, sanitizeForRealtimeDb({
+                uid: user.uid,
+                email: newProfile.email,
+                displayName: newProfile.displayName,
+                joinedAt: newProfile.createdAt,
+                accountType: newProfile.accountType,
+                companyName: newProfile.companyName,
+                currentPlanId: newProfile.currentPlanId,
+                phoneNumber: newProfile.phoneNumber,
+                country: newProfile.country,
+                countryCode: newProfile.countryCode,
+                state: newProfile.state,
+                stateCode: newProfile.stateCode,
+                city: newProfile.city,
+                area: newProfile.area,
+                currentAddress: newProfile.currentAddress,
+                photoURL: newProfile.photoURL,
+                deliveryAddress: newProfile.deliveryAddress,
+                deliveryCoords: newProfile.deliveryCoords,
+                category: newProfile.category,
+                openingHours: newProfile.openingHours,
+                services: newProfile.services,
+                warrantyPolicy: newProfile.warrantyPolicy,
+            }));
+
             setProfile(newProfile);
         } catch (error) {
             console.error("Unable to update profile in database", error);
