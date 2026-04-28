@@ -706,34 +706,34 @@ export default function ProfilePage() {
                                         </>
                                     )}
 
-                                    {!isBusiness && (
-                                        <div className="md:col-span-2 border-t border-slate-100 pt-4 mt-2">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <label className="text-sm font-bold text-slate-700">Precise Delivery Location</label>
-                                                <button 
-                                                    type="button"
-                                                    onClick={() => setIsMapOpen(true)}
-                                                    className="text-xs font-black text-slate-950 flex items-center gap-1 hover:underline"
-                                                >
-                                                    <MapPin size={14} />
-                                                    {editForm.deliveryCoords ? "Change on Map" : "Pin on Map"}
-                                                </button>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <input 
-                                                    className="flex-1 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-950 bg-slate-50 text-sm" 
-                                                    value={editForm.deliveryAddress} 
-                                                    onChange={(e) => setEditForm({...editForm, deliveryAddress: e.target.value})} 
-                                                    placeholder="Search or pin on map for precise delivery..."
-                                                />
-                                            </div>
-                                            {editForm.deliveryCoords && (
-                                                <p className="mt-2 text-[10px] font-bold text-emerald-600">
-                                                    Coordinates saved: {editForm.deliveryCoords.lat.toFixed(6)}, {editForm.deliveryCoords.lng.toFixed(6)}
-                                                </p>
-                                            )}
+                                    <div className="md:col-span-2 border-t border-slate-100 pt-4 mt-2">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <label className="text-sm font-bold text-slate-700">
+                                                {isBusiness ? "Precise Business Location" : "Precise Delivery Location"}
+                                            </label>
+                                            <button 
+                                                type="button"
+                                                onClick={() => setIsMapOpen(true)}
+                                                className="text-xs font-black text-slate-950 flex items-center gap-1 hover:underline"
+                                            >
+                                                <MapPin size={14} />
+                                                {editForm.deliveryCoords ? "Change on Map" : "Pin on Map"}
+                                            </button>
                                         </div>
-                                    )}
+                                        <div className="flex gap-2">
+                                            <input 
+                                                className="flex-1 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-950 bg-slate-50 text-sm" 
+                                                value={editForm.deliveryAddress} 
+                                                onChange={(e) => setEditForm({...editForm, deliveryAddress: e.target.value})} 
+                                                placeholder={isBusiness ? "Search or pin your business location..." : "Search or pin on map for precise delivery..."}
+                                            />
+                                        </div>
+                                        {editForm.deliveryCoords && (
+                                            <p className="mt-2 text-[10px] font-bold text-emerald-600">
+                                                Coordinates saved: {editForm.deliveryCoords.lat.toFixed(6)}, {editForm.deliveryCoords.lng.toFixed(6)}
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <button 
