@@ -64,7 +64,8 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                 if (accountType === "customer") {
                     const { getNeeds } = await import("@/lib/neederoDatabase");
                     const needs = await getNeeds(user.uid);
-                    setHasActivity(needs.length > 0);
+                    // Hide if no needs have offers or bookings
+                    setHasActivity(needs.some(need => need.offers > 0));
                 } else if (accountType === "business") {
                     const { getOffersByBusinessId } = await import("@/lib/neederoDatabase");
                     const offers = await getOffersByBusinessId(user.uid);
