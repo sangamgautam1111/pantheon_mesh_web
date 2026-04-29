@@ -44,7 +44,7 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
         return () => window.removeEventListener("resize", check);
     }, []);
 
-    // On desktop, Fiverr uses top nav only — no persistent sidebar
+    // On desktop, Fiverr-style navigation uses the top bar only.
     if (!isMobile) return null;
 
     // Mobile drawer
@@ -73,7 +73,7 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                             <Image src={logoImg} alt="Needero" width={32} height={32} className="h-full w-full object-cover rounded-lg" />
                         </div>
                         <span className="font-heading font-extrabold text-xl tracking-tight" style={{ color: "#404145" }}>
-                            Needle<span style={{ color: "#1DBF73" }}>ro</span>
+                            Need<span style={{ color: "#1DBF73" }}>ero</span>
                         </span>
                     </Link>
                     <button onClick={onClose} className="rounded-full p-1.5 transition-colors hover:bg-gray-100" style={{ color: "#74767e" }}>
@@ -114,7 +114,7 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                 {/* Footer */}
                 <div className="border-t p-4" style={{ borderColor: "#e4e5e7" }}>
                     <p className="text-xs text-center" style={{ color: "#b5b6ba" }}>
-                        Needero — Local Service Marketplace
+                        Needero - Local Service Marketplace
                     </p>
                 </div>
             </aside>

@@ -229,7 +229,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                         />
                     </div>
                     <span className="hidden sm:block font-heading font-extrabold text-xl tracking-tight" style={{ color: "var(--text-primary)" }}>
-                        Needle<span style={{ color: "var(--ndgreen)" }}>ro</span>
+                        Need<span style={{ color: "var(--ndgreen)" }}>ero</span>
                     </span>
                 </Link>
             </div>

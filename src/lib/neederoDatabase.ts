@@ -215,11 +215,12 @@ export async function cleanNeedWithAI(messyText: string): Promise<NeedCard> {
     return normalizeNeedCard(await response.json(), messyText);
 }
 
-export async function getNeeds(customerId?: string, category?: string): Promise<NeedRecord[]> {
+export async function getNeeds(customerId?: string, category?: string, includeMedia = false): Promise<NeedRecord[]> {
     let url = `${API_URL}/v1/needs`;
     const params = new URLSearchParams();
     if (customerId) params.append("customer_id", customerId);
     if (category) params.append("category", category);
+    if (includeMedia) params.append("include_media", "true");
     if (params.toString()) url += `?${params.toString()}`;
 
     const response = await fetch(url, { cache: "no-store" });
