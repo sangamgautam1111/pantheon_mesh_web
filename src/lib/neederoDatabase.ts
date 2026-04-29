@@ -32,6 +32,7 @@ export type OfferRecord = BusinessOffer & {
     delayRefundRule?: string;
     lateFee?: string;
     businessNote?: string;
+    businessAvatar?: string | null;
 };
 
 export type BookingRecord = {
@@ -243,6 +244,7 @@ const mapOffer = (offer: BackendRecord): OfferRecord => {
         delayRefundRule: String(parsedNote.details.delayRefundRule || ""),
         lateFee: String(parsedNote.details.lateFee || ""),
         businessNote: parsedNote.note,
+        businessAvatar: parsedNote.details.businessAvatar || offer.business_avatar || offer.businessAvatar || null,
     };
 };
 
@@ -366,6 +368,7 @@ export async function createOffer(input: {
     needId: string;
     businessId: string;
     businessName: string;
+    businessAvatar?: string | null;
     price: string;
     serviceType?: string;
     time: string;
@@ -386,6 +389,7 @@ export async function createOffer(input: {
         availability: input.availability || "",
         delayRefundRule: input.delayRefundRule || "",
         lateFee: formatMoney(input.lateFee) || input.lateFee || "",
+        businessAvatar: input.businessAvatar || "",
         businessNote: input.note || "",
     });
 
@@ -411,6 +415,7 @@ export async function createOffer(input: {
 export async function updateOffer(input: {
     offerId: string;
     businessId: string;
+    businessAvatar?: string | null;
     price: string;
     time: string;
     warranty: string;
@@ -431,6 +436,7 @@ export async function updateOffer(input: {
         availability: input.availability || "",
         delayRefundRule: input.delayRefundRule || "",
         lateFee: formatMoney(input.lateFee) || input.lateFee || "",
+        businessAvatar: input.businessAvatar || "",
         businessNote: input.note || "",
     });
 

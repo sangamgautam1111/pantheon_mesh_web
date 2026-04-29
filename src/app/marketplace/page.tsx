@@ -28,7 +28,6 @@ import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import {
     OfferRecord,
-    createBookingFromQuote,
     createOffer,
     getNeeds,
     getOffers,
@@ -200,8 +199,12 @@ function QuoteCard({
             {/* Header */}
             <div className="flex items-start justify-between gap-4 mb-4">
                 <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-black" style={{background:"#222325",color:"#fff"}}>
-                        {(offer.businessName||"B").charAt(0).toUpperCase()}
+                    <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-[#dadbdd] bg-white text-sm font-black text-[#222325]">
+                        {offer.businessAvatar ? (
+                            <img src={offer.businessAvatar} alt={offer.businessName} className="h-full w-full object-cover" />
+                        ) : (
+                            (offer.businessName||"B").charAt(0).toUpperCase()
+                        )}
                     </div>
                     <div>
                         <p className="text-sm font-bold" style={{color:"#404145"}}>{offer.businessName}</p>
@@ -234,8 +237,8 @@ function QuoteCard({
             {(canOrder||canChat)&&(
                 <div className="flex gap-2">
                     {canChat&&(
-                        <button onClick={onChat} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[#222325] px-4 py-2 text-sm font-black text-[#222325] transition hover:bg-[#222325] hover:text-white">
-                            <MessageSquare size={14}/> Chat
+                        <button onClick={onChat} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#222325] px-4 py-2 text-sm font-black text-white transition hover:bg-black">
+                            <MessageSquare size={14}/> Message
                         </button>
                     )}
                     {canOrder&&(
@@ -420,6 +423,7 @@ export default function Marketplace() {
                 needId: selectedNeedId,
                 businessId: user.uid,
                 businessName: profile?.companyName || profile?.displayName || "Local Business",
+                businessAvatar: profile?.photoURL || null,
                 price: draft.price,
                 serviceType: draft.serviceType,
                 time: draft.time,
@@ -443,42 +447,36 @@ export default function Marketplace() {
         }
     };
 
-    const chatAboutQuote = (offer: OfferRecord) => {
-        if (!selectedNeed) return;
+    const startQuoteChat = async (offer: OfferRecord, mode: "chat" | "choose") => {
+        if (!selectedNeed || !user) return;
+        setMessage("");
+        try {
+            const customerText = mode === "choose"
+                ? `I want to choose this Offer for "${selectedNeed.title}". Offer: ${offer.price || "open price"} - ${offer.serviceType || "service"} - ${offer.time || "time to confirm"}.`
+                : `Hi, I want to talk about this Offer for "${selectedNeed.title}". Offer: ${offer.price || "open price"} - ${offer.serviceType || "service"} - ${offer.time || "time to confirm"}.`;
+            const businessText = `Hi, I am following up on my Offer for "${selectedNeed.title}". Offer: ${offer.price || "open price"} - ${offer.serviceType || "service"} - ${offer.time || "time to confirm"}.`;
+            await sendThreadMessage({
+                needId: selectedNeed.id,
+                quoteId: offer.id,
+                senderId: user.uid,
+                senderName: profile?.displayName || profile?.email || (accountType === "business" ? "Business" : "Customer"),
+                senderType: accountType === "business" ? "business" : "customer",
+                senderAvatar: profile?.photoURL || null,
+                text: accountType === "business" ? businessText : customerText,
+            });
+        } catch (error) {
+            console.error("Could not seed quote chat:", error);
+        }
         router.push(
-            `/messages?needId=${encodeURIComponent(selectedNeed.id)}&quoteId=${encodeURIComponent(offer.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName)}&order=0`,
+            `/messages?needId=${encodeURIComponent(selectedNeed.id)}&quoteId=${encodeURIComponent(offer.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName)}&businessAvatar=${encodeURIComponent(offer.businessAvatar || "")}&order=0`,
         );
     };
 
     const chooseQuote = async (offer: OfferRecord) => {
         if (!user || !selectedNeed || accountType !== "customer") return;
-
         setOrderingOfferId(offer.id);
-        setMessage("");
-        try {
-            const booking = await createBookingFromQuote({
-                needId: selectedNeed.id,
-                quoteId: offer.id,
-                customerId: user.uid,
-            });
-            await sendThreadMessage({
-                needId: selectedNeed.id,
-                quoteId: offer.id,
-                bookingId: booking.id,
-                senderId: user.uid,
-                senderName: profile?.displayName || profile?.email || "Customer",
-                senderType: "customer",
-                senderAvatar: profile?.photoURL || null,
-                text: `Booking started from this Quote. Need: "${selectedNeed.title}". Quote price: ${offer.price}.`,
-            });
-            router.push(
-                `/pay?needId=${encodeURIComponent(selectedNeed.id)}&quoteId=${encodeURIComponent(offer.id)}&bookingId=${encodeURIComponent(booking.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName)}`,
-            );
-        } catch (error) {
-            setMessage(error instanceof Error ? error.message : "Could not create this Booking.");
-        } finally {
-            setOrderingOfferId(null);
-        }
+        await startQuoteChat(offer, "choose");
+        setOrderingOfferId(null);
     };
 
     const canOrderSelectedNeed = Boolean(
@@ -593,7 +591,7 @@ export default function Marketplace() {
                                             <span className="ml-auto text-xs font-semibold text-[#74767e]">{need.offers||0} quotes</span>
                                         </div>
                                         <div className="mb-3 flex items-center gap-2">
-                                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#222325] text-[11px] font-black text-white">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#dadbdd] bg-white text-[11px] font-black text-[#222325]">
                                                 {(need.customerName || "C").charAt(0).toUpperCase()}
                                             </div>
                                             <span className="truncate text-xs font-bold text-[#62646a]">{need.customerName || "Customer"}</span>
@@ -707,7 +705,7 @@ export default function Marketplace() {
                                                     canOrder={canOrderSelectedNeed}
                                                     canChat={canOrderSelectedNeed}
                                                     ordering={orderingOfferId===offer.id}
-                                                    onChat={()=>chatAboutQuote(offer)}
+                                                    onChat={()=>void startQuoteChat(offer, "chat")}
                                                     onOrder={()=>void chooseQuote(offer)}/>
                                             ))
                                         )}

@@ -23,7 +23,6 @@ import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import {
     OfferRecord,
-    createBookingFromQuote,
     createOffer,
     deleteNeed,
     deleteOffer,
@@ -117,24 +116,24 @@ function NeedMedia({ need }: { need: NeedRecord }) {
 
     if (!src || failed) {
         return (
-            <div className="flex min-h-[460px] flex-col justify-between rounded-[28px] bg-[#050816] p-8 text-white">
+            <div className="flex min-h-[260px] flex-col justify-between rounded-[24px] bg-[#050816] p-6 text-white sm:min-h-[360px] sm:rounded-[28px] sm:p-8 lg:min-h-[460px]">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
                     <ImageIcon size={24} />
                 </div>
                 <div>
                     <p className="text-xs font-black uppercase tracking-[0.22em] text-white/45">{need.category}</p>
-                    <h2 className="mt-3 max-w-2xl text-5xl font-black leading-tight tracking-[-0.06em]">{need.title}</h2>
+                    <h2 className="mt-3 max-w-2xl text-3xl font-black leading-tight tracking-[-0.06em] sm:text-5xl">{need.title}</h2>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="overflow-hidden rounded-[28px] border border-[#e4e5e7] bg-white">
+        <div className="overflow-hidden rounded-[24px] border border-[#e4e5e7] bg-white sm:rounded-[28px]">
             {isVideo ? (
-                <video src={src} controls className="max-h-[540px] w-full object-cover" onError={() => setFailed(true)} />
+                <video src={src} controls className="max-h-[320px] w-full object-cover sm:max-h-[540px]" onError={() => setFailed(true)} />
             ) : (
-                <img src={src} alt={need.title} className="max-h-[540px] w-full object-cover" onError={() => setFailed(true)} />
+                <img src={src} alt={need.title} className="max-h-[320px] w-full object-cover sm:max-h-[540px]" onError={() => setFailed(true)} />
             )}
         </div>
     );
@@ -162,11 +161,15 @@ function QuoteRow({
     onDelete: () => void;
 }) {
     return (
-        <article className="rounded-[24px] border border-[#e4e5e7] bg-white p-5 shadow-sm">
+        <article className="rounded-[24px] border border-[#e4e5e7] bg-white p-4 shadow-sm sm:p-5">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#222325] text-lg font-black text-white">
-                        {(offer.businessName || "B").charAt(0).toUpperCase()}
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#dadbdd] bg-white text-lg font-black text-[#222325]">
+                        {offer.businessAvatar ? (
+                            <img src={offer.businessAvatar} alt={offer.businessName} className="h-full w-full object-cover" />
+                        ) : (
+                            (offer.businessName || "B").charAt(0).toUpperCase()
+                        )}
                     </div>
                     <div>
                         <div className="flex flex-wrap items-center gap-2">
@@ -185,7 +188,7 @@ function QuoteRow({
                         {offer.businessNote && <p className="mt-4 text-sm leading-6 text-[#62646a]">{offer.businessNote}</p>}
                     </div>
                 </div>
-                <div className="min-w-[210px] rounded-2xl bg-[#050816] p-4 text-white">
+                <div className="w-full rounded-2xl bg-[#050816] p-4 text-white lg:min-w-[210px] lg:w-auto">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/45">Offer price</p>
                     <p className="mt-1 text-3xl font-black">{formatMoney(offer.price) || offer.price || "Open"}</p>
                     <div className="mt-4 grid gap-2">
@@ -282,6 +285,7 @@ export default function NeedDetailPage() {
                 await updateOffer({
                     offerId: editingOfferId,
                     businessId: user.uid,
+                    businessAvatar: profile?.photoURL || null,
                     price: draft.price,
                     serviceType: draft.serviceType,
                     time: draft.time,
@@ -300,6 +304,7 @@ export default function NeedDetailPage() {
                     needId: need.id,
                     businessId: user.uid,
                     businessName: profile?.companyName || profile?.displayName || "Local Business",
+                    businessAvatar: profile?.photoURL || null,
                     price: draft.price,
                     serviceType: draft.serviceType,
                     time: draft.time,
@@ -367,37 +372,38 @@ export default function NeedDetailPage() {
         }
     };
 
-    const messageQuote = (offer: OfferRecord) => {
-        if (!need) return;
-        router.push(`/messages?needId=${encodeURIComponent(need.id)}&quoteId=${encodeURIComponent(offer.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName || "Local Business")}&order=0`);
+    const startQuoteChat = async (offer: OfferRecord, mode: "chat" | "choose") => {
+        if (!need || !user) return;
+        const customerText = mode === "choose"
+            ? `I want to choose this Offer for "${need.title}". Offer: ${offer.price || "open price"} - ${offer.serviceType || "service"} - ${offer.time || "time to confirm"}.`
+            : `Hi, I want to talk about this Offer for "${need.title}". Offer: ${offer.price || "open price"} - ${offer.serviceType || "service"} - ${offer.time || "time to confirm"}.`;
+        const businessText = `Hi, I am following up on my Offer for "${need.title}". Offer: ${offer.price || "open price"} - ${offer.serviceType || "service"} - ${offer.time || "time to confirm"}.`;
+        try {
+            await sendThreadMessage({
+                needId: need.id,
+                quoteId: offer.id,
+                senderId: user.uid,
+                senderName: profile?.displayName || profile?.email || (accountType === "business" ? "Business" : "Customer"),
+                senderType: accountType === "business" ? "business" : "customer",
+                senderAvatar: profile?.photoURL || null,
+                text: accountType === "business" ? businessText : customerText,
+            });
+        } catch (error) {
+            console.error("Could not seed quote chat:", error);
+        }
+        router.push(`/messages?needId=${encodeURIComponent(need.id)}&quoteId=${encodeURIComponent(offer.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName || "Local Business")}&businessAvatar=${encodeURIComponent(offer.businessAvatar || "")}&order=0`);
     };
 
     const chooseQuote = async (offer: OfferRecord) => {
         if (!user || !need || !isOwner) return;
         setOrderingOfferId(offer.id);
-        try {
-            const booking = await createBookingFromQuote({ needId: need.id, quoteId: offer.id, customerId: user.uid });
-            await sendThreadMessage({
-                needId: need.id,
-                quoteId: offer.id,
-                bookingId: booking.id,
-                senderId: user.uid,
-                senderName: profile?.displayName || profile?.email || "Customer",
-                senderType: "customer",
-                senderAvatar: profile?.photoURL || null,
-                text: `Booking started from this Offer. Need: "${need.title}". Offer price: ${offer.price}.`,
-            });
-            router.push(`/pay?needId=${encodeURIComponent(need.id)}&quoteId=${encodeURIComponent(offer.id)}&bookingId=${encodeURIComponent(booking.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName || "Local Business")}`);
-        } catch (error) {
-            setMessage(error instanceof Error ? error.message : "Could not create Booking.");
-        } finally {
-            setOrderingOfferId(null);
-        }
+        await startQuoteChat(offer, "choose");
+        setOrderingOfferId(null);
     };
 
     return (
         <RouteGuard allowedTypes={["customer", "business"]}>
-            <main className="min-h-screen bg-[#fafafa] px-5 py-8 text-[#222325] md:px-8">
+            <main className="min-h-screen bg-[#fafafa] px-4 py-5 text-[#222325] sm:px-5 sm:py-8 md:px-8">
                 <div className="mx-auto max-w-7xl">
                     <Link href="/marketplace" className="inline-flex items-center gap-2 text-sm font-black text-[#62646a] hover:text-black">
                         <ArrowLeft size={16} />
@@ -410,7 +416,7 @@ export default function NeedDetailPage() {
                         <div className="mt-10 rounded-[28px] border border-[#e4e5e7] bg-white p-12 text-center font-black">Loading Need...</div>
                     ) : need ? (
                         <>
-                            <section className="mt-6 grid gap-8 lg:grid-cols-[1fr_360px]">
+                            <section className="mt-6 grid gap-5 lg:grid-cols-[1fr_360px] lg:gap-8">
                                 <NeedMedia need={need} />
                                 <aside className="h-fit rounded-[28px] border border-[#e4e5e7] bg-white p-6 shadow-sm">
                                     <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#95979d]">Need owner</p>
@@ -443,11 +449,11 @@ export default function NeedDetailPage() {
                                 </aside>
                             </section>
 
-                            <section className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
+                            <section className="mt-8 grid gap-5 lg:grid-cols-[1fr_360px] lg:gap-8">
                                 <div>
                                     <div className="rounded-[28px] border border-[#e4e5e7] bg-white p-6 shadow-sm">
                                         <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#95979d]">Need details</p>
-                                        <h1 className="mt-3 text-4xl font-black leading-tight tracking-[-0.05em]">{need.title}</h1>
+                                        <h1 className="mt-3 text-3xl font-black leading-tight tracking-[-0.05em] sm:text-4xl">{need.title}</h1>
                                         <p className="mt-4 text-base leading-8 text-[#62646a]">{need.description || need.issue}</p>
                                     </div>
 
@@ -463,7 +469,7 @@ export default function NeedDetailPage() {
                                                 offer={offer}
                                                 canOrder={Boolean(isOwner)}
                                                 ordering={orderingOfferId === offer.id}
-                                                onMessage={() => messageQuote(offer)}
+                                                onMessage={() => void startQuoteChat(offer, "chat")}
                                                 onChoose={() => void chooseQuote(offer)}
                                                 canManage={Boolean(isBusiness && offer.businessId === user?.uid)}
                                                 deleting={deletingOfferId === offer.id}

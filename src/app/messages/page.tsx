@@ -21,6 +21,7 @@ type OrderContext = {
     bookingId: string;
     businessId: string;
     businessName: string;
+    businessAvatar: string;
     orderStarted: boolean;
 };
 
@@ -30,6 +31,7 @@ const emptyContext: OrderContext = {
     bookingId: "",
     businessId: "",
     businessName: "",
+    businessAvatar: "",
     orderStarted: false,
 };
 
@@ -46,6 +48,14 @@ function formatTime(value?: string | null) {
 
 function avatarLabel(name: string) {
     return (name || "U").charAt(0).toUpperCase();
+}
+
+function mapsSearchUrl(location: { latitude: number; longitude: number }) {
+    return `https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`;
+}
+
+function mapsRouteUrl(location: { latitude: number; longitude: number }) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}&travelmode=driving`;
 }
 
 export default function MessagesPage() {
@@ -70,6 +80,7 @@ export default function MessagesPage() {
             bookingId: params.get("bookingId") || "",
             businessId: params.get("businessId") || "",
             businessName: params.get("businessName") || "",
+            businessAvatar: params.get("businessAvatar") || "",
             orderStarted: params.get("order") === "1",
         });
     }, []);
@@ -90,7 +101,7 @@ export default function MessagesPage() {
             businessName: orderContext.businessName || "Local Business",
             customerName: profile?.displayName || "Customer",
             otherName: accountType === "business" ? "Customer" : orderContext.businessName || "Local Business",
-            otherAvatar: null,
+            otherAvatar: accountType === "customer" ? orderContext.businessAvatar || null : null,
             lastMessage: "No messages yet",
             lastMessageAt: null,
             messageCount: 0,
@@ -149,6 +160,7 @@ export default function MessagesPage() {
             bookingId: thread.bookingId || "",
             businessId: thread.businessId || "",
             businessName: thread.businessName || "",
+            businessAvatar: thread.otherAvatar || "",
             orderStarted: Boolean(thread.bookingId),
         });
     };
@@ -187,7 +199,7 @@ export default function MessagesPage() {
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude,
                 });
-                setStatus("Location attached.");
+                setStatus("Exact location attached. Business can open the route in Maps.");
             },
             () => setStatus("Location permission was not allowed."),
             { enableHighAccuracy: false, timeout: 8000 },
@@ -359,7 +371,7 @@ export default function MessagesPage() {
                                             return (
                                                 <div key={message.id} className={`flex items-end gap-3 ${mine ? "justify-end" : "justify-start"}`}>
                                                     {!mine && (
-                                                        <div className="h-9 w-9 overflow-hidden rounded-full bg-[#222325] text-xs font-black text-white">
+                                                        <div className="h-9 w-9 overflow-hidden rounded-full border border-[#dadbdd] bg-white text-xs font-black text-[#222325]">
                                                             {message.senderAvatar ? (
                                                                 <img src={message.senderAvatar} alt="" className="h-full w-full object-cover" />
                                                             ) : (
@@ -375,9 +387,37 @@ export default function MessagesPage() {
                                                         </div>
                                                         {message.text && <p className="text-sm leading-6">{message.text}</p>}
                                                         {message.mapLocation && (
-                                                            <p className="mt-2 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold">
-                                                                Location: {message.mapLocation.latitude.toFixed(4)}, {message.mapLocation.longitude.toFixed(4)}
-                                                            </p>
+                                                            <div className={`mt-3 rounded-2xl border p-3 text-xs font-semibold ${mine ? "border-white/15 bg-white/10" : "border-[#dadbdd] bg-[#f7f7f7]"}`}>
+                                                                <div className="flex items-start gap-3">
+                                                                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${mine ? "bg-white text-[#222325]" : "bg-[#222325] text-white"}`}>
+                                                                        <MapPin size={18} />
+                                                                    </div>
+                                                                    <div className="min-w-0 flex-1">
+                                                                        <p className="font-black">Exact location shared</p>
+                                                                        <p className={`mt-1 leading-5 ${mine ? "text-white/70" : "text-[#74767e]"}`}>
+                                                                            Open route in Maps for turn-by-turn navigation.
+                                                                        </p>
+                                                                        <div className="mt-3 flex flex-wrap gap-2">
+                                                                            <a
+                                                                                href={mapsRouteUrl(message.mapLocation)}
+                                                                                target="_blank"
+                                                                                rel="noreferrer"
+                                                                                className={`rounded-full px-3 py-2 text-[11px] font-black ${mine ? "bg-white text-[#222325]" : "bg-[#222325] text-white"}`}
+                                                                            >
+                                                                                Open route
+                                                                            </a>
+                                                                            <a
+                                                                                href={mapsSearchUrl(message.mapLocation)}
+                                                                                target="_blank"
+                                                                                rel="noreferrer"
+                                                                                className={`rounded-full border px-3 py-2 text-[11px] font-black ${mine ? "border-white/20 text-white" : "border-[#222325] text-[#222325]"}`}
+                                                                            >
+                                                                                Full map
+                                                                            </a>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
                                                         )}
                                                         {message.attachments?.map((attachment) => (
                                                             <div key={attachment.name} className="mt-2 overflow-hidden rounded-2xl bg-white/10 text-xs font-semibold">
@@ -413,7 +453,7 @@ export default function MessagesPage() {
                                                         )}
                                                     </div>
                                                     {mine && (
-                                                        <div className="h-9 w-9 overflow-hidden rounded-full bg-[#222325] text-xs font-black text-white">
+                                                        <div className="h-9 w-9 overflow-hidden rounded-full border border-[#dadbdd] bg-white text-xs font-black text-[#222325]">
                                                             {message.senderAvatar || profile?.photoURL ? (
                                                                 <img src={message.senderAvatar || profile?.photoURL || ""} alt="" className="h-full w-full object-cover" />
                                                             ) : (
