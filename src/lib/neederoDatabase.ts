@@ -109,10 +109,21 @@ const normalizeStatus = (value: unknown): NeedStatus => {
 };
 
 const formatBudget = (need: BackendRecord) => {
-    if (typeof need.budget_type === "string" && need.budget_type.trim()) return need.budget_type;
-    if (typeof need.budget === "string" && need.budget.trim()) return need.budget;
+    const budgetValue = typeof need.budget_value === "number" ? need.budget_value : parseCurrencyAmount(String(need.budget_value || ""));
+    const formatBudgetValue = (value: number) => `$${value.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+    if (typeof need.budget_type === "string" && need.budget_type.trim()) {
+        const budgetType = need.budget_type.trim();
+        if (/^\d+(?:\.\d+)?$/.test(budgetType)) return formatBudgetValue(Number(budgetType));
+        if (/^custom$/i.test(budgetType) && budgetValue > 0) return formatBudgetValue(budgetValue);
+        return budgetType;
+    }
+    if (typeof need.budget === "string" && need.budget.trim()) {
+        const budget = need.budget.trim();
+        if (/^\d+(?:\.\d+)?$/.test(budget)) return formatBudgetValue(Number(budget));
+        return budget;
+    }
     if (typeof need.budget_value === "number" && need.budget_value > 0) {
-        return `$${need.budget_value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+        return formatBudgetValue(need.budget_value);
     }
     return "No budget yet";
 };
@@ -370,7 +381,7 @@ export async function createOffer(input: {
     const structuredNote = JSON.stringify({
         serviceType: input.serviceType || "",
         included: input.included || "",
-        extraCharges: input.extraCharges || "",
+        extraCharges: formatMoney(input.extraCharges) || input.extraCharges || "",
         distance: input.distance || "",
         availability: input.availability || "",
         delayRefundRule: input.delayRefundRule || "",
@@ -415,7 +426,7 @@ export async function updateOffer(input: {
     const structuredNote = JSON.stringify({
         serviceType: input.serviceType || "",
         included: input.included || "",
-        extraCharges: input.extraCharges || "",
+        extraCharges: formatMoney(input.extraCharges) || input.extraCharges || "",
         distance: input.distance || "",
         availability: input.availability || "",
         delayRefundRule: input.delayRefundRule || "",

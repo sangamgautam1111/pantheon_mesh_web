@@ -414,8 +414,8 @@ export default function MessagesPage() {
                                                     </div>
                                                     {mine && (
                                                         <div className="h-9 w-9 overflow-hidden rounded-full bg-[#222325] text-xs font-black text-white">
-                                                            {profile?.photoURL ? (
-                                                                <img src={profile.photoURL} alt="" className="h-full w-full object-cover" />
+                                                            {message.senderAvatar || profile?.photoURL ? (
+                                                                <img src={message.senderAvatar || profile?.photoURL || ""} alt="" className="h-full w-full object-cover" />
                                                             ) : (
                                                                 <div className="flex h-full w-full items-center justify-center">{avatarLabel(profile?.displayName || "Me")}</div>
                                                             )}

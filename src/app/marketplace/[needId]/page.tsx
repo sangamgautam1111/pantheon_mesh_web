@@ -43,6 +43,7 @@ type QuoteDraft = {
     included: string;
     extraCharges: string;
     distance: string;
+    distanceUnit: "m" | "km";
     availability: string;
     delayRefundRule: string;
     lateFee: string;
@@ -57,6 +58,7 @@ const emptyDraft: QuoteDraft = {
     included: "",
     extraCharges: "",
     distance: "",
+    distanceUnit: "m",
     availability: "",
     delayRefundRule: "",
     lateFee: "",
@@ -64,6 +66,30 @@ const emptyDraft: QuoteDraft = {
 };
 
 const serviceTypes = ["Visit Shop", "Home Visit", "Pickup & Return", "Delivery"];
+const travelServiceTypes = ["Home Visit", "Pickup & Return", "Delivery"];
+
+const needsTravelCharge = (serviceType: string) => travelServiceTypes.includes(serviceType);
+
+const extraChargeLabel = (serviceType: string) => {
+    if (serviceType === "Home Visit") return "Home visit fee";
+    if (serviceType === "Pickup & Return") return "Pickup & return fee";
+    if (serviceType === "Delivery") return "Delivery fee";
+    return "Extra charge";
+};
+
+const parseDistanceDraft = (distance?: string) => {
+    const match = String(distance || "").match(/(\d+(?:\.\d+)?)\s*(km|kilometer|kilometers|m|meter|meters)?/i);
+    return {
+        distance: match?.[1] || "",
+        distanceUnit: match?.[2]?.toLowerCase().startsWith("k") ? "km" as const : "m" as const,
+    };
+};
+
+const formatDistanceDraft = (distance: string, unit: QuoteDraft["distanceUnit"]) => {
+    const value = distance.trim();
+    if (!value) return "Nearby";
+    return `${value} ${unit} away`;
+};
 
 const draftFromOffer = (offer: OfferRecord): QuoteDraft => ({
     price: String(parseAmount(offer.price) || ""),
@@ -72,7 +98,7 @@ const draftFromOffer = (offer: OfferRecord): QuoteDraft => ({
     warranty: offer.warranty || "",
     included: offer.included || "",
     extraCharges: offer.extraCharges || "",
-    distance: offer.distance || "",
+    ...parseDistanceDraft(offer.distance),
     availability: offer.availability || "",
     delayRefundRule: offer.delayRefundRule || "",
     lateFee: offer.lateFee || "",
@@ -234,7 +260,17 @@ export default function NeedDetailPage() {
         void load();
     }, [params.needId]);
 
-    const updateDraft = (key: keyof QuoteDraft, value: string) => setDraft((current) => ({ ...current, [key]: value }));
+    const updateDraft = (key: keyof QuoteDraft, value: string) => {
+        setDraft((current) => {
+            const next = { ...current, [key]: value } as QuoteDraft;
+            if (key === "serviceType" && !needsTravelCharge(value)) {
+                next.extraCharges = "";
+                next.lateFee = "";
+                next.delayRefundRule = "";
+            }
+            return next;
+        });
+    };
 
     const submitQuote = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -251,11 +287,11 @@ export default function NeedDetailPage() {
                     time: draft.time,
                     warranty: draft.warranty,
                     included: draft.included,
-                    extraCharges: draft.extraCharges,
-                    distance: draft.distance || "Nearby",
+                    extraCharges: needsTravelCharge(draft.serviceType) ? draft.extraCharges : "",
+                    distance: formatDistanceDraft(draft.distance, draft.distanceUnit),
                     availability: draft.availability || draft.time,
-                    delayRefundRule: draft.delayRefundRule,
-                    lateFee: draft.lateFee,
+                    delayRefundRule: needsTravelCharge(draft.serviceType) ? draft.delayRefundRule : "",
+                    lateFee: needsTravelCharge(draft.serviceType) ? draft.lateFee : "",
                     note: draft.note,
                 });
                 setEditingOfferId(null);
@@ -269,11 +305,11 @@ export default function NeedDetailPage() {
                     time: draft.time,
                     warranty: draft.warranty,
                     included: draft.included,
-                    extraCharges: draft.extraCharges,
-                    distance: draft.distance || "Nearby",
+                    extraCharges: needsTravelCharge(draft.serviceType) ? draft.extraCharges : "",
+                    distance: formatDistanceDraft(draft.distance, draft.distanceUnit),
                     availability: draft.availability || draft.time,
-                    delayRefundRule: draft.delayRefundRule,
-                    lateFee: draft.lateFee,
+                    delayRefundRule: needsTravelCharge(draft.serviceType) ? draft.delayRefundRule : "",
+                    lateFee: needsTravelCharge(draft.serviceType) ? draft.lateFee : "",
                     note: draft.note,
                 });
             }
@@ -468,8 +504,8 @@ export default function NeedDetailPage() {
                                                 <label className="block">
                                                     <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Price</span>
                                                     <div className="relative">
-                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-[#74767e]">$</span>
-                                                        <input required type="number" min="1" step="0.01" value={draft.price} onChange={(e) => updateDraft("price", e.target.value)} className="nd-input rounded-xl pl-8" placeholder="50" />
+                                                        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-[#74767e]">$</span>
+                                                        <input required type="number" min="1" step="0.01" value={draft.price} onChange={(e) => updateDraft("price", e.target.value)} className="nd-input rounded-xl" style={{ paddingLeft: 42 }} placeholder="50" />
                                                     </div>
                                                 </label>
                                                 <label className="block">
@@ -480,20 +516,41 @@ export default function NeedDetailPage() {
                                                 </label>
                                                 <label className="block">
                                                     <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Actual arrival / completion time</span>
-                                                    <input required type="datetime-local" value={draft.time} onChange={(e) => updateDraft("time", e.target.value)} className="nd-input rounded-xl" />
+                                                <input required type="datetime-local" value={draft.time} onChange={(e) => updateDraft("time", e.target.value)} className="nd-input rounded-xl" />
                                                 </label>
                                                 <input value={draft.warranty} onChange={(e) => updateDraft("warranty", e.target.value)} className="nd-input rounded-xl" placeholder="Warranty / guarantee" />
                                                 <input value={draft.included} onChange={(e) => updateDraft("included", e.target.value)} className="nd-input rounded-xl" placeholder="What is included" />
-                                                <input value={draft.extraCharges} onChange={(e) => updateDraft("extraCharges", e.target.value)} className="nd-input rounded-xl" placeholder="Extra charges, e.g. Home visit fee $3" />
-                                                <input value={draft.distance} onChange={(e) => updateDraft("distance", e.target.value)} className="nd-input rounded-xl" placeholder="Distance, e.g. 1.2 km away" />
+                                                {needsTravelCharge(draft.serviceType) && (
+                                                    <label className="block">
+                                                        <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">{extraChargeLabel(draft.serviceType)}</span>
+                                                        <div className="relative">
+                                                            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-[#74767e]">$</span>
+                                                            <input type="number" min="0" step="0.01" value={draft.extraCharges} onChange={(e) => updateDraft("extraCharges", e.target.value)} className="nd-input rounded-xl" style={{ paddingLeft: 42 }} placeholder="0" />
+                                                        </div>
+                                                    </label>
+                                                )}
                                                 <label className="block">
-                                                    <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Late fine for payment hold</span>
-                                                    <div className="relative">
-                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-[#74767e]">$</span>
-                                                        <input type="number" min="0" step="0.01" value={draft.lateFee} onChange={(e) => updateDraft("lateFee", e.target.value)} className="nd-input rounded-xl pl-8" placeholder="5" />
+                                                    <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Distance from customer</span>
+                                                    <div className="grid grid-cols-[1fr_84px] gap-2">
+                                                        <input type="number" min="0" step="1" value={draft.distance} onChange={(e) => updateDraft("distance", e.target.value)} className="nd-input rounded-xl" placeholder="350" />
+                                                        <select value={draft.distanceUnit} onChange={(e) => updateDraft("distanceUnit", e.target.value)} className="nd-select w-full rounded-xl">
+                                                            <option value="m">m</option>
+                                                            <option value="km">km</option>
+                                                        </select>
                                                     </div>
                                                 </label>
-                                                <input value={draft.delayRefundRule} onChange={(e) => updateDraft("delayRefundRule", e.target.value)} className="nd-input rounded-xl" placeholder="Delay rule, e.g. $5 fine after 30 min late" />
+                                                {needsTravelCharge(draft.serviceType) && (
+                                                    <>
+                                                        <label className="block">
+                                                            <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Late fine</span>
+                                                            <div className="relative">
+                                                                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-[#74767e]">$</span>
+                                                                <input type="number" min="0" step="0.01" value={draft.lateFee} onChange={(e) => updateDraft("lateFee", e.target.value)} className="nd-input rounded-xl" style={{ paddingLeft: 42 }} placeholder="5" />
+                                                            </div>
+                                                        </label>
+                                                        <input value={draft.delayRefundRule} onChange={(e) => updateDraft("delayRefundRule", e.target.value)} className="nd-input rounded-xl" placeholder="Late rule, e.g. fine after 30 min late" />
+                                                    </>
+                                                )}
                                                 <textarea required value={draft.note} onChange={(e) => updateDraft("note", e.target.value)} className="nd-input min-h-28 resize-none rounded-xl" placeholder="Write a useful note for the customer." />
                                                 <button disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#222325] px-5 py-4 text-sm font-black text-white hover:bg-black disabled:opacity-60">
                                                     {saving ? <Clock size={16} className="animate-spin" /> : <Send size={16} />}

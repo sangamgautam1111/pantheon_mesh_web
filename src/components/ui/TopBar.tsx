@@ -276,13 +276,13 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                 </button>
 
                 <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-90">
-                    <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-lg">
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white">
                         <Image
                             src={logoImg}
                             alt="Needero"
-                            width={32}
-                            height={32}
-                            className="h-full w-full rounded-lg object-cover"
+                            width={36}
+                            height={36}
+                            className="h-full w-full object-contain"
                         />
                     </div>
                     <span className="hidden sm:block font-heading font-extrabold text-xl tracking-tight" style={{ color: "var(--text-primary)" }}>
@@ -591,6 +591,9 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                                     <button
                                         key={notification.id}
                                         onClick={() => {
+                                            setDismissedNotificationIds((current) => [
+                                                ...new Set([...current, notification.id]),
+                                            ]);
                                             setShowNotifications(false);
                                             router.push(notification.href || "/messages");
                                         }}
