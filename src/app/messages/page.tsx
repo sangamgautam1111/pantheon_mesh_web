@@ -1,40 +1,62 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
-import { Image as ImageIcon, Loader2, MapPin, Paperclip, Send, ShoppingBag } from "lucide-react";
+import { Image as ImageIcon, Loader2, MapPin, Paperclip, Search, Send, ShoppingBag } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import {
     MessageAttachment,
+    MessageThread,
     ThreadMessage,
+    getMessageThreads,
     getMessages,
     sendThreadMessage,
 } from "@/lib/neederoDatabase";
+
+type OrderContext = {
+    needId: string;
+    quoteId: string;
+    bookingId: string;
+    businessId: string;
+    businessName: string;
+    orderStarted: boolean;
+};
+
+const emptyContext: OrderContext = {
+    needId: "",
+    quoteId: "",
+    bookingId: "",
+    businessId: "",
+    businessName: "",
+    orderStarted: false,
+};
 
 function formatSender(type: string) {
     return type === "business" ? "Business" : "Customer";
 }
 
+function formatTime(value?: string | null) {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function avatarLabel(name: string) {
+    return (name || "U").charAt(0).toUpperCase();
+}
+
 export default function MessagesPage() {
     const { user, profile, accountType } = useAuth();
+    const [threads, setThreads] = useState<MessageThread[]>([]);
     const [messages, setMessages] = useState<ThreadMessage[]>([]);
     const [text, setText] = useState("");
     const [attachments, setAttachments] = useState<MessageAttachment[]>([]);
     const [mapLocation, setMapLocation] = useState<{ latitude: number; longitude: number } | null>(null);
     const [saving, setSaving] = useState(false);
     const [status, setStatus] = useState("");
-    const [orderContext, setOrderContext] = useState({
-        needId: "",
-        quoteId: "",
-        bookingId: "",
-        businessId: "",
-        businessName: "",
-        orderStarted: false,
-    });
-    const threadId = useMemo(
-        () => orderContext.needId || `needero-inbox-${user?.uid || "guest"}`,
-        [orderContext.needId, user?.uid],
-    );
+    const [query, setQuery] = useState("");
+    const [orderContext, setOrderContext] = useState<OrderContext>(emptyContext);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -48,20 +70,84 @@ export default function MessagesPage() {
         });
     }, []);
 
-    useEffect(() => {
+    const selectedThread = useMemo(() => {
+        if (!orderContext.needId) return null;
+        const existing = threads.find(
+            (thread) => thread.needId === orderContext.needId && (thread.quoteId || "") === (orderContext.quoteId || ""),
+        );
+        if (existing) return existing;
+        return {
+            id: `${orderContext.needId}:${orderContext.quoteId}`,
+            needId: orderContext.needId,
+            quoteId: orderContext.quoteId || undefined,
+            bookingId: orderContext.bookingId || undefined,
+            needTitle: "New quote conversation",
+            businessId: orderContext.businessId || undefined,
+            businessName: orderContext.businessName || "Local Business",
+            customerName: profile?.displayName || "Customer",
+            otherName: orderContext.businessName || "Local Business",
+            otherAvatar: null,
+            lastMessage: "No messages yet",
+            lastMessageAt: null,
+            messageCount: 0,
+        } satisfies MessageThread;
+    }, [orderContext, profile?.displayName, threads]);
+
+    const filteredThreads = useMemo(() => {
+        const needle = query.trim().toLowerCase();
+        const base = threads.filter((thread) => thread.messageCount > 0);
+        if (!needle) return base;
+        return base.filter((thread) =>
+            [thread.needTitle, thread.businessName, thread.customerName, thread.otherName, thread.lastMessage]
+                .join(" ")
+                .toLowerCase()
+                .includes(needle),
+        );
+    }, [query, threads]);
+
+    const loadThreads = async () => {
         if (!user) return;
-        const fetchMessages = async () => {
-            try {
-                const data = await getMessages(threadId, orderContext.quoteId || undefined);
-                setMessages(data);
-            } catch (error) {
-                console.error("Failed to fetch messages:", error);
-            }
-        };
-        fetchMessages();
-        const interval = setInterval(fetchMessages, 5000); // Poll every 5s for MVP
+        try {
+            setThreads(await getMessageThreads(user.uid));
+        } catch (error) {
+            console.error("Failed to fetch threads:", error);
+        }
+    };
+
+    const loadMessages = async () => {
+        if (!user || !orderContext.needId) {
+            setMessages([]);
+            return;
+        }
+        try {
+            setMessages(await getMessages(orderContext.needId, orderContext.quoteId || undefined));
+        } catch (error) {
+            console.error("Failed to fetch messages:", error);
+        }
+    };
+
+    useEffect(() => {
+        void loadThreads();
+        const interval = setInterval(loadThreads, 5000);
         return () => clearInterval(interval);
-    }, [orderContext.quoteId, threadId, user]);
+    }, [user?.uid]);
+
+    useEffect(() => {
+        void loadMessages();
+        const interval = setInterval(loadMessages, 3500);
+        return () => clearInterval(interval);
+    }, [orderContext.needId, orderContext.quoteId, user?.uid]);
+
+    const selectThread = (thread: MessageThread) => {
+        setOrderContext({
+            needId: thread.needId,
+            quoteId: thread.quoteId || "",
+            bookingId: thread.bookingId || "",
+            businessId: thread.businessId || "",
+            businessName: thread.businessName || "",
+            orderStarted: Boolean(thread.bookingId),
+        });
+    };
 
     const handleFiles = (event: ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(event.target.files || []).slice(0, 3);
@@ -106,19 +192,20 @@ export default function MessagesPage() {
 
     const submitMessage = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (!user || !accountType) return;
+        if (!user || !accountType || !orderContext.needId) return;
         if (!text.trim() && attachments.length === 0 && !mapLocation) return;
 
         setSaving(true);
         setStatus("");
         try {
             await sendThreadMessage({
-                needId: threadId,
+                needId: orderContext.needId,
                 quoteId: orderContext.quoteId || undefined,
                 bookingId: orderContext.bookingId || undefined,
                 senderId: user.uid,
                 senderName: profile?.displayName || profile?.email || formatSender(accountType),
                 senderType: accountType,
+                senderAvatar: profile?.photoURL || null,
                 text: text.trim(),
                 attachments,
                 mapLocation,
@@ -126,6 +213,7 @@ export default function MessagesPage() {
             setText("");
             setAttachments([]);
             setMapLocation(null);
+            await Promise.all([loadMessages(), loadThreads()]);
         } catch (error) {
             setStatus(error instanceof Error ? error.message : "Could not send message.");
         } finally {
@@ -135,179 +223,239 @@ export default function MessagesPage() {
 
     return (
         <RouteGuard allowedTypes={["customer", "business"]}>
-            <main className="min-h-screen bg-[#f8f7f2] px-4 py-6 text-slate-950 md:px-8">
-                <div className="mx-auto max-w-5xl">
-                    <section className="overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-xl">
-                        <div className="border-b border-slate-100 p-6 md:p-8">
-                            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">
-                                Messages
-                            </p>
-                            <h1 className="mt-3 text-4xl font-black tracking-tight md:text-6xl">
-                                Quote-based chat and Booking pipeline.
-                            </h1>
-                            <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
-                                Every conversation stays attached to a Need and Quote, so booking, payment, work status,
-                                and customer confirmation can stay organized.
-                            </p>
+            <main className="min-h-screen bg-[#f5f5f5] text-[#222325]">
+                <div className="mx-auto grid min-h-[calc(100vh-64px)] max-w-[1480px] border-x border-[#e4e5e7] bg-white lg:grid-cols-[330px_1fr_310px]">
+                    <aside className="border-b border-[#e4e5e7] bg-white lg:border-b-0 lg:border-r">
+                        <div className="border-b border-[#e4e5e7] p-5">
+                            <h1 className="text-2xl font-black">Inbox</h1>
+                            <p className="mt-1 text-sm text-[#74767e]">Only active quote conversations appear here.</p>
+                            <div className="mt-4 flex items-center rounded-full border border-[#dadbdd] bg-[#f7f7f7] px-3">
+                                <Search size={15} className="text-[#74767e]" />
+                                <input
+                                    value={query}
+                                    onChange={(event) => setQuery(event.target.value)}
+                                    placeholder="Search conversations"
+                                    className="h-11 min-w-0 flex-1 bg-transparent px-2 text-sm outline-none"
+                                />
+                            </div>
                         </div>
 
-                        <div className="grid min-h-[620px] lg:grid-cols-[0.65fr_1.2fr_0.65fr]">
-                            <aside className="border-b border-slate-100 bg-slate-50 p-5 lg:border-b-0 lg:border-r">
-                                <div className="rounded-3xl border border-slate-200 bg-white p-5">
-                                    <p className="text-sm font-black">
-                                        {orderContext.businessName || "Needero conversation"}
+                        <div className="max-h-[calc(100vh-196px)] overflow-y-auto p-3">
+                            {filteredThreads.length === 0 ? (
+                                <div className="rounded-2xl border border-dashed border-[#dadbdd] p-8 text-center">
+                                    <Send className="mx-auto text-[#b5b6ba]" size={30} />
+                                    <p className="mt-3 text-sm font-black">No conversations yet</p>
+                                    <p className="mt-1 text-xs leading-5 text-[#74767e]">
+                                        Open a Need, message a business quote, or choose an Offer to start a thread.
                                     </p>
-                                    <p className="mt-2 text-sm leading-6 text-slate-500">
-                                        {orderContext.needId
-                                            ? `Need: ${orderContext.needId}`
-                                            : "Open a Quote from Marketplace to start a focused thread."}
-                                    </p>
-                                    {orderContext.quoteId && (
-                                        <p className="mt-2 break-all text-xs font-bold text-slate-400">
-                                            Quote: {orderContext.quoteId}
-                                        </p>
-                                    )}
                                 </div>
-                            </aside>
+                            ) : (
+                                filteredThreads.map((thread) => {
+                                    const active = selectedThread?.id === thread.id;
+                                    return (
+                                        <button
+                                            key={thread.id}
+                                            onClick={() => selectThread(thread)}
+                                            className="mb-2 flex w-full gap-3 rounded-2xl p-3 text-left transition hover:bg-[#f5f5f5]"
+                                            style={{ background: active ? "#f0f0f0" : "transparent" }}
+                                        >
+                                            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-[#222325] text-sm font-black text-white">
+                                                {thread.otherAvatar ? (
+                                                    <img src={thread.otherAvatar} alt="" className="h-full w-full object-cover" />
+                                                ) : (
+                                                    <div className="flex h-full w-full items-center justify-center">{avatarLabel(thread.otherName)}</div>
+                                                )}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <p className="truncate text-sm font-black">{thread.otherName}</p>
+                                                    <span className="shrink-0 text-[11px] text-[#95979d]">{formatTime(thread.lastMessageAt)}</span>
+                                                </div>
+                                                <p className="mt-1 truncate text-xs font-semibold text-[#62646a]">{thread.needTitle}</p>
+                                                <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#74767e]">{thread.lastMessage}</p>
+                                            </div>
+                                        </button>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </aside>
 
-                            <section className="flex flex-col">
-                                <div className="flex-1 space-y-4 overflow-y-auto p-5 md:p-6">
+                    <section className="flex min-h-[720px] flex-col bg-[#fbfbfb]">
+                        {selectedThread ? (
+                            <>
+                                <header className="flex items-center justify-between border-b border-[#e4e5e7] bg-white px-5 py-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-11 w-11 overflow-hidden rounded-full bg-[#222325] text-sm font-black text-white">
+                                            {selectedThread.otherAvatar ? (
+                                                <img src={selectedThread.otherAvatar} alt="" className="h-full w-full object-cover" />
+                                            ) : (
+                                                <div className="flex h-full w-full items-center justify-center">{avatarLabel(selectedThread.otherName)}</div>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="font-black">{selectedThread.otherName}</p>
+                                            <p className="text-xs text-[#74767e]">{selectedThread.needTitle}</p>
+                                        </div>
+                                    </div>
+                                    <span className="rounded-full bg-[#222325] px-3 py-1 text-xs font-black text-white">
+                                        {orderContext.orderStarted ? "Booking" : "Quote chat"}
+                                    </span>
+                                </header>
+
+                                <div className="flex-1 space-y-5 overflow-y-auto p-5 md:p-7">
                                     {messages.length === 0 ? (
-                                        <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
-                                            <Send className="mx-auto mb-4 text-slate-300" size={34} />
-                                            <p className="text-sm font-semibold text-slate-500">
-                                                No messages yet. Ask a question about this Quote or confirm booking details.
+                                        <div className="mx-auto mt-20 max-w-md rounded-3xl border border-dashed border-[#dadbdd] bg-white p-10 text-center">
+                                            <Send className="mx-auto mb-4 text-[#b5b6ba]" size={34} />
+                                            <p className="text-sm font-black">Start the conversation</p>
+                                            <p className="mt-2 text-sm leading-6 text-[#74767e]">
+                                                Ask about timing, warranty, pickup, delivery, or exact address. This thread will appear in both inboxes after the first message.
                                             </p>
                                         </div>
                                     ) : (
                                         messages.map((message) => {
                                             const mine = message.senderId === user?.uid;
                                             return (
-                                                <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                                                    <div className={`max-w-[78%] rounded-3xl px-4 py-3 ${mine ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-950"}`}>
-                                                        <p className="text-[10px] font-black uppercase tracking-wide opacity-60">
-                                                            {message.senderName} - {formatSender(message.senderType)}
-                                                        </p>
-                                                        {message.text && <p className="mt-2 text-sm leading-6">{message.text}</p>}
+                                                <div key={message.id} className={`flex items-end gap-3 ${mine ? "justify-end" : "justify-start"}`}>
+                                                    {!mine && (
+                                                        <div className="h-9 w-9 overflow-hidden rounded-full bg-[#222325] text-xs font-black text-white">
+                                                            {message.senderAvatar ? (
+                                                                <img src={message.senderAvatar} alt="" className="h-full w-full object-cover" />
+                                                            ) : (
+                                                                <div className="flex h-full w-full items-center justify-center">{avatarLabel(message.senderName)}</div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                    <div className={`max-w-[74%] rounded-[22px] px-4 py-3 shadow-sm ${mine ? "bg-[#222325] text-white" : "bg-white text-[#222325]"}`}>
+                                                        <div className="mb-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-wide opacity-55">
+                                                            <span>{message.senderName}</span>
+                                                            <span>{formatSender(message.senderType)}</span>
+                                                            <span>{formatTime(message.createdAt)}</span>
+                                                        </div>
+                                                        {message.text && <p className="text-sm leading-6">{message.text}</p>}
                                                         {message.mapLocation && (
-                                                            <p className="mt-2 text-xs font-semibold opacity-80">
+                                                            <p className="mt-2 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold">
                                                                 Location: {message.mapLocation.latitude.toFixed(4)}, {message.mapLocation.longitude.toFixed(4)}
                                                             </p>
                                                         )}
                                                         {message.attachments?.map((attachment) => (
-                                                            <div key={attachment.name} className="mt-2 rounded-2xl bg-white/10 p-2 text-xs font-semibold">
+                                                            <div key={attachment.name} className="mt-2 overflow-hidden rounded-2xl bg-white/10 text-xs font-semibold">
                                                                 {attachment.type.startsWith("image/") && attachment.dataUrl ? (
-                                                                    <img src={attachment.dataUrl} alt={attachment.name} className="mb-2 max-h-40 rounded-xl object-cover" />
+                                                                    <img src={attachment.dataUrl} alt={attachment.name} className="max-h-64 w-full object-cover" />
                                                                 ) : null}
                                                                 {attachment.type.startsWith("video/") && attachment.dataUrl ? (
-                                                                    <video src={attachment.dataUrl} controls className="mb-2 max-h-40 rounded-xl object-cover" />
+                                                                    <video src={attachment.dataUrl} controls className="max-h-64 w-full object-cover" />
                                                                 ) : null}
-                                                                {attachment.name}
+                                                                <p className="p-2">{attachment.name}</p>
                                                             </div>
                                                         ))}
                                                     </div>
+                                                    {mine && (
+                                                        <div className="h-9 w-9 overflow-hidden rounded-full bg-[#222325] text-xs font-black text-white">
+                                                            {profile?.photoURL ? (
+                                                                <img src={profile.photoURL} alt="" className="h-full w-full object-cover" />
+                                                            ) : (
+                                                                <div className="flex h-full w-full items-center justify-center">{avatarLabel(profile?.displayName || "Me")}</div>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             );
                                         })
                                     )}
                                 </div>
 
-                                <form onSubmit={submitMessage} className="border-t border-slate-100 p-4">
-                                    {status && <p className="mb-3 text-sm font-semibold text-slate-500">{status}</p>}
+                                <form onSubmit={submitMessage} className="border-t border-[#e4e5e7] bg-white p-4">
+                                    {status && <p className="mb-3 text-sm font-semibold text-[#62646a]">{status}</p>}
                                     {attachments.length > 0 && (
                                         <div className="mb-3 flex flex-wrap gap-2">
                                             {attachments.map((attachment) => (
-                                                <span key={attachment.name} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+                                                <span key={attachment.name} className="rounded-full bg-[#f5f5f5] px-3 py-1 text-xs font-bold text-[#62646a]">
                                                     {attachment.name}
                                                 </span>
                                             ))}
                                         </div>
                                     )}
-                                    <div className="flex items-end gap-2 rounded-3xl border border-slate-200 bg-slate-50 p-2">
-                                        <label className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm">
+                                    <div className="flex items-end gap-2 rounded-full border border-[#dadbdd] bg-[#f7f7f7] p-2">
+                                        <label className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-white text-[#62646a] shadow-sm">
                                             <input type="file" multiple onChange={handleFiles} className="hidden" />
                                             <Paperclip size={18} />
                                         </label>
-                                        <button
-                                            type="button"
-                                            onClick={useLocation}
-                                            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm"
-                                            title="Attach map location"
-                                        >
+                                        <button type="button" onClick={useLocation} className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#62646a] shadow-sm">
                                             <MapPin size={18} />
                                         </button>
                                         <textarea
                                             value={text}
                                             onChange={(event) => setText(event.target.value)}
-                                            placeholder="Write a message..."
+                                            placeholder="Type your message..."
                                             className="min-h-[44px] flex-1 resize-none bg-transparent px-2 py-3 text-sm outline-none"
                                         />
-                                        <button
-                                            type="submit"
-                                            disabled={saving}
-                                            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white disabled:bg-slate-300"
-                                            title="Send message"
-                                        >
+                                        <button type="submit" disabled={saving} className="flex h-11 w-11 items-center justify-center rounded-full bg-[#222325] text-white disabled:bg-[#b5b6ba]">
                                             {saving ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                                         </button>
                                     </div>
-                                    <p className="mt-2 flex items-center gap-2 text-xs text-slate-400">
+                                    <p className="mt-2 flex items-center gap-2 text-xs text-[#95979d]">
                                         <ImageIcon size={14} />
-                                        Files are saved in the message record for this MVP.
+                                        Files, images, videos, and map location stay attached to this quote thread.
                                     </p>
                                 </form>
-                            </section>
-
-                            <aside className="border-t border-slate-100 bg-slate-50 p-5 lg:border-l lg:border-t-0">
-                                <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white">
-                                            <ShoppingBag size={20} />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-black">Booking</p>
-                                            <p className="text-xs font-semibold text-slate-500">
-                                                {orderContext.orderStarted ? "Pending confirmation" : "Quote chat"}
-                                            </p>
-                                        </div>
+                            </>
+                        ) : (
+                            <div className="flex flex-1 items-center justify-center p-8">
+                                <div className="max-w-md text-center">
+                                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#222325] text-white">
+                                        <Send size={26} />
                                     </div>
-                                    <div className="mt-5 space-y-3 text-sm">
-                                        <div className="rounded-2xl bg-slate-50 p-3">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Business</p>
-                                            <p className="mt-1 font-bold">{orderContext.businessName || "Not selected"}</p>
-                                        </div>
-                                        <div className="rounded-2xl bg-slate-50 p-3">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Need</p>
-                                            <p className="mt-1 break-all font-bold">{orderContext.needId || "Open from Marketplace"}</p>
-                                        </div>
-                                        <div className="rounded-2xl bg-slate-50 p-3">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Quote</p>
-                                            <p className="mt-1 break-all font-bold">{orderContext.quoteId || "Not selected"}</p>
-                                        </div>
-                                        <div className="rounded-2xl bg-slate-50 p-3">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Booking</p>
-                                            <p className="mt-1 break-all font-bold">{orderContext.bookingId || "Created after Choose Offer"}</p>
-                                        </div>
-                                        <div className="rounded-2xl border border-slate-200 bg-white p-3">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Pipeline</p>
-                                            <p className="mt-1 text-sm font-bold leading-6">
-                                                Quote selected → Awaiting payment → Booked → In progress → Solved → Payment released
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        className="mt-5 w-full rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white"
-                                    >
-                                        Pay / Hold Payment
-                                    </button>
-                                    <p className="mt-3 text-xs leading-5 text-slate-400">
-                                        Payment is not active yet. This button is the reserved entry point for protected payment hold.
+                                    <h2 className="mt-5 text-3xl font-black tracking-[-0.04em]">No chat selected</h2>
+                                    <p className="mt-3 text-sm leading-6 text-[#74767e]">
+                                        Your inbox stays clean until you message a Quote or choose an Offer. Open a marketplace Need to begin.
                                     </p>
                                 </div>
-                            </aside>
-                        </div>
+                            </div>
+                        )}
                     </section>
+
+                    <aside className="border-t border-[#e4e5e7] bg-white p-5 lg:border-l lg:border-t-0">
+                        <div className="sticky top-20 rounded-3xl border border-[#e4e5e7] bg-white p-5 shadow-sm">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#222325] text-white">
+                                    <ShoppingBag size={20} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-black">Order panel</p>
+                                    <p className="text-xs font-semibold text-[#74767e]">
+                                        {selectedThread ? "Quote pipeline" : "No active quote"}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="mt-5 space-y-3 text-sm">
+                                <div className="rounded-2xl bg-[#f7f7f7] p-3">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#95979d]">Business</p>
+                                    <p className="mt-1 font-bold">{selectedThread?.businessName || "Not selected"}</p>
+                                </div>
+                                <div className="rounded-2xl bg-[#f7f7f7] p-3">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#95979d]">Need</p>
+                                    <p className="mt-1 break-all font-bold">{selectedThread?.needTitle || "Open from Marketplace"}</p>
+                                </div>
+                                <div className="rounded-2xl bg-[#f7f7f7] p-3">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#95979d]">Offer</p>
+                                    <p className="mt-1 font-bold">{selectedThread?.offerPrice || "Not selected"}</p>
+                                </div>
+                                <div className="rounded-2xl border border-[#e4e5e7] bg-white p-3">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#95979d]">Pipeline</p>
+                                    <p className="mt-1 text-sm font-bold leading-6">
+                                        Quote selected {"->"} Payment hold {"->"} Booked {"->"} In progress {"->"} Solved {"->"} Payment released
+                                    </p>
+                                </div>
+                            </div>
+                            <button type="button" className="mt-5 w-full rounded-2xl bg-[#222325] px-5 py-4 text-sm font-black text-white">
+                                Pay / Hold Payment
+                            </button>
+                            <p className="mt-3 text-xs leading-5 text-[#74767e]">
+                                Payment is reserved for MVP3. This keeps the Fiverr-style order panel ready without charging users yet.
+                            </p>
+                        </div>
+                    </aside>
                 </div>
             </main>
         </RouteGuard>

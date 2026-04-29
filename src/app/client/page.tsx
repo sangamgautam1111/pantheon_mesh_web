@@ -4,11 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
     ArrowRight, Briefcase, CheckCircle2, Clock, MapPin,
-    MessageSquare, Plus, Search, Star, RefreshCw, Flame
+    MessageSquare, Plus, Search, Star, RefreshCw, Flame, Trash2
 } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
-import { NeedRecord, getNeeds } from "@/lib/neederoDatabase";
+import { NeedRecord, deleteNeed, getNeeds } from "@/lib/neederoDatabase";
 
 function statusConfig(status: string) {
     switch (status) {
@@ -38,6 +38,7 @@ export default function RequestCenterPage() {
     const [needs, setNeeds] = useState<NeedRecord[]>([]);
     const [dbError, setDbError] = useState("");
     const [loading, setLoading] = useState(true);
+    const [deletingNeedId, setDeletingNeedId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("all");
 
@@ -58,6 +59,22 @@ export default function RequestCenterPage() {
     };
 
     useEffect(() => { fetchNeeds(); }, [user, isBusiness]);
+
+    const removeNeed = async (need: NeedRecord) => {
+        if (!user) return;
+        const confirmed = window.confirm("Delete this Need and all related Offers/messages?");
+        if (!confirmed) return;
+        setDeletingNeedId(need.id);
+        setDbError("");
+        try {
+            await deleteNeed({ needId: need.id, customerId: user.uid });
+            setNeeds((current) => current.filter((item) => item.id !== need.id));
+        } catch (error) {
+            setDbError(error instanceof Error ? error.message : "Could not delete this Need.");
+        } finally {
+            setDeletingNeedId(null);
+        }
+    };
 
     const visibleNeeds = useMemo(() => {
         let list = isBusiness ? needs : needs.filter((n) => n.customerId === user?.uid);
@@ -277,12 +294,23 @@ export default function RequestCenterPage() {
                                                     </p>
                                                 </div>
                                                 <Link
-                                                    href={isBusiness ? "/marketplace" : `/marketplace?needId=${encodeURIComponent(need.id)}`}
+                                                    href={isBusiness ? "/marketplace" : `/marketplace/${encodeURIComponent(need.id)}`}
                                                     className="nd-btn nd-btn-primary nd-btn-sm rounded-full flex-shrink-0 gap-1"
                                                 >
                                                     {isBusiness ? "Send Offer" : "View Offers"}
                                                     <ArrowRight size={13} />
                                                 </Link>
+                                                {!isBusiness && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => void removeNeed(need)}
+                                                        disabled={deletingNeedId === need.id}
+                                                        className="inline-flex items-center justify-center gap-1 rounded-full border border-[#222325] px-3 py-2 text-xs font-black text-[#222325] transition hover:bg-[#222325] hover:text-white disabled:opacity-50"
+                                                    >
+                                                        {deletingNeedId === need.id ? <RefreshCw size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                                                        Delete
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
 

@@ -7,6 +7,7 @@ import {
     ArrowLeft,
     CheckCircle2,
     Clock,
+    Edit3,
     ImageIcon,
     MapPin,
     MessageSquare,
@@ -15,6 +16,8 @@ import {
     ShoppingBag,
     Star,
     Store,
+    Trash2,
+    X,
 } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
@@ -22,10 +25,14 @@ import {
     OfferRecord,
     createBookingFromQuote,
     createOffer,
+    deleteNeed,
+    deleteOffer,
+    formatMoney,
     getNeedById,
     getOffers,
     NeedRecord,
     sendThreadMessage,
+    updateOffer,
 } from "@/lib/neederoDatabase";
 
 type QuoteDraft = {
@@ -38,6 +45,7 @@ type QuoteDraft = {
     distance: string;
     availability: string;
     delayRefundRule: string;
+    lateFee: string;
     note: string;
 };
 
@@ -51,8 +59,25 @@ const emptyDraft: QuoteDraft = {
     distance: "",
     availability: "",
     delayRefundRule: "",
+    lateFee: "",
     note: "",
 };
+
+const serviceTypes = ["Visit Shop", "Home Visit", "Pickup & Return", "Delivery"];
+
+const draftFromOffer = (offer: OfferRecord): QuoteDraft => ({
+    price: String(parseAmount(offer.price) || ""),
+    serviceType: offer.serviceType || "Visit Shop",
+    time: offer.time || "",
+    warranty: offer.warranty || "",
+    included: offer.included || "",
+    extraCharges: offer.extraCharges || "",
+    distance: offer.distance || "",
+    availability: offer.availability || "",
+    delayRefundRule: offer.delayRefundRule || "",
+    lateFee: offer.lateFee || "",
+    note: offer.businessNote || offer.note || "",
+});
 
 const parseAmount = (value: string) => {
     const match = value.replace(/,/g, "").match(/\d+(?:\.\d+)?/);
@@ -95,12 +120,20 @@ function QuoteRow({
     ordering,
     onMessage,
     onChoose,
+    canManage,
+    deleting,
+    onEdit,
+    onDelete,
 }: {
     offer: OfferRecord;
     canOrder: boolean;
     ordering: boolean;
     onMessage: () => void;
     onChoose: () => void;
+    canManage: boolean;
+    deleting: boolean;
+    onEdit: () => void;
+    onDelete: () => void;
 }) {
     return (
         <article className="rounded-[24px] border border-[#e4e5e7] bg-white p-5 shadow-sm">
@@ -121,19 +154,31 @@ function QuoteRow({
                             <span className="rounded-xl bg-[#f7f7f7] px-3 py-2"><strong>Warranty:</strong> {offer.warranty || "Not listed"}</span>
                             <span className="rounded-xl bg-[#f7f7f7] px-3 py-2"><strong>Includes:</strong> {offer.included || "Discuss in chat"}</span>
                             <span className="rounded-xl bg-[#f7f7f7] px-3 py-2"><strong>Extra:</strong> {offer.extraCharges || "None listed"}</span>
-                            <span className="rounded-xl bg-[#f7f7f7] px-3 py-2"><strong>Delay:</strong> {offer.delayRefundRule || "Not listed"}</span>
+                            <span className="rounded-xl bg-[#f7f7f7] px-3 py-2"><strong>Late fine:</strong> {offer.lateFee || offer.delayRefundRule || "Not listed"}</span>
                         </div>
                         {offer.businessNote && <p className="mt-4 text-sm leading-6 text-[#62646a]">{offer.businessNote}</p>}
                     </div>
                 </div>
                 <div className="min-w-[210px] rounded-2xl bg-[#050816] p-4 text-white">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/45">Offer price</p>
-                    <p className="mt-1 text-3xl font-black">{offer.price || "Open"}</p>
+                    <p className="mt-1 text-3xl font-black">{formatMoney(offer.price) || offer.price || "Open"}</p>
                     <div className="mt-4 grid gap-2">
                         <button onClick={onMessage} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 px-4 py-3 text-sm font-black text-white hover:bg-white/10">
                             <MessageSquare size={15} />
                             Message
                         </button>
+                        {canManage && (
+                            <div className="grid grid-cols-2 gap-2">
+                                <button onClick={onEdit} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 px-3 py-3 text-xs font-black text-white hover:bg-white/10">
+                                    <Edit3 size={14} />
+                                    Edit
+                                </button>
+                                <button onClick={onDelete} disabled={deleting} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 px-3 py-3 text-xs font-black text-white hover:bg-white/10 disabled:opacity-50">
+                                    {deleting ? <Clock size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                                    Delete
+                                </button>
+                            </div>
+                        )}
                         {canOrder && (
                             <button onClick={onChoose} disabled={ordering} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-black text-[#050816] hover:bg-[#f5f5f5] disabled:opacity-60">
                                 {ordering ? <Clock size={15} className="animate-spin" /> : <ShoppingBag size={15} />}
@@ -156,13 +201,17 @@ export default function NeedDetailPage() {
     const [draft, setDraft] = useState<QuoteDraft>(emptyDraft);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [deletingNeed, setDeletingNeed] = useState(false);
+    const [deletingOfferId, setDeletingOfferId] = useState<string | null>(null);
+    const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
     const [orderingOfferId, setOrderingOfferId] = useState<string | null>(null);
     const [message, setMessage] = useState("");
 
     const isBusiness = accountType === "business";
     const isOwner = accountType === "customer" && need?.customerId === user?.uid;
     const sortedOffers = useMemo(() => [...offers].sort((a, b) => parseAmount(a.price) - parseAmount(b.price)), [offers]);
-    const hasSubmittedQuote = isBusiness && offers.some((offer) => offer.businessId === user?.uid);
+    const ownOffer = isBusiness ? offers.find((offer) => offer.businessId === user?.uid) || null : null;
+    const hasSubmittedQuote = Boolean(ownOffer);
 
     const load = async () => {
         if (!params.needId) return;
@@ -193,27 +242,92 @@ export default function NeedDetailPage() {
         setSaving(true);
         setMessage("");
         try {
-            await createOffer({
-                needId: need.id,
-                businessId: user.uid,
-                businessName: profile?.companyName || profile?.displayName || "Local Business",
-                price: draft.price,
-                serviceType: draft.serviceType,
-                time: draft.time,
-                warranty: draft.warranty,
-                included: draft.included,
-                extraCharges: draft.extraCharges,
-                distance: draft.distance || "Nearby",
-                availability: draft.availability,
-                delayRefundRule: draft.delayRefundRule,
-                note: draft.note,
-            });
+            if (editingOfferId) {
+                await updateOffer({
+                    offerId: editingOfferId,
+                    businessId: user.uid,
+                    price: draft.price,
+                    serviceType: draft.serviceType,
+                    time: draft.time,
+                    warranty: draft.warranty,
+                    included: draft.included,
+                    extraCharges: draft.extraCharges,
+                    distance: draft.distance || "Nearby",
+                    availability: draft.availability || draft.time,
+                    delayRefundRule: draft.delayRefundRule,
+                    lateFee: draft.lateFee,
+                    note: draft.note,
+                });
+                setEditingOfferId(null);
+            } else {
+                await createOffer({
+                    needId: need.id,
+                    businessId: user.uid,
+                    businessName: profile?.companyName || profile?.displayName || "Local Business",
+                    price: draft.price,
+                    serviceType: draft.serviceType,
+                    time: draft.time,
+                    warranty: draft.warranty,
+                    included: draft.included,
+                    extraCharges: draft.extraCharges,
+                    distance: draft.distance || "Nearby",
+                    availability: draft.availability || draft.time,
+                    delayRefundRule: draft.delayRefundRule,
+                    lateFee: draft.lateFee,
+                    note: draft.note,
+                });
+            }
             setDraft(emptyDraft);
             await load();
         } catch (error) {
             setMessage(error instanceof Error ? error.message : "Could not send this Offer.");
         } finally {
             setSaving(false);
+        }
+    };
+
+    const startEditOffer = (offer: OfferRecord) => {
+        setEditingOfferId(offer.id);
+        setDraft(draftFromOffer(offer));
+        setMessage("Editing your Offer. Save changes in the Offer panel.");
+    };
+
+    const cancelEditOffer = () => {
+        setEditingOfferId(null);
+        setDraft(emptyDraft);
+        setMessage("");
+    };
+
+    const removeOffer = async (offer: OfferRecord) => {
+        if (!user) return;
+        const confirmed = window.confirm("Delete this Offer? The customer will no longer see it.");
+        if (!confirmed) return;
+        setDeletingOfferId(offer.id);
+        setMessage("");
+        try {
+            await deleteOffer({ offerId: offer.id, businessId: user.uid });
+            if (editingOfferId === offer.id) cancelEditOffer();
+            await load();
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : "Could not delete this Offer.");
+        } finally {
+            setDeletingOfferId(null);
+        }
+    };
+
+    const removeNeed = async () => {
+        if (!user || !need || !isOwner) return;
+        const confirmed = window.confirm("Delete this Need and all its Offers/messages?");
+        if (!confirmed) return;
+        setDeletingNeed(true);
+        setMessage("");
+        try {
+            await deleteNeed({ needId: need.id, customerId: user.uid });
+            router.push("/client");
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : "Could not delete this Need.");
+        } finally {
+            setDeletingNeed(false);
         }
     };
 
@@ -234,6 +348,7 @@ export default function NeedDetailPage() {
                 senderId: user.uid,
                 senderName: profile?.displayName || profile?.email || "Customer",
                 senderType: "customer",
+                senderAvatar: profile?.photoURL || null,
                 text: `Booking started from this Offer. Need: "${need.title}". Offer price: ${offer.price}.`,
             });
             router.push(`/pay?needId=${encodeURIComponent(need.id)}&quoteId=${encodeURIComponent(offer.id)}&bookingId=${encodeURIComponent(booking.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName || "Local Business")}`);
@@ -278,6 +393,17 @@ export default function NeedDetailPage() {
                                         <div className="flex items-center justify-between"><span className="text-[#74767e]">Urgency</span><strong>{need.urgency}</strong></div>
                                         <div className="flex items-center justify-between"><span className="text-[#74767e]">Budget</span><strong>{need.budget || "Open"}</strong></div>
                                     </div>
+                                    {isOwner && (
+                                        <button
+                                            type="button"
+                                            onClick={() => void removeNeed()}
+                                            disabled={deletingNeed}
+                                            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#222325] px-5 py-3 text-sm font-black text-[#222325] transition hover:bg-[#222325] hover:text-white disabled:opacity-50"
+                                        >
+                                            {deletingNeed ? <Clock size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                                            Delete Need
+                                        </button>
+                                    )}
                                 </aside>
                             </section>
 
@@ -303,6 +429,10 @@ export default function NeedDetailPage() {
                                                 ordering={orderingOfferId === offer.id}
                                                 onMessage={() => messageQuote(offer)}
                                                 onChoose={() => void chooseQuote(offer)}
+                                                canManage={Boolean(isBusiness && offer.businessId === user?.uid)}
+                                                deleting={deletingOfferId === offer.id}
+                                                onEdit={() => startEditOffer(offer)}
+                                                onDelete={() => void removeOffer(offer)}
                                             />
                                         )) : (
                                             <div className="rounded-[24px] border-2 border-dashed border-[#dadbdd] bg-white p-10 text-center">
@@ -316,23 +446,58 @@ export default function NeedDetailPage() {
 
                                 <aside className="h-fit rounded-[28px] border border-[#e4e5e7] bg-white p-6 shadow-sm">
                                     {isBusiness ? (
-                                        hasSubmittedQuote ? (
+                                        hasSubmittedQuote && !editingOfferId ? (
                                             <div className="text-center">
                                                 <CheckCircle2 className="mx-auto text-[#222325]" size={36} />
                                                 <p className="mt-3 font-black">Offer already submitted</p>
-                                                <p className="mt-1 text-sm text-[#74767e]">You can continue from Messages if the customer replies.</p>
+                                                <p className="mt-1 text-sm text-[#74767e]">Use Edit or Delete on your Offer card if you need to change it.</p>
                                             </div>
                                         ) : (
                                             <form onSubmit={submitQuote} className="space-y-4">
-                                                <h3 className="text-xl font-black">Send an Offer</h3>
-                                                <input required value={draft.price} onChange={(e) => updateDraft("price", e.target.value)} className="nd-input rounded-xl" placeholder="Price, e.g. $50" />
-                                                <input required value={draft.time} onChange={(e) => updateDraft("time", e.target.value)} className="nd-input rounded-xl" placeholder="Arrival/completion time" />
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div>
+                                                        <h3 className="text-xl font-black">{editingOfferId ? "Edit Offer" : "Send an Offer"}</h3>
+                                                        <p className="mt-1 text-xs font-semibold text-[#74767e]">Customers compare price, service type, arrival time, warranty, and late fine.</p>
+                                                    </div>
+                                                    {editingOfferId && (
+                                                        <button type="button" onClick={cancelEditOffer} className="rounded-full border border-[#dadbdd] p-2 hover:bg-[#f5f5f5]">
+                                                            <X size={16} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <label className="block">
+                                                    <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Price</span>
+                                                    <div className="relative">
+                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-[#74767e]">$</span>
+                                                        <input required type="number" min="1" step="0.01" value={draft.price} onChange={(e) => updateDraft("price", e.target.value)} className="nd-input rounded-xl pl-8" placeholder="50" />
+                                                    </div>
+                                                </label>
+                                                <label className="block">
+                                                    <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Service type</span>
+                                                    <select value={draft.serviceType} onChange={(e) => updateDraft("serviceType", e.target.value)} className="nd-select w-full rounded-xl">
+                                                        {serviceTypes.map((type) => <option key={type}>{type}</option>)}
+                                                    </select>
+                                                </label>
+                                                <label className="block">
+                                                    <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Actual arrival / completion time</span>
+                                                    <input required type="datetime-local" value={draft.time} onChange={(e) => updateDraft("time", e.target.value)} className="nd-input rounded-xl" />
+                                                </label>
                                                 <input value={draft.warranty} onChange={(e) => updateDraft("warranty", e.target.value)} className="nd-input rounded-xl" placeholder="Warranty / guarantee" />
                                                 <input value={draft.included} onChange={(e) => updateDraft("included", e.target.value)} className="nd-input rounded-xl" placeholder="What is included" />
+                                                <input value={draft.extraCharges} onChange={(e) => updateDraft("extraCharges", e.target.value)} className="nd-input rounded-xl" placeholder="Extra charges, e.g. Home visit fee $3" />
+                                                <input value={draft.distance} onChange={(e) => updateDraft("distance", e.target.value)} className="nd-input rounded-xl" placeholder="Distance, e.g. 1.2 km away" />
+                                                <label className="block">
+                                                    <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Late fine for payment hold</span>
+                                                    <div className="relative">
+                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-[#74767e]">$</span>
+                                                        <input type="number" min="0" step="0.01" value={draft.lateFee} onChange={(e) => updateDraft("lateFee", e.target.value)} className="nd-input rounded-xl pl-8" placeholder="5" />
+                                                    </div>
+                                                </label>
+                                                <input value={draft.delayRefundRule} onChange={(e) => updateDraft("delayRefundRule", e.target.value)} className="nd-input rounded-xl" placeholder="Delay rule, e.g. $5 fine after 30 min late" />
                                                 <textarea required value={draft.note} onChange={(e) => updateDraft("note", e.target.value)} className="nd-input min-h-28 resize-none rounded-xl" placeholder="Write a useful note for the customer." />
                                                 <button disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#222325] px-5 py-4 text-sm font-black text-white hover:bg-black disabled:opacity-60">
                                                     {saving ? <Clock size={16} className="animate-spin" /> : <Send size={16} />}
-                                                    Send Offer
+                                                    {editingOfferId ? "Save Offer" : "Send Offer"}
                                                 </button>
                                             </form>
                                         )

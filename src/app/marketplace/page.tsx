@@ -439,6 +439,7 @@ export default function Marketplace() {
                 senderId: user.uid,
                 senderName: profile?.displayName || profile?.email || "Customer",
                 senderType: "customer",
+                senderAvatar: profile?.photoURL || null,
                 text: `Booking started from this Quote. Need: "${selectedNeed.title}". Quote price: ${offer.price}.`,
             });
             router.push(

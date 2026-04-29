@@ -30,6 +30,7 @@ export type OfferRecord = BusinessOffer & {
     extraCharges?: string;
     availability?: string;
     delayRefundRule?: string;
+    lateFee?: string;
     businessNote?: string;
 };
 
@@ -47,6 +48,25 @@ export type BookingRecord = {
     workStatus: string;
     status: string;
     quoteSnapshot?: BackendRecord;
+};
+
+export type MessageThread = {
+    id: string;
+    needId: string;
+    quoteId?: string;
+    bookingId?: string;
+    needTitle: string;
+    businessId?: string;
+    businessName: string;
+    customerId?: string;
+    customerName: string;
+    otherName: string;
+    otherAvatar?: string | null;
+    lastMessage: string;
+    lastMessageAt?: string | null;
+    offerPrice?: string;
+    offerStatus?: string;
+    messageCount: number;
 };
 
 const readError = async (response: Response, fallback: string) => {
@@ -91,6 +111,12 @@ const formatBudget = (need: BackendRecord) => {
 const parseCurrencyAmount = (value: string) => {
     const match = value.replace(/,/g, "").match(/\d+(?:\.\d+)?/);
     return match ? Number(match[0]) : 0;
+};
+
+export const formatMoney = (value: string | number | undefined | null) => {
+    const amount = typeof value === "number" ? value : parseCurrencyAmount(String(value || ""));
+    if (!Number.isFinite(amount) || amount <= 0) return "";
+    return `$${amount.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 };
 
 export const normalizeNeedCard = (raw: unknown, messyText = "", category = "Other"): NeedCard => {
@@ -195,6 +221,7 @@ const mapOffer = (offer: BackendRecord): OfferRecord => {
         extraCharges: String(parsedNote.details.extraCharges || ""),
         availability: String(parsedNote.details.availability || ""),
         delayRefundRule: String(parsedNote.details.delayRefundRule || ""),
+        lateFee: String(parsedNote.details.lateFee || ""),
         businessNote: parsedNote.note,
     };
 };
@@ -304,6 +331,17 @@ export async function createNeed(input: {
     return await response.json();
 }
 
+export async function deleteNeed(input: { needId: string; customerId: string }) {
+    const response = await fetch(
+        `${API_URL}/v1/needs/${encodeURIComponent(input.needId)}?customer_id=${encodeURIComponent(input.customerId)}`,
+        { method: "DELETE" },
+    );
+    if (!response.ok) {
+        throw new Error(await readError(response, "Needero could not delete this Need right now."));
+    }
+    return await response.json();
+}
+
 export async function createOffer(input: {
     needId: string;
     businessId: string;
@@ -317,6 +355,7 @@ export async function createOffer(input: {
     extraCharges?: string;
     availability?: string;
     delayRefundRule?: string;
+    lateFee?: string;
     note: string;
 }) {
     const structuredNote = JSON.stringify({
@@ -326,6 +365,7 @@ export async function createOffer(input: {
         distance: input.distance || "",
         availability: input.availability || "",
         delayRefundRule: input.delayRefundRule || "",
+        lateFee: formatMoney(input.lateFee) || input.lateFee || "",
         businessNote: input.note || "",
     });
 
@@ -336,7 +376,7 @@ export async function createOffer(input: {
             need_id: input.needId,
             business_id: input.businessId,
             business_name: input.businessName,
-            price: input.price,
+            price: formatMoney(input.price) || input.price,
             delivery_time: input.time,
             warranty: input.warranty,
             note: structuredNote,
@@ -344,6 +384,60 @@ export async function createOffer(input: {
     });
     if (!response.ok) {
         throw new Error(await readError(response, "Needero could not send this Offer right now."));
+    }
+    return await response.json();
+}
+
+export async function updateOffer(input: {
+    offerId: string;
+    businessId: string;
+    price: string;
+    time: string;
+    warranty: string;
+    serviceType?: string;
+    included?: string;
+    extraCharges?: string;
+    distance?: string;
+    availability?: string;
+    delayRefundRule?: string;
+    lateFee?: string;
+    note: string;
+}) {
+    const structuredNote = JSON.stringify({
+        serviceType: input.serviceType || "",
+        included: input.included || "",
+        extraCharges: input.extraCharges || "",
+        distance: input.distance || "",
+        availability: input.availability || "",
+        delayRefundRule: input.delayRefundRule || "",
+        lateFee: formatMoney(input.lateFee) || input.lateFee || "",
+        businessNote: input.note || "",
+    });
+
+    const response = await fetch(`${API_URL}/v1/offers/${encodeURIComponent(input.offerId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            business_id: input.businessId,
+            price: formatMoney(input.price) || input.price,
+            delivery_time: input.time,
+            warranty: input.warranty,
+            note: structuredNote,
+        }),
+    });
+    if (!response.ok) {
+        throw new Error(await readError(response, "Needero could not update this Offer right now."));
+    }
+    return await response.json();
+}
+
+export async function deleteOffer(input: { offerId: string; businessId: string }) {
+    const response = await fetch(
+        `${API_URL}/v1/offers/${encodeURIComponent(input.offerId)}?business_id=${encodeURIComponent(input.businessId)}`,
+        { method: "DELETE" },
+    );
+    if (!response.ok) {
+        throw new Error(await readError(response, "Needero could not delete this Offer right now."));
     }
     return await response.json();
 }
@@ -401,6 +495,7 @@ export type ThreadMessage = {
     senderId: string;
     senderName: string;
     senderType: "customer" | "business";
+    senderAvatar?: string | null;
     text: string;
     attachments: MessageAttachment[];
     mapLocation?: { latitude: number; longitude: number } | null;
@@ -424,10 +519,39 @@ export async function getMessages(needId: string, quoteId?: string): Promise<Thr
               senderId: String(message.sender_id || ""),
               senderName: String(message.sender_name || "User"),
               senderType: message.sender_type === "business" ? "business" : "customer",
+              senderAvatar: message.sender_avatar || message.senderAvatar || null,
               text: String(message.content || message.text || ""),
               attachments: Array.isArray(message.attachments) ? message.attachments : [],
               mapLocation: message.map_location || message.mapLocation || null,
               createdAt: String(message.created_at || message.createdAt || new Date().toISOString()),
+          }))
+        : [];
+}
+
+export async function getMessageThreads(userId: string): Promise<MessageThread[]> {
+    const response = await fetch(`${API_URL}/v1/messages/threads?user_id=${encodeURIComponent(userId)}`, { cache: "no-store" });
+    if (!response.ok) {
+        throw new Error(await readError(response, "Needero could not load conversations right now."));
+    }
+    const data = await response.json();
+    return Array.isArray(data.threads)
+        ? data.threads.map((thread: BackendRecord) => ({
+              id: String(thread.id || `${thread.need_id || ""}:${thread.quote_id || ""}`),
+              needId: String(thread.need_id || ""),
+              quoteId: thread.quote_id || undefined,
+              bookingId: thread.booking_id || undefined,
+              needTitle: String(thread.need_title || "Need conversation"),
+              businessId: thread.business_id || undefined,
+              businessName: String(thread.business_name || "Local Business"),
+              customerId: thread.customer_id || undefined,
+              customerName: String(thread.customer_name || "Customer"),
+              otherName: String(thread.other_name || thread.business_name || thread.customer_name || "Needero user"),
+              otherAvatar: thread.other_avatar || null,
+              lastMessage: String(thread.last_message || "Conversation update"),
+              lastMessageAt: thread.last_message_at || null,
+              offerPrice: thread.offer_price || undefined,
+              offerStatus: thread.offer_status || undefined,
+              messageCount: Number(thread.message_count || 0),
           }))
         : [];
 }
@@ -439,6 +563,7 @@ export async function sendThreadMessage(input: {
     senderId: string;
     senderName: string;
     senderType: "customer" | "business";
+    senderAvatar?: string | null;
     text: string;
     attachments?: MessageAttachment[];
     mapLocation?: { latitude: number; longitude: number } | null;
@@ -454,6 +579,7 @@ export async function sendThreadMessage(input: {
             receiver_id: "thread",
             sender_name: input.senderName,
             sender_type: input.senderType,
+            sender_avatar: input.senderAvatar || null,
             content: input.text,
             attachments: input.attachments || [],
             map_location: input.mapLocation || null,
