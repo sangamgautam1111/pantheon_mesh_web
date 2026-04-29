@@ -289,7 +289,7 @@ export default function Home() {
                         <h1 className="mt-7 max-w-4xl text-5xl font-black leading-[0.95] tracking-[-0.055em] text-white md:text-7xl">
                             Post a Need. Get local Offers.
                         </h1>
-                        <p className="mt-6 max-w-2xl text-lg leading-8 text-white/78">
+                        <p className="mt-6 max-w-2xl text-lg leading-8 text-white">
                             Needero lets nearby businesses compete with price, time, warranty, and service type so you choose the best one safely.
                         </p>
 

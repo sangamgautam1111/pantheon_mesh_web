@@ -65,6 +65,78 @@ type ScoredOffer = OfferRecord & {
     label: "Best Match" | "Fastest" | "Best Value" | "Cheapest" | "Selected";
 };
 
+type ViewerLocation = {
+    latitude?: number;
+    longitude?: number;
+    countryCode?: string;
+    regionCode?: string;
+    city?: string;
+    label: string;
+    source: "ip" | "browser";
+};
+
+const normalizePlace = (value?: string | null) => String(value || "").trim().toLowerCase();
+
+const distanceKm = (
+    fromLat?: number | null,
+    fromLng?: number | null,
+    toLat?: number | null,
+    toLng?: number | null,
+) => {
+    if (![fromLat, fromLng, toLat, toLng].every((value) => typeof value === "number" && Number.isFinite(value))) {
+        return null;
+    }
+
+    const earthRadiusKm = 6371;
+    const toRad = (value: number) => (value * Math.PI) / 180;
+    const dLat = toRad((toLat as number) - (fromLat as number));
+    const dLng = toRad((toLng as number) - (fromLng as number));
+    const lat1 = toRad(fromLat as number);
+    const lat2 = toRad(toLat as number);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+
+    return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+const localRank = (need: NeedRecord, viewer: ViewerLocation | null) => {
+    if (!viewer) return 0;
+
+    let rank = 0;
+    const needCity = normalizePlace(need.city);
+    const viewerCity = normalizePlace(viewer.city);
+    const needState = normalizePlace(need.stateCode);
+    const viewerState = normalizePlace(viewer.regionCode);
+    const needCountry = normalizePlace(need.countryCode);
+    const viewerCountry = normalizePlace(viewer.countryCode);
+
+    if (needCity && viewerCity && needCity === viewerCity) rank += 500;
+    if (needState && viewerState && needState === viewerState) rank += 220;
+    if (needCountry && viewerCountry && needCountry === viewerCountry) rank += 80;
+
+    const km = distanceKm(need.latitude, need.longitude, viewer.latitude, viewer.longitude);
+    if (km !== null) {
+        rank += Math.max(0, 320 - km);
+    }
+
+    if (normalizePlace(need.location).includes(viewerCity) && viewerCity) rank += 120;
+    return rank;
+};
+
+const needDistanceLabel = (need: NeedRecord, viewer: ViewerLocation | null) => {
+    if (!viewer) return "";
+    const km = distanceKm(need.latitude, need.longitude, viewer.latitude, viewer.longitude);
+    if (km !== null) {
+        if (km < 1) return "Under 1 km";
+        return `${km.toFixed(km < 10 ? 1 : 0)} km away`;
+    }
+    if (normalizePlace(need.city) && normalizePlace(need.city) === normalizePlace(viewer.city)) return "Same city";
+    if (normalizePlace(need.stateCode) && normalizePlace(need.stateCode) === normalizePlace(viewer.regionCode)) return "Same region";
+    if (normalizePlace(need.countryCode) && normalizePlace(need.countryCode) === normalizePlace(viewer.countryCode)) return "Same country";
+    return "";
+};
+
 const parseAmount = (value: string) => {
     const match = value.replace(/,/g, "").match(/\d+(?:\.\d+)?/);
     return match ? Number(match[0]) : Number.POSITIVE_INFINITY;
@@ -116,7 +188,7 @@ function NeedMedia({ src, title, category }: { src?: string | null; title: strin
     if (!src || failed) {
         return (
             <div className="absolute inset-0 overflow-hidden bg-[#0b0b0f] text-white">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(29,191,115,0.28),transparent_32%),radial-gradient(circle_at_85%_20%,rgba(255,255,255,0.14),transparent_28%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.16),transparent_32%),radial-gradient(circle_at_85%_20%,rgba(255,255,255,0.14),transparent_28%)]" />
                 <div className="relative flex h-full flex-col justify-between p-5">
                     <span className="w-fit rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white/70">
                         Need
@@ -164,13 +236,6 @@ function QuoteCard({
         ["Delay refund", offer.delayRefundRule || "Not specified"],
     ];
 
-    const labelColor: Record<string, string> = {
-        "Best Match": "nd-badge-green",
-        "Fastest": "nd-badge-blue",
-        "Best Value": "nd-badge-amber",
-        "Cheapest": "nd-badge-amber",
-        "Selected": "nd-badge-green",
-    };
     return (
         <article className={`rounded-2xl border border-[#e4e5e7] bg-white p-5 shadow-sm ${
             offer.label === "Best Match" || offer.label === "Selected"
@@ -205,8 +270,8 @@ function QuoteCard({
             </div>
 
             {offer.businessNote&&(
-                <div className="mb-4 rounded-lg p-4" style={{background:"#f0fdf4",border:"1px solid #c9f0dd"}}>
-                    <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{color:"#0f8a4a"}}>Business Note</p>
+                <div className="mb-4 rounded-lg p-4" style={{background:"#f6f6f6",border:"1px solid #e4e5e7"}}>
+                    <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{color:"#222325"}}>Business Note</p>
                     <p className="text-sm" style={{color:"#404145"}}>{offer.businessNote}</p>
                 </div>
             )}
@@ -238,7 +303,8 @@ export default function Marketplace() {
     const [selectedNeedId, setSelectedNeedId] = useState<string | null>(null);
     const [offers, setOffers] = useState<OfferRecord[]>([]);
     const [draft, setDraft] = useState<QuoteDraft>(emptyDraft);
-    const [locationStatus, setLocationStatus] = useState("Location not shared yet");
+    const [locationStatus, setLocationStatus] = useState("Finding your area...");
+    const [viewerLocation, setViewerLocation] = useState<ViewerLocation | null>(null);
     const [saving, setSaving] = useState(false);
     const [orderingOfferId, setOrderingOfferId] = useState<string | null>(null);
     const [message, setMessage] = useState("");
@@ -259,16 +325,25 @@ export default function Marketplace() {
     );
     const scoredOffers = useMemo(() => scoreOffers(offers), [offers]);
     const filteredNeeds = useMemo(() => {
-        if (!searchQuery.trim()) return needs;
         const query = searchQuery.toLowerCase();
-        return needs.filter(need => 
-            need.title.toLowerCase().includes(query) || 
-            (need.description && need.description.toLowerCase().includes(query)) ||
-            (need.issue && need.issue.toLowerCase().includes(query)) ||
-            need.category.toLowerCase().includes(query) ||
-            need.location.toLowerCase().includes(query)
-        );
-    }, [needs, searchQuery]);
+        const visibleNeeds = searchQuery.trim()
+            ? needs.filter(need =>
+                need.title.toLowerCase().includes(query) ||
+                (need.description && need.description.toLowerCase().includes(query)) ||
+                (need.issue && need.issue.toLowerCase().includes(query)) ||
+                need.category.toLowerCase().includes(query) ||
+                need.location.toLowerCase().includes(query)
+            )
+            : needs;
+
+        return [...visibleNeeds].sort((a, b) => {
+            const rankDiff = localRank(b, viewerLocation) - localRank(a, viewerLocation);
+            if (rankDiff !== 0) return rankDiff;
+            const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return bDate - aDate;
+        });
+    }, [needs, searchQuery, viewerLocation]);
 
     const visibleOffers = useMemo(() => {
         if (quoteTab === "Cheapest") {
@@ -290,7 +365,7 @@ export default function Marketplace() {
         setLoading(true);
         setMessage("");
         try {
-            const data = await getNeeds();
+            const data = await getNeeds(undefined, undefined, true);
             setNeeds(data);
             const requestedNeedId = new URLSearchParams(window.location.search).get("needId");
             if (requestedNeedId && data.some((need) => need.id === requestedNeedId)) {
@@ -329,22 +404,34 @@ export default function Marketplace() {
         }
     }, [selectedNeedId]);
 
-    const requestLocation = () => {
-        if (!navigator.geolocation) {
-            setLocationStatus("Location is not available in this browser.");
-            return;
-        }
+    const requestLocation = async () => {
+        setLocationStatus("Finding nearby Needs from your IP area...");
+        try {
+            const response = await fetch("https://ipapi.co/json/");
+            if (!response.ok) throw new Error("IP area lookup failed");
+            const data = await response.json();
+            const latitude = Number(data.latitude);
+            const longitude = Number(data.longitude);
+            const cityName = String(data.city || "").trim();
+            const regionCode = String(data.region_code || "").trim();
+            const countryCode = String(data.country_code || "").trim();
+            const label = [cityName, data.region, countryCode].filter(Boolean).join(", ") || "your area";
 
-        setLocationStatus("Checking your area...");
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const lat = position.coords.latitude.toFixed(3);
-                const lng = position.coords.longitude.toFixed(3);
-                setLocationStatus(`Using your area (${lat}, ${lng})`);
-            },
-            () => setLocationStatus("Location was not allowed. You can still browse all Needs."),
-            { enableHighAccuracy: false, timeout: 8000 },
-        );
+            setViewerLocation({
+                latitude: Number.isFinite(latitude) ? latitude : undefined,
+                longitude: Number.isFinite(longitude) ? longitude : undefined,
+                city: cityName,
+                regionCode,
+                countryCode,
+                label,
+                source: "ip",
+            });
+            setLocationStatus(`Nearest first near ${label}`);
+        } catch (error) {
+            console.error("Area detection failed:", error);
+            setViewerLocation(null);
+            setLocationStatus("Area lookup failed. Showing newest Needs first.");
+        }
     };
 
     useEffect(() => {
@@ -352,7 +439,7 @@ export default function Marketplace() {
         const key = "needero-marketplace-location-requested";
         if (window.sessionStorage.getItem(key)) return;
         window.sessionStorage.setItem(key, "1");
-        requestLocation();
+        void requestLocation();
     }, []);
 
     const updateDraft = (key: keyof QuoteDraft, value: string) => {
@@ -460,7 +547,7 @@ export default function Marketplace() {
                                         onChange={e=>setSearchQuery(e.target.value)}
                                         className="min-w-0 flex-1 bg-transparent px-3 text-sm outline-none" style={{color:"#222325"}}/>
                                 </div>
-                                <button onClick={requestLocation} className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#222325] px-5 text-sm font-black text-[#222325] transition hover:bg-[#222325] hover:text-white">
+                                <button onClick={() => void requestLocation()} className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#222325] px-5 text-sm font-black text-[#222325] transition hover:bg-[#222325] hover:text-white">
                                     <Navigation size={14}/> My Area
                                 </button>
                             </div>
@@ -515,7 +602,9 @@ export default function Marketplace() {
                         </div>
                     ):(
                         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {filteredNeeds.map(need=>(
+                            {filteredNeeds.map((need) => {
+                                const localLabel = needDistanceLabel(need, viewerLocation);
+                                return (
                                 <article key={need.id}
                                     className={`overflow-hidden rounded-xl border border-[#e4e5e7] bg-white shadow-sm transition hover:shadow-xl ${
                                         selectedNeedId===need.id?"ring-2 ring-[#222325]":""
@@ -533,6 +622,9 @@ export default function Marketplace() {
                                     <div className="p-4">
                                         <div className="mb-3 flex items-center gap-2">
                                             <span className="rounded bg-[#f5f5f5] px-2.5 py-1 text-[11px] font-bold text-[#62646a]">{need.category}</span>
+                                            {localLabel && (
+                                                <span className="rounded bg-[#222325] px-2.5 py-1 text-[11px] font-bold text-white">{localLabel}</span>
+                                            )}
                                             <span className="ml-auto text-xs font-semibold text-[#74767e]">{need.offers||0} quotes</span>
                                         </div>
                                         <div className="mb-3 flex items-center gap-2">
@@ -552,7 +644,8 @@ export default function Marketplace() {
                                         </div>
                                     </div>
                                 </article>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>
@@ -729,8 +822,8 @@ export default function Marketplace() {
 
                                 {hasSubmittedQuote&&(
                                     <div className="px-6 pb-8">
-                                        <div className="rounded-2xl p-8 text-center" style={{background:"#f0fdf4",border:"1px solid #c9f0dd"}}>
-                                            <div className="mx-auto h-14 w-14 flex items-center justify-center rounded-full mb-4" style={{background:"#e9f9f0"}}>
+                                        <div className="rounded-2xl p-8 text-center" style={{background:"#f6f6f6",border:"1px solid #e4e5e7"}}>
+                                            <div className="mx-auto h-14 w-14 flex items-center justify-center rounded-full mb-4" style={{background:"#ffffff",border:"1px solid #e4e5e7"}}>
                                                 <CheckCircle2 size={32} style={{color:"#222325"}}/>
                                             </div>
                                             <h3 className="text-lg font-bold mb-2" style={{color:"#404145"}}>Offer Submitted!</h3>

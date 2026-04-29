@@ -32,6 +32,11 @@ type UploadedMedia = {
     name: string;
 };
 
+type DetectedCoords = {
+    latitude: number;
+    longitude: number;
+};
+
 export default function NewCustomerRequestPage() {
     const router = useRouter();
     const { user, profile } = useAuth();
@@ -52,6 +57,7 @@ export default function NewCustomerRequestPage() {
     const [stateCode, setStateCode] = useState(profile?.stateCode || "");
     const [city, setCity] = useState(profile?.city || "");
     const [area, setArea] = useState(profile?.area || "");
+    const [detectedCoords, setDetectedCoords] = useState<DetectedCoords | null>(null);
     const [states, setStates] = useState<any[]>([]);
     const [cities, setCities] = useState<any[]>([]);
 
@@ -65,12 +71,19 @@ export default function NewCustomerRequestPage() {
                 .then(data => {
                     if (data.country_code) {
                         setCountryCode(data.country_code);
+                        if (data.region_code) setStateCode(data.region_code);
                         if (data.city) setCity(data.city);
+                        if (data.city && !area) setArea(data.city);
+                        const latitude = Number(data.latitude);
+                        const longitude = Number(data.longitude);
+                        if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+                            setDetectedCoords({ latitude, longitude });
+                        }
                     }
                 })
                 .catch(() => console.log("Location detection skipped"));
         }
-    }, [profile]);
+    }, [profile?.countryCode]);
 
     // Load states when country changes
     useEffect(() => {
@@ -78,9 +91,8 @@ export default function NewCustomerRequestPage() {
             const countryStates = State.getStatesOfCountry(countryCode);
             setStates(countryStates);
             // If the current stateCode doesn't belong to this country, reset it
-            if (!countryStates.find(s => s.isoCode === stateCode)) {
+            if (stateCode && !countryStates.find(s => s.isoCode === stateCode)) {
                 setStateCode("");
-                setCity("");
             }
         } else {
             setStates([]);
@@ -169,6 +181,8 @@ export default function NewCustomerRequestPage() {
                 stateCode,
                 city,
                 area,
+                latitude: detectedCoords?.latitude ?? null,
+                longitude: detectedCoords?.longitude ?? null,
                 urgency,
                 budget: resolvedBudget,
                 photoPreview: uploadedMedia?.dataUrl || null,

@@ -12,6 +12,12 @@ export type NeedRecord = ServiceRequest & {
     cleanCard?: NeedCard | null;
     budget?: string;
     createdAt?: string;
+    countryCode?: string;
+    stateCode?: string;
+    city?: string;
+    area?: string;
+    latitude?: number | null;
+    longitude?: number | null;
 };
 
 export type OfferRecord = BusinessOffer & {
@@ -139,6 +145,12 @@ const mapNeed = (need: BackendRecord): NeedRecord => {
         customerId: need.customer_id || need.customerId,
         customerName: need.customer_name || need.customerName || "Customer",
         createdAt: need.created_at || need.createdAt,
+        countryCode: need.country_code || need.countryCode || "",
+        stateCode: need.state_code || need.stateCode || "",
+        city: need.city || "",
+        area: need.area || "",
+        latitude: typeof need.latitude === "number" ? need.latitude : need.latitude ? Number(need.latitude) : null,
+        longitude: typeof need.longitude === "number" ? need.longitude : need.longitude ? Number(need.longitude) : null,
         photoPreview,
         cleanCard,
     };
@@ -252,6 +264,12 @@ export async function createNeed(input: {
     description: string;
     category: string;
     location: string;
+    countryCode?: string;
+    stateCode?: string;
+    city?: string;
+    area?: string;
+    latitude?: number | null;
+    longitude?: number | null;
     urgency: string;
     budget: string;
     photoPreview?: string | null;
@@ -267,6 +285,12 @@ export async function createNeed(input: {
             description: input.description,
             category: input.category,
             location: input.location,
+            country_code: input.countryCode || null,
+            state_code: input.stateCode || null,
+            city: input.city || null,
+            area: input.area || null,
+            latitude: input.latitude ?? null,
+            longitude: input.longitude ?? null,
             urgency: input.urgency,
             budget_type: input.budget,
             budget_value: parseCurrencyAmount(input.budget),

@@ -219,7 +219,7 @@ export default function NeedDetailPage() {
 
     const messageQuote = (offer: OfferRecord) => {
         if (!need) return;
-        router.push(`/messages?needId=${encodeURIComponent(need.id)}&quoteId=${encodeURIComponent(offer.id)}&businessId=${encodeURIComponent(offer.businessId)}&businessName=${encodeURIComponent(offer.businessName)}&order=0`);
+        router.push(`/messages?needId=${encodeURIComponent(need.id)}&quoteId=${encodeURIComponent(offer.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName || "Local Business")}&order=0`);
     };
 
     const chooseQuote = async (offer: OfferRecord) => {
@@ -236,7 +236,7 @@ export default function NeedDetailPage() {
                 senderType: "customer",
                 text: `Booking started from this Offer. Need: "${need.title}". Offer price: ${offer.price}.`,
             });
-            router.push(`/pay?needId=${encodeURIComponent(need.id)}&quoteId=${encodeURIComponent(offer.id)}&bookingId=${encodeURIComponent(booking.id)}&businessId=${encodeURIComponent(offer.businessId)}&businessName=${encodeURIComponent(offer.businessName)}`);
+            router.push(`/pay?needId=${encodeURIComponent(need.id)}&quoteId=${encodeURIComponent(offer.id)}&bookingId=${encodeURIComponent(booking.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName || "Local Business")}`);
         } catch (error) {
             setMessage(error instanceof Error ? error.message : "Could not create Booking.");
         } finally {

@@ -172,7 +172,7 @@ export default function ProfilePage() {
 
     // Auto-detection state
     const [showLocationPrompt, setShowLocationPrompt] = useState(false);
-    const [detectedLocation, setDetectedLocation] = useState<{country: string, city: string, currency: string} | null>(null);
+    const [detectedLocation, setDetectedLocation] = useState<{country: string, countryCode: string, city: string, currency: string} | null>(null);
     const [hasPromptedLocation, setHasPromptedLocation] = useState(false);
     const [isChangingCountry, setIsChangingCountry] = useState(false);
 
