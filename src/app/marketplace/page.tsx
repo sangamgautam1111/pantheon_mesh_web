@@ -110,20 +110,31 @@ const scoreOffers = (offers: OfferRecord[]): ScoredOffer[] => {
         .sort((a, b) => b.score - a.score);
 };
 
-function NeedMedia({ src }: { src?: string | null }) {
-    if (!src) {
+function NeedMedia({ src, title, category }: { src?: string | null; title: string; category: string }) {
+    const [failed, setFailed] = useState(false);
+
+    if (!src || failed) {
         return (
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-tr from-slate-200 to-slate-100">
-                <Briefcase size={32} className="text-slate-300" />
+            <div className="absolute inset-0 overflow-hidden bg-[#0b0b0f] text-white">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(29,191,115,0.28),transparent_32%),radial-gradient(circle_at_85%_20%,rgba(255,255,255,0.14),transparent_28%)]" />
+                <div className="relative flex h-full flex-col justify-between p-5">
+                    <span className="w-fit rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white/70">
+                        Need
+                    </span>
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#1dbf73]">{category}</p>
+                        <h3 className="mt-2 line-clamp-2 text-xl font-black leading-tight tracking-[-0.03em]">{title}</h3>
+                    </div>
+                </div>
             </div>
         );
     }
 
     const isVideo = src.startsWith("data:video") || /\.(mp4|webm|mov)$/i.test(src);
     return isVideo ? (
-        <video src={src} controls className="h-full w-full object-cover" />
+        <video src={src} controls className="h-full w-full object-cover" onError={() => setFailed(true)} />
     ) : (
-        <img src={src} alt="" className="h-full w-full object-cover" />
+        <img src={src} alt="" className="h-full w-full object-cover" onError={() => setFailed(true)} />
     );
 }
 
@@ -161,15 +172,15 @@ function QuoteCard({
         "Selected": "nd-badge-green",
     };
     return (
-        <article className={`nd-card p-5 ${
+        <article className={`rounded-2xl border border-[#e4e5e7] bg-white p-5 shadow-sm ${
             offer.label === "Best Match" || offer.label === "Selected"
-                ? "ring-2 ring-[#1DBF73]"
+                ? "ring-2 ring-[#222325]"
                 : ""
         }`}>
             {/* Header */}
             <div className="flex items-start justify-between gap-4 mb-4">
                 <div className="flex items-center gap-3">
-                    <div className="nd-avatar h-9 w-9 text-sm" style={{background:"#1DBF73",color:"#fff"}}>
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-black" style={{background:"#222325",color:"#fff"}}>
                         {(offer.businessName||"B").charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -178,7 +189,7 @@ function QuoteCard({
                     </div>
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                    <span className={`nd-badge ${labelColor[offer.label]||"nd-badge-gray"}`}>{offer.label}</span>
+                    <span className="rounded-full bg-[#222325] px-3 py-1 text-[11px] font-black text-white">{offer.label}</span>
                     <p className="text-lg font-bold" style={{color:"#404145"}}>{offer.price||"Open"}</p>
                 </div>
             </div>
@@ -203,12 +214,12 @@ function QuoteCard({
             {(canOrder||canChat)&&(
                 <div className="flex gap-2">
                     {canChat&&(
-                        <button onClick={onChat} className="nd-btn nd-btn-ghost nd-btn-sm flex-1 rounded-full gap-1.5">
+                        <button onClick={onChat} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[#222325] px-4 py-2 text-sm font-black text-[#222325] transition hover:bg-[#222325] hover:text-white">
                             <MessageSquare size={14}/> Chat
                         </button>
                     )}
                     {canOrder&&(
-                        <button onClick={onOrder} disabled={ordering} className="nd-btn nd-btn-primary nd-btn-sm flex-1 rounded-full gap-1.5">
+                        <button onClick={onOrder} disabled={ordering} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#222325] px-4 py-2 text-sm font-black text-white transition hover:bg-black disabled:opacity-60">
                             {ordering?<Clock size={14} className="animate-spin"/>:<ShoppingBag size={14}/>}
                             Choose Offer
                         </button>
@@ -326,11 +337,23 @@ export default function Marketplace() {
 
         setLocationStatus("Checking your area...");
         navigator.geolocation.getCurrentPosition(
-            () => setLocationStatus("Using your approximate area for better Need recommendations."),
+            (position) => {
+                const lat = position.coords.latitude.toFixed(3);
+                const lng = position.coords.longitude.toFixed(3);
+                setLocationStatus(`Using your area (${lat}, ${lng})`);
+            },
             () => setLocationStatus("Location was not allowed. You can still browse all Needs."),
             { enableHighAccuracy: false, timeout: 8000 },
         );
     };
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const key = "needero-marketplace-location-requested";
+        if (window.sessionStorage.getItem(key)) return;
+        window.sessionStorage.setItem(key, "1");
+        requestLocation();
+    }, []);
 
     const updateDraft = (key: keyof QuoteDraft, value: string) => {
         setDraft((current) => ({ ...current, [key]: value }));
@@ -412,33 +435,38 @@ export default function Marketplace() {
 
     return (
         <RouteGuard allowedTypes={["customer", "business"]}>
-            <main style={{background:"#fafafa",minHeight:"100vh",color:"#404145"}}>
+            <main style={{background:"#fafafa",minHeight:"100vh",color:"#222325"}}>
                 {/* ── HEADER ── */}
                 <div style={{background:"#fff",borderBottom:"1px solid #e4e5e7"}}>
-                    <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6 py-7">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                             <div>
-                                <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{color:"#1DBF73"}}>
+                                <p className="text-xs font-black uppercase tracking-[0.18em] mb-2" style={{color:"#1DBF73"}}>
                                     {isBusiness?"Lead Inbox":"Browse Needs"}
                                 </p>
-                                <h1 className="font-heading text-2xl font-bold" style={{color:"#404145"}}>
+                                <h1 className="font-heading text-3xl font-black tracking-[-0.04em]" style={{color:"#222325"}}>
                                     {isBusiness?"Customer Needs Near You":"Find Local Help"}
                                 </h1>
+                                <div className="mt-3 flex flex-wrap items-center gap-3 text-sm" style={{color:"#74767e"}}>
+                                    <span className="font-semibold">{loading ? "Loading" : `${needs.length} live`} Needs</span>
+                                    <span className="h-1 w-1 rounded-full bg-[#b5b6ba]" />
+                                    <span>{locationStatus}</span>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <div className="relative">
-                                    <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{color:"#74767e"}}/>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                <div className="flex h-11 min-w-[280px] items-center overflow-hidden rounded-full border bg-white" style={{borderColor:"#d7d9dc"}}>
+                                    <Search size={16} className="ml-4 shrink-0" style={{color:"#74767e"}}/>
                                     <input type="text" placeholder="Search needs..." value={searchQuery}
                                         onChange={e=>setSearchQuery(e.target.value)}
-                                        className="nd-input rounded-full pl-9 py-2 text-sm" style={{width:"220px"}}/>
+                                        className="min-w-0 flex-1 bg-transparent px-3 text-sm outline-none" style={{color:"#222325"}}/>
                                 </div>
-                                <button onClick={requestLocation} className="nd-btn nd-btn-ghost nd-btn-sm rounded-full gap-1.5">
+                                <button onClick={requestLocation} className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#222325] px-5 text-sm font-black text-[#222325] transition hover:bg-[#222325] hover:text-white">
                                     <Navigation size={14}/> My Area
                                 </button>
                             </div>
                         </div>
                         {/* Stats */}
-                        <div className="mt-4 flex flex-wrap gap-5">
+                        <div className="hidden">
                             {[{label:"Live Needs",value:loading?"...":String(needs.length)},
                               {label:"Pipeline",value:"Need→Quote→Booking"},
                               {label:isBusiness?"Your action":"Your action",value:isBusiness?"Submit Quotes":"Choose Offer"},
@@ -448,6 +476,16 @@ export default function Marketplace() {
                                     <p className="text-sm font-bold" style={{color:"#404145"}}>{s.value}</p>
                                 </div>
                             ))}
+                        </div>
+                        <div className="mt-6 flex gap-3 overflow-x-auto pb-1">
+                            {["Category", "Service options", "Business details", "Budget", "Urgency"].map((filter) => (
+                                <button key={filter} className="whitespace-nowrap rounded-full border border-[#d7d9dc] bg-white px-5 py-2.5 text-sm font-bold text-[#222325] transition hover:border-[#222325]">
+                                    {filter}
+                                </button>
+                            ))}
+                            <button className="whitespace-nowrap rounded-full bg-[#222325] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-black">
+                                Recommended
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -470,7 +508,7 @@ export default function Marketplace() {
                                 {searchQuery?'Try a different keyword.':'Needs appear here once customers post them.'}
                             </p>
                             {!searchQuery&&(
-                                <button onClick={loadNeeds} className="nd-btn nd-btn-primary rounded-full">
+                                <button onClick={loadNeeds} className="rounded-full bg-[#222325] px-6 py-3 text-sm font-black text-white transition hover:bg-black">
                                     Refresh
                                 </button>
                             )}
@@ -479,31 +517,31 @@ export default function Marketplace() {
                         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                             {filteredNeeds.map(need=>(
                                 <article key={need.id}
-                                    className={`nd-gig-card cursor-pointer ${
-                                        selectedNeedId===need.id?"ring-2 ring-[#1DBF73]":""
+                                    className={`overflow-hidden rounded-xl border border-[#e4e5e7] bg-white shadow-sm transition hover:shadow-xl ${
+                                        selectedNeedId===need.id?"ring-2 ring-[#222325]":""
                                     }`}
                                     onClick={()=>{setSelectedNeedId(need.id);setMessage("");}}
                                 >
                                     <div className="relative w-full overflow-hidden bg-gray-100" style={{aspectRatio:"4/3"}}>
-                                        <NeedMedia src={need.photoPreview}/>
+                                        <NeedMedia src={need.photoPreview} title={need.title} category={need.category} />
                                         {need.urgency==="Immediate"&&(
                                             <span className="absolute top-2 left-2 nd-badge nd-badge-red" style={{fontSize:"10px",padding:"2px 8px"}}>
                                                 <Flame size={10} className="mr-1 fill-current" /> Urgent
                                             </span>
                                         )}
                                     </div>
-                                    <div className="nd-gig-body">
-                                        <div className="nd-seller-row">
-                                            <span className="nd-badge nd-badge-gray" style={{fontSize:"11px"}}>{need.category}</span>
-                                            <span className="nd-seller-level ml-auto">{need.offers||0} quotes</span>
+                                    <div className="p-4">
+                                        <div className="mb-3 flex items-center gap-2">
+                                            <span className="rounded bg-[#f5f5f5] px-2.5 py-1 text-[11px] font-bold text-[#62646a]">{need.category}</span>
+                                            <span className="ml-auto text-xs font-semibold text-[#74767e]">{need.offers||0} quotes</span>
                                         </div>
-                                        <h3 className="nd-gig-title">{need.title}</h3>
-                                        <div className="nd-gig-footer">
-                                            <span className="flex items-center gap-1 text-xs" style={{color:"#74767e"}}>
+                                        <h3 className="line-clamp-2 min-h-[48px] text-base font-semibold leading-snug text-[#222325]">{need.title}</h3>
+                                        <div className="mt-4 flex items-end justify-between gap-3 border-t border-[#efeff0] pt-4">
+                                            <span className="flex min-w-0 items-center gap-1 text-xs" style={{color:"#74767e"}}>
                                                 <MapPin size={11}/>{need.location}
                                             </span>
-                                            <div className="nd-price">
-                                                {need.budget?<><strong>{need.budget}</strong></>:<span style={{color:"#74767e",fontSize:"12px",fontStyle:"italic"}}>Open</span>}
+                                            <div className="whitespace-nowrap text-right text-base font-black text-[#222325]">
+                                                {need.budget?<span>{need.budget}</span>:<span style={{color:"#74767e",fontSize:"12px",fontStyle:"italic"}}>Open</span>}
                                             </div>
                                         </div>
                                     </div>
@@ -563,7 +601,11 @@ export default function Marketplace() {
                                     </div>
                                     {selectedNeed.photoPreview&&(
                                         <div className="mt-5 overflow-hidden rounded-xl" style={{border:"1px solid #e4e5e7"}}>
-                                            <NeedMedia src={selectedNeed.photoPreview}/>
+                                            <NeedMedia
+                                                src={selectedNeed.photoPreview}
+                                                title={selectedNeed.title}
+                                                category={selectedNeed.category}
+                                            />
                                         </div>
                                     )}
                                 </div>
@@ -611,9 +653,9 @@ export default function Marketplace() {
                                 {/* Business quote form */}
                                 {isBusiness&&!hasSubmittedQuote&&(
                                     <div className="px-6 pb-8">
-                                        <div className="rounded-2xl p-6" style={{border:"2px solid #1DBF73",background:"#f0fdf4"}}>
+                                        <div className="rounded-2xl p-6" style={{border:"2px solid #222325",background:"#ffffff"}}>
                                             <div className="flex items-center gap-3 mb-6">
-                                                <div className="h-10 w-10 flex items-center justify-center rounded-xl" style={{background:"#1DBF73"}}>
+                                                <div className="h-10 w-10 flex items-center justify-center rounded-xl" style={{background:"#222325"}}>
                                                     <ShieldCheck size={20} color="#fff"/>
                                                 </div>
                                                 <div>
@@ -670,7 +712,7 @@ export default function Marketplace() {
                                                     <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Message to Customer*</label>
                                                     <textarea value={draft.note} onChange={e=>updateDraft("note",e.target.value)} placeholder="Why are you the best fit?" required rows={3} className="nd-input resize-none"/>
                                                 </div>
-                                                <button type="submit" disabled={saving} className="nd-btn nd-btn-primary w-full rounded-xl py-3.5 text-base">
+                                                <button type="submit" disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#222325] py-3.5 text-base font-black text-white transition hover:bg-black disabled:opacity-60">
                                                     {saving?<Clock size={18} className="animate-spin"/>:<Send size={18}/>}
                                                     Submit Offer to Customer
                                                 </button>

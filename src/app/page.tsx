@@ -236,21 +236,14 @@ function PreviewNeedCard({ item }: { item: (typeof PREVIEW_NEEDS)[number] }) {
 
 export default function Home() {
     const router = useRouter();
-    const { accountType, user, loading } = useAuth();
+    const { accountType } = useAuth();
     const [needs, setNeeds] = useState<NeedRecord[]>([]);
     const [feedMode, setFeedMode] = useState<"live" | "preview">("preview");
     const [searchInput, setSearchInput] = useState("");
     const liveNeeds = useMemo(() => needs.slice(0, 6), [needs]);
 
     useEffect(() => {
-        if (!loading && !user) {
-            router.replace("/login");
-        }
-    }, [loading, router, user]);
-
-    useEffect(() => {
         const loadNeeds = async () => {
-            if (!user) return;
             try {
                 const data = await getNeeds();
                 setNeeds(data);
@@ -263,23 +256,12 @@ export default function Home() {
         };
 
         void loadNeeds();
-    }, [user]);
+    }, []);
 
     const runSearch = () => {
         const query = searchInput.trim();
         router.push(query ? `/marketplace?q=${encodeURIComponent(query)}` : "/marketplace");
     };
-
-    if (loading || !user) {
-        return (
-            <main className="flex min-h-screen items-center justify-center bg-[#f7faf8] px-4 text-[#222325]">
-                <div className="rounded-[30px] border border-[#e4e5e7] bg-white p-8 text-center shadow-xl">
-                    <p className="text-sm font-black uppercase tracking-[0.24em] text-[#95979d]">Needero</p>
-                    <h1 className="mt-3 text-3xl font-black">Redirecting to login...</h1>
-                </div>
-            </main>
-        );
-    }
 
     return (
         <main className="bg-[#f7faf8] text-[#222325]">

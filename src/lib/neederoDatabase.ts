@@ -74,11 +74,11 @@ const normalizeStatus = (value: unknown): NeedStatus => {
 };
 
 const formatBudget = (need: BackendRecord) => {
+    if (typeof need.budget_type === "string" && need.budget_type.trim()) return need.budget_type;
     if (typeof need.budget === "string" && need.budget.trim()) return need.budget;
     if (typeof need.budget_value === "number" && need.budget_value > 0) {
-        return `$ ${need.budget_value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+        return `$${need.budget_value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
     }
-    if (typeof need.budget_type === "string" && need.budget_type.trim()) return need.budget_type;
     return "No budget yet";
 };
 

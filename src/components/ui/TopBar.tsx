@@ -137,6 +137,13 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
         router.push(result.href);
     };
 
+    const runGlobalSearch = () => {
+        const query = searchQuery.trim();
+        setSearchOpen(false);
+        setSelectedIndex(-1);
+        router.push(query ? `/marketplace?q=${encodeURIComponent(query)}` : "/marketplace");
+    };
+
     const handleKeyDown = (event: React.KeyboardEvent) => {
         if (event.key === "ArrowDown") {
             event.preventDefault();
@@ -147,6 +154,9 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
         } else if (event.key === "Enter" && selectedIndex >= 0 && searchResults[selectedIndex]) {
             event.preventDefault();
             handleSelect(searchResults[selectedIndex]);
+        } else if (event.key === "Enter") {
+            event.preventDefault();
+            runGlobalSearch();
         } else if (event.key === "Escape") {
             setSearchOpen(false);
             setSearchQuery("");
@@ -237,55 +247,50 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
             {/* Center: Search bar */}
             <div className="desktop-only relative mx-6 flex-1 max-w-2xl" ref={containerRef}>
                 <div
-                    className="flex cursor-text items-center gap-2 rounded-full border px-4 py-2 transition-all"
+                    className="flex cursor-text items-center overflow-hidden rounded-full border transition-all"
                     style={{
-                        background: searchOpen ? "#ffffff" : "#f5f5f5",
-                        borderColor: searchOpen ? "var(--ndgreen)" : "#e4e5e7",
-                        boxShadow: searchOpen ? "0 0 0 3px rgba(29,191,115,0.12)" : "none",
+                        background: "#ffffff",
+                        borderColor: searchOpen ? "#222325" : "#e4e5e7",
+                        boxShadow: searchOpen ? "0 0 0 3px rgba(34,35,37,0.08)" : "none",
                     }}
                     onClick={() => {
                         setSearchOpen(true);
                         setTimeout(() => inputRef.current?.focus(), 50);
                     }}
                 >
-                    <Search size={16} style={{ color: searchOpen ? "var(--ndgreen)" : "var(--text-disabled)", flexShrink: 0 }} />
-                    {searchOpen ? (
-                        <input
-                            ref={inputRef}
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => handleSearchInput(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            className="flex-1 bg-transparent text-sm outline-none"
-                            style={{ color: "var(--text-primary)" }}
-                            placeholder="Search needs, categories, businesses..."
-                            autoFocus
-                        />
-                    ) : (
-                        <span className="flex-1 text-sm" style={{ color: "var(--text-disabled)" }}>
-                            Search needs, categories, businesses...
-                        </span>
-                    )}
+                    <Search size={17} className="ml-4 flex-shrink-0" style={{ color: "#74767e" }} />
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        value={searchQuery}
+                        onFocus={() => setSearchOpen(true)}
+                        onChange={(e) => handleSearchInput(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        className="h-11 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none"
+                        style={{ color: "var(--text-primary)" }}
+                        placeholder="Search needs, categories, businesses..."
+                    />
                     {searchOpen && searchQuery && (
                         <button
                             onClick={(e) => { e.stopPropagation(); setSearchQuery(""); setSearchResults([]); inputRef.current?.focus(); }}
-                            className="rounded-full p-0.5 hover:bg-gray-100"
+                            className="mr-2 rounded-full p-1 hover:bg-gray-100"
                         >
                             <X size={14} style={{ color: "var(--text-disabled)" }} />
                         </button>
                     )}
                     {searchLoading && (
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-transparent" style={{ borderTopColor: "var(--ndgreen)" }} />
+                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-transparent" style={{ borderTopColor: "#222325" }} />
                     )}
-                    {!searchOpen && (
-                        <button
-                            className="nd-btn nd-btn-primary nd-btn-sm rounded-full ml-1 text-xs px-3 py-1"
-                            style={{ borderRadius: "50px" }}
-                            onClick={(e) => { e.stopPropagation(); setSearchOpen(true); }}
-                        >
-                            Search
-                        </button>
-                    )}
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            runGlobalSearch();
+                        }}
+                        className="h-11 bg-[#222325] px-5 text-sm font-bold text-white transition hover:bg-black"
+                    >
+                        Search
+                    </button>
                 </div>
 
                 {searchOpen && (searchResults.length > 0 || searchQuery.length > 0) && (
