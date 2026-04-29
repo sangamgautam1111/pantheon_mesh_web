@@ -640,18 +640,31 @@ export async function updateThreadMessage(input: {
     senderId: string;
     text: string;
 }) {
-    const response = await fetch(`${API_URL}/v1/messages/${encodeURIComponent(input.messageId)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            sender_id: input.senderId,
-            content: input.text,
-        }),
+    const payload = JSON.stringify({
+        sender_id: input.senderId,
+        content: input.text,
     });
-    if (!response.ok) {
-        throw new Error(await readError(response, "Needero could not edit this message right now."));
+    const headers = { "Content-Type": "application/json" };
+
+    const response = await fetch(`${API_URL}/v1/messages/${encodeURIComponent(input.messageId)}/edit`, {
+        method: "POST",
+        headers,
+        body: payload,
+    });
+    if (response.ok) {
+        return await response.json();
     }
-    return await response.json();
+
+    const postError = await readError(response, "Needero could not edit this message right now.");
+    const patchResponse = await fetch(`${API_URL}/v1/messages/${encodeURIComponent(input.messageId)}`, {
+        method: "PATCH",
+        headers,
+        body: payload,
+    });
+    if (!patchResponse.ok) {
+        throw new Error(await readError(patchResponse, postError));
+    }
+    return await patchResponse.json();
 }
 
 export async function deleteThreadMessage(input: {

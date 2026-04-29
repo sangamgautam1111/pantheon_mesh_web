@@ -214,13 +214,33 @@ export default function MessagesPage() {
         setSaving(true);
         setStatus("");
         try {
-            if (editingMessageId) {
+            const activeEditMessageId = editingMessageId;
+            if (activeEditMessageId) {
+                const editedText = text.trim();
                 await updateThreadMessage({
-                    messageId: editingMessageId,
+                    messageId: activeEditMessageId,
                     senderId: user.uid,
-                    text: text.trim(),
+                    text: editedText,
                 });
+                setMessages((current) =>
+                    current.map((message) =>
+                        message.id === activeEditMessageId
+                            ? { ...message, text: editedText }
+                            : message,
+                    ),
+                );
+                setThreads((current) =>
+                    current.map((thread) =>
+                        thread.needId === orderContext.needId && (thread.quoteId || "") === (orderContext.quoteId || "")
+                            ? { ...thread, lastMessage: editedText }
+                            : thread,
+                    ),
+                );
                 setEditingMessageId(null);
+                setText("");
+                setAttachments([]);
+                setMapLocation(null);
+                await loadThreads();
             } else {
                 await sendThreadMessage({
                     needId: orderContext.needId,
@@ -234,11 +254,11 @@ export default function MessagesPage() {
                     attachments,
                     mapLocation,
                 });
+                setText("");
+                setAttachments([]);
+                setMapLocation(null);
+                await Promise.all([loadMessages(), loadThreads()]);
             }
-            setText("");
-            setAttachments([]);
-            setMapLocation(null);
-            await Promise.all([loadMessages(), loadThreads()]);
         } catch (error) {
             setStatus(error instanceof Error ? error.message : "Could not send message.");
         } finally {
