@@ -40,7 +40,7 @@ export default function Dashboard() {
                         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                             <div className="max-w-3xl">
                                 <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">
-                                    Needaro local business dashboard
+                                    Needero local business dashboard
                                 </p>
                                 <h1 className="mt-4 text-4xl font-black leading-tight tracking-tight md:text-6xl">
                                     Your Local Leads Pipeline.

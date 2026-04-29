@@ -94,7 +94,7 @@ export default function RequestCenterPage() {
                     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#1DBF73" }}>
+                                <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#222325" }}>
                                     {isBusiness ? "Lead Inbox" : "My Orders"}
                                 </p>
                                 <h1 className="font-heading text-3xl font-bold" style={{ color: "#404145" }}>
@@ -138,7 +138,7 @@ export default function RequestCenterPage() {
                                         className="h-9 w-9 rounded-xl flex items-center justify-center"
                                         style={{ background: "#e9f9f0" }}
                                     >
-                                        <s.icon size={16} style={{ color: "#1DBF73" }} />
+                                        <s.icon size={16} style={{ color: "#222325" }} />
                                     </div>
                                     <div>
                                         <p className="text-xl font-bold leading-none" style={{ color: "#404145" }}>{s.value}</p>
@@ -162,9 +162,9 @@ export default function RequestCenterPage() {
                                         onClick={() => setStatusFilter(f.key)}
                                         className="nd-chip flex-shrink-0 text-sm"
                                         style={statusFilter === f.key ? {
-                                            background: "#1DBF73",
+                                            background: "#222325",
                                             color: "#ffffff",
-                                            borderColor: "#1DBF73",
+                                            borderColor: "#222325",
                                         } : {}}
                                     >
                                         {f.label}

@@ -4,7 +4,7 @@ import { ArrowRight, Building2, MapPin, ShieldCheck, Sparkles } from "lucide-rea
 const SECTIONS = [
     {
         title: "Core idea",
-        text: "Customers post a local problem once. Needaro AI cleans it into a quote card. Nearby businesses send offers. The customer chooses the best offer by price, distance, speed, warranty, and trust.",
+        text: "Customers post a local problem once. Needero cleans it into a quote card. Nearby businesses send offers. The customer chooses the best offer by price, distance, speed, warranty, and trust.",
     },
     {
         title: "First market",
@@ -29,7 +29,7 @@ export default function WhitepaperPage() {
                         Whitepaper v1
                     </p>
                     <h1 className="mt-4 max-w-4xl text-4xl font-black leading-tight tracking-tight md:text-6xl">
-                        Needaro AI: a reverse marketplace for local service quotes.
+                        Needero: a local service and product quote marketplace.
                     </h1>
                     <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
                         The internet has many directories. Customers do not want directories. They want outcomes:
@@ -65,15 +65,15 @@ export default function WhitepaperPage() {
                     <h2 className="text-3xl font-black">Final positioning</h2>
                     <div className="mt-5 grid gap-4 md:grid-cols-3">
                         <div className="rounded-3xl bg-white/10 p-5">
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-200">Customers</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Customers</p>
                             <p className="mt-3 text-sm font-semibold leading-6">Post your problem. Get prices from nearby businesses. Choose the best offer.</p>
                         </div>
                         <div className="rounded-3xl bg-white/10 p-5">
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-200">Businesses</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Businesses</p>
                             <p className="mt-3 text-sm font-semibold leading-6">Get nearby customers who already need your service.</p>
                         </div>
                         <div className="rounded-3xl bg-white/10 p-5">
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-200">Founder</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Founder</p>
                             <p className="mt-3 text-sm font-semibold leading-6">One category. One city. One painful problem. Validate manually first.</p>
                         </div>
                     </div>

@@ -239,7 +239,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                         />
                     </div>
                     <span className="hidden sm:block font-heading font-extrabold text-xl tracking-tight" style={{ color: "var(--text-primary)" }}>
-                        Need<span style={{ color: "var(--ndgreen)" }}>ero</span>
+                        Need<span style={{ color: "var(--text-primary)" }}>ero</span>
                     </span>
                 </Link>
             </div>
@@ -368,23 +368,23 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
 
                 {/* Nav links desktop */}
                 <nav className="desktop-only flex items-center gap-1 mr-3">
-                    <Link href="/marketplace" className="px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-green-600"
+                    <Link href="/marketplace" className="px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-black"
                         style={{ color: "var(--text-secondary)" }}>
                         Browse Needs
                     </Link>
                     {profile?.accountType === "customer" && (
-                        <Link href="/client/new" className="px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-green-600"
+                        <Link href="/client/new" className="px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-black"
                             style={{ color: "var(--text-secondary)" }}>
                             Post a Need
                         </Link>
                     )}
                     {profile?.accountType === "business" && (
-                        <Link href="/pricing" className="px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-green-600"
+                        <Link href="/pricing" className="px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-black"
                             style={{ color: "var(--text-secondary)" }}>
                             Plans
                         </Link>
                     )}
-                    <Link href="/messages" className="px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-green-600"
+                    <Link href="/messages" className="px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-black"
                         style={{ color: "var(--text-secondary)" }}>
                         Messages
                     </Link>
@@ -396,7 +396,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                     className="desktop-only nd-btn nd-btn-ghost nd-btn-sm rounded-full gap-1.5 mr-1"
                     title="AI Assistant"
                 >
-                    <Sparkles size={14} style={{ color: "var(--ndgreen)" }} />
+                    <Sparkles size={14} style={{ color: "var(--text-primary)" }} />
                     <span className="text-xs font-semibold">AI Help</span>
                 </button>
 

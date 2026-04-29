@@ -83,7 +83,7 @@ function ProgressCard({
                 {items.map((item) => (
                     <div key={item.label} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 p-4">
                         <div className="flex items-center gap-3">
-                            <CheckCircle2 size={18} className={item.done ? "text-emerald-600" : "text-slate-300"} />
+                            <CheckCircle2 size={18} className={item.done ? "text-slate-950" : "text-slate-300"} />
                             <p className="text-sm font-bold">{item.label}</p>
                         </div>
                         <span className="text-xs font-black text-slate-400">+{item.weight}%</span>
@@ -237,17 +237,41 @@ export default function ProfilePage() {
         }
     }, [editForm.countryCode, editForm.stateCode]);
 
-    // Handle photo upload with FileReader for permanent Base64 storage
+    const resizeProfilePhoto = (file: File) =>
+        new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = () => reject(new Error("Could not read image."));
+            reader.onload = () => {
+                const image = new Image();
+                image.onerror = () => reject(new Error("Could not load image."));
+                image.onload = () => {
+                    const maxSize = 384;
+                    const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+                    const width = Math.max(1, Math.round(image.width * scale));
+                    const height = Math.max(1, Math.round(image.height * scale));
+                    const canvas = document.createElement("canvas");
+                    canvas.width = width;
+                    canvas.height = height;
+                    const context = canvas.getContext("2d");
+                    if (!context) {
+                        reject(new Error("Could not prepare image."));
+                        return;
+                    }
+                    context.drawImage(image, 0, 0, width, height);
+                    resolve(canvas.toDataURL("image/jpeg", 0.82));
+                };
+                image.src = String(reader.result || "");
+            };
+            reader.readAsDataURL(file);
+        });
+
+    // Handle photo upload as a compressed data URL so refreshes do not restore broken Firebase Auth photo values.
     const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                if (typeof reader.result === "string") {
-                    setEditForm(prev => ({ ...prev, photoURL: reader.result as string }));
-                }
-            };
-            reader.readAsDataURL(file);
+            void resizeProfilePhoto(file)
+                .then((photoURL) => setEditForm(prev => ({ ...prev, photoURL })))
+                .catch(() => alert("Could not process this image. Please try another photo."));
         }
     };
 
@@ -381,7 +405,7 @@ export default function ProfilePage() {
                                 className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-4 text-sm font-black text-white"
                             >
                                 {isBusiness ? <Briefcase size={17} /> : <MessageSquare size={17} />}
-                                {isBusiness ? "Open Lead Pipeline" : "Post a Need"}
+                                {isBusiness ? "Browse Needs" : "Post a Need"}
                             </Link>
                         </div>
                     </section>
@@ -762,7 +786,7 @@ export default function ProfilePage() {
                                             />
                                         </div>
                                         {editForm.deliveryCoords && (
-                                            <p className="mt-2 text-[10px] font-bold text-emerald-600">
+                                            <p className="mt-2 text-[10px] font-bold text-slate-950">
                                                 Coordinates saved: {editForm.deliveryCoords.lat.toFixed(6)}, {editForm.deliveryCoords.lng.toFixed(6)}
                                             </p>
                                         )}
@@ -773,7 +797,7 @@ export default function ProfilePage() {
                                     onClick={handleSave}
                                     disabled={isSaving || saveSuccess}
                                     className={`mt-6 w-full rounded-xl px-4 py-4 font-bold text-white transition-all ${
-                                        saveSuccess ? "bg-emerald-600" : "bg-slate-950 hover:bg-slate-800"
+                                        saveSuccess ? "bg-slate-700" : "bg-slate-950 hover:bg-slate-800"
                                     } disabled:bg-slate-400`}
                                 >
                                     {isSaving ? "Saving..." : saveSuccess ? "Profile Updated!" : "Save Profile"}

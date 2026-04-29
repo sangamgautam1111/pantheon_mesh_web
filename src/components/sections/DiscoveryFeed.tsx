@@ -28,7 +28,7 @@ export const DiscoveryFeed = () => {
         <section className="py-8 max-w-5xl">
             <div className="flex items-center gap-2 mb-4">
                 <Sparkles size={16} className="text-gcp-yellow-dark" />
-                <h2 className="text-base font-heading font-medium text-gcp-text">Needaro Activity</h2>
+                <h2 className="text-base font-heading font-medium text-gcp-text">Needero Activity</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

@@ -13,12 +13,12 @@ export default function ManifestoPage() {
     return (
         <main className="min-h-screen bg-[#f8f7f2] p-6 text-slate-950 md:p-10">
             <div className="mx-auto max-w-5xl rounded-[34px] border border-slate-200 bg-white p-7 shadow-xl md:p-10">
-                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Needaro manifesto</p>
+                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Needero manifesto</p>
                 <h1 className="mt-4 text-4xl font-black leading-tight tracking-tight md:text-6xl">
                     Customers do not want directories. They want exact offers.
                 </h1>
                 <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
-                    Needaro turns local search into action. A customer posts one problem, AI makes it clear,
+                    Needero turns local search into action. A customer posts one problem, AI makes it clear,
                     nearby businesses compete, and the customer chooses the best offer.
                 </p>
                 <div className="mt-8 space-y-3">

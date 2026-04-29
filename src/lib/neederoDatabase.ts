@@ -231,6 +231,20 @@ export async function getNeeds(customerId?: string, category?: string, includeMe
     return Array.isArray(data.needs) ? data.needs.map(mapNeed) : [];
 }
 
+export async function getNeedById(needId: string, includeMedia = true): Promise<NeedRecord | null> {
+    const params = new URLSearchParams();
+    params.append("need_id", needId);
+    if (includeMedia) params.append("include_media", "true");
+
+    const response = await fetch(`${API_URL}/v1/needs?${params.toString()}`, { cache: "no-store" });
+    if (!response.ok) {
+        throw new Error(await readError(response, "Needero could not load this Need right now."));
+    }
+    const data = await response.json();
+    const needs = Array.isArray(data.needs) ? data.needs.map(mapNeed) : [];
+    return needs[0] || null;
+}
+
 export async function createNeed(input: {
     customerId: string;
     customerName: string;

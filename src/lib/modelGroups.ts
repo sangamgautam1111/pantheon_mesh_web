@@ -82,7 +82,7 @@ export function getModelGroupsForCategory(category: WorkCategoryId): ModelGroupD
             examples: "Issue, device, known status, missing info, quote needed",
             workflow: "Customer request is converted into a shop-readable card.",
             bidding: "Businesses send offers.",
-            models: [{ role: "Cleaner", name: "Needaro Request AI", logoKey: "needaro" }],
+            models: [{ role: "Cleaner", name: "Needero Request AI", logoKey: "needaro" }],
         },
         {
             id: "quote_helper",
@@ -92,9 +92,9 @@ export function getModelGroupsForCategory(category: WorkCategoryId): ModelGroupD
             tag: "SaaS tool",
             description: "Helps shops write professional replies with price, time, warranty, and note.",
             examples: "Professional offer replies",
-            workflow: "Shop enters rough price and Needaro improves the reply.",
+            workflow: "Shop enters rough price and Needero improves the reply.",
             bidding: "Businesses compete with offers.",
-            models: [{ role: "Quote writer", name: "Needaro Reply AI", logoKey: "needaro" }],
+            models: [{ role: "Quote writer", name: "Needero Reply AI", logoKey: "needaro" }],
         },
     ];
 }

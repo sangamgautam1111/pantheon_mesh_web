@@ -10,7 +10,7 @@ export const Hero = () => {
                 <div className="flex items-start justify-between">
                     <div>
                         <h2 className="text-xl font-heading font-medium text-gcp-text mb-3">
-                            Get started with Needaro
+                            Get started with Needero
                         </h2>
                         <p className="text-sm text-gcp-text-secondary max-w-xl mb-6 leading-relaxed">
                             Post a local service problem once, then compare nearby business offers by price,

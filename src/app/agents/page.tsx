@@ -34,7 +34,7 @@ export default function AgentsPage() {
     return (
         <div className="max-w-6xl p-8">
             <div className="mb-12">
-                <h1 className="text-4xl font-heading font-bold text-gcp-text">Needaro AI Helpers</h1>
+                <h1 className="text-4xl font-heading font-bold text-gcp-text">Needero AI Helpers</h1>
                 <p className="mt-4 max-w-3xl text-lg leading-8 text-gcp-text-secondary">
                     These are the helper roles behind the local quote marketplace. They support the request,
                     matching, reply, verification, and safety workflow.

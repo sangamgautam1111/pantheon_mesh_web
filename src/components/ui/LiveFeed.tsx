@@ -16,7 +16,7 @@ interface FeedEvent {
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const WS_URL = API_BASE.replace(/^http/, "ws") + "/ws/stream";
 
-const MOCK_AGENTS = ["Customer Request", "New Road Mobile Care", "Kalanki Phone Fix", "Needaro Matcher", "Quote Helper"];
+const MOCK_AGENTS = ["Customer Request", "New Road Mobile Care", "Kalanki Phone Fix", "Needero Matcher", "Quote Helper"];
 
 export const LiveFeed = () => {
     const [events, setEvents] = useState<FeedEvent[]>([]);

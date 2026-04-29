@@ -103,6 +103,9 @@ const clearPendingAccountType = () => {
     }
 };
 
+const isSafeExternalPhotoUrl = (value?: string | null) =>
+    typeof value === "string" && /^https?:\/\//i.test(value) && value.length < 2048;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -215,7 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             uid: firebaseUser.uid,
             email: firebaseUser.email || existing.email || null,
             displayName,
-            photoURL: firebaseUser.photoURL || existing.photoURL || null,
+            photoURL: existing.photoURL || firebaseUser.photoURL || null,
             accountType: resolvedAccountType,
             createdAt: existing.createdAt || Date.now(),
             companyName,
@@ -438,7 +441,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         }
 
-        if (updates.photoURL !== undefined && updates.photoURL !== user.photoURL) {
+        if (
+            updates.photoURL !== undefined &&
+            updates.photoURL !== user.photoURL &&
+            isSafeExternalPhotoUrl(updates.photoURL)
+        ) {
             try {
                 await updateProfile(user, { photoURL: updates.photoURL || "" });
             } catch (error) {

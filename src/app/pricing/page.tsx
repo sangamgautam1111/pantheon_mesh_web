@@ -138,7 +138,7 @@ export default function PricingPage() {
                                     <li key={i} className="flex items-start gap-3">
                                         <Check
                                             size={20}
-                                            className="text-green-500 flex-shrink-0 mt-0.5"
+                                            className="text-slate-950 flex-shrink-0 mt-0.5"
                                         />
                                         <span className="text-sm text-[var(--text-primary)]">
                                             {feature}

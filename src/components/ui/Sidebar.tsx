@@ -73,7 +73,7 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                             <Image src={logoImg} alt="Needero" width={32} height={32} className="h-full w-full object-cover rounded-lg" />
                         </div>
                         <span className="font-heading font-extrabold text-xl tracking-tight" style={{ color: "#404145" }}>
-                            Need<span style={{ color: "#1DBF73" }}>ero</span>
+                            Need<span style={{ color: "#404145" }}>ero</span>
                         </span>
                     </Link>
                     <button onClick={onClose} className="rounded-full p-1.5 transition-colors hover:bg-gray-100" style={{ color: "#74767e" }}>
@@ -93,18 +93,18 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                                 onClick={onClose}
                                 className="flex items-center gap-3 rounded-lg px-3 py-3 mb-1 text-sm font-medium transition-all"
                                 style={{
-                                    background: active ? "#e9f9f0" : "transparent",
-                                    color: active ? "#1DBF73" : "#404145",
+                                    background: active ? "#f5f5f5" : "transparent",
+                                    color: active ? "#111827" : "#404145",
                                     fontWeight: active ? 600 : 500,
                                 }}
                             >
                                 <item.icon
                                     size={18}
-                                    style={{ color: active ? "#1DBF73" : "#74767e", flexShrink: 0 }}
+                                    style={{ color: active ? "#111827" : "#74767e", flexShrink: 0 }}
                                 />
                                 {item.label}
                                 {active && (
-                                    <div className="ml-auto h-2 w-2 rounded-full" style={{ background: "#1DBF73" }} />
+                                    <div className="ml-auto h-2 w-2 rounded-full" style={{ background: "#111827" }} />
                                 )}
                             </Link>
                         );

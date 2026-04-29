@@ -24,8 +24,11 @@ import {
     PenLine,
     Search,
     ShieldCheck,
+    ShoppingBag,
+    Sparkles,
     Star,
     Store,
+    Truck,
     Video,
     Wrench,
     Zap,
@@ -49,18 +52,18 @@ type IconInfoCard = {
 };
 
 const CATEGORY_CARDS: CategoryCard[] = [
-    { label: "Graphics & Design", icon: Palette, href: "/marketplace?q=graphics%20design" },
-    { label: "Digital Marketing", icon: Megaphone, href: "/marketplace?q=digital%20marketing" },
-    { label: "Writing & Translation", icon: PenLine, href: "/marketplace?q=writing%20translation" },
-    { label: "Video & Animation", icon: Video, href: "/marketplace?q=video%20animation" },
-    { label: "Music & Audio", icon: Headphones, href: "/marketplace?q=music%20audio" },
-    { label: "Programming & Tech", icon: Code2, href: "/marketplace?q=programming%20tech" },
-    { label: "Home Services", icon: HomeIcon, href: "/marketplace?q=home%20services" },
-    { label: "Repair & Maintenance", icon: Wrench, href: "/marketplace?q=repair%20maintenance" },
-    { label: "Consulting", icon: Briefcase, href: "/marketplace?q=consulting" },
-    { label: "Personal Growth", icon: GraduationCap, href: "/marketplace?q=personal%20growth" },
-    { label: "Photography", icon: Camera, href: "/marketplace?q=photography" },
-    { label: "Finance", icon: DollarSign, href: "/marketplace?q=finance" },
+    { label: "Phone & Electronics", icon: Code2, href: "/marketplace?q=phone%20electronics" },
+    { label: "Food & Groceries", icon: Store, href: "/marketplace?q=food%20groceries" },
+    { label: "Home Cleaning", icon: HomeIcon, href: "/marketplace?q=home%20cleaning" },
+    { label: "Plumbing", icon: Wrench, href: "/marketplace?q=plumbing" },
+    { label: "Electrician", icon: Zap, href: "/marketplace?q=electrician" },
+    { label: "Appliance Repair", icon: Briefcase, href: "/marketplace?q=appliance%20repair" },
+    { label: "Printing & Design", icon: Palette, href: "/marketplace?q=printing%20design" },
+    { label: "Delivery & Moving", icon: Truck, href: "/marketplace?q=delivery%20moving" },
+    { label: "Auto & Bike Repair", icon: Clock, href: "/marketplace?q=auto%20bike%20repair" },
+    { label: "Beauty & Grooming", icon: Sparkles, href: "/marketplace?q=beauty%20grooming" },
+    { label: "Hardware Products", icon: Store, href: "/marketplace?q=hardware%20products" },
+    { label: "Local Products", icon: ShoppingBag, href: "/marketplace?q=local%20products" },
 ];
 
 const SERVICE_TILES = [
@@ -146,7 +149,7 @@ const FOOTER_COLUMNS = [
         title: "For Businesses",
         links: [
             "Join as a Business",
-            "Lead Pipeline",
+            "Need Inbox",
             "Quote Tools",
             "Business Profile",
             "Analytics",
@@ -192,7 +195,7 @@ function LiveNeedCard({ need }: { need: NeedRecord }) {
                     {need.offers || 0} Offers
                 </span>
             </div>
-            <h3 className="line-clamp-2 min-h-[52px] text-lg font-bold leading-snug text-[#222325] group-hover:text-[#1dbf73]">
+            <h3 className="line-clamp-2 min-h-[52px] text-lg font-bold leading-snug text-[#222325] group-hover:text-black">
                 {need.title}
             </h3>
             <p className="mt-3 line-clamp-2 text-sm leading-6 text-[#74767e]">{need.issue}</p>
@@ -210,7 +213,7 @@ function LiveNeedCard({ need }: { need: NeedRecord }) {
 function PreviewNeedCard({ item }: { item: (typeof PREVIEW_NEEDS)[number] }) {
     return (
         <article className="rounded-[24px] border border-[#e4e5e7] bg-white p-5 shadow-sm">
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#1dbf73]">{item.category}</p>
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#222325]">{item.category}</p>
             <h3 className="mt-3 text-lg font-bold leading-snug text-[#222325]">{item.title}</h3>
             <div className="mt-5 grid grid-cols-3 gap-2">
                 <div className="rounded-2xl bg-[#f7f7f7] p-3">
@@ -280,8 +283,8 @@ export default function Home() {
 
                 <div className="relative mx-auto grid min-h-[680px] max-w-7xl items-center gap-10 px-5 py-16 md:px-8 lg:grid-cols-[1fr_440px]">
                     <div className="max-w-4xl">
-                        <p className="text-sm font-black uppercase tracking-[0.24em] text-[#1dbf73]">
-                            Reverse local marketplace
+                            <p className="text-sm font-black uppercase tracking-[0.24em] text-white/70">
+                            Needero local marketplace
                         </p>
                         <h1 className="mt-7 max-w-4xl text-5xl font-black leading-[0.95] tracking-[-0.055em] text-white md:text-7xl">
                             Post a Need. Get local Offers.
@@ -303,7 +306,7 @@ export default function Home() {
                             />
                             <button
                                 onClick={runSearch}
-                                className="h-14 rounded-[14px] bg-[#1dbf73] px-7 text-sm font-black text-white transition hover:bg-[#18a864]"
+                                className="h-14 rounded-[14px] bg-[#222325] px-7 text-sm font-black text-white transition hover:bg-black"
                             >
                                 Search
                             </button>
@@ -325,7 +328,7 @@ export default function Home() {
                         <div className="mt-10 flex flex-wrap gap-5 text-sm font-semibold text-white/70">
                             {["Free for customers", "Structured Offers", "Contact protected", "Local businesses"].map((item) => (
                                 <span key={item} className="inline-flex items-center gap-2">
-                                    <CheckCircle2 size={17} className="text-[#1dbf73]" />
+                                    <CheckCircle2 size={17} className="text-white" />
                                     {item}
                                 </span>
                             ))}
@@ -335,7 +338,7 @@ export default function Home() {
                     <aside className="hidden rounded-[30px] border border-white/15 bg-white/95 p-5 shadow-2xl backdrop-blur lg:block">
                         <div className="flex items-center justify-between">
                             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#95979d]">Offer preview</p>
-                            <span className="rounded-full bg-[#e9f9f0] px-3 py-1 text-xs font-black text-[#0f8a4a]">Best Match</span>
+                            <span className="rounded-full bg-[#222325] px-3 py-1 text-xs font-black text-white">Best Match</span>
                         </div>
                         <div className="mt-5 rounded-[24px] bg-[#f7f7f7] p-5">
                             <p className="text-lg font-black">Urgent phone repair</p>
@@ -359,7 +362,7 @@ export default function Home() {
                                     <p className="font-black">Ram Mobile Repair</p>
                                     <p className="mt-1 text-sm text-[#74767e]">Verified - 4.8 rating - 1.2 km away</p>
                                 </div>
-                                <BadgeCheck className="text-[#1dbf73]" size={22} />
+                                <BadgeCheck className="text-[#222325]" size={22} />
                             </div>
                             <div className="mt-4 rounded-2xl bg-[#050816] p-4 text-white">
                                 <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Quote</p>
@@ -375,7 +378,7 @@ export default function Home() {
                 <div className="mx-auto grid max-w-7xl gap-4 px-5 py-6 md:grid-cols-4 md:px-8">
                     {TRUST_ITEMS.map((item) => (
                         <div key={item.title} className="flex items-start gap-3 rounded-2xl bg-[#f7faf8] p-4">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e9f9f0] text-[#1dbf73]">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f5f5f5] text-[#222325]">
                                 <item.icon size={20} />
                             </div>
                             <div>
@@ -387,14 +390,14 @@ export default function Home() {
                 </div>
             </section>
 
-            <section className="bg-white px-5 py-12 md:px-8">
+            <section className="bg-[#050816] px-5 py-12 text-white md:px-8">
                 <div className="mx-auto max-w-7xl">
                     <div className="mb-5 flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-bold text-[#62646a]">Service catalog</p>
+                            <p className="text-sm font-bold text-white/55">Service catalog</p>
                             <h2 className="mt-1 text-3xl font-black tracking-[-0.04em]">Local services at your fingertips</h2>
                         </div>
-                        <Link href="/marketplace" className="hidden items-center gap-2 text-sm font-black text-[#1dbf73] md:inline-flex">
+                        <Link href="/marketplace" className="hidden items-center gap-2 rounded-full border border-white/30 px-5 py-2 text-sm font-black text-white transition hover:bg-white hover:text-[#050816] md:inline-flex">
                             Browse marketplace
                             <ArrowRight size={16} />
                         </Link>
@@ -404,11 +407,11 @@ export default function Home() {
                             <Link
                                 key={item.label}
                                 href={item.href}
-                                className="group min-h-[145px] rounded-[22px] border border-[#e4e5e7] bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl"
+                                className="group min-h-[145px] rounded-[22px] border border-white/10 bg-white/8 p-5 shadow-sm transition-all hover:-translate-y-1 hover:bg-white hover:text-[#050816] hover:shadow-xl"
                             >
-                                <item.icon size={25} className="text-[#222325]" />
-                                <p className="mt-8 text-base font-black leading-snug group-hover:text-[#1dbf73]">{item.label}</p>
-                                <ArrowRight className="mt-4 text-[#95979d] transition group-hover:translate-x-1 group-hover:text-[#1dbf73]" size={18} />
+                                <item.icon size={25} />
+                                <p className="mt-8 text-base font-black leading-snug">{item.label}</p>
+                                <ArrowRight className="mt-4 text-white/45 transition group-hover:translate-x-1 group-hover:text-[#050816]" size={18} />
                             </Link>
                         ))}
                     </div>
@@ -419,7 +422,7 @@ export default function Home() {
                 <div className="mx-auto max-w-7xl">
                     <div className="mb-5 flex items-center justify-between">
                         <h2 className="text-3xl font-black tracking-[-0.04em]">Popular Need types</h2>
-                        <Link href="/client/new" className="rounded-xl bg-[#050816] px-5 py-3 text-sm font-black text-white transition hover:bg-[#1dbf73]">
+                        <Link href="/client/new" className="rounded-xl bg-[#050816] px-5 py-3 text-sm font-black text-white transition hover:bg-black">
                             Post a Need
                         </Link>
                     </div>
@@ -456,7 +459,7 @@ export default function Home() {
                 <div className="mx-auto max-w-7xl">
                     <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                         <div>
-                            <p className="text-sm font-black uppercase tracking-[0.2em] text-[#1dbf73]">
+                            <p className="text-sm font-black uppercase tracking-[0.2em] text-[#222325]">
                                 {feedMode === "live" ? "Live marketplace" : "Marketplace preview"}
                             </p>
                             <h2 className="mt-2 text-4xl font-black tracking-[-0.05em]">See local demand in action</h2>
@@ -481,12 +484,12 @@ export default function Home() {
             <section className="px-5 py-16 md:px-8">
                 <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[34px] border border-[#dfe8e3] bg-[#082c1d] shadow-2xl lg:grid-cols-[0.9fr_1.1fr]">
                     <div className="p-8 text-white md:p-12">
-                        <p className="text-sm font-black uppercase tracking-[0.22em] text-[#18c878]">For local businesses</p>
+                        <p className="text-sm font-black uppercase tracking-[0.22em] text-white/60">For local businesses</p>
                         <h2 className="mt-5 text-4xl font-black leading-tight tracking-[-0.05em] md:text-5xl">
                             Get nearby customers who already need your service.
                         </h2>
                         <p className="mt-5 max-w-xl text-lg leading-8 text-white/70">
-                            Needero gives businesses a lead pipeline, structured quote tools, profile trust, analytics, and subscription growth without needing a full website.
+                            Needero gives businesses a Need inbox, structured quote tools, profile trust, analytics, and subscription growth without needing a full website.
                         </p>
                         <div className="mt-8 flex flex-wrap gap-3">
                             <Link href="/login?role=business" className="rounded-xl bg-white px-6 py-4 text-sm font-black text-[#082c1d] transition hover:bg-[#e9f9f0]">
@@ -500,7 +503,7 @@ export default function Home() {
                     <div className="grid gap-3 bg-white/5 p-8 md:grid-cols-2 md:p-12">
                         {BUSINESS_ITEMS.map((item) => (
                             <div key={item.title} className="rounded-[24px] border border-white/10 bg-white/10 p-5 text-white">
-                                <item.icon size={22} className="text-[#18c878]" />
+                                <item.icon size={22} className="text-white" />
                                 <p className="mt-5 font-black">{item.title}</p>
                                 <p className="mt-2 text-sm leading-6 text-white/62">{item.copy}</p>
                             </div>
@@ -516,7 +519,7 @@ export default function Home() {
                         Post a Need for free and let nearby businesses compete with clear, structured Offers.
                     </p>
                     <div className="mt-8 flex flex-wrap justify-center gap-3">
-                        <Link href={accountType === "business" ? "/marketplace" : "/client/new"} className="rounded-xl bg-[#1dbf73] px-7 py-4 text-sm font-black text-white transition hover:bg-[#18a864]">
+                        <Link href={accountType === "business" ? "/marketplace" : "/client/new"} className="rounded-xl bg-white px-7 py-4 text-sm font-black text-[#050816] transition hover:bg-[#f5f5f5]">
                             {accountType === "business" ? "Browse Needs" : "Post a Need"}
                         </Link>
                         <Link href="/marketplace" className="rounded-xl border border-white/20 px-7 py-4 text-sm font-black text-white transition hover:bg-white/10">
@@ -534,7 +537,7 @@ export default function Home() {
                                 <h3 className="font-black">{column.title}</h3>
                                 <div className="mt-5 space-y-3">
                                     {column.links.map((link) => (
-                                        <a key={link} className="block cursor-pointer text-sm font-medium text-[#62646a] transition hover:text-[#1dbf73]">
+                                        <a key={link} className="block cursor-pointer text-sm font-medium text-[#62646a] transition hover:text-[#222325]">
                                             {link}
                                         </a>
                                     ))}
@@ -544,7 +547,7 @@ export default function Home() {
                     </div>
                     <div className="mt-12 flex flex-col gap-4 border-t border-[#e4e5e7] pt-8 md:flex-row md:items-center md:justify-between">
                         <p className="text-3xl font-black tracking-[-0.06em]">
-                            Need<span className="text-[#1dbf73]">ero</span>
+                            Need<span className="text-[#222325]">ero</span>
                         </p>
                         <p className="text-sm font-semibold text-[#74767e]">Needero Local Marketplace Ltd. 2026</p>
                     </div>

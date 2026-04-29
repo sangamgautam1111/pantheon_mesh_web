@@ -6,27 +6,27 @@
 
 /* ════════════════════════════════════════════════
    NEEDERO — Fiverr-inspired Design System
-   Clean white, signature green, professional feel
+   Clean white, black premium marketplace feel
    ════════════════════════════════════════════════ */
 :root {
     /* Brand Colors */
-    --ndgreen: #1DBF73;
-    --ndgreen-hover: #19a463;
-    --ndgreen-light: #e9f9f0;
-    --ndgreen-mid: #c9f0dd;
+    --ndgreen: #222325;
+    --ndgreen-hover: #000000;
+    --ndgreen-light: #f5f5f5;
+    --ndgreen-mid: #dadbdd;
 
     /* Backgrounds */
     --bg-primary: #ffffff;
     --bg-surface: #ffffff;
     --bg-surface-variant: #f9fafb;
     --bg-hover: #f1f5f9;
-    --bg-active: #e9f9f0;
+    --bg-active: #f5f5f5;
 
     /* TopBar */
     --topbar-bg: #ffffff;
     --sidebar-bg: #ffffff;
     --sidebar-hover: #f7f7f7;
-    --sidebar-active: rgba(29, 191, 115, 0.08);
+    --sidebar-active: rgba(34, 35, 37, 0.08);
 
     /* Borders */
     --border-color: #e4e5e7;
@@ -36,18 +36,18 @@
     --text-primary: #404145;
     --text-secondary: #74767e;
     --text-disabled: #b5b6ba;
-    --text-link: #1DBF73;
+    --text-link: #222325;
 
     /* Legacy color mapping (keep compat with existing pages) */
-    --gcp-blue: #1DBF73;
-    --gcp-blue-hover: #19a463;
-    --gcp-green: #1DBF73;
-    --gcp-green-dark: #19a463;
+    --gcp-blue: #222325;
+    --gcp-blue-hover: #000000;
+    --gcp-green: #222325;
+    --gcp-green-dark: #000000;
     --gcp-yellow: #ffbe57;
     --gcp-yellow-dark: #e5a800;
     --gcp-red: #e63946;
     --gcp-red-dark: #c1121f;
-    --gcp-cyan: #1DBF73;
+    --gcp-cyan: #222325;
 
     /* Cards */
     --card-bg: #ffffff;
@@ -56,16 +56,16 @@
     --card-shadow-hover: 0 8px 24px rgba(0,0,0,0.10);
 
     /* Buttons */
-    --btn-primary-bg: #1DBF73;
+    --btn-primary-bg: #222325;
     --btn-primary-text: #ffffff;
-    --btn-primary-hover: #19a463;
+    --btn-primary-hover: #000000;
     --btn-secondary-bg: #ffffff;
     --btn-secondary-text: #404145;
 
     /* Inputs */
     --input-bg: #ffffff;
     --input-border: #dadbdd;
-    --input-focus: #1DBF73;
+    --input-focus: #222325;
 
     /* Overlay */
     --overlay-bg: rgba(0, 0, 0, 0.55);
@@ -97,7 +97,7 @@
     --text-primary: #e6edf3;
     --text-secondary: #8b949e;
     --text-disabled: #484f58;
-    --text-link: #1DBF73;
+    --text-link: #222325;
 
     --card-bg: #161a1e;
     --card-border: #21262d;
@@ -274,7 +274,7 @@ body {
     background: var(--ndgreen);
     color: #ffffff;
 }
-.nd-btn-primary:hover { background: var(--ndgreen-hover); box-shadow: 0 2px 8px rgba(29,191,115,0.35); }
+.nd-btn-primary:hover { background: var(--ndgreen-hover); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 
 .nd-btn-secondary {
     background: transparent;
@@ -314,7 +314,7 @@ body {
 }
 .nd-input:focus {
     border-color: var(--ndgreen);
-    box-shadow: 0 0 0 3px rgba(29,191,115,0.15);
+    box-shadow: 0 0 0 3px rgba(34,35,37,0.12);
 }
 .nd-input::placeholder { color: var(--text-disabled); }
 
@@ -333,7 +333,7 @@ body {
 }
 .nd-select:focus {
     border-color: var(--ndgreen);
-    box-shadow: 0 0 0 3px rgba(29,191,115,0.15);
+    box-shadow: 0 0 0 3px rgba(34,35,37,0.12);
 }
 
 /* --- Badges / Tags --- */
@@ -347,7 +347,7 @@ body {
     font-weight: 600;
     white-space: nowrap;
 }
-.nd-badge-green  { background: var(--ndgreen-light); color: #0f8a4a; }
+.nd-badge-green  { background: var(--ndgreen-light); color: #222325; }
 .nd-badge-gray   { background: #f5f5f5; color: var(--text-secondary); }
 .nd-badge-amber  { background: #fff8e6; color: #92630a; }
 .nd-badge-blue   { background: #e8f0fe; color: #1a56db; }
@@ -499,7 +499,7 @@ body {
     cursor: pointer;
     transition: background 0.15s, box-shadow 0.15s;
 }
-.gcp-btn-primary:hover { background: var(--ndgreen-hover); box-shadow: 0 2px 8px rgba(29,191,115,0.3); }
+.gcp-btn-primary:hover { background: var(--ndgreen-hover); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 .gcp-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .gcp-btn-text {
@@ -539,7 +539,7 @@ body {
 }
 .gcp-input:focus {
     border-color: var(--ndgreen);
-    box-shadow: 0 0 0 3px rgba(29,191,115,0.15);
+    box-shadow: 0 0 0 3px rgba(34,35,37,0.12);
 }
 .gcp-input::placeholder { color: var(--text-disabled); }
 
