@@ -36,6 +36,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { NeedRecord, getNeeds } from "@/lib/neederoDatabase";
+import { localRank, needDistanceLabel, ViewerLocation } from "@/lib/location";
 
 const HERO_SUGGESTIONS = ["Phone repair", "House cleaning", "Plumber", "Logo design", "Laptop repair"];
 
@@ -184,13 +185,21 @@ const FOOTER_COLUMNS = [
     },
 ];
 
-function LiveNeedCard({ need }: { need: NeedRecord }) {
+function LiveNeedCard({ need, viewer }: { need: NeedRecord; viewer: ViewerLocation | null }) {
+    const localLabel = needDistanceLabel(need, viewer);
     return (
         <article className="group rounded-[24px] border border-[#e4e5e7] bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl">
             <div className="mb-5 flex items-center justify-between gap-3">
-                <span className="rounded-full bg-[#f5f5f5] px-3 py-1 text-[11px] font-bold text-[#62646a]">
-                    {need.category}
-                </span>
+                <div className="flex gap-2">
+                    <span className="rounded-full bg-[#f5f5f5] px-3 py-1 text-[11px] font-bold text-[#62646a]">
+                        {need.category}
+                    </span>
+                    {localLabel && (
+                        <span className="rounded-full bg-[#222325] px-3 py-1 text-[11px] font-bold text-white">
+                            {localLabel}
+                        </span>
+                    )}
+                </div>
                 <span className="rounded-full bg-[#e9f9f0] px-3 py-1 text-[11px] font-bold text-[#0f8a4a]">
                     {need.offers || 0} Offers
                 </span>
@@ -243,7 +252,17 @@ export default function Home() {
     const [needs, setNeeds] = useState<NeedRecord[]>([]);
     const [feedMode, setFeedMode] = useState<"live" | "preview">("preview");
     const [searchInput, setSearchInput] = useState("");
-    const liveNeeds = useMemo(() => needs.slice(0, 6), [needs]);
+    const [viewerLocation, setViewerLocation] = useState<ViewerLocation | null>(null);
+
+    const liveNeeds = useMemo(() => {
+        return [...needs].sort((a, b) => {
+            const rankDiff = localRank(b, viewerLocation) - localRank(a, viewerLocation);
+            if (rankDiff !== 0) return rankDiff;
+            const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return bDate - aDate;
+        }).slice(0, 6);
+    }, [needs, viewerLocation]);
 
     useEffect(() => {
         const loadNeeds = async () => {
@@ -258,7 +277,27 @@ export default function Home() {
             }
         };
 
+        const requestLocation = async () => {
+            try {
+                const response = await fetch("https://ipapi.co/json/");
+                if (!response.ok) throw new Error("IP area lookup failed");
+                const data = await response.json();
+                setViewerLocation({
+                    latitude: Number(data.latitude),
+                    longitude: Number(data.longitude),
+                    city: data.city,
+                    regionCode: data.region_code,
+                    countryCode: data.country_code,
+                    label: [data.city, data.region, data.country_code].filter(Boolean).join(", "),
+                    source: "ip",
+                });
+            } catch (error) {
+                console.warn("Location detection failed:", error);
+            }
+        };
+
         void loadNeeds();
+        void requestLocation();
     }, []);
 
     const runSearch = () => {
@@ -289,7 +328,7 @@ export default function Home() {
                         <h1 className="mt-7 max-w-4xl text-5xl font-black leading-[0.95] tracking-[-0.055em] text-white md:text-7xl">
                             Post a Need. Get local Offers.
                         </h1>
-                        <p className="mt-6 max-w-2xl text-lg leading-8 text-white">
+                        <p className="mt-6 max-w-2xl text-lg leading-8 text-white" style={{ color: "white" }}>
                             Needero lets nearby businesses compete with price, time, warranty, and service type so you choose the best one safely.
                         </p>
 
@@ -475,7 +514,7 @@ export default function Home() {
 
                     <div className="grid gap-5 md:grid-cols-3">
                         {feedMode === "live" && liveNeeds.length > 0
-                            ? liveNeeds.slice(0, 3).map((need) => <LiveNeedCard key={need.id} need={need} />)
+                            ? liveNeeds.slice(0, 3).map((need) => <LiveNeedCard key={need.id} need={need} viewer={viewerLocation} />)
                             : PREVIEW_NEEDS.map((item) => <PreviewNeedCard key={item.title} item={item} />)}
                     </div>
                 </div>
