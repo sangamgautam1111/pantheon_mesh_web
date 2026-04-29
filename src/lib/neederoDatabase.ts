@@ -69,6 +69,15 @@ export type MessageThread = {
     messageCount: number;
 };
 
+export type SiteNotification = {
+    id: string;
+    type: "message" | "offer" | "booking" | string;
+    title: string;
+    body: string;
+    href: string;
+    createdAt?: string | null;
+};
+
 const readError = async (response: Response, fallback: string) => {
     const text = await response.text().catch(() => "");
     if (!text) return fallback;
@@ -556,6 +565,24 @@ export async function getMessageThreads(userId: string): Promise<MessageThread[]
         : [];
 }
 
+export async function getNotifications(userId: string): Promise<SiteNotification[]> {
+    const response = await fetch(`${API_URL}/v1/notifications?user_id=${encodeURIComponent(userId)}`, { cache: "no-store" });
+    if (!response.ok) {
+        throw new Error(await readError(response, "Needero could not load notifications right now."));
+    }
+    const data = await response.json();
+    return Array.isArray(data.notifications)
+        ? data.notifications.map((notification: BackendRecord) => ({
+              id: String(notification.id || crypto.randomUUID()),
+              type: String(notification.type || "message"),
+              title: String(notification.title || "Needero update"),
+              body: String(notification.body || ""),
+              href: String(notification.href || "/messages"),
+              createdAt: notification.created_at || notification.createdAt || null,
+          }))
+        : [];
+}
+
 export async function sendThreadMessage(input: {
     needId: string;
     quoteId?: string;
@@ -587,6 +614,39 @@ export async function sendThreadMessage(input: {
     });
     if (!response.ok) {
         throw new Error(await readError(response, "Needero could not send this message right now."));
+    }
+    return await response.json();
+}
+
+export async function updateThreadMessage(input: {
+    messageId: string;
+    senderId: string;
+    text: string;
+}) {
+    const response = await fetch(`${API_URL}/v1/messages/${encodeURIComponent(input.messageId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            sender_id: input.senderId,
+            content: input.text,
+        }),
+    });
+    if (!response.ok) {
+        throw new Error(await readError(response, "Needero could not edit this message right now."));
+    }
+    return await response.json();
+}
+
+export async function deleteThreadMessage(input: {
+    messageId: string;
+    senderId: string;
+}) {
+    const response = await fetch(
+        `${API_URL}/v1/messages/${encodeURIComponent(input.messageId)}?sender_id=${encodeURIComponent(input.senderId)}`,
+        { method: "DELETE" },
+    );
+    if (!response.ok) {
+        throw new Error(await readError(response, "Needero could not delete this message right now."));
     }
     return await response.json();
 }

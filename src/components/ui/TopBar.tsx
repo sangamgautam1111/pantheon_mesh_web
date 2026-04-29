@@ -23,6 +23,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useGuide } from "@/context/GuideProvider";
 import { useAuth } from "@/context/AuthContext";
+import { SiteNotification, getNotifications } from "@/lib/neederoDatabase";
 import logoImg from "@/app/logo.png";
 
 const API = "/api/needero";
@@ -61,6 +62,8 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+    const [notifications, setNotifications] = useState<SiteNotification[]>([]);
+    const [dismissedNotificationIds, setDismissedNotificationIds] = useState<string[]>([]);
     const [searchLoading, setSearchLoading] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(-1);
     const [scrolled, setScrolled] = useState(false);
@@ -78,6 +81,42 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
+
+    useEffect(() => {
+        if (!user?.uid) {
+            setNotifications([]);
+            setDismissedNotificationIds([]);
+            return;
+        }
+
+        const storageKey = `needero-dismissed-notifications:${user.uid}`;
+        try {
+            const stored = window.localStorage.getItem(storageKey);
+            setDismissedNotificationIds(stored ? JSON.parse(stored) : []);
+        } catch {
+            setDismissedNotificationIds([]);
+        }
+
+        const loadNotifications = async () => {
+            try {
+                setNotifications(await getNotifications(user.uid));
+            } catch (error) {
+                console.error("Needero notifications failed:", error);
+            }
+        };
+
+        void loadNotifications();
+        const interval = setInterval(loadNotifications, 8000);
+        return () => clearInterval(interval);
+    }, [user?.uid]);
+
+    useEffect(() => {
+        if (!user?.uid) return;
+        window.localStorage.setItem(
+            `needero-dismissed-notifications:${user.uid}`,
+            JSON.stringify(dismissedNotificationIds),
+        );
+    }, [dismissedNotificationIds, user?.uid]);
 
     const STATIC_PAGES: SearchResult[] = [
         { type: "page", label: "Local Business Marketplace", href: "/marketplace" },
@@ -208,6 +247,14 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
     const accountHomeHref = profile?.accountType === "customer" ? "/client" : "/marketplace";
     const accountDisplayName = profile?.displayName || (profile?.accountType === "customer" ? "Customer" : "Business");
     const initials = (accountDisplayName || "U").charAt(0).toUpperCase();
+    const visibleNotifications = notifications.filter((notification) => !dismissedNotificationIds.includes(notification.id));
+    const notificationCount = visibleNotifications.length;
+    const formatNotificationTime = (value?: string | null) => {
+        if (!value) return "";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "";
+        return date.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    };
 
     return (
         <header
@@ -408,7 +455,11 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                     style={{ color: "var(--text-secondary)" }}
                 >
                     <Bell size={18} />
-                    <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500 border-2 border-white" />
+                    {notificationCount > 0 && (
+                        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-black leading-none text-white">
+                            {notificationCount > 9 ? "9+" : notificationCount}
+                        </span>
+                    )}
                 </button>
 
                 {/* User menu */}
@@ -519,18 +570,46 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                         <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "var(--border-subtle)" }}>
                             <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Notifications</span>
                             <button
-                                onClick={() => setShowNotifications(false)}
+                                onClick={() => setDismissedNotificationIds((current) => [
+                                    ...new Set([...current, ...visibleNotifications.map((notification) => notification.id)]),
+                                ])}
                                 className="text-xs font-medium hover:underline"
-                                style={{ color: "var(--ndgreen)" }}
+                                style={{ color: "var(--text-primary)" }}
                             >
                                 Clear all
                             </button>
                         </div>
-                        <div className="p-8 text-center">
-                            <Bell size={32} className="mx-auto mb-3 opacity-20" />
-                            <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>No new notifications</p>
-                            <p className="mt-1 text-xs" style={{ color: "var(--text-disabled)" }}>Your Needero workspace is up to date.</p>
-                        </div>
+                        {visibleNotifications.length === 0 ? (
+                            <div className="p-8 text-center">
+                                <Bell size={32} className="mx-auto mb-3 opacity-20" />
+                                <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>No new notifications</p>
+                                <p className="mt-1 text-xs" style={{ color: "var(--text-disabled)" }}>Your Needero workspace is up to date.</p>
+                            </div>
+                        ) : (
+                            <div className="max-h-96 overflow-y-auto p-2">
+                                {visibleNotifications.map((notification) => (
+                                    <button
+                                        key={notification.id}
+                                        onClick={() => {
+                                            setShowNotifications(false);
+                                            router.push(notification.href || "/messages");
+                                        }}
+                                        className="flex w-full gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-gray-50"
+                                    >
+                                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#222325] text-white">
+                                            {notification.type === "message" ? <MessageSquare size={15} /> : notification.type === "offer" ? <Store size={15} /> : <Briefcase size={15} />}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <p className="truncate text-sm font-black" style={{ color: "var(--text-primary)" }}>{notification.title}</p>
+                                                <span className="shrink-0 text-[10px]" style={{ color: "var(--text-disabled)" }}>{formatNotificationTime(notification.createdAt)}</span>
+                                            </div>
+                                            <p className="mt-1 line-clamp-2 text-xs leading-5" style={{ color: "var(--text-secondary)" }}>{notification.body}</p>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
 

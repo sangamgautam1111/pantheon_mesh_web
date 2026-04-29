@@ -1,16 +1,18 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
-import { Image as ImageIcon, Loader2, MapPin, Paperclip, Search, Send, ShoppingBag } from "lucide-react";
+import { Edit3, Image as ImageIcon, Loader2, MapPin, Paperclip, Search, Send, ShoppingBag, Trash2, X } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import {
     MessageAttachment,
     MessageThread,
     ThreadMessage,
+    deleteThreadMessage,
     getMessageThreads,
     getMessages,
     sendThreadMessage,
+    updateThreadMessage,
 } from "@/lib/neederoDatabase";
 
 type OrderContext = {
@@ -57,6 +59,8 @@ export default function MessagesPage() {
     const [status, setStatus] = useState("");
     const [query, setQuery] = useState("");
     const [orderContext, setOrderContext] = useState<OrderContext>(emptyContext);
+    const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+    const showOrderPanel = accountType === "customer";
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -85,13 +89,13 @@ export default function MessagesPage() {
             businessId: orderContext.businessId || undefined,
             businessName: orderContext.businessName || "Local Business",
             customerName: profile?.displayName || "Customer",
-            otherName: orderContext.businessName || "Local Business",
+            otherName: accountType === "business" ? "Customer" : orderContext.businessName || "Local Business",
             otherAvatar: null,
             lastMessage: "No messages yet",
             lastMessageAt: null,
             messageCount: 0,
         } satisfies MessageThread;
-    }, [orderContext, profile?.displayName, threads]);
+    }, [accountType, orderContext, profile?.displayName, threads]);
 
     const filteredThreads = useMemo(() => {
         const needle = query.trim().toLowerCase();
@@ -198,18 +202,27 @@ export default function MessagesPage() {
         setSaving(true);
         setStatus("");
         try {
-            await sendThreadMessage({
-                needId: orderContext.needId,
-                quoteId: orderContext.quoteId || undefined,
-                bookingId: orderContext.bookingId || undefined,
-                senderId: user.uid,
-                senderName: profile?.displayName || profile?.email || formatSender(accountType),
-                senderType: accountType,
-                senderAvatar: profile?.photoURL || null,
-                text: text.trim(),
-                attachments,
-                mapLocation,
-            });
+            if (editingMessageId) {
+                await updateThreadMessage({
+                    messageId: editingMessageId,
+                    senderId: user.uid,
+                    text: text.trim(),
+                });
+                setEditingMessageId(null);
+            } else {
+                await sendThreadMessage({
+                    needId: orderContext.needId,
+                    quoteId: orderContext.quoteId || undefined,
+                    bookingId: orderContext.bookingId || undefined,
+                    senderId: user.uid,
+                    senderName: profile?.displayName || profile?.email || formatSender(accountType),
+                    senderType: accountType,
+                    senderAvatar: profile?.photoURL || null,
+                    text: text.trim(),
+                    attachments,
+                    mapLocation,
+                });
+            }
             setText("");
             setAttachments([]);
             setMapLocation(null);
@@ -221,10 +234,38 @@ export default function MessagesPage() {
         }
     };
 
+    const startEditMessage = (message: ThreadMessage) => {
+        setEditingMessageId(message.id);
+        setText(message.text || "");
+        setAttachments([]);
+        setMapLocation(null);
+        setStatus("Editing your message.");
+    };
+
+    const cancelEditMessage = () => {
+        setEditingMessageId(null);
+        setText("");
+        setStatus("");
+    };
+
+    const removeMessage = async (message: ThreadMessage) => {
+        if (!user) return;
+        const confirmed = window.confirm("Delete this message?");
+        if (!confirmed) return;
+        setStatus("");
+        try {
+            await deleteThreadMessage({ messageId: message.id, senderId: user.uid });
+            if (editingMessageId === message.id) cancelEditMessage();
+            await Promise.all([loadMessages(), loadThreads()]);
+        } catch (error) {
+            setStatus(error instanceof Error ? error.message : "Could not delete message.");
+        }
+    };
+
     return (
         <RouteGuard allowedTypes={["customer", "business"]}>
             <main className="min-h-screen bg-[#f5f5f5] text-[#222325]">
-                <div className="mx-auto grid min-h-[calc(100vh-64px)] max-w-[1480px] border-x border-[#e4e5e7] bg-white lg:grid-cols-[330px_1fr_310px]">
+                <div className={`mx-auto grid min-h-[calc(100vh-64px)] max-w-[1480px] border-x border-[#e4e5e7] bg-white ${showOrderPanel ? "lg:grid-cols-[330px_1fr_310px]" : "lg:grid-cols-[330px_1fr]"}`}>
                     <aside className="border-b border-[#e4e5e7] bg-white lg:border-b-0 lg:border-r">
                         <div className="border-b border-[#e4e5e7] p-5">
                             <h1 className="text-2xl font-black">Inbox</h1>
@@ -349,6 +390,27 @@ export default function MessagesPage() {
                                                                 <p className="p-2">{attachment.name}</p>
                                                             </div>
                                                         ))}
+                                                        {mine && (
+                                                            <div className="mt-3 flex justify-end gap-2">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => startEditMessage(message)}
+                                                                    disabled={!message.text}
+                                                                    className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide hover:bg-white/20 disabled:opacity-40"
+                                                                >
+                                                                    <Edit3 size={11} />
+                                                                    Edit
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => void removeMessage(message)}
+                                                                    className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide hover:bg-white/20"
+                                                                >
+                                                                    <Trash2 size={11} />
+                                                                    Delete
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     {mine && (
                                                         <div className="h-9 w-9 overflow-hidden rounded-full bg-[#222325] text-xs font-black text-white">
@@ -367,6 +429,14 @@ export default function MessagesPage() {
 
                                 <form onSubmit={submitMessage} className="border-t border-[#e4e5e7] bg-white p-4">
                                     {status && <p className="mb-3 text-sm font-semibold text-[#62646a]">{status}</p>}
+                                    {editingMessageId && (
+                                        <div className="mb-3 flex items-center justify-between rounded-2xl border border-[#dadbdd] bg-[#f7f7f7] px-4 py-3 text-sm font-bold">
+                                            <span>Editing message</span>
+                                            <button type="button" onClick={cancelEditMessage} className="rounded-full p-1 hover:bg-white">
+                                                <X size={15} />
+                                            </button>
+                                        </div>
+                                    )}
                                     {attachments.length > 0 && (
                                         <div className="mb-3 flex flex-wrap gap-2">
                                             {attachments.map((attachment) => (
@@ -387,11 +457,11 @@ export default function MessagesPage() {
                                         <textarea
                                             value={text}
                                             onChange={(event) => setText(event.target.value)}
-                                            placeholder="Type your message..."
+                                            placeholder={editingMessageId ? "Edit your message..." : "Type your message..."}
                                             className="min-h-[44px] flex-1 resize-none bg-transparent px-2 py-3 text-sm outline-none"
                                         />
                                         <button type="submit" disabled={saving} className="flex h-11 w-11 items-center justify-center rounded-full bg-[#222325] text-white disabled:bg-[#b5b6ba]">
-                                            {saving ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                                            {saving ? <Loader2 size={18} className="animate-spin" /> : editingMessageId ? <Edit3 size={18} /> : <Send size={18} />}
                                         </button>
                                     </div>
                                     <p className="mt-2 flex items-center gap-2 text-xs text-[#95979d]">
@@ -415,6 +485,7 @@ export default function MessagesPage() {
                         )}
                     </section>
 
+                    {showOrderPanel && (
                     <aside className="border-t border-[#e4e5e7] bg-white p-5 lg:border-l lg:border-t-0">
                         <div className="sticky top-20 rounded-3xl border border-[#e4e5e7] bg-white p-5 shadow-sm">
                             <div className="flex items-center gap-3">
@@ -441,12 +512,6 @@ export default function MessagesPage() {
                                     <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#95979d]">Offer</p>
                                     <p className="mt-1 font-bold">{selectedThread?.offerPrice || "Not selected"}</p>
                                 </div>
-                                <div className="rounded-2xl border border-[#e4e5e7] bg-white p-3">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#95979d]">Pipeline</p>
-                                    <p className="mt-1 text-sm font-bold leading-6">
-                                        Quote selected {"->"} Payment hold {"->"} Booked {"->"} In progress {"->"} Solved {"->"} Payment released
-                                    </p>
-                                </div>
                             </div>
                             <button type="button" className="mt-5 w-full rounded-2xl bg-[#222325] px-5 py-4 text-sm font-black text-white">
                                 Pay / Hold Payment
@@ -456,6 +521,7 @@ export default function MessagesPage() {
                             </p>
                         </div>
                     </aside>
+                    )}
                 </div>
             </main>
         </RouteGuard>
