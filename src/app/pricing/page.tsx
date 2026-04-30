@@ -4,7 +4,7 @@ import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import { BarChart3, CheckCircle2, Crown, Eye, MapPin, ShieldCheck, Sprout, Store, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 const PLANS = [
     {
@@ -25,7 +25,7 @@ const PLANS = [
         id: "pro",
         name: "Pro",
         icon: Zap,
-        price: { monthly: 19, annually: 15 },
+        price: { monthly: 19, annually: 180 },
         caption: "For businesses ready to grow",
         popular: true,
         tone: "primary",
@@ -42,7 +42,7 @@ const PLANS = [
         id: "premium",
         name: "Premium",
         icon: Crown,
-        price: { monthly: 49, annually: 39 },
+        price: { monthly: 49, annually: 468 },
         caption: "For maximum growth and visibility",
         tone: "green",
         features: [
@@ -89,7 +89,7 @@ export default function PricingPage() {
     const [error, setError] = useState("");
 
     const activePlanId = profile?.currentPlanId || "free";
-    const billingLabel = useMemo(() => billingCycle === "monthly" ? "month" : "month", [billingCycle]);
+    const billingLabel = billingCycle === "monthly" ? "month" : "year";
 
     const handleSelectPlan = async (planId: string) => {
         if (!user) {
@@ -172,6 +172,7 @@ export default function PricingPage() {
                             const isCurrentPlan = activePlanId === plan.id;
                             const price = plan.price[billingCycle];
                             const isPro = plan.id === "pro";
+                            const monthlyEquivalent = billingCycle === "annually" && price > 0 ? Math.round(price / 12) : 0;
 
                             return (
                                 <article
@@ -203,6 +204,11 @@ export default function PricingPage() {
                                         <span className="text-4xl font-black tracking-[-0.05em] text-[#121a25]">${price}</span>
                                         <span className="pb-1 text-sm font-semibold text-[#94a3b8]">/{billingLabel}</span>
                                     </div>
+                                    {billingCycle === "annually" && monthlyEquivalent > 0 && (
+                                        <p className="mt-1 text-xs font-bold text-[#0a8f45]">
+                                            Equals ${monthlyEquivalent}/month, billed yearly
+                                        </p>
+                                    )}
                                     <p className="mt-3 min-h-10 text-sm leading-6 text-[#64748b]">{plan.caption}</p>
 
                                     <div className="my-6 h-px bg-[#edf2ef]" />
