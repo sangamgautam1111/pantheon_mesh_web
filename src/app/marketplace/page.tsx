@@ -75,6 +75,20 @@ type ScoredOffer = OfferRecord & {
     label: "Best Match" | "Fastest" | "Best Value" | "Cheapest" | "Selected";
 };
 
+function AvatarCircle({ src, name, className }: { src?: string | null; name: string; className: string }) {
+    const [failed, setFailed] = useState(false);
+    const showImage = Boolean(src && !failed);
+
+    return (
+        <div className={`shrink-0 overflow-hidden rounded-full border border-[#dadbdd] bg-white font-black text-[#222325] ${className}`}>
+            {showImage ? (
+                <img src={src || ""} alt={name} className="h-full w-full object-cover" onError={() => setFailed(true)} />
+            ) : (
+                <div className="flex h-full w-full items-center justify-center">{(name || "U").charAt(0).toUpperCase()}</div>
+            )}
+        </div>
+    );
+}
 
 const parseAmount = (value: string) => {
     const match = value.replace(/,/g, "").match(/\d+(?:\.\d+)?/);
@@ -199,13 +213,7 @@ function QuoteCard({
             {/* Header */}
             <div className="flex items-start justify-between gap-4 mb-4">
                 <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-[#dadbdd] bg-white text-sm font-black text-[#222325]">
-                        {offer.businessAvatar ? (
-                            <img src={offer.businessAvatar} alt={offer.businessName} className="h-full w-full object-cover" />
-                        ) : (
-                            (offer.businessName||"B").charAt(0).toUpperCase()
-                        )}
-                    </div>
+                    <AvatarCircle src={offer.businessAvatar} name={offer.businessName || "Business"} className="h-9 w-9 text-sm" />
                     <div>
                         <p className="text-sm font-bold" style={{color:"#404145"}}>{offer.businessName}</p>
                         <p className="text-xs" style={{color:"#74767e"}}>Score: {offer.score}</p>
@@ -423,7 +431,7 @@ export default function Marketplace() {
                 needId: selectedNeedId,
                 businessId: user.uid,
                 businessName: profile?.companyName || profile?.displayName || "Local Business",
-                businessAvatar: profile?.photoURL || null,
+                businessAvatar: profile?.photoURL || user.photoURL || null,
                 price: draft.price,
                 serviceType: draft.serviceType,
                 time: draft.time,
@@ -461,7 +469,7 @@ export default function Marketplace() {
                 senderId: user.uid,
                 senderName: profile?.displayName || profile?.email || (accountType === "business" ? "Business" : "Customer"),
                 senderType: accountType === "business" ? "business" : "customer",
-                senderAvatar: profile?.photoURL || null,
+                senderAvatar: profile?.photoURL || user.photoURL || null,
                 text: accountType === "business" ? businessText : customerText,
             });
         } catch (error) {

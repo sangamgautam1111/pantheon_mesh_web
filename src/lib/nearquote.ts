@@ -24,6 +24,10 @@ export type NeedCard = {
     tags: string[];
     fallback?: boolean;
     model?: string;
+    customerAvatar?: string | null;
+    serviceMode?: string;
+    preferredTime?: string;
+    warrantyImportant?: string;
 };
 
 export type ServiceRequest = {
@@ -39,6 +43,7 @@ export type ServiceRequest = {
     firstOfferTime: string;
     customerId?: string;
     customerName?: string;
+    customerAvatar?: string | null;
     createdAt?: number;
     photoPreview?: string | null;
 };
@@ -56,6 +61,9 @@ export type BusinessOffer = {
 };
 
 export const NEED_CATEGORIES = [
+    "Food & grocery",
+    "Local products",
+    "Electronics & accessories",
     "Repair & maintenance",
     "Home services",
     "Beauty & wellness",

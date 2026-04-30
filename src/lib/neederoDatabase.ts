@@ -169,13 +169,19 @@ export const normalizeNeedCard = (raw: unknown, messyText = "", category = "Othe
         tags: Array.isArray(data.tags) ? data.tags.map(String) : [resolvedCategory],
         fallback: Boolean(data.fallback),
         model: typeof data.model === "string" ? data.model : undefined,
+        customerAvatar: typeof data.customerAvatar === "string" ? data.customerAvatar : typeof data.customer_avatar === "string" ? data.customer_avatar : null,
+        serviceMode: typeof data.serviceMode === "string" ? data.serviceMode : typeof data.service_mode === "string" ? data.service_mode : undefined,
+        preferredTime: typeof data.preferredTime === "string" ? data.preferredTime : typeof data.preferred_time === "string" ? data.preferred_time : undefined,
+        warrantyImportant: typeof data.warrantyImportant === "string" ? data.warrantyImportant : typeof data.warranty_important === "string" ? data.warranty_important : undefined,
     };
 };
 
 const mapNeed = (need: BackendRecord): NeedRecord => {
     const description = String(need.description || need.issue || need.ai_summary || "");
-    const cleanCard = normalizeNeedCard(need.ai_clean_card || need.cleanCard || {}, description, need.category || "Other");
+    const rawCard = need.ai_clean_card || need.cleanCard || {};
+    const cleanCard = normalizeNeedCard(rawCard, description, need.category || "Other");
     const photoPreview = need.photoPreview || need.photo_url || need.video_url || null;
+    const rawCardRecord = rawCard && typeof rawCard === "object" ? (rawCard as BackendRecord) : {};
 
     return {
         id: String(need.id || need.need_id || crypto.randomUUID()),
@@ -191,6 +197,7 @@ const mapNeed = (need: BackendRecord): NeedRecord => {
         firstOfferTime: String(need.first_offer_time || need.firstOfferTime || "Waiting"),
         customerId: need.customer_id || need.customerId,
         customerName: need.customer_name || need.customerName || "Customer",
+        customerAvatar: need.customer_avatar || need.customerAvatar || rawCardRecord.customerAvatar || rawCardRecord.customer_avatar || cleanCard.customerAvatar || null,
         createdAt: need.created_at || need.createdAt,
         countryCode: need.country_code || need.countryCode || "",
         stateCode: need.state_code || need.stateCode || "",
@@ -200,6 +207,20 @@ const mapNeed = (need: BackendRecord): NeedRecord => {
         longitude: typeof need.longitude === "number" ? need.longitude : need.longitude ? Number(need.longitude) : null,
         photoPreview,
         cleanCard,
+    };
+};
+
+const normalizeMessageLocation = (value: unknown): MessageMapLocation | null => {
+    if (!value || typeof value !== "object") return null;
+    const data = value as BackendRecord;
+    const latitude = Number(data.latitude ?? data.lat);
+    const longitude = Number(data.longitude ?? data.lng ?? data.lon);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
+    return {
+        latitude,
+        longitude,
+        label: typeof data.label === "string" ? data.label : typeof data.address === "string" ? data.address : undefined,
     };
 };
 
@@ -309,6 +330,7 @@ export async function getNeedById(needId: string, includeMedia = true): Promise<
 export async function createNeed(input: {
     customerId: string;
     customerName: string;
+    customerAvatar?: string | null;
     title: string;
     description: string;
     category: string;
@@ -344,7 +366,10 @@ export async function createNeed(input: {
             budget_type: input.budget,
             budget_value: parseCurrencyAmount(input.budget),
             photo_url: input.photoPreview,
-            ai_clean_card: input.cleanCard,
+            ai_clean_card: {
+                ...(input.cleanCard || {}),
+                customerAvatar: input.customerAvatar || input.cleanCard?.customerAvatar || null,
+            },
         }),
     });
     if (!response.ok) {
@@ -513,6 +538,12 @@ export type MessageAttachment = {
     dataUrl?: string;
 };
 
+export type MessageMapLocation = {
+    latitude: number;
+    longitude: number;
+    label?: string;
+};
+
 export type ThreadMessage = {
     id: string;
     needId: string;
@@ -524,7 +555,7 @@ export type ThreadMessage = {
     senderAvatar?: string | null;
     text: string;
     attachments: MessageAttachment[];
-    mapLocation?: { latitude: number; longitude: number } | null;
+    mapLocation?: MessageMapLocation | null;
     createdAt: string;
 };
 
@@ -548,7 +579,7 @@ export async function getMessages(needId: string, quoteId?: string): Promise<Thr
               senderAvatar: message.sender_avatar || message.senderAvatar || null,
               text: String(message.content || message.text || ""),
               attachments: Array.isArray(message.attachments) ? message.attachments : [],
-              mapLocation: message.map_location || message.mapLocation || null,
+              mapLocation: normalizeMessageLocation(message.map_location || message.mapLocation),
               createdAt: String(message.created_at || message.createdAt || new Date().toISOString()),
           }))
         : [];
@@ -610,7 +641,7 @@ export async function sendThreadMessage(input: {
     senderAvatar?: string | null;
     text: string;
     attachments?: MessageAttachment[];
-    mapLocation?: { latitude: number; longitude: number } | null;
+    mapLocation?: MessageMapLocation | null;
 }) {
     const response = await fetch(`${API_URL}/v1/messages`, {
         method: "POST",

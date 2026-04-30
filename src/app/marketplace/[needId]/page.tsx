@@ -109,6 +109,21 @@ const parseAmount = (value: string) => {
     return match ? Number(match[0]) : Number.POSITIVE_INFINITY;
 };
 
+function AvatarCircle({ src, name, className }: { src?: string | null; name: string; className: string }) {
+    const [failed, setFailed] = useState(false);
+    const showImage = Boolean(src && !failed);
+
+    return (
+        <div className={`shrink-0 overflow-hidden rounded-full border border-[#dadbdd] bg-white font-black text-[#222325] ${className}`}>
+            {showImage ? (
+                <img src={src || ""} alt={name} className="h-full w-full object-cover" onError={() => setFailed(true)} />
+            ) : (
+                <div className="flex h-full w-full items-center justify-center">{(name || "U").charAt(0).toUpperCase()}</div>
+            )}
+        </div>
+    );
+}
+
 function NeedMedia({ need }: { need: NeedRecord }) {
     const [failed, setFailed] = useState(false);
     const src = need.photoPreview;
@@ -164,13 +179,7 @@ function QuoteRow({
         <article className="rounded-[24px] border border-[#e4e5e7] bg-white p-4 shadow-sm sm:p-5">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#dadbdd] bg-white text-lg font-black text-[#222325]">
-                        {offer.businessAvatar ? (
-                            <img src={offer.businessAvatar} alt={offer.businessName} className="h-full w-full object-cover" />
-                        ) : (
-                            (offer.businessName || "B").charAt(0).toUpperCase()
-                        )}
-                    </div>
+                    <AvatarCircle src={offer.businessAvatar} name={offer.businessName || "Business"} className="h-12 w-12 text-lg" />
                     <div>
                         <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-lg font-black text-[#222325]">{offer.businessName}</h3>
@@ -281,11 +290,12 @@ export default function NeedDetailPage() {
         setSaving(true);
         setMessage("");
         try {
+            const businessAvatar = profile?.photoURL || user.photoURL || null;
             if (editingOfferId) {
                 await updateOffer({
                     offerId: editingOfferId,
                     businessId: user.uid,
-                    businessAvatar: profile?.photoURL || null,
+                    businessAvatar,
                     price: draft.price,
                     serviceType: draft.serviceType,
                     time: draft.time,
@@ -304,7 +314,7 @@ export default function NeedDetailPage() {
                     needId: need.id,
                     businessId: user.uid,
                     businessName: profile?.companyName || profile?.displayName || "Local Business",
-                    businessAvatar: profile?.photoURL || null,
+                    businessAvatar,
                     price: draft.price,
                     serviceType: draft.serviceType,
                     time: draft.time,
@@ -385,7 +395,7 @@ export default function NeedDetailPage() {
                 senderId: user.uid,
                 senderName: profile?.displayName || profile?.email || (accountType === "business" ? "Business" : "Customer"),
                 senderType: accountType === "business" ? "business" : "customer",
-                senderAvatar: profile?.photoURL || null,
+                senderAvatar: profile?.photoURL || user.photoURL || null,
                 text: accountType === "business" ? businessText : customerText,
             });
         } catch (error) {
@@ -421,9 +431,7 @@ export default function NeedDetailPage() {
                                 <aside className="h-fit rounded-[28px] border border-[#e4e5e7] bg-white p-6 shadow-sm">
                                     <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#95979d]">Need owner</p>
                                     <div className="mt-4 flex items-center gap-3">
-                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#222325] font-black text-white">
-                                            {(need.customerName || "C").charAt(0).toUpperCase()}
-                                        </div>
+                                        <AvatarCircle src={need.customerAvatar} name={need.customerName || "Customer"} className="h-12 w-12 text-base" />
                                         <div>
                                             <p className="font-black">{need.customerName || "Customer"}</p>
                                             <p className="text-sm text-[#74767e]">Contact hidden until Offer is chosen</p>

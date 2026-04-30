@@ -1,11 +1,13 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { Edit3, Image as ImageIcon, Loader2, MapPin, Paperclip, Search, Send, ShoppingBag, Trash2, X } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import {
     MessageAttachment,
+    MessageMapLocation,
     MessageThread,
     ThreadMessage,
     deleteThreadMessage,
@@ -14,6 +16,15 @@ import {
     sendThreadMessage,
     updateThreadMessage,
 } from "@/lib/neederoDatabase";
+
+const DeliveryMap = dynamic(() => import("@/components/profile/DeliveryMap"), {
+    ssr: false,
+    loading: () => (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="rounded-3xl bg-white p-8 text-sm font-black">Loading map...</div>
+        </div>
+    ),
+});
 
 type OrderContext = {
     needId: string;
@@ -50,12 +61,38 @@ function avatarLabel(name: string) {
     return (name || "U").charAt(0).toUpperCase();
 }
 
-function mapsSearchUrl(location: { latitude: number; longitude: number }) {
+function isValidMapLocation(location: MessageMapLocation) {
+    return (
+        Number.isFinite(location.latitude) &&
+        Number.isFinite(location.longitude) &&
+        location.latitude >= -90 &&
+        location.latitude <= 90 &&
+        location.longitude >= -180 &&
+        location.longitude <= 180
+    );
+}
+
+function mapsSearchUrl(location: MessageMapLocation) {
     return `https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`;
 }
 
-function mapsRouteUrl(location: { latitude: number; longitude: number }) {
+function mapsRouteUrl(location: MessageMapLocation) {
     return `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}&travelmode=driving`;
+}
+
+function AvatarCircle({ src, name, className }: { src?: string | null; name: string; className: string }) {
+    const [failed, setFailed] = useState(false);
+    const showImage = Boolean(src && !failed);
+
+    return (
+        <div className={`shrink-0 overflow-hidden rounded-full border border-[#dadbdd] bg-white text-xs font-black text-[#222325] ${className}`}>
+            {showImage ? (
+                <img src={src || ""} alt={name} className="h-full w-full object-cover" onError={() => setFailed(true)} />
+            ) : (
+                <div className="flex h-full w-full items-center justify-center">{avatarLabel(name)}</div>
+            )}
+        </div>
+    );
 }
 
 export default function MessagesPage() {
@@ -64,7 +101,8 @@ export default function MessagesPage() {
     const [messages, setMessages] = useState<ThreadMessage[]>([]);
     const [text, setText] = useState("");
     const [attachments, setAttachments] = useState<MessageAttachment[]>([]);
-    const [mapLocation, setMapLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+    const [mapLocation, setMapLocation] = useState<MessageMapLocation | null>(null);
+    const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
     const [saving, setSaving] = useState(false);
     const [status, setStatus] = useState("");
     const [query, setQuery] = useState("");
@@ -187,23 +225,8 @@ export default function MessagesPage() {
     };
 
     const useLocation = () => {
-        if (!navigator.geolocation) {
-            setStatus("Location is not available in this browser.");
-            return;
-        }
-
-        setStatus("Getting location...");
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                setMapLocation({
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
-                });
-                setStatus("Exact location attached. Business can open the route in Maps.");
-            },
-            () => setStatus("Location permission was not allowed."),
-            { enableHighAccuracy: false, timeout: 8000 },
-        );
+        setIsMapPickerOpen(true);
+        setStatus("Pin the location on the map, then confirm to attach it.");
     };
 
     const submitMessage = async (event: FormEvent<HTMLFormElement>) => {
@@ -249,7 +272,7 @@ export default function MessagesPage() {
                     senderId: user.uid,
                     senderName: profile?.displayName || profile?.email || formatSender(accountType),
                     senderType: accountType,
-                    senderAvatar: profile?.photoURL || null,
+                    senderAvatar: profile?.photoURL || user.photoURL || null,
                     text: text.trim(),
                     attachments,
                     mapLocation,
@@ -332,13 +355,7 @@ export default function MessagesPage() {
                                             className="mb-2 flex w-full gap-3 rounded-2xl p-3 text-left transition hover:bg-[#f5f5f5]"
                                             style={{ background: active ? "#f0f0f0" : "transparent" }}
                                         >
-                                            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-[#222325] text-sm font-black text-white">
-                                                {thread.otherAvatar ? (
-                                                    <img src={thread.otherAvatar} alt="" className="h-full w-full object-cover" />
-                                                ) : (
-                                                    <div className="flex h-full w-full items-center justify-center">{avatarLabel(thread.otherName)}</div>
-                                                )}
-                                            </div>
+                                            <AvatarCircle src={thread.otherAvatar} name={thread.otherName} className="h-12 w-12 text-sm" />
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex items-center justify-between gap-2">
                                                     <p className="truncate text-sm font-black">{thread.otherName}</p>
@@ -359,13 +376,7 @@ export default function MessagesPage() {
                             <>
                                 <header className="flex items-center justify-between border-b border-[#e4e5e7] bg-white px-5 py-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="h-11 w-11 overflow-hidden rounded-full bg-[#222325] text-sm font-black text-white">
-                                            {selectedThread.otherAvatar ? (
-                                                <img src={selectedThread.otherAvatar} alt="" className="h-full w-full object-cover" />
-                                            ) : (
-                                                <div className="flex h-full w-full items-center justify-center">{avatarLabel(selectedThread.otherName)}</div>
-                                            )}
-                                        </div>
+                                        <AvatarCircle src={selectedThread.otherAvatar} name={selectedThread.otherName} className="h-11 w-11 text-sm" />
                                         <div>
                                             <p className="font-black">{selectedThread.otherName}</p>
                                             <p className="text-xs text-[#74767e]">{selectedThread.needTitle}</p>
@@ -391,13 +402,7 @@ export default function MessagesPage() {
                                             return (
                                                 <div key={message.id} className={`flex items-end gap-3 ${mine ? "justify-end" : "justify-start"}`}>
                                                     {!mine && (
-                                                        <div className="h-9 w-9 overflow-hidden rounded-full border border-[#dadbdd] bg-white text-xs font-black text-[#222325]">
-                                                            {message.senderAvatar ? (
-                                                                <img src={message.senderAvatar} alt="" className="h-full w-full object-cover" />
-                                                            ) : (
-                                                                <div className="flex h-full w-full items-center justify-center">{avatarLabel(message.senderName)}</div>
-                                                            )}
-                                                        </div>
+                                                        <AvatarCircle src={message.senderAvatar || selectedThread.otherAvatar} name={message.senderName} className="h-9 w-9" />
                                                     )}
                                                     <div className={`max-w-[74%] rounded-[22px] px-4 py-3 shadow-sm ${mine ? "bg-[#222325] text-white" : "bg-white text-[#222325]"}`}>
                                                         <div className="mb-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-wide opacity-55">
@@ -415,26 +420,28 @@ export default function MessagesPage() {
                                                                     <div className="min-w-0 flex-1">
                                                                         <p className="font-black">Exact location shared</p>
                                                                         <p className={`mt-1 leading-5 ${mine ? "text-white/70" : "text-[#74767e]"}`}>
-                                                                            Open route in Maps for turn-by-turn navigation.
+                                                                            {message.mapLocation.label || "Open route in Maps for turn-by-turn navigation."}
                                                                         </p>
-                                                                        <div className="mt-3 flex flex-wrap gap-2">
-                                                                            <a
-                                                                                href={mapsRouteUrl(message.mapLocation)}
-                                                                                target="_blank"
-                                                                                rel="noreferrer"
-                                                                                className={`rounded-full px-3 py-2 text-[11px] font-black ${mine ? "bg-white text-[#222325]" : "bg-[#222325] text-white"}`}
-                                                                            >
-                                                                                Open route
-                                                                            </a>
-                                                                            <a
-                                                                                href={mapsSearchUrl(message.mapLocation)}
-                                                                                target="_blank"
-                                                                                rel="noreferrer"
-                                                                                className={`rounded-full border px-3 py-2 text-[11px] font-black ${mine ? "border-white/20 text-white" : "border-[#222325] text-[#222325]"}`}
-                                                                            >
-                                                                                Full map
-                                                                            </a>
-                                                                        </div>
+                                                                        {isValidMapLocation(message.mapLocation) && (
+                                                                            <div className="mt-3 flex flex-wrap gap-2">
+                                                                                <a
+                                                                                    href={mapsRouteUrl(message.mapLocation)}
+                                                                                    target="_blank"
+                                                                                    rel="noreferrer"
+                                                                                    className={`rounded-full px-3 py-2 text-[11px] font-black ${mine ? "bg-white text-[#222325]" : "bg-[#222325] text-white"}`}
+                                                                                >
+                                                                                    Open route
+                                                                                </a>
+                                                                                <a
+                                                                                    href={mapsSearchUrl(message.mapLocation)}
+                                                                                    target="_blank"
+                                                                                    rel="noreferrer"
+                                                                                    className={`rounded-full border px-3 py-2 text-[11px] font-black ${mine ? "border-white/20 text-white" : "border-[#222325] text-[#222325]"}`}
+                                                                                >
+                                                                                    Full map
+                                                                                </a>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -473,13 +480,7 @@ export default function MessagesPage() {
                                                         )}
                                                     </div>
                                                     {mine && (
-                                                        <div className="h-9 w-9 overflow-hidden rounded-full border border-[#dadbdd] bg-white text-xs font-black text-[#222325]">
-                                                            {message.senderAvatar || profile?.photoURL ? (
-                                                                <img src={message.senderAvatar || profile?.photoURL || ""} alt="" className="h-full w-full object-cover" />
-                                                            ) : (
-                                                                <div className="flex h-full w-full items-center justify-center">{avatarLabel(profile?.displayName || "Me")}</div>
-                                                            )}
-                                                        </div>
+                                                        <AvatarCircle src={message.senderAvatar || profile?.photoURL || user?.photoURL} name={profile?.displayName || "Me"} className="h-9 w-9" />
                                                     )}
                                                 </div>
                                             );
@@ -504,6 +505,17 @@ export default function MessagesPage() {
                                                     {attachment.name}
                                                 </span>
                                             ))}
+                                        </div>
+                                    )}
+                                    {mapLocation && (
+                                        <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-[#dadbdd] bg-[#f7f7f7] px-4 py-3 text-sm">
+                                            <span className="min-w-0 truncate font-bold">
+                                                <MapPin size={15} className="mr-2 inline" />
+                                                {mapLocation.label || "Pinned map location attached"}
+                                            </span>
+                                            <button type="button" onClick={() => setMapLocation(null)} className="shrink-0 rounded-full p-1 hover:bg-white">
+                                                <X size={15} />
+                                            </button>
                                         </div>
                                     )}
                                     <div className="flex items-end gap-2 rounded-full border border-[#dadbdd] bg-[#f7f7f7] p-2">
@@ -583,6 +595,23 @@ export default function MessagesPage() {
                     </aside>
                     )}
                 </div>
+                {isMapPickerOpen && (
+                    <DeliveryMap
+                        initialCoords={mapLocation ? { lat: mapLocation.latitude, lng: mapLocation.longitude } : profile?.deliveryCoords || null}
+                        initialAddress={mapLocation?.label || profile?.deliveryAddress || profile?.currentAddress || "Pin exact location"}
+                        onClose={() => setIsMapPickerOpen(false)}
+                        onSelect={(data) => {
+                            setMapLocation({
+                                latitude: data.coords.lat,
+                                longitude: data.coords.lng,
+                                label: data.address || "Pinned location",
+                            });
+                            if (!text.trim()) setText("Here is my location.");
+                            setStatus("Pinned location attached. Send it when ready.");
+                            setIsMapPickerOpen(false);
+                        }}
+                    />
+                )}
             </main>
         </RouteGuard>
     );
