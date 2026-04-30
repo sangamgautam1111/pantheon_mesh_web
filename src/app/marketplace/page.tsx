@@ -33,7 +33,6 @@ import {
     getNeeds,
     getOffers,
     NeedRecord,
-    sendThreadMessage,
 } from "@/lib/neederoDatabase";
 
 type QuoteDraft = {
@@ -512,27 +511,17 @@ export default function Marketplace() {
     const startQuoteChat = async (offer: OfferRecord, mode: "chat" | "choose") => {
         if (!selectedNeed || !user) return;
         setMessage("");
-        try {
-            const customerText = mode === "choose"
-                ? `I want to choose this Offer for "${selectedNeed.title}". Offer: ${offer.price || "open price"} - ${offer.serviceType || "service"} - ${offer.time || "time to confirm"}.`
-                : `Hi, I want to talk about this Offer for "${selectedNeed.title}". Offer: ${offer.price || "open price"} - ${offer.serviceType || "service"} - ${offer.time || "time to confirm"}.`;
-            const businessText = `Hi, I am following up on my Offer for "${selectedNeed.title}". Offer: ${offer.price || "open price"} - ${offer.serviceType || "service"} - ${offer.time || "time to confirm"}.`;
-            await sendThreadMessage({
-                needId: selectedNeed.id,
-                quoteId: offer.id,
-                senderId: user.uid,
-                senderName: profile?.displayName || profile?.email || (accountType === "business" ? "Business" : "Customer"),
-                senderType: accountType === "business" ? "business" : "customer",
-                senderAvatar: profile?.photoURL || user.photoURL || null,
-                text: accountType === "business" ? businessText : customerText,
-            });
-        } catch (error) {
-            console.error("Could not seed quote chat:", error);
-        }
         if (typeof window !== "undefined") {
             window.sessionStorage.setItem(chatContextKey(selectedNeed.id, offer.id), JSON.stringify({
                 businessAvatar: offer.businessAvatar || "",
                 businessName: offer.businessName || "Local Business",
+                needTitle: selectedNeed.title || "Need conversation",
+                customerName: selectedNeed.customerName || "Customer",
+                customerAvatar: selectedNeed.customerAvatar || "",
+                offerPrice: offer.price || "",
+                draftText: mode === "choose"
+                    ? `I want to choose this Offer for "${selectedNeed.title}". Offer: ${offer.price || "open price"} - ${offer.serviceType || "service"} - ${offer.time || "time to confirm"}.`
+                    : `Hi, I want to talk about this Offer for "${selectedNeed.title}".`,
             }));
         }
         const params = new URLSearchParams({

@@ -33,6 +33,11 @@ type OrderContext = {
     businessId: string;
     businessName: string;
     businessAvatar: string;
+    needTitle: string;
+    customerName: string;
+    customerAvatar: string;
+    offerPrice: string;
+    draftText: string;
     orderStarted: boolean;
 };
 
@@ -43,6 +48,11 @@ const emptyContext: OrderContext = {
     businessId: "",
     businessName: "",
     businessAvatar: "",
+    needTitle: "",
+    customerName: "",
+    customerAvatar: "",
+    offerPrice: "",
+    draftText: "",
     orderStarted: false,
 };
 
@@ -170,6 +180,11 @@ export default function MessagesPage() {
             businessId: params.get("businessId") || "",
             businessName: params.get("businessName") || storedContext.businessName || "",
             businessAvatar: storedContext.businessAvatar || "",
+            needTitle: storedContext.needTitle || "",
+            customerName: storedContext.customerName || "",
+            customerAvatar: storedContext.customerAvatar || "",
+            offerPrice: storedContext.offerPrice || "",
+            draftText: storedContext.draftText || "",
             orderStarted: params.get("order") === "1",
         });
     }, []);
@@ -185,29 +200,33 @@ export default function MessagesPage() {
             needId: orderContext.needId,
             quoteId: orderContext.quoteId || undefined,
             bookingId: orderContext.bookingId || undefined,
-            needTitle: "New quote conversation",
+            needTitle: orderContext.needTitle || "New quote conversation",
             businessId: orderContext.businessId || undefined,
             businessName: orderContext.businessName || "Local Business",
-            customerName: profile?.displayName || "Customer",
-            otherName: accountType === "business" ? "Customer" : orderContext.businessName || "Local Business",
-            otherAvatar: accountType === "customer" ? orderContext.businessAvatar || null : null,
+            customerName: orderContext.customerName || profile?.displayName || "Customer",
+            otherName: accountType === "business" ? orderContext.customerName || "Customer" : orderContext.businessName || "Local Business",
+            otherAvatar: accountType === "customer" ? orderContext.businessAvatar || null : orderContext.customerAvatar || null,
             lastMessage: "No messages yet",
             lastMessageAt: null,
+            offerPrice: orderContext.offerPrice || undefined,
             messageCount: 0,
         } satisfies MessageThread;
     }, [accountType, orderContext, profile?.displayName, threads]);
 
-    const filteredThreads = useMemo(() => {
+    const displayThreads = useMemo(() => {
         const needle = query.trim().toLowerCase();
         const base = threads.filter((thread) => thread.messageCount > 0);
-        if (!needle) return base;
-        return base.filter((thread) =>
+        const merged = selectedThread && !base.some((thread) => thread.id === selectedThread.id)
+            ? [selectedThread, ...base]
+            : base;
+        if (!needle) return merged;
+        return merged.filter((thread) =>
             [thread.needTitle, thread.businessName, thread.customerName, thread.otherName, thread.lastMessage]
                 .join(" ")
                 .toLowerCase()
                 .includes(needle),
         );
-    }, [query, threads]);
+    }, [query, selectedThread, threads]);
 
     const loadThreads = async () => {
         if (!user) return;
@@ -242,6 +261,11 @@ export default function MessagesPage() {
         return () => clearInterval(interval);
     }, [orderContext.needId, orderContext.quoteId, user?.uid]);
 
+    useEffect(() => {
+        if (!orderContext.draftText || messages.length > 0 || text || editingMessageId) return;
+        setText(orderContext.draftText);
+    }, [editingMessageId, messages.length, orderContext.draftText, text]);
+
     const selectThread = (thread: MessageThread) => {
         setOrderContext({
             needId: thread.needId,
@@ -250,6 +274,11 @@ export default function MessagesPage() {
             businessId: thread.businessId || "",
             businessName: thread.businessName || "",
             businessAvatar: thread.otherAvatar || "",
+            needTitle: thread.needTitle || "",
+            customerName: thread.customerName || "",
+            customerAvatar: thread.otherAvatar || "",
+            offerPrice: thread.offerPrice || "",
+            draftText: "",
             orderStarted: Boolean(thread.bookingId),
         });
     };
@@ -316,18 +345,53 @@ export default function MessagesPage() {
                 setMapLocation(null);
                 await loadThreads();
             } else {
+                const messageText = text.trim();
+                const senderAvatar = profile?.photoURL || user.photoURL || null;
+                const receiverId = accountType === "customer"
+                    ? selectedThread?.businessId || orderContext.businessId || undefined
+                    : selectedThread?.customerId || undefined;
                 await sendThreadMessage({
+                    needId: orderContext.needId,
+                    quoteId: orderContext.quoteId || undefined,
+                    bookingId: orderContext.bookingId || undefined,
+                    senderId: user.uid,
+                    receiverId,
+                    senderName: profile?.displayName || profile?.email || formatSender(accountType),
+                    senderType: accountType,
+                    senderAvatar,
+                    text: messageText,
+                    attachments,
+                    mapLocation,
+                });
+                const optimisticMessage: ThreadMessage = {
+                    id: `local-${crypto.randomUUID()}`,
                     needId: orderContext.needId,
                     quoteId: orderContext.quoteId || undefined,
                     bookingId: orderContext.bookingId || undefined,
                     senderId: user.uid,
                     senderName: profile?.displayName || profile?.email || formatSender(accountType),
                     senderType: accountType,
-                    senderAvatar: profile?.photoURL || user.photoURL || null,
-                    text: text.trim(),
+                    senderAvatar,
+                    text: messageText,
                     attachments,
                     mapLocation,
-                });
+                    createdAt: new Date().toISOString(),
+                };
+                setMessages((current) => [...current, optimisticMessage]);
+                if (selectedThread) {
+                    setThreads((current) => {
+                        const nextThread = {
+                            ...selectedThread,
+                            lastMessage: messageText || attachments[0]?.name || (mapLocation ? "Location shared" : "Message sent"),
+                            lastMessageAt: optimisticMessage.createdAt,
+                            messageCount: Math.max(1, selectedThread.messageCount + 1),
+                        };
+                        const exists = current.some((thread) => thread.id === nextThread.id);
+                        return exists
+                            ? current.map((thread) => thread.id === nextThread.id ? nextThread : thread)
+                            : [nextThread, ...current];
+                    });
+                }
                 setText("");
                 setAttachments([]);
                 setMapLocation(null);
@@ -370,8 +434,8 @@ export default function MessagesPage() {
 
     return (
         <RouteGuard allowedTypes={["customer", "business"]}>
-            <main className="min-h-screen bg-[#f5f5f5] text-[#222325]">
-                <div className={`mx-auto grid min-h-[calc(100vh-64px)] max-w-[1480px] border-x border-[#e4e5e7] bg-white ${showOrderPanel ? "lg:grid-cols-[330px_1fr_310px]" : "lg:grid-cols-[330px_1fr]"}`}>
+            <main className="min-h-screen bg-white text-[#222325]">
+                <div className={`grid min-h-[calc(100vh-64px)] w-full bg-white ${showOrderPanel ? "lg:grid-cols-[330px_1fr_310px]" : "lg:grid-cols-[330px_1fr]"}`}>
                     <aside className="border-b border-[#e4e5e7] bg-white lg:border-b-0 lg:border-r">
                         <div className="border-b border-[#e4e5e7] p-5">
                             <h1 className="text-2xl font-black">Inbox</h1>
@@ -388,7 +452,7 @@ export default function MessagesPage() {
                         </div>
 
                         <div className="max-h-[calc(100vh-196px)] overflow-y-auto p-3">
-                            {filteredThreads.length === 0 ? (
+                            {displayThreads.length === 0 ? (
                                 <div className="rounded-2xl border border-dashed border-[#dadbdd] p-8 text-center">
                                     <Send className="mx-auto text-[#b5b6ba]" size={30} />
                                     <p className="mt-3 text-sm font-black">No conversations yet</p>
@@ -397,7 +461,7 @@ export default function MessagesPage() {
                                     </p>
                                 </div>
                             ) : (
-                                filteredThreads.map((thread) => {
+                                displayThreads.map((thread) => {
                                     const active = selectedThread?.id === thread.id;
                                     return (
                                         <button

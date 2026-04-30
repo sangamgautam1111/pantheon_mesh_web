@@ -31,7 +31,6 @@ import {
     getNeedById,
     getOffers,
     NeedRecord,
-    sendThreadMessage,
     updateOffer,
 } from "@/lib/neederoDatabase";
 
@@ -454,27 +453,17 @@ export default function NeedDetailPage() {
 
     const startQuoteChat = async (offer: OfferRecord, mode: "chat" | "choose") => {
         if (!need || !user) return;
-        const customerText = mode === "choose"
-            ? `I want to choose this Offer for "${need.title}". Offer: ${offer.price || "open price"} - ${offer.serviceType || "service"} - ${offer.time || "time to confirm"}.`
-            : `Hi, I want to talk about this Offer for "${need.title}". Offer: ${offer.price || "open price"} - ${offer.serviceType || "service"} - ${offer.time || "time to confirm"}.`;
-        const businessText = `Hi, I am following up on my Offer for "${need.title}". Offer: ${offer.price || "open price"} - ${offer.serviceType || "service"} - ${offer.time || "time to confirm"}.`;
-        try {
-            await sendThreadMessage({
-                needId: need.id,
-                quoteId: offer.id,
-                senderId: user.uid,
-                senderName: profile?.displayName || profile?.email || (accountType === "business" ? "Business" : "Customer"),
-                senderType: accountType === "business" ? "business" : "customer",
-                senderAvatar: profile?.photoURL || user.photoURL || null,
-                text: accountType === "business" ? businessText : customerText,
-            });
-        } catch (error) {
-            console.error("Could not seed quote chat:", error);
-        }
         if (typeof window !== "undefined") {
             window.sessionStorage.setItem(chatContextKey(need.id, offer.id), JSON.stringify({
                 businessAvatar: offer.businessAvatar || "",
                 businessName: offer.businessName || "Local Business",
+                needTitle: need.title || "Need conversation",
+                customerName: need.customerName || "Customer",
+                customerAvatar: need.customerAvatar || "",
+                offerPrice: offer.price || "",
+                draftText: mode === "choose"
+                    ? `I want to choose this Offer for "${need.title}". Offer: ${offer.price || "open price"} - ${offer.serviceType || "service"} - ${offer.time || "time to confirm"}.`
+                    : `Hi, I want to talk about this Offer for "${need.title}".`,
             }));
         }
         const params = new URLSearchParams({

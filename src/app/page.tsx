@@ -307,12 +307,6 @@ export default function Home() {
 
     return (
         <main className="bg-[#f7faf8] text-[#222325]">
-            <Link
-                href="/support"
-                className="fixed bottom-24 left-4 z-40 hidden rounded-full border border-[#dfe8e3] bg-white px-4 py-3 text-xs font-black text-[#0a8f45] shadow-xl transition hover:-translate-y-0.5 hover:border-[#0a8f45] sm:inline-flex"
-            >
-                Submit feedback & support
-            </Link>
             <section className="relative min-h-[680px] overflow-hidden bg-[#050816]">
                 <video
                     className="absolute inset-0 h-full w-full object-cover opacity-60"

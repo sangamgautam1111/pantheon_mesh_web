@@ -636,6 +636,7 @@ export async function sendThreadMessage(input: {
     quoteId?: string;
     bookingId?: string;
     senderId: string;
+    receiverId?: string;
     senderName: string;
     senderType: "customer" | "business";
     senderAvatar?: string | null;
@@ -651,7 +652,7 @@ export async function sendThreadMessage(input: {
             quote_id: input.quoteId || null,
             booking_id: input.bookingId || null,
             sender_id: input.senderId,
-            receiver_id: "thread",
+            receiver_id: input.receiverId || "thread",
             sender_name: input.senderName,
             sender_type: input.senderType,
             sender_avatar: input.senderAvatar || null,

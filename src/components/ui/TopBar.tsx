@@ -10,6 +10,7 @@ import {
     Layout,
     LogOut,
     Menu,
+    Plus,
     Search,
     Sparkles,
     X,
@@ -17,10 +18,11 @@ import {
     MessageSquare,
     User,
     ChevronDown,
+    Globe2,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useGuide } from "@/context/GuideProvider";
 import { useAuth } from "@/context/AuthContext";
 import { SiteNotification, getNotifications } from "@/lib/neederoDatabase";
@@ -57,6 +59,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
     const { setChatOpen } = useGuide();
     const { user, profile, signOut } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
     const [showNotifications, setShowNotifications] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
@@ -249,6 +252,9 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
     const initials = (accountDisplayName || "U").charAt(0).toUpperCase();
     const visibleNotifications = notifications.filter((notification) => !dismissedNotificationIds.includes(notification.id));
     const notificationCount = visibleNotifications.length;
+    const isBrowseActive = pathname?.startsWith("/marketplace");
+    const isPostActive = pathname?.startsWith("/client/new");
+    const isMessagesActive = pathname?.startsWith("/messages");
     const formatNotificationTime = (value?: string | null) => {
         if (!value) return "";
         const date = new Date(value);
@@ -414,25 +420,37 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
             <div className="flex items-center gap-1">
 
                 {/* Nav links desktop */}
-                <nav className="desktop-only flex items-center gap-1 mr-3">
-                    <Link href="/marketplace" className="px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-black"
-                        style={{ color: "var(--text-secondary)" }}>
+                <nav className="desktop-only mr-3 flex items-center gap-1">
+                    <Link
+                        href="/marketplace"
+                        className={`relative px-3 py-5 text-sm font-bold transition-colors hover:text-[#0a8f45] ${
+                            isBrowseActive ? "text-[#0a8f45] after:absolute after:bottom-0 after:left-3 after:right-3 after:h-0.5 after:rounded-full after:bg-[#0a8f45]" : "text-[#62646a]"
+                        }`}
+                    >
                         Browse Needs
                     </Link>
                     {profile?.accountType === "customer" && (
-                        <Link href="/client/new" className="px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-black"
-                            style={{ color: "var(--text-secondary)" }}>
+                        <Link
+                            href="/client/new"
+                            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-black transition ${
+                                isPostActive ? "bg-[#08783b] text-white" : "bg-[#0a8f45] text-white hover:bg-[#08783b]"
+                            }`}
+                        >
+                            <Plus size={14} />
                             Post a Need
                         </Link>
                     )}
                     {profile?.accountType === "business" && (
-                        <Link href="/pricing" className="px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-black"
-                            style={{ color: "var(--text-secondary)" }}>
+                        <Link href="/pricing" className="px-3 py-2 text-sm font-bold text-[#62646a] transition-colors hover:text-[#0a8f45]">
                             Plans
                         </Link>
                     )}
-                    <Link href="/messages" className="px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-black"
-                        style={{ color: "var(--text-secondary)" }}>
+                    <Link
+                        href="/messages"
+                        className={`relative px-3 py-5 text-sm font-bold transition-colors hover:text-[#0a8f45] ${
+                            isMessagesActive ? "text-[#0a8f45] after:absolute after:bottom-0 after:left-3 after:right-3 after:h-0.5 after:rounded-full after:bg-[#0a8f45]" : "text-[#62646a]"
+                        }`}
+                    >
                         Messages
                     </Link>
                 </nav>
@@ -440,12 +458,17 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                 {/* AI Assistant */}
                 <button
                     onClick={openAssistant}
-                    className="desktop-only nd-btn nd-btn-ghost nd-btn-sm rounded-full gap-1.5 mr-1"
+                    className="desktop-only mr-1 inline-flex items-center gap-1.5 rounded-md border border-[#dadbdd] bg-white px-3 py-2 text-xs font-bold text-[#222325] transition hover:bg-[#f5f5f5]"
                     title="AI Assistant"
                 >
                     <Sparkles size={14} style={{ color: "var(--text-primary)" }} />
                     <span className="text-xs font-semibold">AI Help</span>
                 </button>
+
+                <div className="desktop-only flex items-center gap-1 px-2 text-xs font-bold text-[#62646a]">
+                    <Globe2 size={14} />
+                    EN
+                </div>
 
                 {/* Notifications */}
                 <button
