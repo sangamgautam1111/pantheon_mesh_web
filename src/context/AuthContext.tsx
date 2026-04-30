@@ -46,6 +46,12 @@ interface UserProfile {
     shopPhotos?: string[] | null;
     deliveryAddress?: string | null;
     deliveryCoords?: { lat: number; lng: number } | null;
+    username?: string | null;
+    shortBio?: string | null;
+    preferredServiceMethod?: string | null;
+    language?: string | null;
+    emailNotifications?: boolean | null;
+    smsNotifications?: boolean | null;
 }
 
 interface AuthContextType {
@@ -262,6 +268,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 openingHours: profileData.openingHours,
                 services: profileData.services,
                 warrantyPolicy: profileData.warrantyPolicy,
+                username: profileData.username,
+                shortBio: profileData.shortBio,
+                preferredServiceMethod: profileData.preferredServiceMethod,
+                language: profileData.language,
+                emailNotifications: profileData.emailNotifications,
+                smsNotifications: profileData.smsNotifications,
             });
             
             // Sync to the specific account type mirror
@@ -486,6 +498,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 openingHours: newProfile.openingHours,
                 services: newProfile.services,
                 warrantyPolicy: newProfile.warrantyPolicy,
+                username: newProfile.username,
+                shortBio: newProfile.shortBio,
+                preferredServiceMethod: newProfile.preferredServiceMethod,
+                language: newProfile.language,
+                emailNotifications: newProfile.emailNotifications,
+                smsNotifications: newProfile.smsNotifications,
             });
 
             // Update both mirror paths to prevent stale data when switching roles.
