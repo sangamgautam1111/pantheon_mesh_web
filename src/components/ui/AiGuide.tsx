@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { X, Send, ArrowRight, Loader2 } from "lucide-react";
+import { X, Send, ArrowRight, Loader2, Headphones, Sparkles } from "lucide-react";
 import { useGuide } from "@/context/GuideProvider";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
@@ -65,7 +65,7 @@ export const AiGuide = () => {
         {
             id: "welcome",
             role: "assistant",
-            text: "Hi, I'm Needero Assist. Tell me what you need help with, or ask about Needs, Offers, messages, marketplace, or plans.",
+            text: "Hi, I'm Needero Assist. I can help you post a Need, compare Offers, find messages, or contact support.",
         },
     ]);
     const [input, setInput] = useState("");
@@ -296,7 +296,7 @@ export const AiGuide = () => {
             {!open && (
                 <button
                     onClick={() => setOpen(true)}
-                    className="group fixed z-[70] flex items-center justify-center rounded-full bg-slate-950 shadow-2xl transition-all hover:scale-110 active:scale-95"
+                    className="group fixed z-[70] flex items-center justify-center rounded-full bg-[#0a8f45] shadow-2xl shadow-[#0a8f45]/25 transition-all hover:scale-110 hover:bg-[#08783b] active:scale-95"
                     style={{
                         bottom: isMobile ? 16 : 32,
                         right: isMobile ? 16 : 32,
@@ -309,7 +309,7 @@ export const AiGuide = () => {
                         <Image src={chatIcon} alt="Needero Assist" className="h-full w-full object-contain brightness-0 invert" />
                     </div>
                     {!isMobile && (
-                        <div className="pointer-events-none absolute right-20 whitespace-nowrap rounded-lg border border-gray-100 bg-white px-4 py-2 text-sm font-bold text-[#0f1114] opacity-0 shadow-2xl transition-opacity group-hover:opacity-100">
+                        <div className="pointer-events-none absolute right-20 whitespace-nowrap rounded-lg border border-[#dfe8e3] bg-white px-4 py-2 text-sm font-bold text-[#083b25] opacity-0 shadow-2xl transition-opacity group-hover:opacity-100">
                             Needero Assist - Ask about Needs or Offers
                         </div>
                     )}
@@ -320,32 +320,32 @@ export const AiGuide = () => {
                 <div
                     className="fixed z-[80] flex flex-col overflow-hidden border shadow-2xl backdrop-blur-xl"
                     style={{
-                        background: "var(--bg-surface)",
-                        borderColor: isMobile ? "transparent" : "var(--border-color)",
+                        background: "#ffffff",
+                        borderColor: isMobile ? "transparent" : "#dfe8e3",
                         width: isMobile ? "100vw" : panelSize.width,
                         height: isMobile ? "100vh" : panelSize.height,
                         top: isMobile ? 0 : panelPosition?.y,
                         left: isMobile ? 0 : panelPosition?.x,
                         bottom: isMobile || panelPosition ? undefined : 24,
                         right: isMobile || panelPosition ? undefined : 24,
-                        borderRadius: isMobile ? 0 : 16,
+                        borderRadius: isMobile ? 0 : 24,
                     }}
                 >
                     <div
                         onPointerDown={handleDragStart}
-                        className="flex cursor-move select-none items-center justify-between border-b px-4 py-3"
-                        style={{ borderColor: "var(--border-color)", background: "var(--bg-surface-variant)" }}
+                        className="flex cursor-move select-none items-center justify-between border-b px-5 py-4"
+                        style={{ borderColor: "#dfe8e3", background: "linear-gradient(135deg,#f7faf8,#ffffff)" }}
                     >
                         <div className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white p-0.5 shadow-sm">
+                            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl border border-[#dfe8e3] bg-[#e9f9f0] p-1 shadow-sm">
                                 <Image src={chatIcon} alt="Assistant" className="h-full w-full object-contain" />
                             </div>
                             <div>
-                                <div className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                                <div className="text-sm font-black text-[#083b25]">
                                     Needero Assist
                                 </div>
-                                <div className="text-xs" style={{ color: "var(--text-disabled)" }}>
-                                    Drag header. Resize corner.
+                                <div className="text-xs font-semibold text-[#74767e]">
+                                    AI support, guide, and marketplace navigator
                                 </div>
                             </div>
                         </div>
@@ -359,7 +359,18 @@ export const AiGuide = () => {
                         </button>
                     </div>
 
-                    <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4 scrollbar-hide">
+                    <div className="border-b border-[#edf2ef] bg-[#f7faf8] px-5 py-3">
+                        <div className="grid grid-cols-2 gap-2 text-xs font-black text-[#083b25]">
+                            <button onClick={() => router.push("/client/new")} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 ring-1 ring-[#dfe8e3] hover:bg-[#e9f9f0]">
+                                <Sparkles size={14} /> Post Need
+                            </button>
+                            <button onClick={() => router.push("/support")} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 ring-1 ring-[#dfe8e3] hover:bg-[#e9f9f0]">
+                                <Headphones size={14} /> Support
+                            </button>
+                        </div>
+                    </div>
+
+                    <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto bg-white p-4 scrollbar-hide">
                         {messages.map((message) => (
                             <div
                                 key={message.id}
@@ -372,12 +383,12 @@ export const AiGuide = () => {
                                     style={{
                                         background:
                                             message.role === "user"
-                                                ? "var(--btn-primary-bg)"
-                                                : "var(--bg-surface-variant)",
+                                                ? "#0a8f45"
+                                                : "#f7faf8",
                                         color:
                                             message.role === "user"
-                                                ? "var(--btn-primary-text)"
-                                                : "var(--text-primary)",
+                                                ? "#ffffff"
+                                                : "#222325",
                                     }}
                                 >
                                     {renderText(message.text)}
@@ -426,7 +437,7 @@ export const AiGuide = () => {
                             <div className="flex justify-start">
                                 <div
                                     className="flex items-center gap-2 rounded-lg px-4 py-3"
-                                    style={{ background: "var(--bg-surface-variant)", color: "var(--text-disabled)" }}
+                                    style={{ background: "#f7faf8", color: "#74767e" }}
                                 >
                                     <Loader2 size={14} className="animate-spin" />
                                     Thinking...
@@ -442,11 +453,7 @@ export const AiGuide = () => {
                                     key={suggestion}
                                     onClick={() => void handleSend(suggestion)}
                                     className="rounded-full border px-3 py-1.5 text-xs transition-all hover:scale-[1.02]"
-                                    style={{
-                                        borderColor: "var(--border-color)",
-                                        color: "var(--text-primary)",
-                                        background: "transparent",
-                                    }}
+                                    style={{ borderColor: "#dfe8e3", color: "#083b25", background: "#ffffff" }}
                                 >
                                     {suggestion}
                                 </button>
@@ -454,10 +461,10 @@ export const AiGuide = () => {
                         </div>
                     )}
 
-                    <div className="border-t px-4 py-3" style={{ borderColor: "var(--border-color)" }}>
+                    <div className="border-t bg-[#f7faf8] px-4 py-3" style={{ borderColor: "#dfe8e3" }}>
                         <div
-                            className="flex items-center gap-2 rounded-lg px-3 py-2"
-                            style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)" }}
+                            className="flex items-center gap-2 rounded-2xl px-3 py-2"
+                            style={{ background: "#ffffff", border: "1px solid #dfe8e3" }}
                         >
                             <input
                                 ref={inputRef}
@@ -467,13 +474,12 @@ export const AiGuide = () => {
                                 onKeyDown={handleKeyDown}
                                 placeholder="Ask about requests, shops, offers, or launch..."
                                 className="flex-1 bg-transparent text-sm outline-none"
-                                style={{ color: "var(--text-primary)" }}
+                                style={{ color: "#222325" }}
                             />
                             <button
                                 onClick={() => void handleSend()}
                                 disabled={!input.trim() || loading}
-                                className="rounded p-1.5 transition-opacity disabled:opacity-30"
-                                style={{ color: "var(--text-primary)" }}
+                                className="rounded-xl bg-[#0a8f45] p-2 text-white transition hover:bg-[#08783b] disabled:opacity-30"
                             >
                                 <Send size={16} />
                             </button>

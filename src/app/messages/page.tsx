@@ -46,6 +46,8 @@ const emptyContext: OrderContext = {
     orderStarted: false,
 };
 
+const chatContextKey = (needId: string, quoteId: string) => `needero-chat:${needId}:${quoteId}`;
+
 function formatSender(type: string) {
     return type === "business" ? "Business" : "Customer";
 }
@@ -151,13 +153,23 @@ export default function MessagesPage() {
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
+        const needId = params.get("needId") || "";
+        const quoteId = params.get("quoteId") || "";
+        let storedContext: Partial<OrderContext> = {};
+        if (needId && quoteId) {
+            try {
+                storedContext = JSON.parse(window.sessionStorage.getItem(chatContextKey(needId, quoteId)) || "{}") as Partial<OrderContext>;
+            } catch {
+                storedContext = {};
+            }
+        }
         setOrderContext({
-            needId: params.get("needId") || "",
-            quoteId: params.get("quoteId") || "",
+            needId,
+            quoteId,
             bookingId: params.get("bookingId") || "",
             businessId: params.get("businessId") || "",
-            businessName: params.get("businessName") || "",
-            businessAvatar: params.get("businessAvatar") || "",
+            businessName: params.get("businessName") || storedContext.businessName || "",
+            businessAvatar: storedContext.businessAvatar || "",
             orderStarted: params.get("order") === "1",
         });
     }, []);

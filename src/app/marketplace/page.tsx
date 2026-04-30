@@ -68,6 +68,7 @@ const emptyDraft: QuoteDraft = {
 
 const serviceTypes = ["Visit Shop", "Home Visit", "Pickup & Return", "Delivery"];
 const travelServiceTypes = ["Home Visit", "Pickup & Return", "Delivery"];
+const lateMinuteOptions = ["15 minutes", "30 minutes", "45 minutes", "60 minutes"];
 const quoteTabs = ["All Quotes", "Recommended", "Cheapest", "Fastest", "Selected"] as const;
 
 type QuoteTab = (typeof quoteTabs)[number];
@@ -75,6 +76,8 @@ type ScoredOffer = OfferRecord & {
     score: number;
     label: "Best Match" | "Fastest" | "Best Value" | "Cheapest" | "Selected";
 };
+
+const chatContextKey = (needId: string, quoteId: string) => `needero-chat:${needId}:${quoteId}`;
 
 function AvatarCircle({ src, name, className }: { src?: string | null; name: string; className: string }) {
     const [failed, setFailed] = useState(false);
@@ -244,7 +247,7 @@ function QuoteCard({
         ["Extra charges", offer.extraCharges || "None listed"],
         ["Distance", offer.distance || "Nearby"],
         ["Availability", offer.availability || "Not specified"],
-        ["Delay refund", offer.delayRefundRule || "Not specified"],
+        ["Late policy", offer.delayRefundRule || "Not specified"],
     ];
 
     return (
@@ -472,9 +475,9 @@ export default function Marketplace() {
         try {
             if (
                 needsTravelCharge(draft.serviceType) &&
-                (!draft.extraCharges.trim() || !draft.lateFee.trim() || !draft.delayRefundRule.trim())
+                (!draft.extraCharges.trim() || !draft.delayRefundRule.trim())
             ) {
-                setMessage("For home visit, pickup & return, or delivery, add the travel fee, late fine, and late rule.");
+                setMessage("For home visit, pickup & return, or delivery, add the travel fee and late arrival rule.");
                 setSaving(false);
                 return;
             }
@@ -492,7 +495,7 @@ export default function Marketplace() {
                 distance: formatDistanceDraft(draft.distance, draft.distanceUnit),
                 availability: draft.availability,
                 delayRefundRule: needsTravelCharge(draft.serviceType) ? draft.delayRefundRule : "",
-                lateFee: needsTravelCharge(draft.serviceType) ? draft.lateFee : "",
+                lateFee: "",
                 note: draft.note,
             });
             setDraft(emptyDraft);
@@ -526,9 +529,20 @@ export default function Marketplace() {
         } catch (error) {
             console.error("Could not seed quote chat:", error);
         }
-        router.push(
-            `/messages?needId=${encodeURIComponent(selectedNeed.id)}&quoteId=${encodeURIComponent(offer.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName)}&businessAvatar=${encodeURIComponent(offer.businessAvatar || "")}&order=0`,
-        );
+        if (typeof window !== "undefined") {
+            window.sessionStorage.setItem(chatContextKey(selectedNeed.id, offer.id), JSON.stringify({
+                businessAvatar: offer.businessAvatar || "",
+                businessName: offer.businessName || "Local Business",
+            }));
+        }
+        const params = new URLSearchParams({
+            needId: selectedNeed.id,
+            quoteId: offer.id,
+            businessId: offer.businessId || "",
+            businessName: offer.businessName || "Local Business",
+            order: "0",
+        });
+        router.push(`/messages?${params.toString()}`);
     };
 
     const chooseQuote = async (offer: OfferRecord) => {
@@ -825,16 +839,13 @@ export default function Marketplace() {
                                                         </div>
                                                     </div>
                                                     {needsTravelCharge(draft.serviceType)&&(
-                                                        <>
                                                         <div>
-                                                            <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Late fine ($)</label>
-                                                            <MoneyInput value={draft.lateFee} onChange={(value) => updateDraft("lateFee", value)} placeholder="5" required />
+                                                            <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Late arrival rule</label>
+                                                            <select value={draft.delayRefundRule} onChange={e=>updateDraft("delayRefundRule",e.target.value)} required className="nd-select w-full">
+                                                                <option value="">Select grace time</option>
+                                                                {lateMinuteOptions.map((option)=><option key={option} value={`Late after ${option}`}>{option}</option>)}
+                                                            </select>
                                                         </div>
-                                                        <div>
-                                                            <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Late rule</label>
-                                                            <input value={draft.delayRefundRule} onChange={e=>updateDraft("delayRefundRule",e.target.value)} placeholder="e.g. fine after 30 min late" required className="nd-input"/>
-                                                        </div>
-                                                        </>
                                                     )}
                                                 </div>
                                                 <div>

@@ -307,6 +307,12 @@ export default function Home() {
 
     return (
         <main className="bg-[#f7faf8] text-[#222325]">
+            <Link
+                href="/support"
+                className="fixed bottom-24 left-4 z-40 hidden rounded-full border border-[#dfe8e3] bg-white px-4 py-3 text-xs font-black text-[#0a8f45] shadow-xl transition hover:-translate-y-0.5 hover:border-[#0a8f45] sm:inline-flex"
+            >
+                Submit feedback & support
+            </Link>
             <section className="relative min-h-[680px] overflow-hidden bg-[#050816]">
                 <video
                     className="absolute inset-0 h-full w-full object-cover opacity-60"
@@ -345,7 +351,7 @@ export default function Home() {
                             />
                             <button
                                 onClick={runSearch}
-                                className="h-14 rounded-[14px] bg-[#222325] px-7 text-sm font-black text-white transition hover:bg-black"
+                                className="h-14 rounded-[14px] bg-[#0a8f45] px-7 text-sm font-black text-white transition hover:bg-[#08783b]"
                             >
                                 Search
                             </button>
@@ -357,7 +363,7 @@ export default function Home() {
                                 <button
                                     key={item}
                                     onClick={() => router.push(`/marketplace?q=${encodeURIComponent(item)}`)}
-                                    className="rounded-full border border-white/25 bg-white/5 px-4 py-2 text-sm font-bold text-white/85 backdrop-blur transition hover:bg-white/15"
+                                    className="rounded-full border border-white/25 bg-white/5 px-4 py-2 text-sm font-bold text-white/85 backdrop-blur transition hover:border-[#24d381] hover:bg-[#0a8f45]/50"
                                 >
                                     {item}
                                 </button>
@@ -367,7 +373,7 @@ export default function Home() {
                         <div className="mt-10 flex flex-wrap gap-5 text-sm font-semibold text-white/70">
                             {["Free for customers", "Structured Offers", "Contact protected", "Local businesses"].map((item) => (
                                 <span key={item} className="inline-flex items-center gap-2">
-                                    <CheckCircle2 size={17} className="text-white" />
+                                    <CheckCircle2 size={17} className="text-[#24d381]" />
                                     {item}
                                 </span>
                             ))}
@@ -377,7 +383,7 @@ export default function Home() {
                     <aside className="hidden rounded-[30px] border border-white/15 bg-white/95 p-5 shadow-2xl backdrop-blur lg:block">
                         <div className="flex items-center justify-between">
                             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#95979d]">Offer preview</p>
-                            <span className="rounded-full bg-[#222325] px-3 py-1 text-xs font-black text-white">Best Match</span>
+                            <span className="rounded-full bg-[#0a8f45] px-3 py-1 text-xs font-black text-white">Best Match</span>
                         </div>
                         <div className="mt-5 rounded-[24px] bg-[#f7f7f7] p-5">
                             <p className="text-lg font-black">Urgent phone repair</p>
@@ -401,9 +407,9 @@ export default function Home() {
                                     <p className="font-black">Ram Mobile Repair</p>
                                     <p className="mt-1 text-sm text-[#74767e]">Verified - 4.8 rating - 1.2 km away</p>
                                 </div>
-                                <BadgeCheck className="text-[#222325]" size={22} />
+                                <BadgeCheck className="text-[#0a8f45]" size={22} />
                             </div>
-                            <div className="mt-4 rounded-2xl bg-[#050816] p-4 text-white">
+                            <div className="mt-4 rounded-2xl bg-[#083b25] p-4 text-white">
                                 <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Quote</p>
                                 <p className="mt-1 text-2xl font-black">$45</p>
                                 <p className="mt-2 text-sm text-white/70">Home Visit - Today 4:00 PM - 7-day warranty</p>
@@ -417,7 +423,7 @@ export default function Home() {
                 <div className="mx-auto grid max-w-7xl gap-4 px-5 py-6 md:grid-cols-4 md:px-8">
                     {TRUST_ITEMS.map((item) => (
                         <div key={item.title} className="flex items-start gap-3 rounded-2xl bg-[#f7faf8] p-4">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f5f5f5] text-[#222325]">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e9f9f0] text-[#0a8f45]">
                                 <item.icon size={20} />
                             </div>
                             <div>
@@ -446,7 +452,7 @@ export default function Home() {
                             <Link
                                 key={item.label}
                                 href={item.href}
-                                className="group min-h-[145px] rounded-[22px] border border-white/10 bg-white/8 p-5 shadow-sm transition-all hover:-translate-y-1 hover:bg-white hover:text-[#050816] hover:shadow-xl"
+                                className="group min-h-[145px] rounded-[22px] border border-white/10 bg-white/8 p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-[#24d381] hover:bg-white hover:text-[#050816] hover:shadow-xl"
                             >
                                 <item.icon size={25} />
                                 <p className="mt-8 text-base font-black leading-snug">{item.label}</p>
@@ -484,8 +490,8 @@ export default function Home() {
                             ["2", "Receive Offers", "Nearby businesses submit structured Quotes with price, time, warranty, and service type."],
                             ["3", "Compare & Choose", "Chat inside the Quote, choose the best Offer, then move into Booking and payment hold."],
                         ].map(([step, title, copy]) => (
-                            <div key={step} className="rounded-[30px] border border-[#e4e5e7] bg-white p-7 shadow-sm">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#050816] text-lg font-black text-white">{step}</div>
+                            <div key={step} className="rounded-[30px] border border-[#dfe8e3] bg-white p-7 shadow-sm">
+                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e9f9f0] text-lg font-black text-[#0a8f45]">{step}</div>
                                 <h3 className="mt-7 text-2xl font-black tracking-[-0.03em]">{title}</h3>
                                 <p className="mt-3 text-base leading-7 text-[#74767e]">{copy}</p>
                             </div>
@@ -506,7 +512,7 @@ export default function Home() {
                                 New Needs appear as cards with category, location, budget, and Offer count. Preview cards keep the page useful while the live feed warms up.
                             </p>
                         </div>
-                        <Link href="/marketplace" className="inline-flex items-center gap-2 rounded-xl border border-[#222325] px-5 py-3 text-sm font-black transition hover:bg-[#222325] hover:text-white">
+                        <Link href="/marketplace" className="inline-flex items-center gap-2 rounded-xl border border-[#0a8f45] px-5 py-3 text-sm font-black text-[#0a8f45] transition hover:bg-[#0a8f45] hover:text-white">
                             Browse all Needs
                             <ArrowRight size={16} />
                         </Link>
@@ -558,7 +564,7 @@ export default function Home() {
                         Post a Need for free and let nearby businesses compete with clear, structured Offers.
                     </p>
                     <div className="mt-8 flex flex-wrap justify-center gap-3">
-                        <Link href={accountType === "business" ? "/marketplace" : "/client/new"} className="rounded-xl bg-white px-7 py-4 text-sm font-black text-[#050816] transition hover:bg-[#f5f5f5]">
+                        <Link href={accountType === "business" ? "/marketplace" : "/client/new"} className="rounded-xl bg-white px-7 py-4 text-sm font-black text-[#083b25] transition hover:bg-[#e9f9f0]">
                             {accountType === "business" ? "Browse Needs" : "Post a Need"}
                         </Link>
                         <Link href="/marketplace" className="rounded-xl border border-white/20 px-7 py-4 text-sm font-black text-white transition hover:bg-white/10">

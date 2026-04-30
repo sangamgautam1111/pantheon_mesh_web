@@ -67,8 +67,10 @@ const emptyDraft: QuoteDraft = {
 
 const serviceTypes = ["Visit Shop", "Home Visit", "Pickup & Return", "Delivery"];
 const travelServiceTypes = ["Home Visit", "Pickup & Return", "Delivery"];
+const lateMinuteOptions = ["15 minutes", "30 minutes", "45 minutes", "60 minutes"];
 
 const needsTravelCharge = (serviceType: string) => travelServiceTypes.includes(serviceType);
+const chatContextKey = (needId: string, quoteId: string) => `needero-chat:${needId}:${quoteId}`;
 
 const extraChargeLabel = (serviceType: string) => {
     if (serviceType === "Home Visit") return "Home visit fee";
@@ -220,33 +222,48 @@ function QuoteRow({
     onEdit: () => void;
     onDelete: () => void;
 }) {
+    const comparison = [
+        ["Price", formatMoney(offer.price) || offer.price || "Open"],
+        ["Arrival", offer.time || offer.availability || "Time not set"],
+        ["Service", offer.serviceType || "Service"],
+        ["Warranty", offer.warranty || "Not listed"],
+    ];
     return (
-        <article className="rounded-[24px] border border-[#e4e5e7] bg-white p-4 shadow-sm sm:p-5">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                <div className="flex gap-4">
+        <article className="rounded-[26px] border border-[#dfe8e3] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl sm:p-5">
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                <div className="min-w-0 flex-1">
+                    <div className="flex gap-4">
                     <AvatarCircle src={offer.businessAvatar} name={offer.businessName || "Business"} className="h-12 w-12 text-lg" />
-                    <div>
+                    <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-lg font-black text-[#222325]">{offer.businessName}</h3>
-                            <span className="rounded-full bg-[#f5f5f5] px-3 py-1 text-[11px] font-black text-[#62646a]">Verified-ready</span>
+                            <span className="rounded-full bg-[#e9f9f0] px-3 py-1 text-[11px] font-black text-[#0a8f45]">Verified-ready</span>
                         </div>
                         <p className="mt-2 text-sm text-[#74767e]">
                             {offer.serviceType || "Service"} - {offer.time || offer.availability || "Time not set"} - {offer.distance || "Nearby"}
                         </p>
-                        <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                            <span className="rounded-xl bg-[#f7f7f7] px-3 py-2"><strong>Warranty:</strong> {offer.warranty || "Not listed"}</span>
-                            <span className="rounded-xl bg-[#f7f7f7] px-3 py-2"><strong>Includes:</strong> {offer.included || "Discuss in chat"}</span>
-                            <span className="rounded-xl bg-[#f7f7f7] px-3 py-2"><strong>Extra:</strong> {offer.extraCharges || "None listed"}</span>
-                            <span className="rounded-xl bg-[#f7f7f7] px-3 py-2"><strong>Late fine:</strong> {offer.lateFee || offer.delayRefundRule || "Not listed"}</span>
-                        </div>
-                        {offer.businessNote && <p className="mt-4 text-sm leading-6 text-[#62646a]">{offer.businessNote}</p>}
                     </div>
+                    </div>
+                    <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                        {comparison.map(([label, value]) => (
+                            <div key={label} className="rounded-2xl bg-[#f7faf8] p-4">
+                                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8a8d92]">{label}</p>
+                                <p className="mt-1 line-clamp-2 text-sm font-black text-[#222325]">{value}</p>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
+                        <span className="rounded-2xl bg-white px-3 py-2 ring-1 ring-[#e4e5e7]"><strong>Includes:</strong> {offer.included || "Discuss in chat"}</span>
+                        <span className="rounded-2xl bg-white px-3 py-2 ring-1 ring-[#e4e5e7]"><strong>Extra:</strong> {offer.extraCharges ? formatMoney(offer.extraCharges) || offer.extraCharges : "None listed"}</span>
+                        <span className="rounded-2xl bg-white px-3 py-2 ring-1 ring-[#e4e5e7]"><strong>Late:</strong> {offer.delayRefundRule || "Not listed"}</span>
+                    </div>
+                    {offer.businessNote && <p className="mt-4 text-sm leading-6 text-[#62646a]">{offer.businessNote}</p>}
                 </div>
-                <div className="w-full rounded-2xl bg-[#050816] p-4 text-white lg:min-w-[210px] lg:w-auto">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/45">Offer price</p>
+                <div className="w-full rounded-3xl bg-[#083b25] p-4 text-white xl:min-w-[210px] xl:w-auto">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/55">Offer price</p>
                     <p className="mt-1 text-3xl font-black">{formatMoney(offer.price) || offer.price || "Open"}</p>
                     <div className="mt-4 grid gap-2">
-                        <button onClick={onMessage} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 px-4 py-3 text-sm font-black text-white hover:bg-white/10">
+                        <button onClick={onMessage} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 px-4 py-3 text-sm font-black text-white hover:bg-white/10">
                             <MessageSquare size={15} />
                             Message
                         </button>
@@ -263,7 +280,7 @@ function QuoteRow({
                             </div>
                         )}
                         {canOrder && (
-                            <button onClick={onChoose} disabled={ordering} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-black text-[#050816] hover:bg-[#f5f5f5] disabled:opacity-60">
+                            <button onClick={onChoose} disabled={ordering} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-black text-[#083b25] hover:bg-[#e9f9f0] disabled:opacity-60">
                                 {ordering ? <Clock size={15} className="animate-spin" /> : <ShoppingBag size={15} />}
                                 Choose Offer
                             </button>
@@ -338,9 +355,9 @@ export default function NeedDetailPage() {
             const businessAvatar = profile?.photoURL || user.photoURL || null;
             if (
                 needsTravelCharge(draft.serviceType) &&
-                (!draft.extraCharges.trim() || !draft.lateFee.trim() || !draft.delayRefundRule.trim())
+                (!draft.extraCharges.trim() || !draft.delayRefundRule.trim())
             ) {
-                setMessage("For home visit, pickup & return, or delivery, add the travel fee, late fine, and late rule.");
+                setMessage("For home visit, pickup & return, or delivery, add the travel fee and late arrival rule.");
                 setSaving(false);
                 return;
             }
@@ -358,7 +375,7 @@ export default function NeedDetailPage() {
                     distance: formatDistanceDraft(draft.distance, draft.distanceUnit),
                     availability: draft.availability || draft.time,
                     delayRefundRule: needsTravelCharge(draft.serviceType) ? draft.delayRefundRule : "",
-                    lateFee: needsTravelCharge(draft.serviceType) ? draft.lateFee : "",
+                    lateFee: "",
                     note: draft.note,
                 });
                 setEditingOfferId(null);
@@ -377,7 +394,7 @@ export default function NeedDetailPage() {
                     distance: formatDistanceDraft(draft.distance, draft.distanceUnit),
                     availability: draft.availability || draft.time,
                     delayRefundRule: needsTravelCharge(draft.serviceType) ? draft.delayRefundRule : "",
-                    lateFee: needsTravelCharge(draft.serviceType) ? draft.lateFee : "",
+                    lateFee: "",
                     note: draft.note,
                 });
             }
@@ -454,7 +471,20 @@ export default function NeedDetailPage() {
         } catch (error) {
             console.error("Could not seed quote chat:", error);
         }
-        router.push(`/messages?needId=${encodeURIComponent(need.id)}&quoteId=${encodeURIComponent(offer.id)}&businessId=${encodeURIComponent(offer.businessId || "")}&businessName=${encodeURIComponent(offer.businessName || "Local Business")}&businessAvatar=${encodeURIComponent(offer.businessAvatar || "")}&order=0`);
+        if (typeof window !== "undefined") {
+            window.sessionStorage.setItem(chatContextKey(need.id, offer.id), JSON.stringify({
+                businessAvatar: offer.businessAvatar || "",
+                businessName: offer.businessName || "Local Business",
+            }));
+        }
+        const params = new URLSearchParams({
+            needId: need.id,
+            quoteId: offer.id,
+            businessId: offer.businessId || "",
+            businessName: offer.businessName || "Local Business",
+            order: "0",
+        });
+        router.push(`/messages?${params.toString()}`);
     };
 
     const chooseQuote = async (offer: OfferRecord) => {
@@ -479,9 +509,32 @@ export default function NeedDetailPage() {
                         <div className="mt-10 rounded-[28px] border border-[#e4e5e7] bg-white p-12 text-center font-black">Loading Need...</div>
                     ) : need ? (
                         <>
-                            <section className="mt-6 grid gap-5 lg:grid-cols-[1fr_360px] lg:gap-8">
-                                <NeedMedia need={need} />
-                                <aside className="h-fit rounded-[28px] border border-[#e4e5e7] bg-white p-6 shadow-sm">
+                            <section className="mt-6 grid gap-5 lg:grid-cols-[1fr_340px] lg:gap-8">
+                                <div className="rounded-[30px] border border-[#dfe8e3] bg-white p-6 shadow-sm sm:p-8">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="rounded-full bg-[#e9f9f0] px-3 py-1 text-xs font-black text-[#0a8f45]">{need.category}</span>
+                                        <span className="rounded-full bg-[#f4f8f5] px-3 py-1 text-xs font-black text-[#4b5563]">{need.urgency || "Flexible"}</span>
+                                        <span className="rounded-full bg-[#f4f8f5] px-3 py-1 text-xs font-black text-[#4b5563]">{offers.length} Offer{offers.length === 1 ? "" : "s"}</span>
+                                    </div>
+                                    <h1 className="mt-5 max-w-4xl text-3xl font-black leading-tight tracking-[-0.05em] text-[#050816] sm:text-5xl">
+                                        {need.title}
+                                    </h1>
+                                    <p className="mt-4 max-w-3xl text-base leading-8 text-[#62646a]">{need.description || need.issue}</p>
+                                    <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                        {[
+                                            ["Area", need.location || "Not shared"],
+                                            ["Budget", need.budget || "Open"],
+                                            ["Status", need.status || "Open"],
+                                            ["Privacy", "Contact protected"],
+                                        ].map(([label, value]) => (
+                                            <div key={label} className="rounded-2xl bg-[#f7faf8] p-4">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8a8d92]">{label}</p>
+                                                <p className="mt-1 line-clamp-2 text-sm font-black text-[#222325]">{value}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <aside className="h-fit rounded-[28px] border border-[#e4e5e7] bg-white p-6 shadow-sm lg:sticky lg:top-24">
                                     <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#95979d]">Need owner</p>
                                     <div className="mt-4 flex items-center gap-3">
                                         <AvatarCircle src={need.customerAvatar} name={need.customerName || "Customer"} className="h-12 w-12 text-base" />
@@ -510,17 +563,28 @@ export default function NeedDetailPage() {
                                 </aside>
                             </section>
 
-                            <section className="mt-8 grid gap-5 lg:grid-cols-[1fr_360px] lg:gap-8">
+                            <section className="mt-8 grid gap-5 lg:grid-cols-[1fr_340px] lg:gap-8">
                                 <div>
                                     <div className="rounded-[28px] border border-[#e4e5e7] bg-white p-6 shadow-sm">
                                         <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#95979d]">Need details</p>
-                                        <h1 className="mt-3 text-3xl font-black leading-tight tracking-[-0.05em] sm:text-4xl">{need.title}</h1>
+                                        <h2 className="mt-3 text-2xl font-black tracking-[-0.04em]">Problem and preferences</h2>
                                         <p className="mt-4 text-base leading-8 text-[#62646a]">{need.description || need.issue}</p>
+                                        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                                            <span className="rounded-2xl bg-[#f7faf8] p-4 text-sm"><strong>Urgency:</strong> {need.urgency || "Flexible"}</span>
+                                            <span className="rounded-2xl bg-[#f7faf8] p-4 text-sm"><strong>Budget:</strong> {need.budget || "Open"}</span>
+                                            <span className="rounded-2xl bg-[#f7faf8] p-4 text-sm"><strong>Offers:</strong> {offers.length}</span>
+                                        </div>
+                                        <div className="mt-5">
+                                            <NeedMedia need={need} />
+                                        </div>
                                     </div>
 
                                     <div className="mt-6 flex items-center justify-between">
-                                        <h2 className="text-2xl font-black">Quotes from businesses</h2>
-                                        <span className="rounded-full bg-[#222325] px-4 py-2 text-sm font-black text-white">{offers.length} Offers</span>
+                                        <div>
+                                            <h2 className="text-2xl font-black">Offers from local businesses</h2>
+                                            <p className="mt-1 text-sm font-semibold text-[#74767e]">Compare price, time, warranty, service type, and trust before choosing.</p>
+                                        </div>
+                                        <span className="rounded-full bg-[#0a8f45] px-4 py-2 text-sm font-black text-white">{offers.length} Offers</span>
                                     </div>
 
                                     <div className="mt-4 space-y-4">
@@ -560,7 +624,7 @@ export default function NeedDetailPage() {
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div>
                                                         <h3 className="text-xl font-black">{editingOfferId ? "Edit Offer" : "Send an Offer"}</h3>
-                                                        <p className="mt-1 text-xs font-semibold text-[#74767e]">Customers compare price, service type, arrival time, warranty, and late fine.</p>
+                                                        <p className="mt-1 text-xs font-semibold text-[#74767e]">Customers compare price, service type, arrival time, warranty, and late policy.</p>
                                                     </div>
                                                     {editingOfferId && (
                                                         <button type="button" onClick={cancelEditOffer} className="rounded-full border border-[#dadbdd] p-2 hover:bg-[#f5f5f5]">
@@ -602,16 +666,18 @@ export default function NeedDetailPage() {
                                                     </div>
                                                 </label>
                                                 {needsTravelCharge(draft.serviceType) && (
-                                                    <>
-                                                        <label className="block">
-                                                            <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Late fine</span>
-                                                            <MoneyInput value={draft.lateFee} onChange={(value) => updateDraft("lateFee", value)} placeholder="5" required />
-                                                        </label>
-                                                        <input required value={draft.delayRefundRule} onChange={(e) => updateDraft("delayRefundRule", e.target.value)} className="nd-input rounded-xl" placeholder="Late rule, e.g. fine after 30 min late" />
-                                                    </>
+                                                    <label className="block">
+                                                        <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Late arrival rule</span>
+                                                        <select required value={draft.delayRefundRule} onChange={(e) => updateDraft("delayRefundRule", e.target.value)} className="nd-select w-full rounded-xl">
+                                                            <option value="">Select grace time</option>
+                                                            {lateMinuteOptions.map((option) => (
+                                                                <option key={option} value={`Late after ${option}`}>{option}</option>
+                                                            ))}
+                                                        </select>
+                                                    </label>
                                                 )}
                                                 <textarea required value={draft.note} onChange={(e) => updateDraft("note", e.target.value)} className="nd-input min-h-28 resize-none rounded-xl" placeholder="Write a useful note for the customer." />
-                                                <button disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#222325] px-5 py-4 text-sm font-black text-white hover:bg-black disabled:opacity-60">
+                                                <button disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a8f45] px-5 py-4 text-sm font-black text-white hover:bg-[#08783b] disabled:opacity-60">
                                                     {saving ? <Clock size={16} className="animate-spin" /> : <Send size={16} />}
                                                     {editingOfferId ? "Save Offer" : "Send Offer"}
                                                 </button>
@@ -634,7 +700,7 @@ export default function NeedDetailPage() {
                     ) : (
                         <div className="mt-10 rounded-[28px] border border-[#e4e5e7] bg-white p-12 text-center">
                             <p className="text-2xl font-black">Need not found</p>
-                            <Link href="/marketplace" className="mt-5 inline-flex rounded-xl bg-[#222325] px-5 py-3 text-sm font-black text-white">Browse Needs</Link>
+                            <Link href="/marketplace" className="mt-5 inline-flex rounded-xl bg-[#0a8f45] px-5 py-3 text-sm font-black text-white">Browse Needs</Link>
                         </div>
                     )}
                 </div>
