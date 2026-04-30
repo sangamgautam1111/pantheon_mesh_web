@@ -7,6 +7,7 @@ import {
     Briefcase,
     CheckCircle2,
     Clock,
+    FileText,
     Flame,
     MapPin,
     MessageCircle,
@@ -86,6 +87,36 @@ function AvatarCircle({ src, name, className }: { src?: string | null; name: str
             ) : (
                 <div className="flex h-full w-full items-center justify-center">{(name || "U").charAt(0).toUpperCase()}</div>
             )}
+        </div>
+    );
+}
+
+function MoneyInput({
+    value,
+    onChange,
+    placeholder = "0",
+    required = false,
+    min = "0",
+}: {
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+    required?: boolean;
+    min?: string;
+}) {
+    return (
+        <div className="flex overflow-hidden rounded-xl border border-[#dadbdd] bg-white focus-within:border-[#222325] focus-within:ring-4 focus-within:ring-black/5">
+            <span className="flex w-12 shrink-0 items-center justify-center border-r border-[#dadbdd] bg-[#f7f7f7] text-sm font-black text-[#74767e]">$</span>
+            <input
+                type="number"
+                min={min}
+                step="0.01"
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                placeholder={placeholder}
+                required={required}
+                className="min-w-0 flex-1 px-4 py-3 text-sm outline-none"
+            />
         </div>
     );
 }
@@ -171,6 +202,18 @@ function NeedMedia({ src, title, category }: { src?: string | null; title: strin
     }
 
     const isVideo = src.startsWith("data:video") || /\.(mp4|webm|mov)$/i.test(src);
+    const isPdf = src.startsWith("data:application/pdf") || /\.pdf(?:\?|$)/i.test(src);
+    if (isPdf) {
+        return (
+            <div className="flex h-full w-full flex-col items-center justify-center bg-white p-5 text-center">
+                <div className="rounded-2xl bg-[#222325] p-3 text-white">
+                    <FileText size={24} />
+                </div>
+                <p className="mt-3 line-clamp-2 text-sm font-black text-[#222325]">{title}</p>
+                <p className="mt-1 text-xs font-semibold text-[#74767e]">PDF attachment</p>
+            </div>
+        );
+    }
     return isVideo ? (
         <video src={src} controls className="h-full w-full object-cover" onError={() => setFailed(true)} />
     ) : (
@@ -427,6 +470,14 @@ export default function Marketplace() {
         setSaving(true);
         setMessage("");
         try {
+            if (
+                needsTravelCharge(draft.serviceType) &&
+                (!draft.extraCharges.trim() || !draft.lateFee.trim() || !draft.delayRefundRule.trim())
+            ) {
+                setMessage("For home visit, pickup & return, or delivery, add the travel fee, late fine, and late rule.");
+                setSaving(false);
+                return;
+            }
             await createOffer({
                 needId: selectedNeedId,
                 businessId: user.uid,
@@ -737,10 +788,7 @@ export default function Marketplace() {
                                                 <div className="grid gap-4 md:grid-cols-2">
                                                     <div>
                                                         <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Price ($)*</label>
-                                                        <div className="relative">
-                                                            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-bold" style={{color:"#74767e"}}>$</span>
-                                                            <input type="number" min="1" step="0.01" value={draft.price} onChange={e=>updateDraft("price",e.target.value)} placeholder="50" required className="nd-input" style={{paddingLeft:42}}/>
-                                                        </div>
+                                                        <MoneyInput value={draft.price} onChange={(value) => updateDraft("price", value)} placeholder="50" required min="1" />
                                                     </div>
                                                     <div>
                                                         <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Service Type</label>
@@ -749,7 +797,7 @@ export default function Marketplace() {
                                                         </select>
                                                     </div>
                                                     <div>
-                                                        <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Arrival Date & Time*</label>
+                                                        <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Specific arrival / completion time*</label>
                                                         <input type="datetime-local" value={draft.time} onChange={e=>updateDraft("time",e.target.value)} required className="nd-input"/>
                                                     </div>
                                                     <div>
@@ -763,10 +811,7 @@ export default function Marketplace() {
                                                     {needsTravelCharge(draft.serviceType)&&(
                                                         <div>
                                                             <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>{extraChargeLabel(draft.serviceType)} ($)</label>
-                                                            <div className="relative">
-                                                                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-bold" style={{color:"#74767e"}}>$</span>
-                                                                <input type="number" min="0" step="0.01" value={draft.extraCharges} onChange={e=>updateDraft("extraCharges",e.target.value)} placeholder="0" className="nd-input" style={{paddingLeft:42}}/>
-                                                            </div>
+                                                            <MoneyInput value={draft.extraCharges} onChange={(value) => updateDraft("extraCharges", value)} placeholder="0" required />
                                                         </div>
                                                     )}
                                                     <div>
@@ -783,14 +828,11 @@ export default function Marketplace() {
                                                         <>
                                                         <div>
                                                             <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Late fine ($)</label>
-                                                            <div className="relative">
-                                                                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-bold" style={{color:"#74767e"}}>$</span>
-                                                                <input type="number" min="0" step="0.01" value={draft.lateFee} onChange={e=>updateDraft("lateFee",e.target.value)} placeholder="5" className="nd-input" style={{paddingLeft:42}}/>
-                                                            </div>
+                                                            <MoneyInput value={draft.lateFee} onChange={(value) => updateDraft("lateFee", value)} placeholder="5" required />
                                                         </div>
                                                         <div>
                                                             <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Late rule</label>
-                                                            <input value={draft.delayRefundRule} onChange={e=>updateDraft("delayRefundRule",e.target.value)} placeholder="e.g. fine after 30 min late" className="nd-input"/>
+                                                            <input value={draft.delayRefundRule} onChange={e=>updateDraft("delayRefundRule",e.target.value)} placeholder="e.g. fine after 30 min late" required className="nd-input"/>
                                                         </div>
                                                         </>
                                                     )}

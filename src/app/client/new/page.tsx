@@ -11,6 +11,7 @@ import {
     Check,
     CheckCircle2,
     ChevronLeft,
+    FileText,
     Loader2,
     MapPin,
     MessageSquare,
@@ -37,6 +38,34 @@ type UploadedMedia = {
     type: string;
     name: string;
 };
+
+const isPdfMedia = (media?: UploadedMedia | null) =>
+    Boolean(media?.type === "application/pdf" || media?.dataUrl?.startsWith("data:application/pdf") || /\.pdf$/i.test(media?.name || ""));
+
+function UploadedMediaPreview({ media, compact = false }: { media: UploadedMedia; compact?: boolean }) {
+    if (isPdfMedia(media)) {
+        return (
+            <div className={`mt-5 overflow-hidden rounded-2xl border border-[#dadbdd] bg-white ${compact ? "" : ""}`}>
+                <div className="flex items-center gap-3 bg-[#f7f7f7] p-4">
+                    <div className="rounded-xl bg-[#222325] p-2 text-white">
+                        <FileText size={18} />
+                    </div>
+                    <div className="min-w-0">
+                        <p className="truncate text-sm font-black">{media.name}</p>
+                        <p className="text-xs font-semibold text-[#74767e]">PDF attached for businesses to review</p>
+                    </div>
+                </div>
+                {!compact && <iframe src={media.dataUrl} title={media.name} className="h-72 w-full bg-white" />}
+            </div>
+        );
+    }
+
+    if (media.type.startsWith("video/")) {
+        return <video src={media.dataUrl} controls className={`${compact ? "h-36" : "mt-5 max-h-72"} w-full rounded-2xl object-cover`} />;
+    }
+
+    return <img src={media.dataUrl} alt={media.name} className={`${compact ? "h-36" : "mt-5 max-h-72"} w-full rounded-2xl object-cover`} />;
+}
 
 type PinPoint = {
     address: string;
@@ -313,23 +342,17 @@ export default function NewCustomerRequestPage() {
                         </div>
                     </div>
                     <label className="mt-5 block cursor-pointer rounded-[28px] border border-dashed border-[#dadbdd] bg-white p-5 transition hover:border-[#222325]">
-                        <input type="file" accept="image/*,video/*" onChange={handlePhoto} className="hidden" />
+                        <input type="file" accept="image/*,video/*,application/pdf,.pdf" onChange={handlePhoto} className="hidden" />
                         <div className="flex items-center gap-4">
                             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f5f5f5] p-4">
                                 <UploadCloud size={22} />
                             </div>
                             <div>
-                                <p className="font-black">Upload photo or video</p>
+                                <p className="font-black">Upload photo, video, or PDF</p>
                                 <p className="mt-1 text-sm text-[#74767e]">Optional, but it helps businesses quote faster.</p>
                             </div>
                         </div>
-                        {uploadedMedia ? (
-                            uploadedMedia.type.startsWith("video/") ? (
-                                <video src={uploadedMedia.dataUrl} controls className="mt-5 max-h-72 w-full rounded-2xl object-cover" />
-                            ) : (
-                                <img src={uploadedMedia.dataUrl} alt={uploadedMedia.name} className="mt-5 max-h-72 w-full rounded-2xl object-cover" />
-                            )
-                        ) : null}
+                        {uploadedMedia ? <UploadedMediaPreview media={uploadedMedia} /> : null}
                     </label>
                 </section>
             );
@@ -418,9 +441,9 @@ export default function NewCustomerRequestPage() {
                         {budget === "Custom" && (
                             <label>
                                 <span className="text-xs font-black uppercase tracking-[0.16em] text-[#74767e]">Custom budget</span>
-                                <div className="relative mt-2">
-                                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-[#74767e]">$</span>
-                                    <input value={customBudget} onChange={(event) => setCustomBudget(event.target.value)} className="nd-input rounded-2xl pl-9" placeholder="50" />
+                                <div className="mt-2 flex overflow-hidden rounded-2xl border border-[#dadbdd] bg-white focus-within:border-[#222325] focus-within:ring-4 focus-within:ring-black/5">
+                                    <span className="flex w-12 shrink-0 items-center justify-center border-r border-[#dadbdd] bg-[#f7f7f7] text-sm font-black text-[#74767e]">$</span>
+                                    <input value={customBudget} onChange={(event) => setCustomBudget(event.target.value)} className="min-w-0 flex-1 px-4 py-3 text-sm outline-none" placeholder="50" inputMode="decimal" />
                                 </div>
                             </label>
                         )}
@@ -431,8 +454,8 @@ export default function NewCustomerRequestPage() {
                             </select>
                         </label>
                         <label>
-                            <span className="text-xs font-black uppercase tracking-[0.16em] text-[#74767e]">Preferred time</span>
-                            <input value={preferredTime} onChange={(event) => setPreferredTime(event.target.value)} className="nd-input mt-2 rounded-2xl" placeholder="Today 4 PM, tomorrow morning..." />
+                            <span className="text-xs font-black uppercase tracking-[0.16em] text-[#74767e]">Preferred date & time</span>
+                            <input type="datetime-local" value={preferredTime} onChange={(event) => setPreferredTime(event.target.value)} className="nd-input mt-2 rounded-2xl" />
                         </label>
                         <label>
                             <span className="text-xs font-black uppercase tracking-[0.16em] text-[#74767e]">Warranty important?</span>
@@ -622,11 +645,9 @@ function NeedPreview({
         <div className={compact ? "mt-5" : "mt-8"}>
             <div className="overflow-hidden rounded-[24px] border border-[#e4e5e7] bg-white">
                 {media ? (
-                    media.type.startsWith("video/") ? (
-                        <video src={media.dataUrl} controls className={compact ? "h-36 w-full object-cover" : "max-h-80 w-full object-cover"} />
-                    ) : (
-                        <img src={media.dataUrl} alt={media.name} className={compact ? "h-36 w-full object-cover" : "max-h-80 w-full object-cover"} />
-                    )
+                    <div className={compact ? "" : "p-5 pb-0"}>
+                        <UploadedMediaPreview media={media} compact={compact} />
+                    </div>
                 ) : (
                     <div className={`${compact ? "h-32" : "h-52"} flex items-center justify-center bg-[#f5f5f5]`}>
                         <Camera className="text-[#b5b6ba]" size={32} />

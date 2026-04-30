@@ -2,7 +2,7 @@
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { Edit3, Image as ImageIcon, Loader2, MapPin, Paperclip, Search, Send, ShoppingBag, Trash2, X } from "lucide-react";
+import { Edit3, FileText, Image as ImageIcon, Loader2, MapPin, Paperclip, Search, Send, ShoppingBag, Trash2, X } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -90,6 +90,45 @@ function AvatarCircle({ src, name, className }: { src?: string | null; name: str
                 <img src={src || ""} alt={name} className="h-full w-full object-cover" onError={() => setFailed(true)} />
             ) : (
                 <div className="flex h-full w-full items-center justify-center">{avatarLabel(name)}</div>
+            )}
+        </div>
+    );
+}
+
+function AttachmentPreview({ attachment }: { attachment: MessageAttachment }) {
+    const isImage = attachment.type.startsWith("image/") && attachment.dataUrl;
+    const isVideo = attachment.type.startsWith("video/") && attachment.dataUrl;
+    const isPdf = Boolean(
+        attachment.type === "application/pdf" ||
+        attachment.dataUrl?.startsWith("data:application/pdf") ||
+        /\.pdf$/i.test(attachment.name || ""),
+    );
+
+    return (
+        <div className="mt-2 overflow-hidden rounded-2xl bg-white/10 text-xs font-semibold">
+            {isImage ? <img src={attachment.dataUrl} alt={attachment.name} className="max-h-64 w-full object-cover" /> : null}
+            {isVideo ? <video src={attachment.dataUrl} controls className="max-h-64 w-full object-cover" /> : null}
+            {isPdf ? (
+                <div className="bg-white text-[#222325]">
+                    <div className="flex items-center gap-2 border-b border-[#e4e5e7] p-3">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#222325] text-white">
+                            <FileText size={16} />
+                        </span>
+                        <div className="min-w-0">
+                            <p className="truncate font-black">{attachment.name || "PDF attachment"}</p>
+                            <p className="text-[11px] font-semibold text-[#74767e]">PDF attachment</p>
+                        </div>
+                    </div>
+                    {attachment.dataUrl ? <iframe src={attachment.dataUrl} title={attachment.name} className="h-64 w-full bg-white" /> : null}
+                </div>
+            ) : null}
+            {!isImage && !isVideo && !isPdf ? (
+                <div className="flex items-center gap-2 bg-white p-3 text-[#222325]">
+                    <FileText size={16} />
+                    <span className="truncate">{attachment.name}</span>
+                </div>
+            ) : (
+                <p className="p-2">{attachment.name}</p>
             )}
         </div>
     );
@@ -446,17 +485,7 @@ export default function MessagesPage() {
                                                                 </div>
                                                             </div>
                                                         )}
-                                                        {message.attachments?.map((attachment) => (
-                                                            <div key={attachment.name} className="mt-2 overflow-hidden rounded-2xl bg-white/10 text-xs font-semibold">
-                                                                {attachment.type.startsWith("image/") && attachment.dataUrl ? (
-                                                                    <img src={attachment.dataUrl} alt={attachment.name} className="max-h-64 w-full object-cover" />
-                                                                ) : null}
-                                                                {attachment.type.startsWith("video/") && attachment.dataUrl ? (
-                                                                    <video src={attachment.dataUrl} controls className="max-h-64 w-full object-cover" />
-                                                                ) : null}
-                                                                <p className="p-2">{attachment.name}</p>
-                                                            </div>
-                                                        ))}
+                                                        {message.attachments?.map((attachment) => <AttachmentPreview key={attachment.name} attachment={attachment} />)}
                                                         {mine && (
                                                             <div className="mt-3 flex justify-end gap-2">
                                                                 <button

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
     ArrowRight, Briefcase, CheckCircle2, Clock, MapPin,
-    MessageSquare, Plus, Search, Star, RefreshCw, Flame, Trash2
+    MessageSquare, Plus, Search, Star, RefreshCw, Flame, Trash2, FileText
 } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
@@ -25,6 +25,15 @@ function statusConfig(status: string) {
 function NeedMedia({ src }: { src?: string | null }) {
     if (!src) return null;
     const isVideo = src.startsWith("data:video") || /\.(mp4|webm|mov)$/i.test(src);
+    const isPdf = src.startsWith("data:application/pdf") || /\.pdf(?:\?|$)/i.test(src);
+    if (isPdf) {
+        return (
+            <div className="flex h-20 w-24 flex-shrink-0 flex-col items-center justify-center rounded-xl border border-[#e4e5e7] bg-[#f7f7f7] text-[10px] font-black uppercase tracking-wide text-[#74767e]">
+                <FileText size={18} className="mb-1 text-[#222325]" />
+                PDF
+            </div>
+        );
+    }
     return isVideo ? (
         <video src={src} controls className="h-20 w-24 rounded-xl object-cover flex-shrink-0" />
     ) : (

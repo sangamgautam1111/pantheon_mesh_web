@@ -8,6 +8,7 @@ import {
     CheckCircle2,
     Clock,
     Edit3,
+    FileText,
     ImageIcon,
     MapPin,
     MessageSquare,
@@ -124,10 +125,41 @@ function AvatarCircle({ src, name, className }: { src?: string | null; name: str
     );
 }
 
+function MoneyInput({
+    value,
+    onChange,
+    placeholder = "0",
+    required = false,
+    min = "0",
+}: {
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+    required?: boolean;
+    min?: string;
+}) {
+    return (
+        <div className="flex overflow-hidden rounded-xl border border-[#dadbdd] bg-white focus-within:border-[#222325] focus-within:ring-4 focus-within:ring-black/5">
+            <span className="flex w-12 shrink-0 items-center justify-center border-r border-[#dadbdd] bg-[#f7f7f7] text-sm font-black text-[#74767e]">$</span>
+            <input
+                type="number"
+                min={min}
+                step="0.01"
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                placeholder={placeholder}
+                required={required}
+                className="min-w-0 flex-1 px-4 py-3 text-sm outline-none"
+            />
+        </div>
+    );
+}
+
 function NeedMedia({ need }: { need: NeedRecord }) {
     const [failed, setFailed] = useState(false);
     const src = need.photoPreview;
     const isVideo = src && (src.startsWith("data:video") || /\.(mp4|webm|mov)$/i.test(src));
+    const isPdf = src && (src.startsWith("data:application/pdf") || /\.pdf(?:\?|$)/i.test(src));
 
     if (!src || failed) {
         return (
@@ -145,7 +177,20 @@ function NeedMedia({ need }: { need: NeedRecord }) {
 
     return (
         <div className="overflow-hidden rounded-[24px] border border-[#e4e5e7] bg-white sm:rounded-[28px]">
-            {isVideo ? (
+            {isPdf ? (
+                <div>
+                    <div className="flex items-center gap-3 border-b border-[#e4e5e7] bg-[#f7f7f7] p-4">
+                        <div className="rounded-xl bg-[#222325] p-2 text-white">
+                            <FileText size={18} />
+                        </div>
+                        <div>
+                            <p className="text-sm font-black">{need.title}</p>
+                            <p className="text-xs font-semibold text-[#74767e]">PDF attachment</p>
+                        </div>
+                    </div>
+                    <iframe src={src} title={need.title} className="h-[520px] w-full bg-white" onError={() => setFailed(true)} />
+                </div>
+            ) : isVideo ? (
                 <video src={src} controls className="max-h-[320px] w-full object-cover sm:max-h-[540px]" onError={() => setFailed(true)} />
             ) : (
                 <img src={src} alt={need.title} className="max-h-[320px] w-full object-cover sm:max-h-[540px]" onError={() => setFailed(true)} />
@@ -291,6 +336,14 @@ export default function NeedDetailPage() {
         setMessage("");
         try {
             const businessAvatar = profile?.photoURL || user.photoURL || null;
+            if (
+                needsTravelCharge(draft.serviceType) &&
+                (!draft.extraCharges.trim() || !draft.lateFee.trim() || !draft.delayRefundRule.trim())
+            ) {
+                setMessage("For home visit, pickup & return, or delivery, add the travel fee, late fine, and late rule.");
+                setSaving(false);
+                return;
+            }
             if (editingOfferId) {
                 await updateOffer({
                     offerId: editingOfferId,
@@ -517,10 +570,7 @@ export default function NeedDetailPage() {
                                                 </div>
                                                 <label className="block">
                                                     <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Price</span>
-                                                    <div className="relative">
-                                                        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-[#74767e]">$</span>
-                                                        <input required type="number" min="1" step="0.01" value={draft.price} onChange={(e) => updateDraft("price", e.target.value)} className="nd-input rounded-xl" style={{ paddingLeft: 42 }} placeholder="50" />
-                                                    </div>
+                                                    <MoneyInput value={draft.price} onChange={(value) => updateDraft("price", value)} placeholder="50" required min="1" />
                                                 </label>
                                                 <label className="block">
                                                     <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Service type</span>
@@ -529,18 +579,16 @@ export default function NeedDetailPage() {
                                                     </select>
                                                 </label>
                                                 <label className="block">
-                                                    <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Actual arrival / completion time</span>
-                                                <input required type="datetime-local" value={draft.time} onChange={(e) => updateDraft("time", e.target.value)} className="nd-input rounded-xl" />
+                                                    <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Specific arrival / completion time</span>
+                                                    <input required type="datetime-local" value={draft.time} onChange={(e) => updateDraft("time", e.target.value)} className="nd-input rounded-xl" />
                                                 </label>
+                                                <input value={draft.availability} onChange={(e) => updateDraft("availability", e.target.value)} className="nd-input rounded-xl" placeholder="Availability note, e.g. 4:00 PM - 6:00 PM" />
                                                 <input value={draft.warranty} onChange={(e) => updateDraft("warranty", e.target.value)} className="nd-input rounded-xl" placeholder="Warranty / guarantee" />
                                                 <input value={draft.included} onChange={(e) => updateDraft("included", e.target.value)} className="nd-input rounded-xl" placeholder="What is included" />
                                                 {needsTravelCharge(draft.serviceType) && (
                                                     <label className="block">
                                                         <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">{extraChargeLabel(draft.serviceType)}</span>
-                                                        <div className="relative">
-                                                            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-[#74767e]">$</span>
-                                                            <input type="number" min="0" step="0.01" value={draft.extraCharges} onChange={(e) => updateDraft("extraCharges", e.target.value)} className="nd-input rounded-xl" style={{ paddingLeft: 42 }} placeholder="0" />
-                                                        </div>
+                                                        <MoneyInput value={draft.extraCharges} onChange={(value) => updateDraft("extraCharges", value)} placeholder="0" required />
                                                     </label>
                                                 )}
                                                 <label className="block">
@@ -557,12 +605,9 @@ export default function NeedDetailPage() {
                                                     <>
                                                         <label className="block">
                                                             <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Late fine</span>
-                                                            <div className="relative">
-                                                                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-[#74767e]">$</span>
-                                                                <input type="number" min="0" step="0.01" value={draft.lateFee} onChange={(e) => updateDraft("lateFee", e.target.value)} className="nd-input rounded-xl" style={{ paddingLeft: 42 }} placeholder="5" />
-                                                            </div>
+                                                            <MoneyInput value={draft.lateFee} onChange={(value) => updateDraft("lateFee", value)} placeholder="5" required />
                                                         </label>
-                                                        <input value={draft.delayRefundRule} onChange={(e) => updateDraft("delayRefundRule", e.target.value)} className="nd-input rounded-xl" placeholder="Late rule, e.g. fine after 30 min late" />
+                                                        <input required value={draft.delayRefundRule} onChange={(e) => updateDraft("delayRefundRule", e.target.value)} className="nd-input rounded-xl" placeholder="Late rule, e.g. fine after 30 min late" />
                                                     </>
                                                 )}
                                                 <textarea required value={draft.note} onChange={(e) => updateDraft("note", e.target.value)} className="nd-input min-h-28 resize-none rounded-xl" placeholder="Write a useful note for the customer." />
