@@ -13,6 +13,7 @@ import {
     Mail,
     Store,
     UserRound,
+    Lock,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -132,15 +133,14 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-[calc(100vh-48px)] px-4 py-10 md:px-8 md:py-16">
+        <div className="min-h-screen bg-[#fbfdfb] px-4 py-7 text-[#08111f] md:px-8 md:py-10">
             <div className="mx-auto max-w-6xl">
                 <Link
                     href="/"
-                    className="mb-8 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest transition-opacity hover:opacity-70"
-                    style={{ color: "var(--text-secondary)" }}
+                    className="mb-6 inline-flex items-center gap-2 text-xs font-bold text-[#64748b] transition hover:text-[#0a8f45]"
                 >
                     <ArrowLeft size={14} />
-                    Back to Hub
+                    Back to Needero
                 </Link>
 
                 {error && (
@@ -158,57 +158,67 @@ export default function LoginPage() {
                     </div>
                 )}
 
-                <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-                    <section className="rounded-[28px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,rgba(15,23,42,0.10),transparent_45%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(250,250,247,0.9))] p-8 shadow-xl md:p-12">
-                        <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-slate-600">
+                <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+                    <section className="relative overflow-hidden rounded-[18px] border border-[#dfe8e3] bg-[radial-gradient(circle_at_90%_8%,rgba(10,143,69,0.08),transparent_30%),linear-gradient(180deg,#ffffff,#f8fcfa)] p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)] md:p-12">
+                        <div className="absolute bottom-0 left-0 h-44 w-72 rounded-tr-[120px] bg-[repeating-linear-gradient(45deg,rgba(10,143,69,0.05)_0,rgba(10,143,69,0.05)_1px,transparent_1px,transparent_12px)]" />
+                        <div className="relative mb-8 inline-flex items-center gap-2 rounded-full border border-[#dfe8e3] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#0a8f45] shadow-sm">
                             <Building2 size={14} />
                             Needero account system
                         </div>
 
-                        <h1 className="max-w-2xl text-4xl font-heading font-bold leading-tight md:text-6xl">
+                        <h1 className="relative max-w-2xl text-4xl font-black leading-[0.96] tracking-[-0.055em] text-[#06111f] md:text-6xl">
                             One marketplace. Two clear account flows.
                         </h1>
 
-                        <p className="mt-6 max-w-2xl text-base leading-7 text-gcp-text-secondary md:text-lg">
+                        <p className="relative mt-6 max-w-2xl text-base leading-7 text-[#64748b]">
                             Customers post Needs once. Local businesses compete with clear Offers. Needero keeps
                             contact details protected until the customer chooses a shop.
                         </p>
 
-                        <div className="mt-10 grid gap-4 md:grid-cols-3">
+                        <div className="relative mt-10 grid gap-4 md:grid-cols-3">
                             {[
                                 {
                                     title: "Customer",
                                     copy: "Post any local Need, upload photos, and compare real Offers.",
+                                    icon: UserRound,
                                 },
                                 {
                                     title: "Business",
                                     copy: "Receive warm nearby leads and send price, time, and warranty.",
+                                    icon: Store,
                                 },
                                 {
                                     title: "Marketplace",
                                     copy: "Start with local Needs, nearby businesses, Offers, and messages.",
+                                    icon: Building2,
                                 },
-                            ].map((item) => (
-                                <div key={item.title} className="rounded-2xl border border-gcp-border bg-white/80 p-5 shadow-sm">
-                                    <h2 className="text-sm font-bold uppercase tracking-wider text-gcp-text">
+                            ].map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                <div key={item.title} className="rounded-2xl border border-[#dfe8e3] bg-white/90 p-5 shadow-sm">
+                                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-[#e9f9f0] text-[#0a8f45]">
+                                        <Icon size={18} />
+                                    </div>
+                                    <h2 className="text-sm font-black uppercase tracking-wider text-[#0f172a]">
                                         {item.title}
                                     </h2>
-                                    <p className="mt-3 text-sm leading-6 text-gcp-text-secondary">{item.copy}</p>
+                                    <p className="mt-3 text-sm leading-6 text-[#64748b]">{item.copy}</p>
+                                    <div className="mt-5 h-1 w-8 rounded-full bg-[#0a8f45]" />
                                 </div>
-                            ))}
+                            );})}
                         </div>
                     </section>
 
-                    <section className="gcp-card p-8 shadow-2xl md:p-10">
+                    <section className="rounded-[18px] border border-[#dfe8e3] bg-white p-7 shadow-[0_24px_80px_rgba(15,23,42,0.08)] md:p-9">
                         <div className="mb-8">
-                            <p className="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">
+                            <p className="text-xs font-black uppercase tracking-[0.26em] text-[#64748b]">
                                 Choose account type
                             </p>
-                            <h2 className="mt-3 text-2xl font-heading font-bold text-gcp-text">
+                            <h2 className="mt-3 text-3xl font-black tracking-[-0.045em] text-[#06111f]">
                                 Access Needero
                             </h2>
-                            <p className="mt-2 text-sm leading-6 text-gcp-text-secondary">
-                                Pick the role first, then sign in with Google, GitHub, or email.
+                            <p className="mt-2 text-sm leading-6 text-[#64748b]">
+                                Pick the role that best describes you.
                             </p>
                         </div>
 
@@ -222,10 +232,10 @@ export default function LoginPage() {
                                         key={option.type}
                                         type="button"
                                         onClick={() => setSelectedAccountType(option.type)}
-                                        className={`rounded-3xl border p-4 text-left transition-all ${
+                                        className={`rounded-[18px] border p-4 text-left transition-all ${
                                             selected
-                                                ? "border-slate-950 bg-slate-950 text-white shadow-xl shadow-slate-900/10"
-                                                : "border-slate-200 bg-white text-slate-950 hover:border-slate-950"
+                                                ? "border-[#0a8f45] bg-[#06111f] text-white shadow-xl shadow-[#06111f]/10 ring-2 ring-[#0a8f45]/30"
+                                                : "border-[#dfe8e3] bg-white text-[#06111f] hover:border-[#0a8f45]"
                                         }`}
                                     >
                                         <div className="flex items-start gap-3">
@@ -239,7 +249,7 @@ export default function LoginPage() {
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex items-center justify-between gap-3">
                                                     <h3 className="text-base font-black">{option.title}</h3>
-                                                    {selected && <CheckCircle2 size={18} />}
+                                                    {selected && <CheckCircle2 size={18} className="text-[#8bf3b4]" />}
                                                 </div>
                                                 <p className={`mt-1 text-sm leading-6 ${selected ? "text-white/75" : "text-slate-500"}`}>
                                                     {option.subtitle}
@@ -264,11 +274,18 @@ export default function LoginPage() {
                         </div>
 
                         {!emailMode ? (
-                            <div className="space-y-5">
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-3 py-1">
+                                    <div className="h-px flex-1 bg-[#e4ebe7]" />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#94a3b8]">
+                                        Or continue as {selectedAccountType}
+                                    </span>
+                                    <div className="h-px flex-1 bg-[#e4ebe7]" />
+                                </div>
                                 <button
                                     onClick={() => handleProviderSignIn("google")}
                                     disabled={loading === "google"}
-                                    className="flex w-full items-center justify-center gap-3 rounded-2xl border border-[#dadce0] bg-white px-6 py-4 text-base font-bold text-[#3c4043] transition-all hover:bg-[#f8f9fa] disabled:opacity-50"
+                                    className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#dfe8e3] bg-white px-6 py-3 text-sm font-black text-[#3c4043] transition-all hover:bg-[#f8f9fa] disabled:opacity-50"
                                 >
                                     {loading === "google" ? (
                                         <Loader2 size={20} className="animate-spin" />
@@ -286,7 +303,7 @@ export default function LoginPage() {
                                 <button
                                     onClick={() => handleProviderSignIn("github")}
                                     disabled={loading === "github"}
-                                    className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#24292e] px-6 py-4 text-base font-bold text-white transition-all hover:bg-[#1b1f23] disabled:opacity-50"
+                                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-[#24292e] px-6 py-3 text-sm font-black text-white transition-all hover:bg-[#1b1f23] disabled:opacity-50"
                                 >
                                     {loading === "github" ? (
                                         <Loader2 size={20} className="animate-spin" />
@@ -301,7 +318,7 @@ export default function LoginPage() {
                                         setError(null);
                                         setEmailMode("signin");
                                     }}
-                                    className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gcp-blue px-6 py-4 text-base font-bold text-white transition-all hover:bg-gcp-blue-hover"
+                                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-[#06111f] px-6 py-3 text-sm font-black text-white transition-all hover:bg-black"
                                 >
                                     <Mail size={20} />
                                     Continue with Email as {selectedAccountType === "business" ? "Local Business" : "Customer"}
@@ -378,7 +395,7 @@ export default function LoginPage() {
                                 <button
                                     type="submit"
                                     disabled={loading === "email"}
-                                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gcp-blue px-4 py-3 text-sm font-bold uppercase tracking-widest text-white transition-all hover:bg-gcp-blue-hover disabled:opacity-50"
+                                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#06111f] px-4 py-3 text-sm font-bold uppercase tracking-widest text-white transition-all hover:bg-black disabled:opacity-50"
                                 >
                                     {loading === "email" ? <Loader2 size={18} className="animate-spin" /> : <Mail size={18} />}
                                     {emailMode === "signup"
@@ -394,7 +411,7 @@ export default function LoginPage() {
                                         onClick={() =>
                                             setEmailMode((current) => (current === "signup" ? "signin" : "signup"))
                                         }
-                                        className="text-xs font-medium text-gcp-blue transition-colors hover:underline"
+                                        className="text-xs font-bold text-[#0a8f45] transition-colors hover:underline"
                                     >
                                         {emailMode === "signup"
                                             ? "Already have an account? Sign in"
@@ -403,6 +420,15 @@ export default function LoginPage() {
                                 </div>
                             </form>
                         )}
+                        <div className="mt-5 flex items-center justify-center gap-2 text-xs font-semibold text-[#94a3b8]">
+                            <Lock size={13} />
+                            We never share your contact details. Learn more about privacy.
+                        </div>
+                        <div className="mt-3 text-center">
+                            <Link href="/support" className="text-xs font-black text-[#0a8f45] hover:underline">
+                                Need help? Contact support
+                            </Link>
+                        </div>
                     </section>
                 </div>
             </div>
