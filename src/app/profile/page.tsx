@@ -707,7 +707,12 @@ export default function ProfilePage() {
         }
 
         const code = phoneOtp.trim();
-        if (!phoneVerificationId || code.length < 4) {
+        if (!phoneVerificationId) {
+            setPhoneVerifyError("Send the SMS code first, then enter the code here.");
+            return;
+        }
+
+        if (code.length < 4) {
             setPhoneVerifyError("Enter the SMS code first.");
             return;
         }
@@ -1040,20 +1045,18 @@ export default function ProfilePage() {
                                     onChange={(event) => setPhoneOtp(event.target.value)}
                                     placeholder="Enter SMS code"
                                     inputMode="numeric"
-                                    disabled={editedPhoneVerified || !phoneVerificationId}
+                                    disabled={editedPhoneVerified || !editForm.phoneNumberRaw.trim()}
                                 />
                             </div>
-                            {phoneVerificationId && !editedPhoneVerified && (
-                                <button
-                                    type="button"
-                                    onClick={handleConfirmPhoneCode}
-                                    disabled={isConfirmingPhoneCode || phoneOtp.trim().length < 4}
-                                    className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a8f45] px-3 py-2.5 text-xs font-black text-white transition hover:bg-[#08783b] disabled:cursor-not-allowed disabled:opacity-55"
-                                >
-                                    {isConfirmingPhoneCode ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                                    Confirm SMS code
-                                </button>
-                            )}
+                            <button
+                                type="button"
+                                onClick={handleConfirmPhoneCode}
+                                disabled={editedPhoneVerified || isConfirmingPhoneCode || phoneOtp.trim().length < 4}
+                                className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a8f45] px-3 py-2.5 text-xs font-black text-white transition hover:bg-[#08783b] disabled:cursor-not-allowed disabled:opacity-55"
+                            >
+                                {isConfirmingPhoneCode ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                                Verify SMS code
+                            </button>
                             {phoneVerifyMessage && <p className="mt-2 text-xs font-bold text-[#0a8f45]">{phoneVerifyMessage}</p>}
                             {phoneVerifyError && <p className="mt-2 text-xs font-bold text-[#c2410c]">{phoneVerifyError}</p>}
                         </Field>
