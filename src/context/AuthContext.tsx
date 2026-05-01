@@ -12,13 +12,14 @@ import {
     signOut as firebaseSignOut,
     updateProfile,
 } from "firebase/auth";
-import { get, onValue, ref, set } from "firebase/database";
+import { get, onValue, ref, runTransaction, set } from "firebase/database";
 import { auth, db, githubProvider, googleProvider } from "@/lib/firebase";
+import { normalizeUsername, validateUsername } from "@/lib/usernames";
 
 export type ActiveAccountType = "customer" | "business";
 export type AccountType = ActiveAccountType | null;
 
-interface UserProfile {
+export interface UserProfile {
     uid: string;
     email: string | null;
     displayName: string | null;
@@ -56,6 +57,26 @@ interface UserProfile {
     language?: string | null;
     emailNotifications?: boolean | null;
     smsNotifications?: boolean | null;
+    firstNeedCompleted?: boolean | null;
+    firstNeedCompletedAt?: number | null;
+    shopFrontPhotoUrl?: string | null;
+    shopInsidePhotoUrl?: string | null;
+    businessDocumentUrl?: string | null;
+    businessSocialLinks?: string[] | null;
+    googleMapsUrl?: string | null;
+    businessVerified?: boolean | null;
+    businessVerifiedAt?: number | null;
+    businessVerificationStatus?: "not_started" | "pending" | "manual_review" | "approved" | "rejected" | null;
+    businessVerificationScore?: number | null;
+    businessVerificationConfidence?: number | null;
+    businessVerificationDecision?: string | null;
+    businessVerificationReasons?: string[] | null;
+    businessVerificationRiskFlags?: string[] | null;
+    businessVerificationSources?: Array<{ title: string; url: string; content?: string; score?: number; query?: string }> | null;
+    businessVerificationBadges?: string[] | null;
+    businessVerificationRequestedAt?: number | null;
+    businessVerificationReviewedAt?: number | null;
+    businessVerificationProvider?: string | null;
 }
 
 interface AuthContextType {
@@ -242,6 +263,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     : firebaseUser.emailVerified
                       ? Date.now()
                       : null,
+            firstNeedCompleted: Boolean(existing.firstNeedCompleted),
+            firstNeedCompletedAt: typeof existing.firstNeedCompletedAt === "number" ? existing.firstNeedCompletedAt : null,
+            businessVerified: Boolean(existing.businessVerified || existing.businessVerificationStatus === "approved"),
+            businessVerifiedAt: typeof existing.businessVerifiedAt === "number" ? existing.businessVerifiedAt : null,
+            businessVerificationStatus:
+                existing.businessVerificationStatus === "approved" ||
+                existing.businessVerificationStatus === "manual_review" ||
+                existing.businessVerificationStatus === "pending" ||
+                existing.businessVerificationStatus === "rejected"
+                    ? existing.businessVerificationStatus
+                    : resolvedAccountType === "business"
+                      ? "not_started"
+                      : null,
             totalSpent:
                 typeof overrides.totalSpent === "number"
                     ? overrides.totalSpent
@@ -291,6 +325,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 language: profileData.language,
                 emailNotifications: profileData.emailNotifications,
                 smsNotifications: profileData.smsNotifications,
+                firstNeedCompleted: profileData.firstNeedCompleted,
+                firstNeedCompletedAt: profileData.firstNeedCompletedAt,
+                shopFrontPhotoUrl: profileData.shopFrontPhotoUrl,
+                shopInsidePhotoUrl: profileData.shopInsidePhotoUrl,
+                businessDocumentUrl: profileData.businessDocumentUrl,
+                businessSocialLinks: profileData.businessSocialLinks,
+                googleMapsUrl: profileData.googleMapsUrl,
+                businessVerified: profileData.businessVerified,
+                businessVerifiedAt: profileData.businessVerifiedAt,
+                businessVerificationStatus: profileData.businessVerificationStatus,
+                businessVerificationScore: profileData.businessVerificationScore,
+                businessVerificationConfidence: profileData.businessVerificationConfidence,
+                businessVerificationDecision: profileData.businessVerificationDecision,
+                businessVerificationReasons: profileData.businessVerificationReasons,
+                businessVerificationRiskFlags: profileData.businessVerificationRiskFlags,
+                businessVerificationSources: profileData.businessVerificationSources,
+                businessVerificationBadges: profileData.businessVerificationBadges,
+                businessVerificationRequestedAt: profileData.businessVerificationRequestedAt,
+                businessVerificationReviewedAt: profileData.businessVerificationReviewedAt,
+                businessVerificationProvider: profileData.businessVerificationProvider,
             });
             
             // Sync to the specific account type mirror
@@ -465,11 +519,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const updateUserProfile = async (updates: Partial<UserProfile>) => {
         if (!user || !profile) return;
         const nextUpdates: Partial<UserProfile> = { ...updates };
+        let claimedUsername = "";
+        let previousUsername = "";
+
         const phoneChanged = updates.phoneNumber !== undefined && updates.phoneNumber !== profile.phoneNumber;
         if (phoneChanged && updates.phoneVerified !== true) {
             nextUpdates.phoneVerified = false;
             nextUpdates.phoneVerifiedAt = null;
         }
+
+        if (updates.username !== undefined) {
+            const validation = validateUsername(updates.username || "");
+            if (!validation.valid) {
+                throw new Error(validation.error);
+            }
+
+            nextUpdates.username = validation.username;
+            previousUsername = profile.username ? normalizeUsername(profile.username) : "";
+
+            const now = Date.now();
+            const usernameRef = ref(db, `usernames/${validation.username}`);
+            const result = await runTransaction(usernameRef, (current) => {
+                const currentRecord = current && typeof current === "object"
+                    ? current as { uid?: string; createdAt?: number }
+                    : null;
+                const currentUid = typeof current === "string" ? current : currentRecord?.uid;
+
+                if (currentUid && currentUid !== user.uid) {
+                    return;
+                }
+
+                return {
+                    uid: user.uid,
+                    username: validation.username,
+                    displayName: nextUpdates.displayName || profile.displayName || "",
+                    accountType: nextUpdates.accountType || profile.accountType || null,
+                    createdAt: currentRecord?.createdAt || now,
+                    updatedAt: now,
+                };
+            });
+
+            if (!result.committed) {
+                throw new Error("That @username is already taken.");
+            }
+
+            claimedUsername = validation.username;
+        }
+
         const newProfile = { ...profile, ...nextUpdates };
 
         if (updates.displayName !== undefined && updates.displayName !== user.displayName) {
@@ -535,6 +631,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 language: newProfile.language,
                 emailNotifications: newProfile.emailNotifications,
                 smsNotifications: newProfile.smsNotifications,
+                firstNeedCompleted: newProfile.firstNeedCompleted,
+                firstNeedCompletedAt: newProfile.firstNeedCompletedAt,
+                shopFrontPhotoUrl: newProfile.shopFrontPhotoUrl,
+                shopInsidePhotoUrl: newProfile.shopInsidePhotoUrl,
+                businessDocumentUrl: newProfile.businessDocumentUrl,
+                businessSocialLinks: newProfile.businessSocialLinks,
+                googleMapsUrl: newProfile.googleMapsUrl,
+                businessVerified: newProfile.businessVerified,
+                businessVerifiedAt: newProfile.businessVerifiedAt,
+                businessVerificationStatus: newProfile.businessVerificationStatus,
+                businessVerificationScore: newProfile.businessVerificationScore,
+                businessVerificationConfidence: newProfile.businessVerificationConfidence,
+                businessVerificationDecision: newProfile.businessVerificationDecision,
+                businessVerificationReasons: newProfile.businessVerificationReasons,
+                businessVerificationRiskFlags: newProfile.businessVerificationRiskFlags,
+                businessVerificationSources: newProfile.businessVerificationSources,
+                businessVerificationBadges: newProfile.businessVerificationBadges,
+                businessVerificationRequestedAt: newProfile.businessVerificationRequestedAt,
+                businessVerificationReviewedAt: newProfile.businessVerificationReviewedAt,
+                businessVerificationProvider: newProfile.businessVerificationProvider,
             });
 
             // Update both mirror paths to prevent stale data when switching roles.
@@ -544,8 +660,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 set(ref(db, `accounts/business/${user.uid}`), mirrorData).catch(e => console.warn("Failed to update business mirror", e))
             ]);
 
+            if (previousUsername && claimedUsername && previousUsername !== claimedUsername) {
+                await runTransaction(ref(db, `usernames/${previousUsername}`), (current) => {
+                    const currentRecord = current && typeof current === "object" ? current as { uid?: string } : null;
+                    const currentUid = typeof current === "string" ? current : currentRecord?.uid;
+                    return currentUid === user.uid ? null : current;
+                }).catch((error) => console.warn("Failed to release old username reservation", error));
+            }
+
             setProfile(cleanedProfile);
         } catch (error) {
+            if (claimedUsername && claimedUsername !== previousUsername) {
+                await runTransaction(ref(db, `usernames/${claimedUsername}`), (current) => {
+                    const currentRecord = current && typeof current === "object" ? current as { uid?: string } : null;
+                    const currentUid = typeof current === "string" ? current : currentRecord?.uid;
+                    return currentUid === user.uid ? null : current;
+                }).catch((releaseError) => console.warn("Failed to release username reservation after profile save error", releaseError));
+            }
             console.error("Firebase update failed:", error);
             throw error;
         }

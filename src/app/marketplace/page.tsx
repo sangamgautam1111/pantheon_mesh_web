@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
     Bell,
     Briefcase,
@@ -34,6 +35,7 @@ import {
     getOffers,
     NeedRecord,
 } from "@/lib/neederoDatabase";
+import { businessVerificationStatusLabel, isBusinessVerificationApproved } from "@/lib/businessVerification";
 
 type QuoteDraft = {
     price: string;
@@ -310,6 +312,12 @@ export default function Marketplace() {
     const router = useRouter();
     const { user, profile, accountType } = useAuth();
     const isBusiness = accountType === "business";
+    const canSendBusinessOffer = Boolean(isBusiness && profile?.phoneVerified && isBusinessVerificationApproved(profile));
+    const businessQuoteBlocker = !profile?.phoneVerified
+        ? "Verify your phone number from Profile before sending Repair Offers."
+        : !isBusinessVerificationApproved(profile)
+          ? `Business verification required. Current status: ${businessVerificationStatusLabel(profile?.businessVerificationStatus)}.`
+          : "";
     const [needs, setNeeds] = useState<NeedRecord[]>([]);
     const [selectedNeedId, setSelectedNeedId] = useState<string | null>(null);
     const [offers, setOffers] = useState<OfferRecord[]>([]);
@@ -468,6 +476,10 @@ export default function Marketplace() {
     const submitQuote = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (!user || !selectedNeedId || !isBusiness) return;
+        if (!canSendBusinessOffer) {
+            setMessage(businessQuoteBlocker || "Business verification is required before sending Repair Offers.");
+            return;
+        }
 
         setSaving(true);
         setMessage("");
@@ -777,9 +789,21 @@ export default function Marketplace() {
                                                 </div>
                                                 <div>
                                                     <h3 className="text-base font-bold" style={{color:"#404145"}}>Send Repair Offer</h3>
-                                                    <p className="text-xs" style={{color:"#74767e"}}>Submit price, time, warranty, parts quality, and availability.</p>
+                                                    <p className="text-xs" style={{color:"#74767e"}}>
+                                                        {canSendBusinessOffer ? "Submit price, time, warranty, parts quality, and availability." : businessQuoteBlocker}
+                                                    </p>
                                                 </div>
                                             </div>
+                                            {!canSendBusinessOffer ? (
+                                                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-center">
+                                                    <ShieldCheck className="mx-auto text-amber-700" size={28} />
+                                                    <p className="mt-3 text-sm font-black text-amber-950">Verification required before quoting</p>
+                                                    <p className="mt-1 text-xs leading-5 text-amber-800">{businessQuoteBlocker}</p>
+                                                    <Link href="/profile" className="mt-4 inline-flex rounded-xl bg-[#222325] px-5 py-3 text-xs font-black text-white">
+                                                        Verify Business to Quote
+                                                    </Link>
+                                                </div>
+                                            ) : (
                                             <form onSubmit={submitQuote} className="grid gap-4">
                                                 <div className="grid gap-4 md:grid-cols-2">
                                                     <div>
@@ -840,6 +864,7 @@ export default function Marketplace() {
                                                     Send Repair Offer
                                                 </button>
                                             </form>
+                                            )}
                                         </div>
                                     </div>
                                 )}

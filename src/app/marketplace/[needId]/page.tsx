@@ -33,6 +33,7 @@ import {
     NeedRecord,
     updateOffer,
 } from "@/lib/neederoDatabase";
+import { businessVerificationStatusLabel, isBusinessVerificationApproved } from "@/lib/businessVerification";
 
 type QuoteDraft = {
     price: string;
@@ -311,6 +312,12 @@ export default function NeedDetailPage() {
     const [message, setMessage] = useState("");
 
     const isBusiness = accountType === "business";
+    const canSendBusinessOffer = Boolean(isBusiness && profile?.phoneVerified && isBusinessVerificationApproved(profile));
+    const businessQuoteBlocker = !profile?.phoneVerified
+        ? "Verify your phone number from Profile before sending Repair Offers."
+        : !isBusinessVerificationApproved(profile)
+          ? `Business verification required. Current status: ${businessVerificationStatusLabel(profile?.businessVerificationStatus)}.`
+          : "";
     const isOwner = accountType === "customer" && need?.customerId === user?.uid;
     const sortedOffers = useMemo(() => [...offers].sort((a, b) => parseAmount(a.price) - parseAmount(b.price)), [offers]);
     const ownOffer = isBusiness ? offers.find((offer) => offer.businessId === user?.uid) || null : null;
@@ -352,6 +359,10 @@ export default function NeedDetailPage() {
     const submitQuote = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (!user || !need || !isBusiness) return;
+        if (!canSendBusinessOffer) {
+            setMessage(businessQuoteBlocker || "Business verification is required before sending Repair Offers.");
+            return;
+        }
         setSaving(true);
         setMessage("");
         try {
@@ -605,6 +616,15 @@ export default function NeedDetailPage() {
                                                 <CheckCircle2 className="mx-auto text-[#222325]" size={36} />
                                                 <p className="mt-3 font-black">Offer already submitted</p>
                                                 <p className="mt-1 text-sm text-[#74767e]">Use Edit or Delete on your Offer card if you need to change it.</p>
+                                            </div>
+                                        ) : !canSendBusinessOffer ? (
+                                            <div className="text-center">
+                                                <ShieldCheck className="mx-auto text-[#c2410c]" size={36} />
+                                                <p className="mt-3 font-black">Verification required before quoting</p>
+                                                <p className="mt-1 text-sm leading-6 text-[#74767e]">{businessQuoteBlocker}</p>
+                                                <Link href="/profile" className="mt-5 inline-flex rounded-xl bg-[#0a8f45] px-5 py-3 text-sm font-black text-white">
+                                                    Verify Business to Quote
+                                                </Link>
                                             </div>
                                         ) : (
                                             <form onSubmit={submitQuote} className="space-y-4">

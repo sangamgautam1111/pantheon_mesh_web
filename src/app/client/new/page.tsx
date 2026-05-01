@@ -167,7 +167,7 @@ function buildRepairCard(input: {
 
 export default function NewCustomerRequestPage() {
     const router = useRouter();
-    const { user, profile } = useAuth();
+    const { user, profile, updateUserProfile } = useAuth();
     const [step, setStep] = useState(0);
     const [issueType, setIssueType] = useState(issueOptions[0].value);
     const [phoneBrand, setPhoneBrand] = useState(brandOptions[0]);
@@ -314,6 +314,10 @@ export default function NewCustomerRequestPage() {
                 budget: "Open for NPR repair quotes",
                 photoPreview: uploadedMedia?.dataUrl || null,
                 cleanCard: repairCard,
+            });
+            await updateUserProfile({
+                firstNeedCompleted: true,
+                firstNeedCompletedAt: Date.now(),
             });
             router.push("/client");
         } catch (nextError: any) {

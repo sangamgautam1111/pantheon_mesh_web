@@ -42,9 +42,18 @@ import {
     type ReactNode,
 } from "react";
 import { PhoneAuthProvider, RecaptchaVerifier, updatePhoneNumber } from "firebase/auth";
+import { get, ref } from "firebase/database";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import {
+    businessVerificationStatusLabel,
+    isBusinessVerificationApproved,
+    requestBusinessVerification,
+    type BusinessVerificationResult,
+} from "@/lib/businessVerification";
+import { getNeeds } from "@/lib/neederoDatabase";
+import { normalizeUsername, validateUsername } from "@/lib/usernames";
 
 const DeliveryMap = dynamic(() => import("@/components/profile/DeliveryMap"), {
     ssr: false,
@@ -102,6 +111,22 @@ type ProfileForm = {
     manualLocation: boolean;
 };
 
+type UsernameStatus = "idle" | "checking" | "available" | "taken" | "invalid";
+
+type BusinessVerificationForm = {
+    ownerName: string;
+    businessName: string;
+    category: string;
+    address: string;
+    city: string;
+    country: string;
+    googleMapsUrl: string;
+    socialLinks: string;
+    shopFrontPhoto: string;
+    insideShopPhoto: string;
+    documentUrl: string;
+};
+
 const emptyForm: ProfileForm = {
     displayName: "",
     companyName: "",
@@ -150,6 +175,7 @@ const inputClass =
     "mt-1 w-full rounded-xl border border-[#dfe8e3] bg-white px-3.5 py-3 text-sm font-semibold text-[#06111f] outline-none transition focus:border-[#0a8f45] focus:ring-4 focus:ring-[#e9f9f0] disabled:bg-[#f8faf9] disabled:text-[#94a3b8]";
 
 const labelClass = "text-xs font-black uppercase tracking-[0.12em] text-[#64748b]";
+const PHONE_OTP_COOLDOWN_MS = 60_000;
 
 function completion(items: ChecklistItem[]) {
     const total = items.reduce((sum, item) => sum + item.weight, 0);
@@ -258,6 +284,31 @@ function resizeProfilePhoto(file: File) {
         };
         reader.readAsDataURL(file);
     });
+}
+
+function readFileAsDataUrl(file: File) {
+    return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Could not read file."));
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.readAsDataURL(file);
+    });
+}
+
+function businessVerificationFormFromProfile(profile: ReturnType<typeof useAuth>["profile"], fallbackName: string): BusinessVerificationForm {
+    return {
+        ownerName: profile?.displayName || "",
+        businessName: profile?.companyName || fallbackName,
+        category: profile?.category || "",
+        address: profile?.currentAddress || profile?.deliveryAddress || "",
+        city: profile?.city || "",
+        country: profile?.country || "",
+        googleMapsUrl: profile?.googleMapsUrl || "",
+        socialLinks: Array.isArray(profile?.businessSocialLinks) ? profile.businessSocialLinks.join("\n") : "",
+        shopFrontPhoto: profile?.shopFrontPhotoUrl || "",
+        insideShopPhoto: profile?.shopInsidePhotoUrl || "",
+        documentUrl: profile?.businessDocumentUrl || "",
+    };
 }
 
 function ProgressRing({ percent, size = "large" }: { percent: number; size?: "small" | "large" }) {
@@ -529,6 +580,19 @@ export default function ProfilePage() {
     const [phoneVerifyError, setPhoneVerifyError] = useState("");
     const [isSendingPhoneCode, setIsSendingPhoneCode] = useState(false);
     const [isConfirmingPhoneCode, setIsConfirmingPhoneCode] = useState(false);
+    const [isPhoneVerifyOpen, setIsPhoneVerifyOpen] = useState(false);
+    const [phoneCooldownUntil, setPhoneCooldownUntil] = useState(0);
+    const [phoneCooldownNow, setPhoneCooldownNow] = useState(Date.now());
+    const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle");
+    const [usernameMessage, setUsernameMessage] = useState("");
+    const [customerNeedCount, setCustomerNeedCount] = useState(0);
+    const [isBusinessVerifyOpen, setIsBusinessVerifyOpen] = useState(false);
+    const [businessVerifyForm, setBusinessVerifyForm] = useState<BusinessVerificationForm>(() =>
+        businessVerificationFormFromProfile(profile, businessName),
+    );
+    const [businessVerifyResult, setBusinessVerifyResult] = useState<BusinessVerificationResult | null>(null);
+    const [businessVerifyError, setBusinessVerifyError] = useState("");
+    const [isBusinessVerifying, setIsBusinessVerifying] = useState(false);
 
     const countries = useMemo(() => Country.getAllCountries(), []);
     const sortedCountries = useMemo(() => [...countries].sort((a, b) => a.name.localeCompare(b.name)), [countries]);
@@ -565,6 +629,13 @@ export default function ProfilePage() {
     );
     const profilePhoneVerified = Boolean(profile?.phoneVerified && profile?.phoneNumber);
     const editedPhoneVerified = Boolean(profilePhoneVerified && editedPhoneMatchesProfile);
+    const phoneCooldownSeconds = Math.max(0, Math.ceil((phoneCooldownUntil - phoneCooldownNow) / 1000));
+    const businessVerificationApproved = isBusinessVerificationApproved(profile);
+    const businessVerificationStatus =
+        profile?.businessVerificationStatus || (businessVerificationApproved ? "approved" : "not_started");
+    const businessVerificationLabel = businessVerificationStatusLabel(businessVerificationStatus);
+    const customerFirstNeedDone = Boolean(profile?.firstNeedCompleted || customerNeedCount > 0);
+    const todayProofDate = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
     useEffect(() => {
         if (!isEditing) {
@@ -585,6 +656,95 @@ export default function ProfilePage() {
         setPhoneVerifyMessage("");
         setPhoneVerifyError("");
     }, [editedPhoneE164]);
+
+    useEffect(() => {
+        if (!user?.uid || !editedPhoneE164 || typeof window === "undefined") {
+            setPhoneCooldownUntil(0);
+            return;
+        }
+
+        const key = `needero-phone-otp-sent:${user.uid}:${editedPhoneE164}`;
+        const stored = Number(window.localStorage.getItem(key) || "0");
+        setPhoneCooldownUntil(Number.isFinite(stored) && stored > Date.now() ? stored : 0);
+    }, [user?.uid, editedPhoneE164]);
+
+    useEffect(() => {
+        if (!phoneCooldownUntil) return;
+        setPhoneCooldownNow(Date.now());
+        const timer = window.setInterval(() => setPhoneCooldownNow(Date.now()), 1000);
+        return () => window.clearInterval(timer);
+    }, [phoneCooldownUntil]);
+
+    useEffect(() => {
+        if (!isEditing || activeTab !== "general") {
+            return;
+        }
+
+        const validation = validateUsername(editForm.username);
+        if (!validation.valid) {
+            setUsernameStatus("invalid");
+            setUsernameMessage(validation.error);
+            return;
+        }
+
+        const currentUsername = profile?.username ? normalizeUsername(profile.username) : "";
+        if (validation.username === currentUsername) {
+            setUsernameStatus("available");
+            setUsernameMessage("Current username.");
+            return;
+        }
+
+        setUsernameStatus("checking");
+        setUsernameMessage("Checking availability...");
+        const timer = window.setTimeout(() => {
+            void get(ref(db, `usernames/${validation.username}`))
+                .then((snapshot) => {
+                    if (!snapshot.exists()) {
+                        setUsernameStatus("available");
+                        setUsernameMessage(`@${validation.username} is available.`);
+                        return;
+                    }
+
+                    const value = snapshot.val() as { uid?: string } | string | null;
+                    const ownerUid = typeof value === "string" ? value : value?.uid;
+                    if (ownerUid === user?.uid) {
+                        setUsernameStatus("available");
+                        setUsernameMessage("Current username.");
+                    } else {
+                        setUsernameStatus("taken");
+                        setUsernameMessage(`@${validation.username} is already taken.`);
+                    }
+                })
+                .catch(() => {
+                    setUsernameStatus("idle");
+                    setUsernameMessage("Username will be checked when you save.");
+                });
+        }, 350);
+
+        return () => window.clearTimeout(timer);
+    }, [activeTab, editForm.username, isEditing, profile?.username, user?.uid]);
+
+    useEffect(() => {
+        if (!user?.uid || isBusiness) return;
+
+        let cancelled = false;
+        void getNeeds(user.uid)
+            .then((needs) => {
+                if (cancelled) return;
+                setCustomerNeedCount(needs.length);
+                if (needs.length > 0 && !profile?.firstNeedCompleted) {
+                    void updateUserProfile({
+                        firstNeedCompleted: true,
+                        firstNeedCompletedAt: Date.now(),
+                    }).catch((error) => console.warn("Could not mark first Need completion:", error));
+                }
+            })
+            .catch(() => undefined);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [isBusiness, profile?.firstNeedCompleted, user?.uid]);
 
     useEffect(() => {
         if (profile && !profile.country && !hasPromptedLocation) {
@@ -674,13 +834,24 @@ export default function ProfilePage() {
             return;
         }
 
+        if (phoneCooldownSeconds > 0) {
+            setPhoneVerifyError(`Wait ${phoneCooldownSeconds}s before sending another SMS code.`);
+            return;
+        }
+
         setIsSendingPhoneCode(true);
         try {
             const provider = new PhoneAuthProvider(auth);
             const verifier = getRecaptchaVerifier();
             const verificationId = await provider.verifyPhoneNumber(editedPhoneE164, verifier);
+            const nextCooldownUntil = Date.now() + PHONE_OTP_COOLDOWN_MS;
+            if (typeof window !== "undefined") {
+                window.localStorage.setItem(`needero-phone-otp-sent:${user.uid}:${editedPhoneE164}`, String(nextCooldownUntil));
+            }
+            setPhoneCooldownUntil(nextCooldownUntil);
+            setPhoneCooldownNow(Date.now());
             setPhoneVerificationId(verificationId);
-            setPhoneVerifyMessage(`SMS code sent to ${editedPhoneE164}.`);
+            setPhoneVerifyMessage(`SMS code sent to ${editedPhoneE164}. You can resend after 60 seconds.`);
         } catch (error) {
             console.error("Phone verification SMS failed:", error);
             resetRecaptcha();
@@ -738,11 +909,22 @@ export default function ProfilePage() {
 
         try {
             const finalPhoneNumber = buildDisplayPhone(editForm.dialCode, editForm.phoneNumberRaw);
+            const usernameValidation = validateUsername(editForm.username);
+            if (!usernameValidation.valid) {
+                setUsernameStatus("invalid");
+                setUsernameMessage(usernameValidation.error);
+                throw new Error(usernameValidation.error);
+            }
+
+            if (usernameStatus === "taken") {
+                throw new Error(usernameMessage || "That @username is already taken.");
+            }
 
             await updateUserProfile({
                 ...editForm,
                 displayName: editForm.displayName.trim() || displayName,
                 companyName: isBusiness ? editForm.companyName.trim() || editForm.displayName.trim() || businessName : null,
+                username: usernameValidation.username,
                 phoneNumber: finalPhoneNumber,
             });
 
@@ -753,9 +935,97 @@ export default function ProfilePage() {
             }, 900);
         } catch (error) {
             console.error("Failed to update profile", error);
-            setSaveError("Failed to update profile. Please try again.");
+            setSaveError(error instanceof Error ? error.message : "Failed to update profile. Please try again.");
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const openBusinessVerification = () => {
+        setBusinessVerifyForm(businessVerificationFormFromProfile(profile, businessName));
+        setBusinessVerifyResult(null);
+        setBusinessVerifyError("");
+        setIsBusinessVerifyOpen(true);
+    };
+
+    const processBusinessVerificationFile = (field: "shopFrontPhoto" | "insideShopPhoto" | "documentUrl", file?: File) => {
+        if (!file) return;
+
+        const loader = file.type.startsWith("image/") ? resizeProfilePhoto(file) : readFileAsDataUrl(file);
+        void loader
+            .then((dataUrl) => setBusinessVerifyForm((current) => ({ ...current, [field]: dataUrl })))
+            .catch(() => setBusinessVerifyError("Could not read that file. Try another image or document."));
+    };
+
+    const submitBusinessVerification = async () => {
+        if (!user || !profile || !isBusiness) return;
+
+        if (!profilePhoneVerified) {
+            setBusinessVerifyError("Verify your phone number first, then submit business verification.");
+            return;
+        }
+
+        setIsBusinessVerifying(true);
+        setBusinessVerifyError("");
+        setBusinessVerifyResult(null);
+
+        try {
+            const socialLinks = businessVerifyForm.socialLinks
+                .split(/\r?\n|,/)
+                .map((item) => item.trim())
+                .filter(Boolean);
+            const result = await requestBusinessVerification({
+                uid: user.uid,
+                businessName: businessVerifyForm.businessName,
+                ownerName: businessVerifyForm.ownerName,
+                phoneNumber: profile.phoneNumber || editedPhoneDisplay || editedPhoneE164,
+                phoneVerified: profilePhoneVerified,
+                email: profile.email || "",
+                category: businessVerifyForm.category,
+                address: businessVerifyForm.address,
+                city: businessVerifyForm.city,
+                country: businessVerifyForm.country,
+                coordinates: profile.deliveryCoords || null,
+                logoUrl: profile.photoURL || "",
+                shopFrontPhoto: businessVerifyForm.shopFrontPhoto,
+                insideShopPhoto: businessVerifyForm.insideShopPhoto,
+                documentUrl: businessVerifyForm.documentUrl || null,
+                socialLinks,
+                googleMapsUrl: businessVerifyForm.googleMapsUrl || null,
+            });
+
+            await updateUserProfile({
+                companyName: businessVerifyForm.businessName,
+                category: businessVerifyForm.category,
+                currentAddress: businessVerifyForm.address,
+                city: businessVerifyForm.city,
+                country: businessVerifyForm.country,
+                googleMapsUrl: businessVerifyForm.googleMapsUrl || null,
+                businessSocialLinks: socialLinks,
+                shopFrontPhotoUrl: businessVerifyForm.shopFrontPhoto,
+                shopInsidePhotoUrl: businessVerifyForm.insideShopPhoto,
+                businessDocumentUrl: businessVerifyForm.documentUrl || null,
+                businessVerificationStatus: result.status,
+                businessVerificationScore: result.score,
+                businessVerificationConfidence: result.confidence,
+                businessVerificationDecision: result.decision,
+                businessVerificationReasons: result.reasons,
+                businessVerificationRiskFlags: result.riskFlags,
+                businessVerificationSources: result.sources,
+                businessVerificationBadges: result.badges,
+                businessVerificationRequestedAt: Date.now(),
+                businessVerificationReviewedAt: result.reviewedAt,
+                businessVerificationProvider: result.aiProvider,
+                businessVerified: result.status === "approved",
+                businessVerifiedAt: result.status === "approved" ? Date.now() : profile.businessVerifiedAt || null,
+            });
+
+            setBusinessVerifyResult(result);
+        } catch (error) {
+            console.error("Business verification failed", error);
+            setBusinessVerifyError(error instanceof Error ? error.message : "Business verification could not run right now.");
+        } finally {
+            setIsBusinessVerifying(false);
         }
     };
 
@@ -766,9 +1036,9 @@ export default function ProfilePage() {
             { label: "Add country & city", done: Boolean(profile?.country && profile?.city), weight: 15, tab: "address" },
             { label: "Add current address", done: Boolean(profile?.currentAddress), weight: 15, tab: "address" },
             { label: "Add email", done: Boolean(profile?.email), weight: 15, tab: "contact" },
-            { label: "Complete first Need", done: false, weight: 20, tab: "preferences" },
+            { label: "Complete first Need", done: customerFirstNeedDone, weight: 20, tab: "preferences" },
         ],
-        [photo, profilePhoneVerified, profile?.country, profile?.city, profile?.currentAddress, profile?.email],
+        [photo, profilePhoneVerified, profile?.country, profile?.city, profile?.currentAddress, profile?.email, customerFirstNeedDone],
     );
 
     const businessChecklist: ChecklistItem[] = useMemo(
@@ -781,9 +1051,9 @@ export default function ProfilePage() {
             { label: "Add services/products", done: Boolean(profile?.services), weight: 15, tab: "preferences" },
             { label: "Add warranty policy", done: Boolean(profile?.warrantyPolicy), weight: 10, tab: "security" },
             { label: "Verify phone", done: profilePhoneVerified, weight: 10, tab: "contact" },
-            { label: "Add email", done: Boolean(profile?.email), weight: 10, tab: "contact" },
+            { label: "Verify business", done: businessVerificationApproved, weight: 10, tab: "security" },
         ],
-        [photo, businessName, profile?.category, profile?.country, profile?.city, profile?.openingHours, profile?.services, profile?.warrantyPolicy, profilePhoneVerified, profile?.email],
+        [photo, businessName, profile?.category, profile?.country, profile?.city, profile?.openingHours, profile?.services, profile?.warrantyPolicy, profilePhoneVerified, businessVerificationApproved],
     );
 
     const liveChecklist = useMemo<ChecklistItem[]>(
@@ -798,7 +1068,7 @@ export default function ProfilePage() {
                       { label: "Add services/products", done: Boolean(editForm.services), weight: 15, tab: "preferences" },
                       { label: "Add warranty policy", done: Boolean(editForm.warrantyPolicy), weight: 10, tab: "security" },
                       { label: "Verify phone", done: editedPhoneVerified, weight: 10, tab: "contact" },
-                      { label: "Add email", done: Boolean(profile?.email), weight: 10, tab: "contact" },
+                      { label: "Verify business", done: businessVerificationApproved, weight: 10, tab: "security" },
                   ]
                 : [
                       { label: "Add profile photo", done: Boolean(editForm.photoURL), weight: 15, tab: "general" },
@@ -806,9 +1076,9 @@ export default function ProfilePage() {
                       { label: "Add country & city", done: Boolean(editForm.country && editForm.city), weight: 15, tab: "address" },
                       { label: "Add current address", done: Boolean(editForm.currentAddress), weight: 15, tab: "address" },
                       { label: "Add email", done: Boolean(profile?.email), weight: 15, tab: "contact" },
-                      { label: "Complete first Need", done: false, weight: 20, tab: "preferences" },
+                      { label: "Complete first Need", done: customerFirstNeedDone, weight: 20, tab: "preferences" },
                   ],
-        [editForm, isBusiness, profile?.email, editedPhoneVerified],
+        [editForm, isBusiness, profile?.email, editedPhoneVerified, businessVerificationApproved, customerFirstNeedDone],
     );
 
     const checklist = isBusiness ? businessChecklist : customerChecklist;
@@ -895,6 +1165,19 @@ export default function ProfilePage() {
                                     placeholder="username"
                                 />
                             </div>
+                            {usernameMessage && (
+                                <p
+                                    className={`mt-2 text-xs font-bold ${
+                                        usernameStatus === "available"
+                                            ? "text-[#0a8f45]"
+                                            : usernameStatus === "taken" || usernameStatus === "invalid"
+                                              ? "text-[#c2410c]"
+                                              : "text-[#64748b]"
+                                    }`}
+                                >
+                                    {usernameMessage}
+                                </p>
+                            )}
                         </Field>
                         <Field label="Short Bio" className="md:col-span-2">
                             <textarea
@@ -946,42 +1229,15 @@ export default function ProfilePage() {
                                 {editedPhoneVerified ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
                                 {editedPhoneVerified ? "Phone verified" : "Phone verification required"}
                             </div>
-                            <div className="mt-3 grid gap-3 lg:grid-cols-2">
-                                <div className="rounded-2xl border border-[#edf2ef] bg-[#fbfdfb] p-3">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#94a3b8]">Step 1</p>
-                                    <button
-                                        type="button"
-                                        onClick={handleSendPhoneCode}
-                                        disabled={editedPhoneVerified || isSendingPhoneCode || !editForm.phoneNumberRaw.trim()}
-                                        className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#06111f] px-3 py-3 text-xs font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-55"
-                                    >
-                                        {isSendingPhoneCode ? <Loader2 size={14} className="animate-spin" /> : <Phone size={14} />}
-                                        {phoneVerificationId ? "Resend SMS code" : "Send SMS code"}
-                                    </button>
-                                </div>
-                                <div className="rounded-2xl border border-[#edf2ef] bg-[#fbfdfb] p-3">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#94a3b8]">Step 2</p>
-                                    <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto]">
-                                        <input
-                                            className={`${inputClass} mt-0`}
-                                            value={phoneOtp}
-                                            onChange={(event) => setPhoneOtp(event.target.value)}
-                                            placeholder="Enter SMS code"
-                                            inputMode="numeric"
-                                            disabled={editedPhoneVerified || !editForm.phoneNumberRaw.trim()}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={handleConfirmPhoneCode}
-                                            disabled={editedPhoneVerified || isConfirmingPhoneCode || phoneOtp.trim().length < 4}
-                                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0a8f45] px-4 py-3 text-xs font-black text-white transition hover:bg-[#08783b] disabled:cursor-not-allowed disabled:opacity-55"
-                                        >
-                                            {isConfirmingPhoneCode ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                                            Verify code
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsPhoneVerifyOpen(true)}
+                                disabled={editedPhoneVerified || !editForm.phoneNumberRaw.trim()}
+                                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#06111f] px-4 py-3 text-xs font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-55 sm:w-auto"
+                            >
+                                <Phone size={14} />
+                                {editedPhoneVerified ? "Phone already verified" : "Open verification popup"}
+                            </button>
                             {phoneVerifyMessage && <p className="mt-2 text-xs font-bold text-[#0a8f45]">{phoneVerifyMessage}</p>}
                             {phoneVerifyError && <p className="mt-2 text-xs font-bold text-[#c2410c]">{phoneVerifyError}</p>}
                         </Field>
@@ -1217,6 +1473,29 @@ export default function ProfilePage() {
                             <p className="mt-3 text-sm font-black text-[#06111f]">Safety controls</p>
                             <p className="mt-1 text-xs leading-5 text-[#64748b]">Hidden contact settings and reports stay tied to your profile.</p>
                         </div>
+                        {isBusiness && (
+                            <div className="rounded-2xl border border-[#edf2ef] bg-[#fbfdfb] p-4 md:col-span-2">
+                                <ShieldCheck size={20} className={businessVerificationApproved ? "text-[#0a8f45]" : "text-[#c2410c]"} />
+                                <p className="mt-3 text-sm font-black text-[#06111f]">{businessVerificationLabel}</p>
+                                <p className="mt-1 text-xs leading-5 text-[#64748b]">
+                                    Phone verification unlocks business verification. Approved businesses can send Repair Offers.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (!profilePhoneVerified) {
+                                            setActiveTab("contact");
+                                            return;
+                                        }
+                                        openBusinessVerification();
+                                    }}
+                                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#06111f] px-4 py-3 text-xs font-black text-white transition hover:bg-black"
+                                >
+                                    <ShieldCheck size={14} />
+                                    {profilePhoneVerified ? "Verify Business to Quote" : "Verify phone first"}
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </Field>
                 <Field label={isBusiness ? "Warranty Policy" : "Profile Safety Note"}>
@@ -1277,13 +1556,38 @@ export default function ProfilePage() {
                                     </div>
                                 </div>
                             </div>
-                            <Link
-                                href={isBusiness ? "/marketplace" : "/client/new"}
-                                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#06111f] px-6 py-4 text-sm font-black text-white shadow-lg transition hover:bg-black"
-                            >
-                                {isBusiness ? <Briefcase size={17} /> : <MessageSquare size={17} />}
-                                {isBusiness ? "Browse Repair Offers" : "Post Phone Repair Need"}
-                            </Link>
+                            {isBusiness ? (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (businessVerificationApproved) {
+                                            window.location.href = "/marketplace";
+                                            return;
+                                        }
+                                        if (!profilePhoneVerified) {
+                                            openEditor("contact");
+                                            return;
+                                        }
+                                        openBusinessVerification();
+                                    }}
+                                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#06111f] px-6 py-4 text-sm font-black text-white shadow-lg transition hover:bg-black"
+                                >
+                                    <Briefcase size={17} />
+                                    {businessVerificationApproved
+                                        ? "Browse Repair Offers"
+                                        : profilePhoneVerified
+                                          ? "Verify Business to Quote"
+                                          : "Verify Phone First"}
+                                </button>
+                            ) : (
+                                <Link
+                                    href="/client/new"
+                                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#06111f] px-6 py-4 text-sm font-black text-white shadow-lg transition hover:bg-black"
+                                >
+                                    <MessageSquare size={17} />
+                                    Post Phone Repair Need
+                                </Link>
+                            )}
                         </div>
                     </section>
 
@@ -1293,7 +1597,15 @@ export default function ProfilePage() {
                         <InfoTile
                             icon={ShieldCheck}
                             label="Trust"
-                            value={profilePhoneVerified ? "Phone verified" : profile?.phoneNumber ? "Verify phone number" : "Add phone number"}
+                            value={
+                                isBusiness
+                                    ? `${profilePhoneVerified ? "Phone ok" : "Phone needed"} - ${businessVerificationLabel}`
+                                    : profilePhoneVerified
+                                      ? "Phone verified"
+                                      : profile?.phoneNumber
+                                        ? "Verify phone number"
+                                        : "Add phone number"
+                            }
                             onClick={() => openEditor("contact")}
                         />
                         <InfoTile
@@ -1329,7 +1641,12 @@ export default function ProfilePage() {
                                         <WorkspaceTile icon={Store} title="Repair Offers" copy="Browse phone repair Needs and send Offers" href="/marketplace" />
                                         <WorkspaceTile icon={Briefcase} title="Plans" copy="Upgrade visibility and lead access" href="/pricing" />
                                         <WorkspaceTile icon={MessageSquare} title="Messages" copy="Customer chats and offer updates" href="/messages" />
-                                        <WorkspaceTile icon={ShieldCheck} title="Trust" copy="Warranty, contact, and safety settings" onClick={() => openEditor("security")} />
+                                        <WorkspaceTile
+                                            icon={ShieldCheck}
+                                            title={businessVerificationApproved ? "Business Verified" : "Verify Business"}
+                                            copy={businessVerificationApproved ? "Ready to quote customer Needs" : "Submit shop proof before quoting"}
+                                            onClick={profilePhoneVerified ? openBusinessVerification : () => openEditor("contact")}
+                                        />
                                     </>
                                 ) : (
                                     <>
@@ -1407,6 +1724,251 @@ export default function ProfilePage() {
                                     </button>
                                 </>
                             )}
+                        </div>
+                    </div>
+                )}
+
+                {isPhoneVerifyOpen && (
+                    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm">
+                        <div className="w-full max-w-lg rounded-[24px] border border-[#dfe8e3] bg-white p-6 shadow-2xl">
+                            <div className="flex items-start justify-between gap-4">
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#0a8f45]">Phone verification</p>
+                                    <h2 className="mt-2 text-2xl font-black text-[#06111f]">Verify this number</h2>
+                                    <p className="mt-2 text-sm leading-6 text-[#64748b]">
+                                        {editedPhoneE164 || "Add a valid phone number first."}
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsPhoneVerifyOpen(false)}
+                                    className="rounded-full p-2 text-[#64748b] transition hover:bg-[#f1f5f9]"
+                                    aria-label="Close phone verification"
+                                >
+                                    <X size={22} />
+                                </button>
+                            </div>
+
+                            <div className="mt-6 grid gap-4">
+                                <div className="rounded-2xl border border-[#edf2ef] bg-[#fbfdfb] p-4">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                            <p className="text-xs font-black uppercase tracking-[0.14em] text-[#94a3b8]">Step 1</p>
+                                            <p className="mt-1 text-sm font-black text-[#06111f]">Send SMS code</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleSendPhoneCode}
+                                            disabled={editedPhoneVerified || isSendingPhoneCode || !editForm.phoneNumberRaw.trim() || phoneCooldownSeconds > 0}
+                                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#06111f] px-4 py-3 text-xs font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-55"
+                                        >
+                                            {isSendingPhoneCode ? <Loader2 size={14} className="animate-spin" /> : <Phone size={14} />}
+                                            {phoneCooldownSeconds > 0
+                                                ? `Wait ${phoneCooldownSeconds}s`
+                                                : phoneVerificationId
+                                                  ? "Resend code"
+                                                  : "Send code"}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="rounded-2xl border border-[#edf2ef] bg-[#fbfdfb] p-4">
+                                    <p className="text-xs font-black uppercase tracking-[0.14em] text-[#94a3b8]">Step 2</p>
+                                    <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]">
+                                        <input
+                                            className={`${inputClass} mt-0`}
+                                            value={phoneOtp}
+                                            onChange={(event) => setPhoneOtp(event.target.value)}
+                                            placeholder="Enter SMS code"
+                                            inputMode="numeric"
+                                            disabled={editedPhoneVerified || !editForm.phoneNumberRaw.trim()}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleConfirmPhoneCode}
+                                            disabled={editedPhoneVerified || isConfirmingPhoneCode || phoneOtp.trim().length < 4}
+                                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0a8f45] px-4 py-3 text-xs font-black text-white transition hover:bg-[#08783b] disabled:cursor-not-allowed disabled:opacity-55"
+                                        >
+                                            {isConfirmingPhoneCode ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                                            Verify code
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {phoneVerifyMessage && <p className="mt-4 rounded-xl bg-[#e9f9f0] px-4 py-3 text-xs font-bold text-[#0a8f45]">{phoneVerifyMessage}</p>}
+                            {phoneVerifyError && <p className="mt-4 rounded-xl bg-[#fff7ed] px-4 py-3 text-xs font-bold text-[#c2410c]">{phoneVerifyError}</p>}
+                        </div>
+                    </div>
+                )}
+
+                {isBusinessVerifyOpen && (
+                    <div className="fixed inset-0 z-[75] overflow-y-auto bg-black/55 p-4 backdrop-blur-sm md:p-6">
+                        <div className="mx-auto w-full max-w-4xl rounded-[24px] border border-[#dfe8e3] bg-white p-5 shadow-2xl md:p-7">
+                            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#0a8f45]">AI-assisted verification</p>
+                                    <h2 className="mt-2 text-2xl font-black text-[#06111f]">Verify Business to Quote</h2>
+                                    <p className="mt-2 max-w-2xl text-sm leading-6 text-[#64748b]">
+                                        Needero checks submitted proof, Tavily web evidence, and DeepSeek risk reasoning. Risky cases go to manual review.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsBusinessVerifyOpen(false)}
+                                    className="self-end rounded-full p-2 text-[#64748b] transition hover:bg-[#f1f5f9] md:self-auto"
+                                    aria-label="Close business verification"
+                                >
+                                    <X size={22} />
+                                </button>
+                            </div>
+
+                            {!profilePhoneVerified && (
+                                <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
+                                    Verify your phone number first. Then this business verification can run.
+                                </div>
+                            )}
+
+                            <div className="mt-6 grid gap-4 md:grid-cols-2">
+                                <Field label="Owner name">
+                                    <input
+                                        className={inputClass}
+                                        value={businessVerifyForm.ownerName}
+                                        onChange={(event) => setBusinessVerifyForm({ ...businessVerifyForm, ownerName: event.target.value })}
+                                    />
+                                </Field>
+                                <Field label="Business name">
+                                    <input
+                                        className={inputClass}
+                                        value={businessVerifyForm.businessName}
+                                        onChange={(event) => setBusinessVerifyForm({ ...businessVerifyForm, businessName: event.target.value })}
+                                    />
+                                </Field>
+                                <Field label="Category">
+                                    <input
+                                        className={inputClass}
+                                        value={businessVerifyForm.category}
+                                        onChange={(event) => setBusinessVerifyForm({ ...businessVerifyForm, category: event.target.value })}
+                                        placeholder="Phone repair shop"
+                                    />
+                                </Field>
+                                <Field label="City / country">
+                                    <div className="grid gap-2 sm:grid-cols-2">
+                                        <input
+                                            className={inputClass}
+                                            value={businessVerifyForm.city}
+                                            onChange={(event) => setBusinessVerifyForm({ ...businessVerifyForm, city: event.target.value })}
+                                            placeholder="City"
+                                        />
+                                        <input
+                                            className={inputClass}
+                                            value={businessVerifyForm.country}
+                                            onChange={(event) => setBusinessVerifyForm({ ...businessVerifyForm, country: event.target.value })}
+                                            placeholder="Country"
+                                        />
+                                    </div>
+                                </Field>
+                                <Field label="Shop address" className="md:col-span-2">
+                                    <input
+                                        className={inputClass}
+                                        value={businessVerifyForm.address}
+                                        onChange={(event) => setBusinessVerifyForm({ ...businessVerifyForm, address: event.target.value })}
+                                        placeholder="Street, landmark, floor, shop number"
+                                    />
+                                </Field>
+                                <Field label="Google Maps link">
+                                    <input
+                                        className={inputClass}
+                                        value={businessVerifyForm.googleMapsUrl}
+                                        onChange={(event) => setBusinessVerifyForm({ ...businessVerifyForm, googleMapsUrl: event.target.value })}
+                                        placeholder="https://maps.google.com/..."
+                                    />
+                                </Field>
+                                <Field label="Social links">
+                                    <textarea
+                                        className={`${inputClass} min-h-[92px] resize-none`}
+                                        value={businessVerifyForm.socialLinks}
+                                        onChange={(event) => setBusinessVerifyForm({ ...businessVerifyForm, socialLinks: event.target.value })}
+                                        placeholder="Facebook, Instagram, website links"
+                                    />
+                                </Field>
+                            </div>
+
+                            <div className="mt-5 grid gap-4 md:grid-cols-3">
+                                {[
+                                    ["shopFrontPhoto", "Shop front photo", businessVerifyForm.shopFrontPhoto],
+                                    ["insideShopPhoto", "Inside shop photo", businessVerifyForm.insideShopPhoto],
+                                    ["documentUrl", "Optional document", businessVerifyForm.documentUrl],
+                                ].map(([field, label, value]) => (
+                                    <label key={field} className="block cursor-pointer rounded-2xl border border-dashed border-[#bdddc8] bg-[#fbfdfb] p-4 transition hover:border-[#0a8f45]">
+                                        <input
+                                            type="file"
+                                            accept={field === "documentUrl" ? "image/*,application/pdf,.pdf" : "image/*"}
+                                            className="hidden"
+                                            onChange={(event) =>
+                                                processBusinessVerificationFile(
+                                                    field as "shopFrontPhoto" | "insideShopPhoto" | "documentUrl",
+                                                    event.target.files?.[0],
+                                                )
+                                            }
+                                        />
+                                        <div className="flex h-24 items-center justify-center rounded-2xl bg-white">
+                                            {value && String(value).startsWith("data:image") ? (
+                                                <img src={String(value)} alt="" className="h-full w-full rounded-2xl object-cover" />
+                                            ) : (
+                                                <UploadCloud size={28} className="text-[#94a3b8]" />
+                                            )}
+                                        </div>
+                                        <p className="mt-3 text-sm font-black text-[#06111f]">{label}</p>
+                                        <p className="mt-1 text-xs leading-5 text-[#64748b]">
+                                            {field === "shopFrontPhoto" ? `Use a fresh front photo holding paper: Needero ${todayProofDate}.` : value ? "File attached." : "Tap to upload."}
+                                        </p>
+                                    </label>
+                                ))}
+                            </div>
+
+                            {businessVerifyResult && (
+                                <div className="mt-5 rounded-2xl border border-[#dfe8e3] bg-[#fbfdfb] p-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <p className="text-sm font-black text-[#06111f]">{businessVerificationStatusLabel(businessVerifyResult.status)}</p>
+                                            <p className="mt-1 text-xs font-bold text-[#64748b]">
+                                                Score {businessVerifyResult.score}/100 - Confidence {businessVerifyResult.confidence}%
+                                            </p>
+                                        </div>
+                                        <span className="rounded-full bg-[#e9f9f0] px-3 py-1 text-xs font-black text-[#0a8f45]">
+                                            {businessVerifyResult.aiProvider === "deepseek" ? "DeepSeek reviewed" : "Local fallback"}
+                                        </span>
+                                    </div>
+                                    {businessVerifyResult.reasons.length > 0 && (
+                                        <p className="mt-3 text-xs leading-5 text-[#0a8f45]">{businessVerifyResult.reasons.slice(0, 2).join(" ")}</p>
+                                    )}
+                                    {businessVerifyResult.riskFlags.length > 0 && (
+                                        <p className="mt-2 text-xs leading-5 text-[#c2410c]">{businessVerifyResult.riskFlags.slice(0, 2).join(" ")}</p>
+                                    )}
+                                </div>
+                            )}
+
+                            {businessVerifyError && <div className="mt-5 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{businessVerifyError}</div>}
+
+                            <div className="mt-6 flex flex-col gap-3 border-t border-[#edf2ef] pt-5 sm:flex-row sm:justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsBusinessVerifyOpen(false)}
+                                    className="rounded-xl border border-[#dfe8e3] bg-white px-5 py-3 text-sm font-black text-[#06111f] transition hover:bg-[#f8faf9]"
+                                >
+                                    Close
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => void submitBusinessVerification()}
+                                    disabled={!profilePhoneVerified || isBusinessVerifying}
+                                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0a8f45] px-5 py-3 text-sm font-black text-white transition hover:bg-[#08783b] disabled:cursor-not-allowed disabled:opacity-55"
+                                >
+                                    {isBusinessVerifying ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
+                                    Run verification
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
