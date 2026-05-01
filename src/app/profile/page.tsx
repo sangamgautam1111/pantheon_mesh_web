@@ -41,7 +41,7 @@ import {
     type DragEvent,
     type ReactNode,
 } from "react";
-import { PhoneAuthProvider, RecaptchaVerifier, updatePhoneNumber } from "firebase/auth";
+import { PhoneAuthProvider, RecaptchaVerifier, linkWithCredential, updatePhoneNumber } from "firebase/auth";
 import { get, ref } from "firebase/database";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
@@ -216,6 +216,30 @@ function buildE164Phone(dialCode: string, rawPhone: string) {
 
 function isValidE164Phone(phone: string) {
     return /^\+\d{8,15}$/.test(phone);
+}
+
+function firebaseErrorCode(error: unknown) {
+    return typeof error === "object" && error && "code" in error ? String((error as { code?: string }).code) : "";
+}
+
+function phoneCodeErrorMessage(error: unknown) {
+    const code = firebaseErrorCode(error);
+    if (code === "auth/invalid-verification-code") {
+        return "That code does not match the latest SMS. Check the newest message and try again.";
+    }
+    if (code === "auth/code-expired" || code === "auth/session-expired") {
+        return "That SMS session expired. Send a new code and enter the newest SMS.";
+    }
+    if (code === "auth/requires-recent-login") {
+        return "For security, sign out and sign in again, then verify this phone number.";
+    }
+    if (code === "auth/credential-already-in-use") {
+        return "This phone number is already linked to another account.";
+    }
+    if (code === "auth/too-many-requests") {
+        return "Too many attempts. Wait a few minutes before trying again.";
+    }
+    return "Phone verification failed. Send a new SMS code and try again.";
 }
 
 function usernameFromProfile(displayName?: string | null, email?: string | null) {
@@ -884,7 +908,20 @@ export default function ProfilePage() {
         setIsConfirmingPhoneCode(true);
         try {
             const credential = PhoneAuthProvider.credential(phoneVerificationId, code);
-            await updatePhoneNumber(user, credential);
+            const hasPhoneProvider = user.providerData.some((provider) => provider.providerId === "phone");
+            try {
+                if (hasPhoneProvider) {
+                    await updatePhoneNumber(user, credential);
+                } else {
+                    await linkWithCredential(user, credential);
+                }
+            } catch (authError) {
+                if (!hasPhoneProvider && firebaseErrorCode(authError) === "auth/provider-already-linked") {
+                    await updatePhoneNumber(user, credential);
+                } else {
+                    throw authError;
+                }
+            }
             await updateUserProfile({
                 phoneNumber: editedPhoneDisplay || editedPhoneE164,
                 phoneVerified: true,
@@ -896,7 +933,7 @@ export default function ProfilePage() {
             setPhoneVerifyMessage("Phone number verified successfully.");
         } catch (error) {
             console.error("Phone verification code failed:", error);
-            setPhoneVerifyError("Invalid or expired code. Send a new SMS code and try again.");
+            setPhoneVerifyError(phoneCodeErrorMessage(error));
         } finally {
             setIsConfirmingPhoneCode(false);
         }
