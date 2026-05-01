@@ -25,6 +25,7 @@ import {
     Sparkles,
     Star,
     Store,
+    Trash2,
     UploadCloud,
     UserRound,
     X,
@@ -41,7 +42,7 @@ import {
     type DragEvent,
     type ReactNode,
 } from "react";
-import { PhoneAuthProvider, RecaptchaVerifier, updatePhoneNumber } from "firebase/auth";
+import { PhoneAuthProvider, RecaptchaVerifier, unlink, updatePhoneNumber } from "firebase/auth";
 import { get, ref, update } from "firebase/database";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
@@ -226,6 +227,11 @@ function firebaseErrorMessage(error: unknown) {
     return typeof error === "object" && error && "message" in error ? String((error as { message?: string }).message) : "";
 }
 
+function isPhoneCredentialOwnershipConflict(error: unknown) {
+    const code = firebaseErrorCode(error);
+    return code === "auth/account-exists-with-different-credential" || code === "auth/credential-already-in-use";
+}
+
 function phoneCodeErrorMessage(error: unknown) {
     const code = firebaseErrorCode(error);
     if (code === "auth/invalid-verification-code") {
@@ -237,8 +243,8 @@ function phoneCodeErrorMessage(error: unknown) {
     if (code === "auth/requires-recent-login") {
         return "For security, sign out and sign in again, then verify this phone number.";
     }
-    if (code === "auth/credential-already-in-use") {
-        return "This phone number is already linked to another account.";
+    if (isPhoneCredentialOwnershipConflict(error)) {
+        return "This phone number is already linked to another account. Delete phone and restart here, or remove it from that other account first.";
     }
     if (code === "auth/too-many-requests") {
         return "Too many attempts. Wait a few minutes before trying again.";
@@ -606,12 +612,14 @@ export default function ProfilePage() {
     const [isChangingCountry, setIsChangingCountry] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
+    const didResetPhoneRef = useRef(false);
     const [phoneVerificationId, setPhoneVerificationId] = useState("");
     const [phoneOtp, setPhoneOtp] = useState("");
     const [phoneVerifyMessage, setPhoneVerifyMessage] = useState("");
     const [phoneVerifyError, setPhoneVerifyError] = useState("");
     const [isSendingPhoneCode, setIsSendingPhoneCode] = useState(false);
     const [isConfirmingPhoneCode, setIsConfirmingPhoneCode] = useState(false);
+    const [isResettingPhone, setIsResettingPhone] = useState(false);
     const [isPhoneVerifyOpen, setIsPhoneVerifyOpen] = useState(false);
     const [phoneCooldownUntil, setPhoneCooldownUntil] = useState(0);
     const [phoneCooldownNow, setPhoneCooldownNow] = useState(Date.now());
@@ -683,6 +691,10 @@ export default function ProfilePage() {
     }, []);
 
     useEffect(() => {
+        if (didResetPhoneRef.current) {
+            didResetPhoneRef.current = false;
+            return;
+        }
         setPhoneVerificationId("");
         setPhoneOtp("");
         setPhoneVerifyMessage("");
@@ -893,6 +905,68 @@ export default function ProfilePage() {
         }
     };
 
+    const handleResetPhoneVerification = async () => {
+        setPhoneVerifyError("");
+        setPhoneVerifyMessage("");
+
+        if (!user) {
+            setPhoneVerifyError("Please sign in again before deleting this phone number.");
+            return;
+        }
+
+        const phoneForCooldown = editedPhoneE164;
+        const resetAt = Date.now();
+        const resetPayload = {
+            phoneNumber: null,
+            phoneVerified: false,
+            phoneVerifiedAt: null,
+            phoneResetAt: resetAt,
+            smsNotifications: editForm.smsNotifications,
+        };
+
+        setIsResettingPhone(true);
+        try {
+            if (user.phoneNumber) {
+                await unlink(user, PhoneAuthProvider.PROVIDER_ID).catch((unlinkError) => {
+                    console.warn("Could not unlink Firebase Auth phone provider; clearing app phone state:", unlinkError);
+                });
+                await user.reload().catch(() => undefined);
+            }
+
+            try {
+                await updateUserProfile(resetPayload);
+            } catch (profileError) {
+                console.warn("Full profile phone reset failed; trying minimal phone reset:", profileError);
+                await update(ref(db, `users/${user.uid}`), resetPayload);
+                await Promise.all([
+                    update(ref(db, `accounts/customer/${user.uid}`), resetPayload).catch((mirrorError) =>
+                        console.warn("Customer phone mirror reset failed:", mirrorError),
+                    ),
+                    update(ref(db, `accounts/business/${user.uid}`), resetPayload).catch((mirrorError) =>
+                        console.warn("Business phone mirror reset failed:", mirrorError),
+                    ),
+                ]);
+            }
+
+            if (typeof window !== "undefined" && phoneForCooldown) {
+                window.localStorage.removeItem(`needero-phone-otp-sent:${user.uid}:${phoneForCooldown}`);
+            }
+            resetRecaptcha();
+            setPhoneCooldownUntil(0);
+            setPhoneCooldownNow(Date.now());
+            setPhoneVerificationId("");
+            setPhoneOtp("");
+            didResetPhoneRef.current = true;
+            setEditForm((current) => ({ ...current, phoneNumberRaw: "" }));
+            setPhoneVerifyMessage("Phone number deleted. Enter it again and send a fresh SMS code.");
+        } catch (error) {
+            console.error("Phone reset failed:", error);
+            setPhoneVerifyError(error instanceof Error ? error.message : "Could not delete this phone number. Try again.");
+        } finally {
+            setIsResettingPhone(false);
+        }
+    };
+
     const handleConfirmPhoneCode = async () => {
         setPhoneVerifyError("");
         setPhoneVerifyMessage("");
@@ -926,6 +1000,7 @@ export default function ProfilePage() {
                     phoneNumber: verifiedPhoneNumber,
                     phoneVerified: true,
                     phoneVerifiedAt: verifiedAt,
+                    phoneResetAt: null,
                     smsNotifications: editForm.smsNotifications,
                 });
             } catch (profileError) {
@@ -934,6 +1009,7 @@ export default function ProfilePage() {
                     phoneNumber: verifiedPhoneNumber,
                     phoneVerified: true,
                     phoneVerifiedAt: verifiedAt,
+                    phoneResetAt: null,
                     smsNotifications: editForm.smsNotifications,
                 });
                 if (accountType) {
@@ -941,6 +1017,7 @@ export default function ProfilePage() {
                         phoneNumber: verifiedPhoneNumber,
                         phoneVerified: true,
                         phoneVerifiedAt: verifiedAt,
+                        phoneResetAt: null,
                         smsNotifications: editForm.smsNotifications,
                     }).catch((mirrorError) => console.warn("Minimal phone mirror save failed:", mirrorError));
                 }
@@ -969,6 +1046,7 @@ export default function ProfilePage() {
 
         try {
             const finalPhoneNumber = buildDisplayPhone(editForm.dialCode, editForm.phoneNumberRaw);
+            const phoneWasCleared = !finalPhoneNumber && Boolean(profile?.phoneNumber);
             const usernameValidation = validateUsername(editForm.username);
             if (!usernameValidation.valid) {
                 setUsernameStatus("invalid");
@@ -985,7 +1063,8 @@ export default function ProfilePage() {
                 displayName: editForm.displayName.trim() || displayName,
                 companyName: isBusiness ? editForm.companyName.trim() || editForm.displayName.trim() || businessName : null,
                 username: usernameValidation.username,
-                phoneNumber: finalPhoneNumber,
+                phoneNumber: finalPhoneNumber || null,
+                phoneResetAt: finalPhoneNumber ? profile?.phoneResetAt ?? null : phoneWasCleared ? Date.now() : profile?.phoneResetAt ?? null,
             });
 
             setSaveSuccess(true);
@@ -1290,15 +1369,28 @@ export default function ProfilePage() {
                                 {editedPhoneVerified ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
                                 {editedPhoneVerified ? "Phone verified" : "Phone verification required"}
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => setIsPhoneVerifyOpen(true)}
-                                disabled={editedPhoneVerified || !editForm.phoneNumberRaw.trim()}
-                                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#06111f] px-4 py-3 text-xs font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-55 sm:w-auto"
-                            >
-                                <Phone size={14} />
-                                {editedPhoneVerified ? "Phone already verified" : "Open verification popup"}
-                            </button>
+                            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsPhoneVerifyOpen(true)}
+                                    disabled={editedPhoneVerified || !editForm.phoneNumberRaw.trim()}
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#06111f] px-4 py-3 text-xs font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-55 sm:w-auto"
+                                >
+                                    <Phone size={14} />
+                                    {editedPhoneVerified ? "Phone already verified" : "Open verification popup"}
+                                </button>
+                                {(profile?.phoneNumber || editForm.phoneNumberRaw.trim()) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => void handleResetPhoneVerification()}
+                                        disabled={isResettingPhone}
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-3 text-xs font-black text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-55 sm:w-auto"
+                                    >
+                                        {isResettingPhone ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                                        Delete phone & restart
+                                    </button>
+                                )}
+                            </div>
                             {phoneVerifyMessage && <p className="mt-2 text-xs font-bold text-[#0a8f45]">{phoneVerifyMessage}</p>}
                             {phoneVerifyError && <p className="mt-2 text-xs font-bold text-[#c2410c]">{phoneVerifyError}</p>}
                         </Field>
@@ -1859,6 +1951,17 @@ export default function ProfilePage() {
 
                             {phoneVerifyMessage && <p className="mt-4 rounded-xl bg-[#e9f9f0] px-4 py-3 text-xs font-bold text-[#0a8f45]">{phoneVerifyMessage}</p>}
                             {phoneVerifyError && <p className="mt-4 rounded-xl bg-[#fff7ed] px-4 py-3 text-xs font-bold text-[#c2410c]">{phoneVerifyError}</p>}
+                            {(profile?.phoneNumber || editForm.phoneNumberRaw.trim()) && (
+                                <button
+                                    type="button"
+                                    onClick={() => void handleResetPhoneVerification()}
+                                    disabled={isResettingPhone}
+                                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-3 text-xs font-black text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-55"
+                                >
+                                    {isResettingPhone ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                                    Delete phone & restart
+                                </button>
+                            )}
                         </div>
                     </div>
                 )}

@@ -32,6 +32,7 @@ export interface UserProfile {
     phoneNumber?: string | null;
     phoneVerified?: boolean | null;
     phoneVerifiedAt?: number | null;
+    phoneResetAt?: number | null;
     emailVerified?: boolean | null;
     emailVerifiedAt?: number | null;
     location?: string | null;
@@ -245,13 +246,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     : requestedPlanId
                 : null;
         const authPhoneNumber = firebaseUser.phoneNumber || null;
+        const phoneResetAt =
+            typeof overrides.phoneResetAt === "number"
+                ? overrides.phoneResetAt
+                : typeof existing.phoneResetAt === "number"
+                  ? existing.phoneResetAt
+                  : null;
+        const canUseAuthPhone = Boolean(authPhoneNumber && !phoneResetAt);
         const resolvedPhoneNumber =
             typeof overrides.phoneNumber === "string"
                 ? overrides.phoneNumber
                 : typeof existing.phoneNumber === "string" && existing.phoneNumber.trim()
                   ? existing.phoneNumber
-                  : authPhoneNumber;
-        const hasVerifiedAuthPhone = Boolean(authPhoneNumber && resolvedPhoneNumber);
+                  : canUseAuthPhone
+                    ? authPhoneNumber
+                    : null;
+        const hasVerifiedAuthPhone = Boolean(canUseAuthPhone && resolvedPhoneNumber);
 
         const profileData: UserProfile = {
             ...existing,
@@ -273,6 +283,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                       : hasVerifiedAuthPhone
                         ? Date.now()
                         : null,
+            phoneResetAt,
             emailVerified: Boolean(existing.emailVerified || firebaseUser.emailVerified),
             emailVerifiedAt:
                 typeof existing.emailVerifiedAt === "number"
@@ -320,6 +331,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 phoneNumber: profileData.phoneNumber,
                 phoneVerified: profileData.phoneVerified,
                 phoneVerifiedAt: profileData.phoneVerifiedAt,
+                phoneResetAt: profileData.phoneResetAt,
                 emailVerified: profileData.emailVerified,
                 emailVerifiedAt: profileData.emailVerifiedAt,
                 country: profileData.country,
@@ -627,6 +639,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 phoneNumber: newProfile.phoneNumber,
                 phoneVerified: newProfile.phoneVerified,
                 phoneVerifiedAt: newProfile.phoneVerifiedAt,
+                phoneResetAt: newProfile.phoneResetAt,
                 emailVerified: newProfile.emailVerified,
                 emailVerifiedAt: newProfile.emailVerifiedAt,
                 country: newProfile.country,
