@@ -103,7 +103,7 @@ export default function PrivacyPolicyPage() {
                         {[
                             { icon: LockKeyhole, label: "Protected login", copy: "Firebase and provider sign-in" },
                             { icon: Database, label: "Marketplace data", copy: "Needs, Offers, messages, profiles" },
-                            { icon: Mail, label: "Contact", copy: "needroofficial@gmail.com" },
+                            { icon: Mail, label: "Contact", copy: "neederoofficial@gmail.com" },
                         ].map((item) => (
                             <div key={item.label} className="rounded-2xl border border-[#edf2ef] bg-[#fbfdfb] p-4">
                                 <item.icon size={20} className="text-[#0a8f45]" />
@@ -132,7 +132,7 @@ export default function PrivacyPolicyPage() {
                         <h2 className="text-xl font-black">Contact and Requests</h2>
                         <p className="mt-3 text-sm leading-7 text-[#62646a]">
                             For privacy questions, account deletion, data correction, or security concerns, contact Needero
-                            support at <a className="font-black text-[#0a8f45]" href="mailto:needroofficial@gmail.com">needroofficial@gmail.com</a>.
+                            support at <a className="font-black text-[#0a8f45]" href="mailto:neederoofficial@gmail.com">neederoofficial@gmail.com</a>.
                         </p>
                     </section>
                 </section>

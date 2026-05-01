@@ -75,7 +75,7 @@ export default function SupportPage() {
                             <Mail size={24} />
                             <h2 className="mt-5 text-xl font-black">Customer support email</h2>
                             <p className="mt-2 text-sm leading-6 text-white/70">Temporary MVP contact:</p>
-                            <p className="mt-3 rounded-2xl bg-white/10 px-4 py-3 font-black">needroofficial@gmail.com</p>
+                            <p className="mt-3 rounded-2xl bg-white/10 px-4 py-3 font-black">neederoofficial@gmail.com</p>
                         </div>
 
                         {submitted && (

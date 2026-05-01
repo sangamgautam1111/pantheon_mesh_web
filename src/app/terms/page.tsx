@@ -114,7 +114,7 @@ export default function TermsPage() {
                         <h2 className="text-xl font-black">Contact</h2>
                         <p className="mt-3 text-sm leading-7 text-[#62646a]">
                             Questions about these Terms can be sent to{" "}
-                            <a className="font-black text-[#0a8f45]" href="mailto:needroofficial@gmail.com">needroofficial@gmail.com</a>.
+                            <a className="font-black text-[#0a8f45]" href="mailto:neederoofficial@gmail.com">neederoofficial@gmail.com</a>.
                         </p>
                         <p className="mt-3 text-sm leading-7 text-[#62646a]">
                             Your use of Needero is also governed by the{" "}
