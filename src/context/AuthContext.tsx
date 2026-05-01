@@ -29,6 +29,10 @@ interface UserProfile {
     currentPlanId?: string | null;
     totalSpent?: number;
     phoneNumber?: string | null;
+    phoneVerified?: boolean | null;
+    phoneVerifiedAt?: number | null;
+    emailVerified?: boolean | null;
+    emailVerifiedAt?: number | null;
     location?: string | null;
     savedAddress?: string | null;
     country?: string | null;
@@ -229,6 +233,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             createdAt: existing.createdAt || Date.now(),
             companyName,
             currentPlanId: resolvedPlanId,
+            phoneVerified: Boolean(existing.phoneVerified),
+            phoneVerifiedAt: typeof existing.phoneVerifiedAt === "number" ? existing.phoneVerifiedAt : null,
+            emailVerified: Boolean(existing.emailVerified || firebaseUser.emailVerified),
+            emailVerifiedAt:
+                typeof existing.emailVerifiedAt === "number"
+                    ? existing.emailVerifiedAt
+                    : firebaseUser.emailVerified
+                      ? Date.now()
+                      : null,
             totalSpent:
                 typeof overrides.totalSpent === "number"
                     ? overrides.totalSpent
@@ -254,6 +267,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 companyName: profileData.companyName,
                 currentPlanId: profileData.currentPlanId,
                 phoneNumber: profileData.phoneNumber,
+                phoneVerified: profileData.phoneVerified,
+                phoneVerifiedAt: profileData.phoneVerifiedAt,
+                emailVerified: profileData.emailVerified,
+                emailVerifiedAt: profileData.emailVerifiedAt,
                 country: profileData.country,
                 countryCode: profileData.countryCode,
                 state: profileData.state,
@@ -334,6 +351,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         : null,
                     currentPlanId: fallbackAccountType === "business" ? "free" : null,
                     totalSpent: 0,
+                    phoneVerified: false,
+                    phoneVerifiedAt: null,
+                    emailVerified: Boolean(firebaseUser.emailVerified),
+                    emailVerifiedAt: firebaseUser.emailVerified ? Date.now() : null,
                 };
                 setProfile(syncedProfile);
                 setAccountType(fallbackAccountType);
@@ -443,7 +464,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const updateUserProfile = async (updates: Partial<UserProfile>) => {
         if (!user || !profile) return;
-        const newProfile = { ...profile, ...updates };
+        const nextUpdates: Partial<UserProfile> = { ...updates };
+        const phoneChanged = updates.phoneNumber !== undefined && updates.phoneNumber !== profile.phoneNumber;
+        if (phoneChanged && updates.phoneVerified !== true) {
+            nextUpdates.phoneVerified = false;
+            nextUpdates.phoneVerifiedAt = null;
+        }
+        const newProfile = { ...profile, ...nextUpdates };
 
         if (updates.displayName !== undefined && updates.displayName !== user.displayName) {
             try {
@@ -484,6 +511,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 companyName: newProfile.companyName,
                 currentPlanId: newProfile.currentPlanId,
                 phoneNumber: newProfile.phoneNumber,
+                phoneVerified: newProfile.phoneVerified,
+                phoneVerifiedAt: newProfile.phoneVerifiedAt,
+                emailVerified: newProfile.emailVerified,
+                emailVerifiedAt: newProfile.emailVerifiedAt,
                 country: newProfile.country,
                 countryCode: newProfile.countryCode,
                 state: newProfile.state,

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
+    AlertCircle,
     AtSign,
     Bell,
     Briefcase,
@@ -15,10 +16,13 @@ import {
     Eye,
     Globe,
     Lock,
+    Loader2,
     Mail,
     MapPin,
     MessageSquare,
     Phone,
+    RefreshCw,
+    Send,
     ShieldCheck,
     Sparkles,
     Star,
@@ -39,8 +43,10 @@ import {
     type DragEvent,
     type ReactNode,
 } from "react";
+import { PhoneAuthProvider, RecaptchaVerifier, reload, sendEmailVerification, updatePhoneNumber } from "firebase/auth";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
+import { auth } from "@/lib/firebase";
 
 const DeliveryMap = dynamic(() => import("@/components/profile/DeliveryMap"), {
     ssr: false,
@@ -163,6 +169,29 @@ function parsePhoneNumber(phoneNumber?: string | null) {
         dialCode: match?.[1] || "+977",
         phoneNumberRaw: match?.[2] || phone,
     };
+}
+
+function compactPhone(value?: string | null) {
+    return (value || "").replace(/[^\d+]/g, "");
+}
+
+function buildDisplayPhone(dialCode: string, rawPhone: string) {
+    const cleanRaw = rawPhone.trim();
+    return cleanRaw ? `${dialCode} ${cleanRaw}` : "";
+}
+
+function buildE164Phone(dialCode: string, rawPhone: string) {
+    const raw = rawPhone.trim();
+    if (!raw) return "";
+    if (raw.startsWith("+")) return `+${raw.replace(/[^\d]/g, "")}`;
+    const dialDigits = dialCode.replace(/[^\d]/g, "");
+    const rawDigits = raw.replace(/[^\d]/g, "");
+    const phoneDigits = rawDigits.startsWith(dialDigits) ? rawDigits.slice(dialDigits.length) : rawDigits;
+    return dialDigits && phoneDigits ? `+${dialDigits}${phoneDigits}` : "";
+}
+
+function isValidE164Phone(phone: string) {
+    return /^\+\d{8,15}$/.test(phone);
 }
 
 function usernameFromProfile(displayName?: string | null, email?: string | null) {
@@ -475,7 +504,7 @@ function PreviewStat({ label, value }: { label: string; value: string }) {
 }
 
 export default function ProfilePage() {
-    const { profile, accountType, updateUserProfile } = useAuth();
+    const { user, profile, accountType, updateUserProfile } = useAuth();
     const isBusiness = accountType === "business";
     const displayName = profile?.displayName || (isBusiness ? "Local Business" : "Customer");
     const businessName = profile?.companyName || displayName;
@@ -495,6 +524,17 @@ export default function ProfilePage() {
     const [hasPromptedLocation, setHasPromptedLocation] = useState(false);
     const [isChangingCountry, setIsChangingCountry] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
+    const [phoneVerificationId, setPhoneVerificationId] = useState("");
+    const [phoneOtp, setPhoneOtp] = useState("");
+    const [phoneVerifyMessage, setPhoneVerifyMessage] = useState("");
+    const [phoneVerifyError, setPhoneVerifyError] = useState("");
+    const [isSendingPhoneCode, setIsSendingPhoneCode] = useState(false);
+    const [isConfirmingPhoneCode, setIsConfirmingPhoneCode] = useState(false);
+    const [emailVerifyMessage, setEmailVerifyMessage] = useState("");
+    const [emailVerifyError, setEmailVerifyError] = useState("");
+    const [isSendingEmailCode, setIsSendingEmailCode] = useState(false);
+    const [isRefreshingEmail, setIsRefreshingEmail] = useState(false);
 
     const countries = useMemo(() => Country.getAllCountries(), []);
     const sortedCountries = useMemo(() => [...countries].sort((a, b) => a.name.localeCompare(b.name)), [countries]);
@@ -523,11 +563,35 @@ export default function ProfilePage() {
         return City.getCitiesOfCountry(editForm.countryCode) || [];
     }, [editForm.countryCode, editForm.stateCode]);
 
+    const editedPhoneDisplay = buildDisplayPhone(editForm.dialCode, editForm.phoneNumberRaw);
+    const editedPhoneE164 = buildE164Phone(editForm.dialCode, editForm.phoneNumberRaw);
+    const editedPhoneMatchesProfile = Boolean(
+        profile?.phoneNumber &&
+            compactPhone(profile.phoneNumber) === compactPhone(editedPhoneDisplay || editedPhoneE164),
+    );
+    const profilePhoneVerified = Boolean(profile?.phoneVerified && profile?.phoneNumber);
+    const editedPhoneVerified = Boolean(profilePhoneVerified && editedPhoneMatchesProfile);
+    const profileEmailVerified = Boolean(profile?.emailVerified || user?.emailVerified);
+
     useEffect(() => {
         if (!isEditing) {
             setEditForm(formFromProfile(profile, isBusiness));
         }
     }, [profile, isBusiness, isEditing]);
+
+    useEffect(() => {
+        return () => {
+            recaptchaVerifierRef.current?.clear();
+            recaptchaVerifierRef.current = null;
+        };
+    }, []);
+
+    useEffect(() => {
+        setPhoneVerificationId("");
+        setPhoneOtp("");
+        setPhoneVerifyMessage("");
+        setPhoneVerifyError("");
+    }, [editedPhoneE164]);
 
     useEffect(() => {
         if (profile && !profile.country && !hasPromptedLocation) {
@@ -589,15 +653,143 @@ export default function ProfilePage() {
         setIsChangingCountry(false);
     };
 
+    const resetRecaptcha = () => {
+        recaptchaVerifierRef.current?.clear();
+        recaptchaVerifierRef.current = null;
+    };
+
+    const getRecaptchaVerifier = () => {
+        if (!recaptchaVerifierRef.current) {
+            recaptchaVerifierRef.current = new RecaptchaVerifier(auth, "needero-phone-recaptcha", {
+                size: "invisible",
+            });
+        }
+        return recaptchaVerifierRef.current;
+    };
+
+    const handleSendPhoneCode = async () => {
+        setPhoneVerifyError("");
+        setPhoneVerifyMessage("");
+
+        if (!user) {
+            setPhoneVerifyError("Please sign in again before verifying your phone.");
+            return;
+        }
+
+        if (!isValidE164Phone(editedPhoneE164)) {
+            setPhoneVerifyError("Enter a valid phone number with the country code.");
+            return;
+        }
+
+        setIsSendingPhoneCode(true);
+        try {
+            const provider = new PhoneAuthProvider(auth);
+            const verifier = getRecaptchaVerifier();
+            const verificationId = await provider.verifyPhoneNumber(editedPhoneE164, verifier);
+            setPhoneVerificationId(verificationId);
+            setPhoneVerifyMessage(`SMS code sent to ${editedPhoneE164}.`);
+        } catch (error) {
+            console.error("Phone verification SMS failed:", error);
+            resetRecaptcha();
+            setPhoneVerifyError("Could not send SMS code. Check Firebase phone auth setup and try again.");
+        } finally {
+            setIsSendingPhoneCode(false);
+        }
+    };
+
+    const handleConfirmPhoneCode = async () => {
+        setPhoneVerifyError("");
+        setPhoneVerifyMessage("");
+
+        if (!user) {
+            setPhoneVerifyError("Please sign in again before confirming the code.");
+            return;
+        }
+
+        const code = phoneOtp.trim();
+        if (!phoneVerificationId || code.length < 4) {
+            setPhoneVerifyError("Enter the SMS code first.");
+            return;
+        }
+
+        setIsConfirmingPhoneCode(true);
+        try {
+            const credential = PhoneAuthProvider.credential(phoneVerificationId, code);
+            await updatePhoneNumber(user, credential);
+            await updateUserProfile({
+                phoneNumber: editedPhoneDisplay || editedPhoneE164,
+                phoneVerified: true,
+                phoneVerifiedAt: Date.now(),
+                smsNotifications: editForm.smsNotifications,
+            });
+            setPhoneVerificationId("");
+            setPhoneOtp("");
+            setPhoneVerifyMessage("Phone number verified successfully.");
+        } catch (error) {
+            console.error("Phone verification code failed:", error);
+            setPhoneVerifyError("Invalid or expired code. Send a new SMS code and try again.");
+        } finally {
+            setIsConfirmingPhoneCode(false);
+        }
+    };
+
+    const handleSendEmailVerification = async () => {
+        setEmailVerifyError("");
+        setEmailVerifyMessage("");
+
+        if (!user?.email) {
+            setEmailVerifyError("No email address is connected to this account.");
+            return;
+        }
+
+        setIsSendingEmailCode(true);
+        try {
+            await sendEmailVerification(user);
+            setEmailVerifyMessage("Verification email sent. Open the link, then refresh the status here.");
+        } catch (error) {
+            console.error("Email verification send failed:", error);
+            setEmailVerifyError("Could not send verification email right now.");
+        } finally {
+            setIsSendingEmailCode(false);
+        }
+    };
+
+    const handleRefreshEmailVerification = async () => {
+        setEmailVerifyError("");
+        setEmailVerifyMessage("");
+
+        if (!user) {
+            setEmailVerifyError("Please sign in again before refreshing email status.");
+            return;
+        }
+
+        setIsRefreshingEmail(true);
+        try {
+            await reload(user);
+            if (user.emailVerified) {
+                await updateUserProfile({
+                    emailVerified: true,
+                    emailVerifiedAt: profile?.emailVerifiedAt || Date.now(),
+                });
+                setEmailVerifyMessage("Email is verified.");
+            } else {
+                setEmailVerifyError("Email is not verified yet. Open the verification link first.");
+            }
+        } catch (error) {
+            console.error("Email verification refresh failed:", error);
+            setEmailVerifyError("Could not refresh email status right now.");
+        } finally {
+            setIsRefreshingEmail(false);
+        }
+    };
+
     const handleSave = async () => {
         setIsSaving(true);
         setSaveSuccess(false);
         setSaveError("");
 
         try {
-            const finalPhoneNumber = editForm.phoneNumberRaw.trim()
-                ? `${editForm.dialCode} ${editForm.phoneNumberRaw.trim()}`
-                : "";
+            const finalPhoneNumber = buildDisplayPhone(editForm.dialCode, editForm.phoneNumberRaw);
 
             await updateUserProfile({
                 ...editForm,
@@ -622,13 +814,13 @@ export default function ProfilePage() {
     const customerChecklist: ChecklistItem[] = useMemo(
         () => [
             { label: "Add profile photo", done: Boolean(photo), weight: 15, tab: "general" },
-            { label: "Verify phone number", done: Boolean(profile?.phoneNumber), weight: 20, tab: "contact" },
+            { label: "Verify phone number", done: profilePhoneVerified, weight: 20, tab: "contact" },
             { label: "Add country & city", done: Boolean(profile?.country && profile?.city), weight: 15, tab: "address" },
             { label: "Add current address", done: Boolean(profile?.currentAddress), weight: 15, tab: "address" },
             { label: "Add email", done: Boolean(profile?.email), weight: 15, tab: "contact" },
             { label: "Complete first Need", done: false, weight: 20, tab: "preferences" },
         ],
-        [photo, profile?.phoneNumber, profile?.country, profile?.city, profile?.currentAddress, profile?.email],
+        [photo, profilePhoneVerified, profile?.country, profile?.city, profile?.currentAddress, profile?.email],
     );
 
     const businessChecklist: ChecklistItem[] = useMemo(
@@ -640,10 +832,10 @@ export default function ProfilePage() {
             { label: "Add opening hours", done: Boolean(profile?.openingHours), weight: 10, tab: "preferences" },
             { label: "Add services/products", done: Boolean(profile?.services), weight: 15, tab: "preferences" },
             { label: "Add warranty policy", done: Boolean(profile?.warrantyPolicy), weight: 10, tab: "security" },
-            { label: "Verify phone", done: Boolean(profile?.phoneNumber), weight: 10, tab: "contact" },
-            { label: "Verify email", done: Boolean(profile?.email), weight: 10, tab: "contact" },
+            { label: "Verify phone", done: profilePhoneVerified, weight: 10, tab: "contact" },
+            { label: "Add email", done: Boolean(profile?.email), weight: 10, tab: "contact" },
         ],
-        [photo, businessName, profile?.category, profile?.country, profile?.city, profile?.openingHours, profile?.services, profile?.warrantyPolicy, profile?.phoneNumber, profile?.email],
+        [photo, businessName, profile?.category, profile?.country, profile?.city, profile?.openingHours, profile?.services, profile?.warrantyPolicy, profilePhoneVerified, profile?.email],
     );
 
     const liveChecklist = useMemo<ChecklistItem[]>(
@@ -657,18 +849,18 @@ export default function ProfilePage() {
                       { label: "Add opening hours", done: Boolean(editForm.openingHours), weight: 10, tab: "preferences" },
                       { label: "Add services/products", done: Boolean(editForm.services), weight: 15, tab: "preferences" },
                       { label: "Add warranty policy", done: Boolean(editForm.warrantyPolicy), weight: 10, tab: "security" },
-                      { label: "Verify phone", done: Boolean(editForm.phoneNumberRaw), weight: 10, tab: "contact" },
-                      { label: "Verify email", done: Boolean(profile?.email), weight: 10, tab: "contact" },
+                      { label: "Verify phone", done: editedPhoneVerified, weight: 10, tab: "contact" },
+                      { label: "Add email", done: Boolean(profile?.email), weight: 10, tab: "contact" },
                   ]
                 : [
                       { label: "Add profile photo", done: Boolean(editForm.photoURL), weight: 15, tab: "general" },
-                      { label: "Verify phone number", done: Boolean(editForm.phoneNumberRaw), weight: 20, tab: "contact" },
+                      { label: "Verify phone number", done: editedPhoneVerified, weight: 20, tab: "contact" },
                       { label: "Add country & city", done: Boolean(editForm.country && editForm.city), weight: 15, tab: "address" },
                       { label: "Add current address", done: Boolean(editForm.currentAddress), weight: 15, tab: "address" },
                       { label: "Add email", done: Boolean(profile?.email), weight: 15, tab: "contact" },
                       { label: "Complete first Need", done: false, weight: 20, tab: "preferences" },
                   ],
-        [editForm, isBusiness, profile?.email],
+        [editForm, isBusiness, profile?.email, editedPhoneVerified],
     );
 
     const checklist = isBusiness ? businessChecklist : customerChecklist;
@@ -780,12 +972,34 @@ export default function ProfilePage() {
                                 <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
                                 <input className={`${inputClass} pl-10`} value={email} disabled />
                             </div>
-                            <div className="mt-2 flex items-center gap-2 text-xs font-bold text-[#0a8f45]">
-                                <CheckCircle2 size={14} />
-                                Email verified
+                            <div className={`mt-3 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-black ${profileEmailVerified ? "bg-[#e9f9f0] text-[#0a8f45]" : "bg-[#fff7ed] text-[#c2410c]"}`}>
+                                {profileEmailVerified ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                                {profileEmailVerified ? "Email verified" : "Email verification optional"}
                             </div>
+                            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                <button
+                                    type="button"
+                                    onClick={handleSendEmailVerification}
+                                    disabled={profileEmailVerified || isSendingEmailCode || !user?.email}
+                                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#dfe8e3] bg-white px-3 py-2.5 text-xs font-black text-[#06111f] transition hover:bg-[#fbfdfb] disabled:cursor-not-allowed disabled:opacity-55"
+                                >
+                                    {isSendingEmailCode ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                                    Send email link
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleRefreshEmailVerification}
+                                    disabled={profileEmailVerified || isRefreshingEmail || !user?.email}
+                                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#06111f] px-3 py-2.5 text-xs font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-55"
+                                >
+                                    {isRefreshingEmail ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                                    Refresh status
+                                </button>
+                            </div>
+                            {emailVerifyMessage && <p className="mt-2 text-xs font-bold text-[#0a8f45]">{emailVerifyMessage}</p>}
+                            {emailVerifyError && <p className="mt-2 text-xs font-bold text-[#c2410c]">{emailVerifyError}</p>}
                         </Field>
-                        <Field label="Phone Number">
+                        <Field label="Phone Number" hint="Required for customers and repair shops. The green tick appears only after SMS OTP success.">
                             <div className="mt-1 flex gap-2">
                                 <select
                                     className="w-[42%] rounded-xl border border-[#dfe8e3] bg-[#fbfdfb] px-3 py-3 text-xs font-bold text-[#06111f] outline-none focus:border-[#0a8f45] focus:ring-4 focus:ring-[#e9f9f0]"
@@ -806,6 +1020,42 @@ export default function ProfilePage() {
                                     placeholder="98XXXXXXXX"
                                 />
                             </div>
+                            <div className={`mt-3 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-black ${editedPhoneVerified ? "bg-[#e9f9f0] text-[#0a8f45]" : "bg-[#fff7ed] text-[#c2410c]"}`}>
+                                {editedPhoneVerified ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                                {editedPhoneVerified ? "Phone verified" : "Phone verification required"}
+                            </div>
+                            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                <button
+                                    type="button"
+                                    onClick={handleSendPhoneCode}
+                                    disabled={editedPhoneVerified || isSendingPhoneCode || !editForm.phoneNumberRaw.trim()}
+                                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#06111f] px-3 py-2.5 text-xs font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-55"
+                                >
+                                    {isSendingPhoneCode ? <Loader2 size={14} className="animate-spin" /> : <Phone size={14} />}
+                                    {phoneVerificationId ? "Resend SMS code" : "Verify phone number"}
+                                </button>
+                                <input
+                                    className={`${inputClass} mt-0`}
+                                    value={phoneOtp}
+                                    onChange={(event) => setPhoneOtp(event.target.value)}
+                                    placeholder="Enter SMS code"
+                                    inputMode="numeric"
+                                    disabled={editedPhoneVerified || !phoneVerificationId}
+                                />
+                            </div>
+                            {phoneVerificationId && !editedPhoneVerified && (
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmPhoneCode}
+                                    disabled={isConfirmingPhoneCode || phoneOtp.trim().length < 4}
+                                    className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a8f45] px-3 py-2.5 text-xs font-black text-white transition hover:bg-[#08783b] disabled:cursor-not-allowed disabled:opacity-55"
+                                >
+                                    {isConfirmingPhoneCode ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                                    Confirm SMS code
+                                </button>
+                            )}
+                            {phoneVerifyMessage && <p className="mt-2 text-xs font-bold text-[#0a8f45]">{phoneVerifyMessage}</p>}
+                            {phoneVerifyError && <p className="mt-2 text-xs font-bold text-[#c2410c]">{phoneVerifyError}</p>}
                         </Field>
                     </div>
                     <ToggleRow
@@ -1063,6 +1313,7 @@ export default function ProfilePage() {
     return (
         <RouteGuard allowedTypes={["customer", "business"]}>
             <main className="min-h-screen bg-[#fbfdfb] px-4 py-6 text-[#06111f] md:px-8">
+                <div id="needero-phone-recaptcha" className="hidden" />
                 <div className="mx-auto max-w-6xl">
                     <section className="relative overflow-hidden rounded-[24px] border border-[#dfe8e3] bg-[radial-gradient(circle_at_88%_22%,rgba(10,143,69,0.12),transparent_34%),linear-gradient(180deg,#ffffff,#fbfdfb)] p-6 shadow-[0_18px_60px_rgba(15,23,42,0.08)] md:p-8">
                         <button
@@ -1121,8 +1372,8 @@ export default function ProfilePage() {
                         <InfoTile
                             icon={ShieldCheck}
                             label="Trust"
-                            value={profile?.email || profile?.phoneNumber ? "Contact ready" : "Verify phone/email"}
-                            onClick={() => openEditor("security")}
+                            value={profilePhoneVerified ? "Phone verified" : profile?.phoneNumber ? "Verify phone number" : "Add phone number"}
+                            onClick={() => openEditor("contact")}
                         />
                         <InfoTile
                             icon={CreditCard}
@@ -1381,11 +1632,16 @@ export default function ProfilePage() {
                                                 <p className="truncate text-base font-black text-[#06111f]">
                                                     {isBusiness ? editForm.companyName || businessName : editForm.displayName || displayName}
                                                 </p>
-                                                <CheckCircle2 size={15} className="shrink-0 text-[#0a8f45]" />
+                                                {editedPhoneVerified && <CheckCircle2 size={15} className="shrink-0 text-[#0a8f45]" />}
                                             </div>
                                             <p className="mt-1 text-xs font-semibold text-[#64748b]">{locationDisplay}</p>
                                             <div className="mt-3 flex flex-wrap justify-center gap-2 text-[10px] font-black text-[#0a8f45]">
-                                                <span className="rounded-full bg-[#e9f9f0] px-2.5 py-1">Email verified</span>
+                                                <span className={`rounded-full px-2.5 py-1 ${editedPhoneVerified ? "bg-[#e9f9f0] text-[#0a8f45]" : "bg-[#fff7ed] text-[#c2410c]"}`}>
+                                                    {editedPhoneVerified ? "Phone verified" : "Phone required"}
+                                                </span>
+                                                <span className={`rounded-full px-2.5 py-1 ${profileEmailVerified ? "bg-[#e9f9f0] text-[#0a8f45]" : "bg-[#f1f5f9] text-[#64748b]"}`}>
+                                                    {profileEmailVerified ? "Email verified" : "Email optional"}
+                                                </span>
                                                 <span className="rounded-full bg-[#e9f9f0] px-2.5 py-1">Address added</span>
                                                 <span className="rounded-full bg-[#eef6ff] px-2.5 py-1 text-[#2563eb]">Trusted</span>
                                             </div>

@@ -275,6 +275,10 @@ export default function NewCustomerRequestPage() {
 
     const handleSubmit = async () => {
         if (!user) return;
+        if (!profile?.phoneVerified) {
+            setError("Verify your phone number from Profile before posting a Phone Repair Need.");
+            return;
+        }
         const nextError = validateStep();
         if (nextError) {
             setError(nextError);
@@ -549,6 +553,23 @@ export default function NewCustomerRequestPage() {
                         </div>
                     </div>
 
+                    {!profile?.phoneVerified && (
+                        <div className="mb-5 flex flex-col gap-3 rounded-[22px] border border-amber-200 bg-amber-50 p-5 text-amber-950 shadow-sm md:flex-row md:items-center md:justify-between">
+                            <div className="flex items-start gap-3">
+                                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-amber-700">
+                                    <Smartphone size={20} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-black">Phone verification required</p>
+                                    <p className="mt-1 text-sm leading-6 text-amber-800">Verify your phone number with SMS OTP before posting a repair Need.</p>
+                                </div>
+                            </div>
+                            <Link href="/profile" className="inline-flex shrink-0 items-center justify-center rounded-xl bg-[#06111f] px-5 py-3 text-sm font-black text-white transition hover:bg-black">
+                                Verify phone number
+                            </Link>
+                        </div>
+                    )}
+
                     <section className="overflow-hidden rounded-[24px] border border-[#dfe8e3] bg-white shadow-[0_18px_55px_rgba(15,23,42,0.06)]">
                         <div className="grid lg:grid-cols-[250px_minmax(0,1fr)_340px]">
                             <aside className="border-b border-[#dfe8e3] bg-[#fbfdfb] p-4 lg:border-b-0 lg:border-r">
@@ -607,11 +628,11 @@ export default function NewCustomerRequestPage() {
                                         <button
                                             type="button"
                                             onClick={() => void handleSubmit()}
-                                            disabled={posting}
+                                            disabled={posting || !profile?.phoneVerified}
                                             className="inline-flex items-center gap-2 rounded-xl bg-[#0a8f45] px-6 py-3 text-sm font-black text-white hover:bg-[#08783b] disabled:opacity-50"
                                         >
                                             {posting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-                                            Post Phone Repair Need
+                                            {profile?.phoneVerified ? "Post Phone Repair Need" : "Verify phone first"}
                                         </button>
                                     )}
                                 </div>
