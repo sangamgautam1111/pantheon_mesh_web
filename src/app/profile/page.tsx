@@ -41,7 +41,7 @@ import {
     type DragEvent,
     type ReactNode,
 } from "react";
-import { PhoneAuthProvider, RecaptchaVerifier, linkWithCredential, updatePhoneNumber } from "firebase/auth";
+import { PhoneAuthProvider, RecaptchaVerifier, updatePhoneNumber } from "firebase/auth";
 import { get, ref } from "firebase/database";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
@@ -239,7 +239,9 @@ function phoneCodeErrorMessage(error: unknown) {
     if (code === "auth/too-many-requests") {
         return "Too many attempts. Wait a few minutes before trying again.";
     }
-    return "Phone verification failed. Send a new SMS code and try again.";
+    return code
+        ? `Phone verification failed (${code}). Send a new SMS code and try again.`
+        : "Phone verification failed. Send a new SMS code and try again.";
 }
 
 function usernameFromProfile(displayName?: string | null, email?: string | null) {
@@ -908,20 +910,7 @@ export default function ProfilePage() {
         setIsConfirmingPhoneCode(true);
         try {
             const credential = PhoneAuthProvider.credential(phoneVerificationId, code);
-            const hasPhoneProvider = user.providerData.some((provider) => provider.providerId === "phone");
-            try {
-                if (hasPhoneProvider) {
-                    await updatePhoneNumber(user, credential);
-                } else {
-                    await linkWithCredential(user, credential);
-                }
-            } catch (authError) {
-                if (!hasPhoneProvider && firebaseErrorCode(authError) === "auth/provider-already-linked") {
-                    await updatePhoneNumber(user, credential);
-                } else {
-                    throw authError;
-                }
-            }
+            await updatePhoneNumber(user, credential);
             await updateUserProfile({
                 phoneNumber: editedPhoneDisplay || editedPhoneE164,
                 phoneVerified: true,
