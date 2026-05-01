@@ -73,7 +73,7 @@ const serviceTypes = ["Visit Shop", "Home Repair", "Pickup & Return"];
 const travelServiceTypes = ["Home Repair", "Pickup & Return"];
 const partsQualityOptions = ["Original", "High-quality copy", "Refurbished", "Not sure"];
 const lateMinuteOptions = ["15 minutes", "30 minutes", "45 minutes", "60 minutes"];
-const quoteTabs = ["All Quotes", "Recommended", "Cheapest", "Fastest", "Selected"] as const;
+const quoteTabs = ["All Offers", "Recommended", "Cheapest", "Fastest", "Selected"] as const;
 
 type QuoteTab = (typeof quoteTabs)[number];
 type ScoredOffer = OfferRecord & {
@@ -312,12 +312,10 @@ export default function Marketplace() {
     const router = useRouter();
     const { user, profile, accountType } = useAuth();
     const isBusiness = accountType === "business";
-    const canSendBusinessOffer = Boolean(isBusiness && profile?.phoneVerified && isBusinessVerificationApproved(profile));
-    const businessQuoteBlocker = !profile?.phoneVerified
-        ? "Verify your phone number from Profile before sending Repair Offers."
-        : !isBusinessVerificationApproved(profile)
-          ? `Business verification required. Current status: ${businessVerificationStatusLabel(profile?.businessVerificationStatus)}.`
-          : "";
+    const canSendBusinessOffer = Boolean(isBusiness && isBusinessVerificationApproved(profile));
+    const businessQuoteBlocker = !isBusinessVerificationApproved(profile)
+        ? `Business verification required. Current status: ${businessVerificationStatusLabel(profile?.businessVerificationStatus)}.`
+        : "";
     const [needs, setNeeds] = useState<NeedRecord[]>([]);
     const [selectedNeedId, setSelectedNeedId] = useState<string | null>(null);
     const [offers, setOffers] = useState<OfferRecord[]>([]);
@@ -585,7 +583,7 @@ export default function Marketplace() {
                         {/* Stats */}
                         <div className="hidden">
                             {[{label:"Live Needs",value:loading?"...":String(needs.length)},
-                              {label:"Pipeline",value:"Repair Need -> Offer -> Booking"},
+                              {label:"Pipeline",value:"Repair Need -> Offer -> Customer choice"},
                               {label:isBusiness?"Your action":"Your action",value:isBusiness?"Send Repair Offers":"Choose Offer"},
                               {label:"Area",value:locationStatus}].map(s=>(
                                 <div key={s.label} className="flex flex-col">
@@ -655,12 +653,10 @@ export default function Marketplace() {
                                             {localLabel && (
                                                 <span className="rounded bg-[#222325] px-2.5 py-1 text-[11px] font-bold text-white">{localLabel}</span>
                                             )}
-                                            <span className="ml-auto text-xs font-semibold text-[#74767e]">{need.offers||0} quotes</span>
+                                            <span className="ml-auto text-xs font-semibold text-[#74767e]">{need.offers || 0} offers</span>
                                         </div>
                                         <div className="mb-3 flex items-center gap-2">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#dadbdd] bg-white text-[11px] font-black text-[#222325]">
-                                                {(need.customerName || "C").charAt(0).toUpperCase()}
-                                            </div>
+                                            <AvatarCircle src={need.customerAvatar} name={need.customerName || "Customer"} className="h-7 w-7 text-[11px]" />
                                             <span className="truncate text-xs font-bold text-[#62646a]">{need.customerName || "Customer"}</span>
                                         </div>
                                         <h3 className="line-clamp-2 min-h-[48px] text-base font-semibold leading-snug text-[#222325]">{need.title}</h3>
@@ -668,8 +664,11 @@ export default function Marketplace() {
                                             <span className="flex min-w-0 items-center gap-1 text-xs" style={{color:"#74767e"}}>
                                                 <MapPin size={11}/>{need.location}
                                             </span>
-                                            <div className="whitespace-nowrap text-right text-base font-black text-[#222325]">
-                                                {need.budget?<span>{need.budget}</span>:<span style={{color:"#74767e",fontSize:"12px",fontStyle:"italic"}}>Open</span>}
+                                            <div className="max-w-[45%] text-right">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#95979d]">Customer budget</p>
+                                                <p className="truncate text-sm font-black text-[#222325]">
+                                                    {need.budget || "Open"}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -720,7 +719,7 @@ export default function Marketplace() {
                                     <p className="text-sm leading-relaxed mb-5" style={{color:"#74767e"}}>{selectedNeed.issue}</p>
                                     <div className="flex gap-4">
                                         <div className="nd-stat-tile flex-1">
-                                                <p className="nd-stat-label">Quote target</p>
+                                                <p className="nd-stat-label">Customer budget</p>
                                             <p className="nd-stat-value" style={{fontSize:"20px"}}>{selectedNeed.budget||"Flexible"}</p>
                                         </div>
                                         <div className="nd-stat-tile flex-1">

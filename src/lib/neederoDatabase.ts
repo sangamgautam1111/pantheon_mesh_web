@@ -354,6 +354,8 @@ export async function createNeed(input: {
         body: JSON.stringify({
             customer_id: input.customerId,
             customer_name: input.customerName,
+            customer_avatar: input.customerAvatar || null,
+            customerAvatar: input.customerAvatar || null,
             title: input.title,
             description: input.description,
             category: input.category,

@@ -135,6 +135,7 @@ function buildRepairCard(input: {
     servicePreference: string;
     urgency: string;
     location: string;
+    budget: string;
     customerAvatar?: string | null;
 }): NeedCard {
     const title = buildRepairTitle(input.brand, input.model, input.issueType, input.urgency);
@@ -143,6 +144,7 @@ function buildRepairCard(input: {
         `Phone: ${[input.brand, input.model].filter(Boolean).join(" ") || "Not specified"}`,
         input.issueDescription ? `Details: ${input.issueDescription}` : "",
         `Service preference: ${input.servicePreference}`,
+        `Customer budget: ${input.budget || "Open for NPR repair quotes"}`,
         `Urgency: ${input.urgency}`,
         `Area: ${input.location}`,
     ]
@@ -175,6 +177,7 @@ export default function NewCustomerRequestPage() {
     const [issueDescription, setIssueDescription] = useState("");
     const [uploadedMedia, setUploadedMedia] = useState<UploadedMedia | null>(null);
     const [servicePreference, setServicePreference] = useState(servicePreferences[0]);
+    const [budget, setBudget] = useState("Open for NPR repair quotes");
     const [urgency, setUrgency] = useState(urgencyOptions[0]);
     const [countryCode, setCountryCode] = useState(profile?.countryCode || "NP");
     const [stateCode, setStateCode] = useState(profile?.stateCode || "");
@@ -212,11 +215,12 @@ export default function NewCustomerRequestPage() {
                 issueType,
                 issueDescription,
                 servicePreference,
+                budget,
                 urgency,
                 location: locationString,
                 customerAvatar: profileAvatar,
             }),
-        [issueType, issueDescription, locationString, phoneBrand, phoneModel, profileAvatar, servicePreference, urgency],
+        [budget, issueType, issueDescription, locationString, phoneBrand, phoneModel, profileAvatar, servicePreference, urgency],
     );
 
     useEffect(() => {
@@ -289,6 +293,7 @@ export default function NewCustomerRequestPage() {
         try {
             const description = [
                 repairCard.knownDetails,
+                `Customer budget: ${budget.trim() || "Open for NPR repair quotes"}`,
                 exactAddress ? `Exact address: ${exactAddress}` : "",
                 pinPoint ? `Map pin: ${pinPoint.address}` : "",
                 "Repair shops should send price, estimated time, warranty, parts quality, availability, and note.",
@@ -311,7 +316,7 @@ export default function NewCustomerRequestPage() {
                 latitude: pinPoint?.coords.lat ?? null,
                 longitude: pinPoint?.coords.lng ?? null,
                 urgency,
-                budget: "Open for NPR repair quotes",
+                budget: budget.trim() || "Open for NPR repair quotes",
                 photoPreview: uploadedMedia?.dataUrl || null,
                 cleanCard: repairCard,
             });
@@ -445,6 +450,15 @@ export default function NewCustomerRequestPage() {
                             );
                         })}
                     </div>
+                    <label className="mt-5 block">
+                        <span className={labelClass}>Customer budget</span>
+                        <input
+                            value={budget}
+                            onChange={(event) => setBudget(event.target.value)}
+                            className={inputClass}
+                            placeholder="Open for NPR repair quotes or NPR 4,500"
+                        />
+                    </label>
                 </section>
             );
         }
@@ -538,7 +552,7 @@ export default function NewCustomerRequestPage() {
                 <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 5 of 5</p>
                 <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">Review your phone repair Need.</h1>
                 <p className="mt-3 text-sm leading-7 text-[#64748b]">Shops can send price, time, warranty, parts quality, availability, and repair notes.</p>
-                <NeedPreview card={repairCard} location={locationString} urgency={urgency} media={uploadedMedia} pinPoint={pinPoint} />
+                <NeedPreview card={repairCard} location={locationString} urgency={urgency} budget={budget} media={uploadedMedia} pinPoint={pinPoint} />
             </section>
         );
     };
@@ -651,7 +665,7 @@ export default function NewCustomerRequestPage() {
                                         </div>
                                         <Smartphone size={22} className="text-[#0a8f45]" />
                                     </div>
-                                    <NeedPreview compact card={repairCard} location={locationString} urgency={urgency} media={uploadedMedia} pinPoint={pinPoint} />
+                                    <NeedPreview compact card={repairCard} location={locationString} urgency={urgency} budget={budget} media={uploadedMedia} pinPoint={pinPoint} />
                                 </div>
                                 <div className="mt-4 rounded-[22px] border border-[#dfe8e3] bg-white p-5">
                                     <p className="font-black text-[#06111f]">What happens next?</p>
@@ -687,6 +701,7 @@ function NeedPreview({
     card,
     location,
     urgency,
+    budget,
     media,
     pinPoint,
     compact = false,
@@ -694,6 +709,7 @@ function NeedPreview({
     card: NeedCard;
     location: string;
     urgency: string;
+    budget: string;
     media: UploadedMedia | null;
     pinPoint: PinPoint | null;
     compact?: boolean;
@@ -718,7 +734,7 @@ function NeedPreview({
                         <span className="rounded-2xl bg-[#f8faf9] p-3"><strong>Area:</strong> {location}</span>
                         <span className="rounded-2xl bg-[#f8faf9] p-3"><strong>Urgency:</strong> {urgency}</span>
                         <span className="rounded-2xl bg-[#f8faf9] p-3"><strong>Service:</strong> {card.serviceMode || "Open"}</span>
-                        <span className="rounded-2xl bg-[#f8faf9] p-3"><strong>Currency:</strong> NPR</span>
+                        <span className="rounded-2xl bg-[#f8faf9] p-3"><strong>Customer budget:</strong> {budget || "Open"}</span>
                     </div>
                     {pinPoint && (
                         <div className="mt-3 rounded-2xl border border-[#dfe8e3] p-3 text-sm font-semibold text-[#64748b]">

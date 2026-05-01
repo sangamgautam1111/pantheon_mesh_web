@@ -1099,11 +1099,6 @@ export default function ProfilePage() {
     const submitBusinessVerification = async () => {
         if (!user || !profile || !isBusiness) return;
 
-        if (!profilePhoneVerified) {
-            setBusinessVerifyError("Verify your phone number first, then submit business verification.");
-            return;
-        }
-
         setIsBusinessVerifying(true);
         setBusinessVerifyError("");
         setBusinessVerifyResult(null);
@@ -1190,10 +1185,9 @@ export default function ProfilePage() {
             { label: "Add opening hours", done: Boolean(profile?.openingHours), weight: 10, tab: "preferences" },
             { label: "Add services/products", done: Boolean(profile?.services), weight: 15, tab: "preferences" },
             { label: "Add warranty policy", done: Boolean(profile?.warrantyPolicy), weight: 10, tab: "security" },
-            { label: "Verify phone", done: profilePhoneVerified, weight: 10, tab: "contact" },
-            { label: "Verify business", done: businessVerificationApproved, weight: 10, tab: "security" },
+            { label: "Verify business", done: businessVerificationApproved, weight: 20, tab: "security" },
         ],
-        [photo, businessName, profile?.category, profile?.country, profile?.city, profile?.openingHours, profile?.services, profile?.warrantyPolicy, profilePhoneVerified, businessVerificationApproved],
+        [photo, businessName, profile?.category, profile?.country, profile?.city, profile?.openingHours, profile?.services, profile?.warrantyPolicy, businessVerificationApproved],
     );
 
     const liveChecklist = useMemo<ChecklistItem[]>(
@@ -1207,8 +1201,7 @@ export default function ProfilePage() {
                       { label: "Add opening hours", done: Boolean(editForm.openingHours), weight: 10, tab: "preferences" },
                       { label: "Add services/products", done: Boolean(editForm.services), weight: 15, tab: "preferences" },
                       { label: "Add warranty policy", done: Boolean(editForm.warrantyPolicy), weight: 10, tab: "security" },
-                      { label: "Verify phone", done: editedPhoneVerified, weight: 10, tab: "contact" },
-                      { label: "Verify business", done: businessVerificationApproved, weight: 10, tab: "security" },
+                      { label: "Verify business", done: businessVerificationApproved, weight: 20, tab: "security" },
                   ]
                 : [
                       { label: "Add profile photo", done: Boolean(editForm.photoURL), weight: 15, tab: "general" },
@@ -1338,7 +1331,10 @@ export default function ProfilePage() {
             return (
                 <div className="space-y-5">
                     <div className="grid gap-4 md:grid-cols-2">
-                        <Field label="Email" hint="Email is optional in the MVP. Phone verification is the trust gate.">
+                        <Field
+                            label="Email"
+                            hint={isBusiness ? "Email is used for account notices and business verification logs." : "Email is optional in the MVP. Phone verification is the customer trust gate."}
+                        >
                             <div className="relative">
                                 <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
                                 <input className={`${inputClass} pl-10`} value={email} disabled />
@@ -1365,9 +1361,9 @@ export default function ProfilePage() {
                                     placeholder="98XXXXXXXX"
                                 />
                             </div>
-                            <div className={`mt-3 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-black ${editedPhoneVerified ? "bg-[#e9f9f0] text-[#0a8f45]" : "bg-[#fff7ed] text-[#c2410c]"}`}>
+                            <div className={`mt-3 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-black ${editedPhoneVerified ? "bg-[#e9f9f0] text-[#0a8f45]" : isBusiness ? "bg-[#f1f5f9] text-[#475569]" : "bg-[#fff7ed] text-[#c2410c]"}`}>
                                 {editedPhoneVerified ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
-                                {editedPhoneVerified ? "Phone verified" : "Phone verification required"}
+                                {editedPhoneVerified ? "Phone verified" : isBusiness ? "Phone optional for MVP" : "Phone verification required"}
                             </div>
                             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                                 <button
@@ -1631,21 +1627,15 @@ export default function ProfilePage() {
                                 <ShieldCheck size={20} className={businessVerificationApproved ? "text-[#0a8f45]" : "text-[#c2410c]"} />
                                 <p className="mt-3 text-sm font-black text-[#06111f]">{businessVerificationLabel}</p>
                                 <p className="mt-1 text-xs leading-5 text-[#64748b]">
-                                    Phone verification unlocks business verification. Approved businesses can send Repair Offers.
+                                    Business verification unlocks quote sending. Phone OTP stays available, but it is not required for this MVP.
                                 </p>
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        if (!profilePhoneVerified) {
-                                            setActiveTab("contact");
-                                            return;
-                                        }
-                                        openBusinessVerification();
-                                    }}
+                                    onClick={openBusinessVerification}
                                     className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#06111f] px-4 py-3 text-xs font-black text-white transition hover:bg-black"
                                 >
                                     <ShieldCheck size={14} />
-                                    {profilePhoneVerified ? "Verify Business to Quote" : "Verify phone first"}
+                                    Verify Business to Quote
                                 </button>
                             </div>
                         )}
@@ -1717,20 +1707,12 @@ export default function ProfilePage() {
                                             window.location.href = "/marketplace";
                                             return;
                                         }
-                                        if (!profilePhoneVerified) {
-                                            openEditor("contact");
-                                            return;
-                                        }
                                         openBusinessVerification();
                                     }}
                                     className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#06111f] px-6 py-4 text-sm font-black text-white shadow-lg transition hover:bg-black"
                                 >
                                     <Briefcase size={17} />
-                                    {businessVerificationApproved
-                                        ? "Browse Repair Offers"
-                                        : profilePhoneVerified
-                                          ? "Verify Business to Quote"
-                                          : "Verify Phone First"}
+                                    {businessVerificationApproved ? "Browse Repair Offers" : "Verify Business to Quote"}
                                 </button>
                             ) : (
                                 <Link
@@ -1752,14 +1734,14 @@ export default function ProfilePage() {
                             label="Trust"
                             value={
                                 isBusiness
-                                    ? `${profilePhoneVerified ? "Phone ok" : "Phone needed"} - ${businessVerificationLabel}`
+                                    ? businessVerificationLabel
                                     : profilePhoneVerified
                                       ? "Phone verified"
                                       : profile?.phoneNumber
                                         ? "Verify phone number"
                                         : "Add phone number"
                             }
-                            onClick={() => openEditor("contact")}
+                            onClick={isBusiness ? openBusinessVerification : () => openEditor("contact")}
                         />
                         <InfoTile
                             icon={CreditCard}
@@ -1798,7 +1780,7 @@ export default function ProfilePage() {
                                             icon={ShieldCheck}
                                             title={businessVerificationApproved ? "Business Verified" : "Verify Business"}
                                             copy={businessVerificationApproved ? "Ready to quote customer Needs" : "Submit shop proof before quoting"}
-                                            onClick={profilePhoneVerified ? openBusinessVerification : () => openEditor("contact")}
+                                            onClick={openBusinessVerification}
                                         />
                                     </>
                                 ) : (
@@ -1987,12 +1969,6 @@ export default function ProfilePage() {
                                 </button>
                             </div>
 
-                            {!profilePhoneVerified && (
-                                <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
-                                    Verify your phone number first. Then this business verification can run.
-                                </div>
-                            )}
-
                             <div className="mt-6 grid gap-4 md:grid-cols-2">
                                 <Field label="Owner name">
                                     <input
@@ -2129,7 +2105,7 @@ export default function ProfilePage() {
                                 <button
                                     type="button"
                                     onClick={() => void submitBusinessVerification()}
-                                    disabled={!profilePhoneVerified || isBusinessVerifying}
+                                    disabled={isBusinessVerifying}
                                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0a8f45] px-5 py-3 text-sm font-black text-white transition hover:bg-[#08783b] disabled:cursor-not-allowed disabled:opacity-55"
                                 >
                                     {isBusinessVerifying ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
@@ -2282,12 +2258,12 @@ export default function ProfilePage() {
                                                 <p className="truncate text-base font-black text-[#06111f]">
                                                     {isBusiness ? editForm.companyName || businessName : editForm.displayName || displayName}
                                                 </p>
-                                                {editedPhoneVerified && <CheckCircle2 size={15} className="shrink-0 text-[#0a8f45]" />}
+                                                {(isBusiness ? businessVerificationApproved : editedPhoneVerified) && <CheckCircle2 size={15} className="shrink-0 text-[#0a8f45]" />}
                                             </div>
                                             <p className="mt-1 text-xs font-semibold text-[#64748b]">{locationDisplay}</p>
                                             <div className="mt-3 flex flex-wrap justify-center gap-2 text-[10px] font-black text-[#0a8f45]">
-                                                <span className={`rounded-full px-2.5 py-1 ${editedPhoneVerified ? "bg-[#e9f9f0] text-[#0a8f45]" : "bg-[#fff7ed] text-[#c2410c]"}`}>
-                                                    {editedPhoneVerified ? "Phone verified" : "Phone required"}
+                                                <span className={`rounded-full px-2.5 py-1 ${(isBusiness ? businessVerificationApproved : editedPhoneVerified) ? "bg-[#e9f9f0] text-[#0a8f45]" : "bg-[#fff7ed] text-[#c2410c]"}`}>
+                                                    {isBusiness ? businessVerificationLabel : editedPhoneVerified ? "Phone verified" : "Phone required"}
                                                 </span>
                                                 <span className="rounded-full bg-[#f1f5f9] px-2.5 py-1 text-[#64748b]">Email optional</span>
                                                 <span className="rounded-full bg-[#e9f9f0] px-2.5 py-1">Address added</span>

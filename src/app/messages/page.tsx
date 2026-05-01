@@ -2,7 +2,7 @@
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { CheckCircle2, Edit3, FileText, Image as ImageIcon, Info, Loader2, MapPin, Paperclip, Phone, Search, Send, SlidersHorizontal, Sparkles, Trash2, X } from "lucide-react";
+import { CheckCircle2, Edit3, FileText, Image as ImageIcon, Info, Loader2, MapPin, Paperclip, Search, Send, SlidersHorizontal, Sparkles, Trash2, X } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -159,6 +159,8 @@ export default function MessagesPage() {
     const [query, setQuery] = useState("");
     const [orderContext, setOrderContext] = useState<OrderContext>(emptyContext);
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+    const [assistantLoadingAction, setAssistantLoadingAction] = useState<string | null>(null);
+    const [assistantOutput, setAssistantOutput] = useState("");
     const showOrderPanel = accountType === "customer";
 
     useEffect(() => {
@@ -229,7 +231,6 @@ export default function MessagesPage() {
     }, [query, selectedThread, threads]);
 
     const unreadCount = displayThreads.filter((thread) => thread.lastMessage && thread.messageCount > 0).length;
-    const activeCount = displayThreads.filter((thread) => thread.offerStatus !== "closed" && thread.offerStatus !== "declined").length;
 
     const loadThreads = async () => {
         if (!user) return;
@@ -435,6 +436,60 @@ export default function MessagesPage() {
         }
     };
 
+    const runAssistantAction = async (action: string) => {
+        if (!selectedThread) return;
+
+        const recentMessages = messages
+            .slice(-10)
+            .map((message) => `${message.senderName}: ${message.text || message.attachments?.[0]?.name || "Attachment shared"}`)
+            .join("\n");
+        const promptByAction: Record<string, string> = {
+            "Suggest reply": "Write one short, polite customer reply for this phone repair quote chat. Focus on price, arrival time, warranty, or address safety.",
+            "Compare offer": "Compare the current repair Offer using simple customer language. Mention price, timing, warranty, and what to ask before choosing.",
+            "Check warranty": "Review the warranty conversation and suggest one clear question the customer should ask before accepting the repair Offer.",
+        };
+        const prompt = `${promptByAction[action] || action}
+
+Need: ${selectedThread.needTitle || "Phone repair Need"}
+Business: ${selectedThread.businessName || "Local Business"}
+Offer: ${selectedThread.offerPrice || "Not selected"}
+Recent chat:
+${recentMessages || "No chat messages yet."}`;
+
+        setAssistantLoadingAction(action);
+        setAssistantOutput("");
+        setStatus("");
+        try {
+            const response = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    message: prompt,
+                    messages: messages
+                        .slice(-6)
+                        .filter((message) => message.text)
+                        .map((message) => ({
+                            role: message.senderType === accountType ? "user" : "assistant",
+                            text: message.text,
+                        })),
+                }),
+            });
+            if (!response.ok) throw new Error("Needero AI could not generate that yet.");
+            const data = await response.json() as { response?: string };
+            const generated = data.response || "Needero AI could not generate that yet.";
+            if (action === "Suggest reply") {
+                setText(generated);
+                setStatus("Needero AI drafted a reply. Review it before sending.");
+            } else {
+                setAssistantOutput(generated);
+            }
+        } catch (error) {
+            setAssistantOutput(error instanceof Error ? error.message : "Needero AI could not generate that yet.");
+        } finally {
+            setAssistantLoadingAction(null);
+        }
+    };
+
     return (
         <RouteGuard allowedTypes={["customer", "business"]}>
             <main className="min-h-screen bg-white text-[#222325]">
@@ -463,8 +518,6 @@ export default function MessagesPage() {
                                 {[
                                     ["All", displayThreads.length],
                                     ["Unread", unreadCount],
-                                    ["Active", activeCount],
-                                    ["Closed", 0],
                                 ].map(([label, count], index) => (
                                     <button
                                         key={label}
@@ -534,11 +587,7 @@ export default function MessagesPage() {
                                         <span className="rounded-full bg-[#e9f9f0] px-3 py-1.5 text-xs font-black text-[#0a8f45]">
                                             {orderContext.orderStarted ? "Booking" : "Quote Chat"}
                                         </span>
-                                        <span className="rounded-full bg-[#eef8f1] px-3 py-1.5 text-xs font-black text-[#0a8f45]">Active</span>
                                         <span className="rounded-full bg-[#f1efff] px-3 py-1.5 text-xs font-black text-[#5746d8]">Offer #1</span>
-                                        <button type="button" className="flex h-9 w-9 items-center justify-center rounded-full border border-[#dadbdd] text-[#62646a] hover:bg-[#f7f7f7]">
-                                            <Phone size={15} />
-                                        </button>
                                         <button type="button" className="flex h-9 w-9 items-center justify-center rounded-full border border-[#dadbdd] text-[#62646a] hover:bg-[#f7f7f7]">
                                             <Info size={15} />
                                         </button>
@@ -721,15 +770,26 @@ export default function MessagesPage() {
                                         </div>
                                     </div>
                                     <p className="mt-4 text-xs leading-5 text-[#64748b]">
-                                        I can help you understand this conversation, compare offers, and suggest next steps.
+                                        I can help compare this repair Offer and draft a careful customer reply.
                                     </p>
-                                    <div className="mt-4 grid grid-cols-2 gap-2">
-                                        {["Summarize chat", "Suggest reply", "Compare offer", "Check warranty"].map((action) => (
-                                            <button key={action} type="button" className="rounded-xl border border-[#dfe8e3] bg-[#fbfdfb] px-3 py-2 text-xs font-black text-[#334155] hover:bg-[#e9f9f0]">
-                                                {action}
+                                    <div className="mt-4 grid gap-2">
+                                        {["Suggest reply", "Compare offer", "Check warranty"].map((action) => (
+                                            <button
+                                                key={action}
+                                                type="button"
+                                                onClick={() => void runAssistantAction(action)}
+                                                disabled={Boolean(assistantLoadingAction)}
+                                                className="rounded-xl border border-[#dfe8e3] bg-[#fbfdfb] px-3 py-2 text-xs font-black text-[#334155] hover:bg-[#e9f9f0] disabled:cursor-not-allowed disabled:opacity-60"
+                                            >
+                                                {assistantLoadingAction === action ? "Generating..." : action}
                                             </button>
                                         ))}
                                     </div>
+                                    {assistantOutput && (
+                                        <p className="mt-3 rounded-xl bg-[#f7faf8] p-3 text-xs font-semibold leading-5 text-[#334155]">
+                                            {assistantOutput}
+                                        </p>
+                                    )}
                                 </section>
 
                                 <section className="rounded-2xl border border-[#dfe8e3] bg-white p-4 shadow-sm">
@@ -766,9 +826,6 @@ export default function MessagesPage() {
                                             </div>
                                         ))}
                                     </div>
-                                    <button type="button" className="mt-5 w-full rounded-xl bg-[#0a8f45] px-4 py-3 text-sm font-black text-white hover:bg-[#08783b]">
-                                        Pay / Hold Payment soon
-                                    </button>
                                 </section>
                             </div>
                         </aside>

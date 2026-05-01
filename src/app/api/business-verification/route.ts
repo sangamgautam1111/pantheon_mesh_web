@@ -100,8 +100,6 @@ function validateRequired(input: BusinessVerificationSubmission) {
     if (!input.uid) missing.push("Signed-in user");
     if (!input.businessName) missing.push("Business name");
     if (!input.ownerName) missing.push("Owner name");
-    if (!input.phoneVerified) missing.push("Verified phone number");
-    if (!input.phoneNumber || normalizePhone(input.phoneNumber).length < 8) missing.push("Phone number");
     if (!input.email) missing.push("Email");
     if (!input.category) missing.push("Business category");
     if (!input.address) missing.push("Shop address");
@@ -115,12 +113,15 @@ function validateRequired(input: BusinessVerificationSubmission) {
 
 function buildQueries(input: BusinessVerificationSubmission) {
     const category = input.category || "phone repair";
-    return [
+    const queries = [
         `"${input.businessName}" "${input.city}" ${category}`,
         `"${input.businessName}" "${input.address}"`,
-        `"${input.phoneNumber}" "${input.businessName}"`,
         `"${input.businessName}" Google Maps`,
     ];
+    if (normalizePhone(input.phoneNumber).length >= 8) {
+        queries.splice(2, 0, `"${input.phoneNumber}" "${input.businessName}"`);
+    }
+    return queries;
 }
 
 async function searchTavily(query: string, apiKey: string) {
@@ -361,7 +362,9 @@ function scoreEvidence(input: BusinessVerificationSubmission, web: WebCheck, mis
     }
 
     if (!web.webPresenceFound) riskFlags.push("No strong public web listing was found.");
-    if (!web.matchedPhone) riskFlags.push("Phone number did not match public web results.");
+    if (normalizePhone(input.phoneNumber).length >= 8 && !web.matchedPhone) {
+        riskFlags.push("Phone number did not match public web results.");
+    }
     if (!web.matchedAddress) riskFlags.push("Address did not match public web results.");
     if (visionResults.provider !== "openrouter") riskFlags.push(...visionResults.riskFlags);
     if (visionResults.provider === "openrouter" && visionResults.editedOrStockRisk) riskFlags.push("Vision model flagged possible edited, screenshot-like, or stock-looking imagery.");

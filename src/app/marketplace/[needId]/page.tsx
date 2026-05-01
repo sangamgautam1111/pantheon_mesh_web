@@ -312,12 +312,10 @@ export default function NeedDetailPage() {
     const [message, setMessage] = useState("");
 
     const isBusiness = accountType === "business";
-    const canSendBusinessOffer = Boolean(isBusiness && profile?.phoneVerified && isBusinessVerificationApproved(profile));
-    const businessQuoteBlocker = !profile?.phoneVerified
-        ? "Verify your phone number from Profile before sending Repair Offers."
-        : !isBusinessVerificationApproved(profile)
-          ? `Business verification required. Current status: ${businessVerificationStatusLabel(profile?.businessVerificationStatus)}.`
-          : "";
+    const canSendBusinessOffer = Boolean(isBusiness && isBusinessVerificationApproved(profile));
+    const businessQuoteBlocker = !isBusinessVerificationApproved(profile)
+        ? `Business verification required. Current status: ${businessVerificationStatusLabel(profile?.businessVerificationStatus)}.`
+        : "";
     const isOwner = accountType === "customer" && need?.customerId === user?.uid;
     const sortedOffers = useMemo(() => [...offers].sort((a, b) => parseAmount(a.price) - parseAmount(b.price)), [offers]);
     const ownOffer = isBusiness ? offers.find((offer) => offer.businessId === user?.uid) || null : null;
@@ -521,7 +519,7 @@ export default function NeedDetailPage() {
                                     <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                                         {[
                                             ["Area", need.location || "Not shared"],
-                                            ["Budget", need.budget || "Open"],
+                                            ["Customer budget", need.budget || "Open"],
                                             ["Status", need.status || "Open"],
                                             ["Privacy", "Contact protected"],
                                         ].map(([label, value]) => (
@@ -545,7 +543,7 @@ export default function NeedDetailPage() {
                                         <div className="flex items-center justify-between"><span className="text-[#74767e]">Category</span><strong>{need.category}</strong></div>
                                         <div className="flex items-center justify-between"><span className="text-[#74767e]">Area</span><strong>{need.location}</strong></div>
                                         <div className="flex items-center justify-between"><span className="text-[#74767e]">Urgency</span><strong>{need.urgency}</strong></div>
-                                        <div className="flex items-center justify-between"><span className="text-[#74767e]">Budget</span><strong>{need.budget || "Open"}</strong></div>
+                                        <div className="flex items-center justify-between"><span className="text-[#74767e]">Customer budget</span><strong>{need.budget || "Open"}</strong></div>
                                     </div>
                                     {isOwner && (
                                         <button
@@ -569,7 +567,7 @@ export default function NeedDetailPage() {
                                         <p className="mt-4 text-base leading-8 text-[#62646a]">{need.description || need.issue}</p>
                                         <div className="mt-5 grid gap-3 sm:grid-cols-3">
                                             <span className="rounded-2xl bg-[#f7faf8] p-4 text-sm"><strong>Urgency:</strong> {need.urgency || "Flexible"}</span>
-                                            <span className="rounded-2xl bg-[#f7faf8] p-4 text-sm"><strong>Budget:</strong> {need.budget || "Open"}</span>
+                                            <span className="rounded-2xl bg-[#f7faf8] p-4 text-sm"><strong>Customer budget:</strong> {need.budget || "Open"}</span>
                                             <span className="rounded-2xl bg-[#f7faf8] p-4 text-sm"><strong>Offers:</strong> {offers.length}</span>
                                         </div>
                                         <div className="mt-5">
