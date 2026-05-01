@@ -33,7 +33,6 @@ import {
     NeedRecord,
     updateOffer,
 } from "@/lib/neederoDatabase";
-import { businessVerificationStatusLabel, isBusinessVerificationApproved } from "@/lib/businessVerification";
 
 type QuoteDraft = {
     price: string;
@@ -312,9 +311,9 @@ export default function NeedDetailPage() {
     const [message, setMessage] = useState("");
 
     const isBusiness = accountType === "business";
-    const canSendBusinessOffer = Boolean(isBusiness && isBusinessVerificationApproved(profile));
-    const businessQuoteBlocker = !isBusinessVerificationApproved(profile)
-        ? `Business verification required. Current status: ${businessVerificationStatusLabel(profile?.businessVerificationStatus)}.`
+    const canSendBusinessOffer = Boolean(isBusiness && profile?.phoneVerified && profile?.phoneNumber);
+    const businessQuoteBlocker = !canSendBusinessOffer
+        ? "Verify your phone number with SMS OTP from Profile before sending Repair Offers."
         : "";
     const isOwner = accountType === "customer" && need?.customerId === user?.uid;
     const sortedOffers = useMemo(() => [...offers].sort((a, b) => parseAmount(a.price) - parseAmount(b.price)), [offers]);
@@ -358,7 +357,7 @@ export default function NeedDetailPage() {
         event.preventDefault();
         if (!user || !need || !isBusiness) return;
         if (!canSendBusinessOffer) {
-            setMessage(businessQuoteBlocker || "Business verification is required before sending Repair Offers.");
+            setMessage(businessQuoteBlocker || "Phone OTP is required before sending Repair Offers.");
             return;
         }
         setSaving(true);
@@ -618,10 +617,10 @@ export default function NeedDetailPage() {
                                         ) : !canSendBusinessOffer ? (
                                             <div className="text-center">
                                                 <ShieldCheck className="mx-auto text-[#c2410c]" size={36} />
-                                                <p className="mt-3 font-black">Verification required before quoting</p>
+                                                <p className="mt-3 font-black">Phone OTP required before quoting</p>
                                                 <p className="mt-1 text-sm leading-6 text-[#74767e]">{businessQuoteBlocker}</p>
                                                 <Link href="/profile" className="mt-5 inline-flex rounded-xl bg-[#0a8f45] px-5 py-3 text-sm font-black text-white">
-                                                    Verify Business to Quote
+                                                    Verify Phone to Quote
                                                 </Link>
                                             </div>
                                         ) : (

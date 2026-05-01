@@ -55,7 +55,7 @@ type PinPoint = {
 
 const steps = [
     { label: "Issue", helper: "What happened?" },
-    { label: "Phone details", helper: "Model and proof" },
+    { label: "Phone details", helper: "Brand and proof" },
     { label: "Preference", helper: "How to repair" },
     { label: "Location", helper: "Area and urgency" },
     { label: "Review", helper: "Post repair need" },
@@ -257,7 +257,7 @@ export default function NewCustomerRequestPage() {
 
     const validateStep = () => {
         if (step === 0 && !issueType) return "Choose what happened to your phone.";
-        if (step === 1 && (!phoneBrand || !phoneModel.trim())) return "Add phone brand and model so shops can quote correctly.";
+        if (step === 1 && !phoneBrand) return "Choose the phone brand. The exact model is optional.";
         if (step === 3 && (!city || !area)) return "Add city and area so nearby repair shops can find this request.";
         return "";
     };
@@ -371,7 +371,7 @@ export default function NewCustomerRequestPage() {
                 <section>
                     <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 2 of 5</p>
                     <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">Add phone details.</h1>
-                    <p className="mt-3 text-sm leading-7 text-[#64748b]">Model and clear photos help repair shops quote the right part and price.</p>
+                    <p className="mt-3 text-sm leading-7 text-[#64748b]">Choose the brand. Add the model only if you know it; clear photos can help shops quote the right part and price.</p>
                     <div className="mt-7 grid gap-4 md:grid-cols-2">
                         <label>
                             <span className={labelClass}>Phone brand</span>
@@ -382,8 +382,8 @@ export default function NewCustomerRequestPage() {
                             </select>
                         </label>
                         <label>
-                            <span className={labelClass}>Model</span>
-                            <input value={phoneModel} onChange={(event) => setPhoneModel(event.target.value)} className={inputClass} placeholder="iPhone 13, Redmi Note 12..." />
+                            <span className={labelClass}>Model optional</span>
+                            <input value={phoneModel} onChange={(event) => setPhoneModel(event.target.value)} className={inputClass} placeholder="Optional: iPhone 13, Redmi Note 12..." />
                         </label>
                         <label className="md:col-span-2">
                             <span className={labelClass}>Issue description</span>
