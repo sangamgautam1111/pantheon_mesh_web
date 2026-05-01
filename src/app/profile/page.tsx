@@ -1012,6 +1012,7 @@ export default function ProfilePage() {
                 businessVerificationReasons: result.reasons,
                 businessVerificationRiskFlags: result.riskFlags,
                 businessVerificationSources: result.sources,
+                businessVerificationVisionResults: result.visionResults || null,
                 businessVerificationBadges: result.badges,
                 businessVerificationRequestedAt: Date.now(),
                 businessVerificationReviewedAt: result.reviewedAt,
@@ -1938,6 +1939,9 @@ export default function ProfilePage() {
                                         </div>
                                         <span className="rounded-full bg-[#e9f9f0] px-3 py-1 text-xs font-black text-[#0a8f45]">
                                             {businessVerifyResult.aiProvider === "deepseek" ? "DeepSeek reviewed" : "Local fallback"}
+                                        </span>
+                                        <span className="rounded-full bg-[#eef6ff] px-3 py-1 text-xs font-black text-[#2563eb]">
+                                            {businessVerifyResult.visionResults?.provider === "openrouter" ? "Vision checked" : "Vision review pending"}
                                         </span>
                                     </div>
                                     {businessVerifyResult.reasons.length > 0 && (

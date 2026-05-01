@@ -4,13 +4,16 @@ import type {
     BusinessVerificationResult,
     BusinessVerificationSource,
     BusinessVerificationSubmission,
+    BusinessVisionResult,
 } from "@/lib/businessVerification";
 
 export const runtime = "nodejs";
 
 const TAVILY_SEARCH_URL = "https://api.tavily.com/search";
 const DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions";
+const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_BUSINESS_VERIFIER_MODEL || process.env.DEEPSEEK_MODEL || "deepseek-v4-pro";
+const VISION_MODEL = process.env.BUSINESS_VERIFICATION_VISION_MODEL || process.env.OPENROUTER_VISION_MODEL || "google/gemini-2.5-flash";
 
 type WebCheck = {
     webPresenceFound: boolean;
@@ -26,6 +29,7 @@ type LocalEvidence = WebCheck & {
     reasons: string[];
     riskFlags: string[];
     missingFields: string[];
+    visionResults: BusinessVisionResult;
 };
 
 type DeepSeekDecision = {
@@ -173,6 +177,113 @@ async function collectWebSources(input: BusinessVerificationSubmission) {
     return { sources: sources.slice(0, 10), searchError };
 }
 
+function fallbackVision(provider: BusinessVisionResult["provider"], riskFlag: string): BusinessVisionResult {
+    return {
+        provider,
+        model: provider === "openrouter" ? VISION_MODEL : undefined,
+        storefrontReal: false,
+        signboardVisible: false,
+        signboardMatchesBusiness: false,
+        categoryMatches: false,
+        insideShopLooksReal: false,
+        editedOrStockRisk: false,
+        confidence: 0,
+        reasons: [],
+        riskFlags: [riskFlag],
+    };
+}
+
+function parseVisionJson(content: string): Partial<BusinessVisionResult> {
+    const clean = content
+        .trim()
+        .replace(/^```json\s*/i, "")
+        .replace(/^```\s*/i, "")
+        .replace(/```$/i, "")
+        .trim();
+    return JSON.parse(clean) as Partial<BusinessVisionResult>;
+}
+
+async function analyzeShopImages(input: BusinessVerificationSubmission): Promise<BusinessVisionResult> {
+    if (!input.shopFrontPhoto || !input.insideShopPhoto) {
+        return fallbackVision("not_configured", "Shop image verification skipped because required images were missing.");
+    }
+
+    const apiKey = process.env.BUSINESS_VERIFICATION_VISION_API_KEY || process.env.OPENROUTER_API_KEY || "";
+    if (!apiKey) {
+        return fallbackVision("not_configured", "Vision model is not configured; image authenticity needs manual review.");
+    }
+
+    try {
+        const response = await fetch(OPENROUTER_API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+                "X-OpenRouter-Title": "Needero Business Verification",
+            },
+            body: JSON.stringify({
+                model: VISION_MODEL,
+                response_format: { type: "json_object" },
+                max_tokens: 700,
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "text",
+                                text: `Return JSON only. Analyze these business verification photos for "${input.businessName}" in category "${input.category}".
+JSON shape:
+{
+  "storefrontReal": true,
+  "signboardVisible": true,
+  "signboardMatchesBusiness": false,
+  "categoryMatches": true,
+  "insideShopLooksReal": true,
+  "editedOrStockRisk": false,
+  "confidence": 80,
+  "reasons": ["short reason"],
+  "riskFlags": ["short risk flag"]
+}
+Check whether the front image looks like a real storefront, whether a signboard is visible, whether visible sign text appears to match the business name, whether the shop/category looks like phone repair, whether the inside photo looks real, and whether the images look edited, screenshot-like, or stock-like.`,
+                            },
+                            { type: "image_url", image_url: { url: input.shopFrontPhoto, detail: "low" } },
+                            { type: "image_url", image_url: { url: input.insideShopPhoto, detail: "low" } },
+                        ],
+                    },
+                ],
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Vision model failed with ${response.status}`);
+        }
+
+        const data = await response.json() as { choices?: Array<{ message?: { content?: unknown } }> };
+        const content = data.choices?.[0]?.message?.content;
+        if (typeof content !== "string" || !content.trim()) {
+            throw new Error("Vision model returned empty content.");
+        }
+
+        const parsed = parseVisionJson(content);
+        return {
+            provider: "openrouter",
+            model: VISION_MODEL,
+            storefrontReal: Boolean(parsed.storefrontReal),
+            signboardVisible: Boolean(parsed.signboardVisible),
+            signboardMatchesBusiness: Boolean(parsed.signboardMatchesBusiness),
+            categoryMatches: Boolean(parsed.categoryMatches),
+            insideShopLooksReal: Boolean(parsed.insideShopLooksReal),
+            editedOrStockRisk: Boolean(parsed.editedOrStockRisk),
+            confidence: typeof parsed.confidence === "number" ? Math.max(0, Math.min(100, Math.round(parsed.confidence))) : 0,
+            reasons: Array.isArray(parsed.reasons) ? parsed.reasons.map(String).filter(Boolean).slice(0, 5) : [],
+            riskFlags: Array.isArray(parsed.riskFlags) ? parsed.riskFlags.map(String).filter(Boolean).slice(0, 5) : [],
+        };
+    } catch (error) {
+        console.error("Business verification vision check failed:", error);
+        return fallbackVision("failed", "Vision model failed; image authenticity needs manual review.");
+    }
+}
+
 function evaluateWebEvidence(input: BusinessVerificationSubmission, sources: BusinessVerificationSource[]): WebCheck {
     const sourceText = sources.map((source) => `${source.title} ${source.url} ${source.content || ""}`).join("\n");
     const matchedName = hasUsefulMatch(sourceText, input.businessName);
@@ -199,7 +310,7 @@ function evaluateWebEvidence(input: BusinessVerificationSubmission, sources: Bus
     };
 }
 
-function scoreEvidence(input: BusinessVerificationSubmission, web: WebCheck, missingFields: string[]): LocalEvidence {
+function scoreEvidence(input: BusinessVerificationSubmission, web: WebCheck, missingFields: string[], visionResults: BusinessVisionResult): LocalEvidence {
     const reasons: string[] = [];
     const riskFlags: string[] = [];
     let score = 0;
@@ -212,10 +323,19 @@ function scoreEvidence(input: BusinessVerificationSubmission, web: WebCheck, mis
         score += 10;
         reasons.push("Email is attached to the profile.");
     }
-    if (input.shopFrontPhoto && input.insideShopPhoto) {
+    if (visionResults.storefrontReal && visionResults.insideShopLooksReal) {
         score += 15;
+        reasons.push("Vision check says shop front and inside shop photos look real.");
+    } else if (input.shopFrontPhoto && input.insideShopPhoto) {
+        score += 8;
         reasons.push("Shop front and inside shop photos were submitted.");
-        riskFlags.push("Image authenticity still needs OCR/vision or manual review before guarantee-level trust.");
+    }
+    if (visionResults.signboardMatchesBusiness) {
+        score += 20;
+        reasons.push("Vision check says the signboard matches the business name.");
+    } else if (visionResults.signboardVisible) {
+        score += 8;
+        reasons.push("Vision check found a signboard, but the business-name match is uncertain.");
     }
     if (web.matchedName && web.matchedPhone) {
         score += 20;
@@ -243,6 +363,10 @@ function scoreEvidence(input: BusinessVerificationSubmission, web: WebCheck, mis
     if (!web.webPresenceFound) riskFlags.push("No strong public web listing was found.");
     if (!web.matchedPhone) riskFlags.push("Phone number did not match public web results.");
     if (!web.matchedAddress) riskFlags.push("Address did not match public web results.");
+    if (visionResults.provider !== "openrouter") riskFlags.push(...visionResults.riskFlags);
+    if (visionResults.provider === "openrouter" && visionResults.editedOrStockRisk) riskFlags.push("Vision model flagged possible edited, screenshot-like, or stock-looking imagery.");
+    if (visionResults.provider === "openrouter" && !visionResults.categoryMatches) riskFlags.push("Vision model could not confirm the image category matches the business type.");
+    if (visionResults.provider === "openrouter" && !visionResults.signboardMatchesBusiness) riskFlags.push("Vision model could not confirm signboard text matches the business name.");
     if (missingFields.length) riskFlags.push(`Missing required fields: ${missingFields.join(", ")}.`);
 
     return {
@@ -251,6 +375,7 @@ function scoreEvidence(input: BusinessVerificationSubmission, web: WebCheck, mis
         reasons,
         riskFlags,
         missingFields,
+        visionResults,
     };
 }
 
@@ -301,6 +426,7 @@ async function askDeepSeek(input: BusinessVerificationSubmission, evidence: Loca
             content: source.content,
             query: source.query,
         })),
+        visionResults: evidence.visionResults,
         checks: evidence,
         scoringRules: {
             approve: "80-100 with low risk",
@@ -374,8 +500,9 @@ export async function POST(req: Request) {
         const input = normalizeSubmission(body);
         const missingFields = validateRequired(input);
         const { sources, searchError } = await collectWebSources(input);
+        const visionResults = await analyzeShopImages(input);
         const web = evaluateWebEvidence(input, sources);
-        const localEvidence = scoreEvidence(input, web, missingFields);
+        const localEvidence = scoreEvidence(input, web, missingFields, visionResults);
         if (searchError) localEvidence.riskFlags.push(searchError);
 
         let decision = localDecision(localEvidence);
@@ -422,6 +549,7 @@ export async function POST(req: Request) {
             riskFlags: [...new Set([...localEvidence.riskFlags, ...aiRiskFlags])].slice(0, 10),
             badges: buildBadges(status, input, localEvidence),
             sources,
+            visionResults,
             model: aiProvider === "deepseek" ? DEEPSEEK_MODEL : undefined,
             aiProvider,
             reviewedAt: Date.now(),

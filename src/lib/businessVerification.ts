@@ -10,6 +10,20 @@ export type BusinessVerificationSource = {
     query?: string;
 };
 
+export type BusinessVisionResult = {
+    provider: "openrouter" | "not_configured" | "failed";
+    model?: string;
+    storefrontReal: boolean;
+    signboardVisible: boolean;
+    signboardMatchesBusiness: boolean;
+    categoryMatches: boolean;
+    insideShopLooksReal: boolean;
+    editedOrStockRisk: boolean;
+    confidence: number;
+    reasons: string[];
+    riskFlags: string[];
+};
+
 export type BusinessVerificationSubmission = {
     uid: string;
     businessName: string;
@@ -44,6 +58,7 @@ export type BusinessVerificationResult = {
     riskFlags: string[];
     badges: string[];
     sources: BusinessVerificationSource[];
+    visionResults?: BusinessVisionResult | null;
     model?: string;
     aiProvider: "deepseek" | "local_fallback";
     reviewedAt: number;

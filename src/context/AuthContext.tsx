@@ -73,6 +73,7 @@ export interface UserProfile {
     businessVerificationReasons?: string[] | null;
     businessVerificationRiskFlags?: string[] | null;
     businessVerificationSources?: Array<{ title: string; url: string; content?: string; score?: number; query?: string }> | null;
+    businessVerificationVisionResults?: Record<string, unknown> | null;
     businessVerificationBadges?: string[] | null;
     businessVerificationRequestedAt?: number | null;
     businessVerificationReviewedAt?: number | null;
@@ -341,6 +342,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 businessVerificationReasons: profileData.businessVerificationReasons,
                 businessVerificationRiskFlags: profileData.businessVerificationRiskFlags,
                 businessVerificationSources: profileData.businessVerificationSources,
+                businessVerificationVisionResults: profileData.businessVerificationVisionResults,
                 businessVerificationBadges: profileData.businessVerificationBadges,
                 businessVerificationRequestedAt: profileData.businessVerificationRequestedAt,
                 businessVerificationReviewedAt: profileData.businessVerificationReviewedAt,
@@ -647,6 +649,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 businessVerificationReasons: newProfile.businessVerificationReasons,
                 businessVerificationRiskFlags: newProfile.businessVerificationRiskFlags,
                 businessVerificationSources: newProfile.businessVerificationSources,
+                businessVerificationVisionResults: newProfile.businessVerificationVisionResults,
                 businessVerificationBadges: newProfile.businessVerificationBadges,
                 businessVerificationRequestedAt: newProfile.businessVerificationRequestedAt,
                 businessVerificationReviewedAt: newProfile.businessVerificationReviewedAt,
