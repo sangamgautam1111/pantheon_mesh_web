@@ -21,8 +21,6 @@ import {
     MapPin,
     MessageSquare,
     Phone,
-    RefreshCw,
-    Send,
     ShieldCheck,
     Sparkles,
     Star,
@@ -43,7 +41,7 @@ import {
     type DragEvent,
     type ReactNode,
 } from "react";
-import { PhoneAuthProvider, RecaptchaVerifier, reload, sendEmailVerification, updatePhoneNumber } from "firebase/auth";
+import { PhoneAuthProvider, RecaptchaVerifier, updatePhoneNumber } from "firebase/auth";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
@@ -531,10 +529,6 @@ export default function ProfilePage() {
     const [phoneVerifyError, setPhoneVerifyError] = useState("");
     const [isSendingPhoneCode, setIsSendingPhoneCode] = useState(false);
     const [isConfirmingPhoneCode, setIsConfirmingPhoneCode] = useState(false);
-    const [emailVerifyMessage, setEmailVerifyMessage] = useState("");
-    const [emailVerifyError, setEmailVerifyError] = useState("");
-    const [isSendingEmailCode, setIsSendingEmailCode] = useState(false);
-    const [isRefreshingEmail, setIsRefreshingEmail] = useState(false);
 
     const countries = useMemo(() => Country.getAllCountries(), []);
     const sortedCountries = useMemo(() => [...countries].sort((a, b) => a.name.localeCompare(b.name)), [countries]);
@@ -571,7 +565,6 @@ export default function ProfilePage() {
     );
     const profilePhoneVerified = Boolean(profile?.phoneVerified && profile?.phoneNumber);
     const editedPhoneVerified = Boolean(profilePhoneVerified && editedPhoneMatchesProfile);
-    const profileEmailVerified = Boolean(profile?.emailVerified || user?.emailVerified);
 
     useEffect(() => {
         if (!isEditing) {
@@ -691,7 +684,7 @@ export default function ProfilePage() {
         } catch (error) {
             console.error("Phone verification SMS failed:", error);
             resetRecaptcha();
-            setPhoneVerifyError("Could not send SMS code. Check Firebase phone auth setup and try again.");
+            setPhoneVerifyError("SMS could not be sent. Check Firebase Phone Auth, authorized domain, billing/SMS region, or add this number as a Firebase test phone number.");
         } finally {
             setIsSendingPhoneCode(false);
         }
@@ -735,56 +728,6 @@ export default function ProfilePage() {
             setPhoneVerifyError("Invalid or expired code. Send a new SMS code and try again.");
         } finally {
             setIsConfirmingPhoneCode(false);
-        }
-    };
-
-    const handleSendEmailVerification = async () => {
-        setEmailVerifyError("");
-        setEmailVerifyMessage("");
-
-        if (!user?.email) {
-            setEmailVerifyError("No email address is connected to this account.");
-            return;
-        }
-
-        setIsSendingEmailCode(true);
-        try {
-            await sendEmailVerification(user);
-            setEmailVerifyMessage("Verification email sent. Open the link, then refresh the status here.");
-        } catch (error) {
-            console.error("Email verification send failed:", error);
-            setEmailVerifyError("Could not send verification email right now.");
-        } finally {
-            setIsSendingEmailCode(false);
-        }
-    };
-
-    const handleRefreshEmailVerification = async () => {
-        setEmailVerifyError("");
-        setEmailVerifyMessage("");
-
-        if (!user) {
-            setEmailVerifyError("Please sign in again before refreshing email status.");
-            return;
-        }
-
-        setIsRefreshingEmail(true);
-        try {
-            await reload(user);
-            if (user.emailVerified) {
-                await updateUserProfile({
-                    emailVerified: true,
-                    emailVerifiedAt: profile?.emailVerifiedAt || Date.now(),
-                });
-                setEmailVerifyMessage("Email is verified.");
-            } else {
-                setEmailVerifyError("Email is not verified yet. Open the verification link first.");
-            }
-        } catch (error) {
-            console.error("Email verification refresh failed:", error);
-            setEmailVerifyError("Could not refresh email status right now.");
-        } finally {
-            setIsRefreshingEmail(false);
         }
     };
 
@@ -972,39 +915,13 @@ export default function ProfilePage() {
             return (
                 <div className="space-y-5">
                     <div className="grid gap-4 md:grid-cols-2">
-                        <Field label="Email">
+                        <Field label="Email" hint="Email is optional in the MVP. Phone verification is the trust gate.">
                             <div className="relative">
                                 <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
                                 <input className={`${inputClass} pl-10`} value={email} disabled />
                             </div>
-                            <div className={`mt-3 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-black ${profileEmailVerified ? "bg-[#e9f9f0] text-[#0a8f45]" : "bg-[#fff7ed] text-[#c2410c]"}`}>
-                                {profileEmailVerified ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
-                                {profileEmailVerified ? "Email verified" : "Email verification optional"}
-                            </div>
-                            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                                <button
-                                    type="button"
-                                    onClick={handleSendEmailVerification}
-                                    disabled={profileEmailVerified || isSendingEmailCode || !user?.email}
-                                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#dfe8e3] bg-white px-3 py-2.5 text-xs font-black text-[#06111f] transition hover:bg-[#fbfdfb] disabled:cursor-not-allowed disabled:opacity-55"
-                                >
-                                    {isSendingEmailCode ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                                    Send email link
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleRefreshEmailVerification}
-                                    disabled={profileEmailVerified || isRefreshingEmail || !user?.email}
-                                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#06111f] px-3 py-2.5 text-xs font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-55"
-                                >
-                                    {isRefreshingEmail ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                                    Refresh status
-                                </button>
-                            </div>
-                            {emailVerifyMessage && <p className="mt-2 text-xs font-bold text-[#0a8f45]">{emailVerifyMessage}</p>}
-                            {emailVerifyError && <p className="mt-2 text-xs font-bold text-[#c2410c]">{emailVerifyError}</p>}
                         </Field>
-                        <Field label="Phone Number" hint="Required for customers and repair shops. The green tick appears only after SMS OTP success.">
+                        <Field label="Phone Number" hint="Required for customers and repair shops. Step 1 sends SMS, Step 2 verifies the code." className="md:col-span-2">
                             <div className="mt-1 flex gap-2">
                                 <select
                                     className="w-[42%] rounded-xl border border-[#dfe8e3] bg-[#fbfdfb] px-3 py-3 text-xs font-bold text-[#06111f] outline-none focus:border-[#0a8f45] focus:ring-4 focus:ring-[#e9f9f0]"
@@ -1029,34 +946,42 @@ export default function ProfilePage() {
                                 {editedPhoneVerified ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
                                 {editedPhoneVerified ? "Phone verified" : "Phone verification required"}
                             </div>
-                            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                                <button
-                                    type="button"
-                                    onClick={handleSendPhoneCode}
-                                    disabled={editedPhoneVerified || isSendingPhoneCode || !editForm.phoneNumberRaw.trim()}
-                                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#06111f] px-3 py-2.5 text-xs font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-55"
-                                >
-                                    {isSendingPhoneCode ? <Loader2 size={14} className="animate-spin" /> : <Phone size={14} />}
-                                    {phoneVerificationId ? "Resend SMS code" : "Verify phone number"}
-                                </button>
-                                <input
-                                    className={`${inputClass} mt-0`}
-                                    value={phoneOtp}
-                                    onChange={(event) => setPhoneOtp(event.target.value)}
-                                    placeholder="Enter SMS code"
-                                    inputMode="numeric"
-                                    disabled={editedPhoneVerified || !editForm.phoneNumberRaw.trim()}
-                                />
+                            <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                                <div className="rounded-2xl border border-[#edf2ef] bg-[#fbfdfb] p-3">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#94a3b8]">Step 1</p>
+                                    <button
+                                        type="button"
+                                        onClick={handleSendPhoneCode}
+                                        disabled={editedPhoneVerified || isSendingPhoneCode || !editForm.phoneNumberRaw.trim()}
+                                        className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#06111f] px-3 py-3 text-xs font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-55"
+                                    >
+                                        {isSendingPhoneCode ? <Loader2 size={14} className="animate-spin" /> : <Phone size={14} />}
+                                        {phoneVerificationId ? "Resend SMS code" : "Send SMS code"}
+                                    </button>
+                                </div>
+                                <div className="rounded-2xl border border-[#edf2ef] bg-[#fbfdfb] p-3">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#94a3b8]">Step 2</p>
+                                    <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto]">
+                                        <input
+                                            className={`${inputClass} mt-0`}
+                                            value={phoneOtp}
+                                            onChange={(event) => setPhoneOtp(event.target.value)}
+                                            placeholder="Enter SMS code"
+                                            inputMode="numeric"
+                                            disabled={editedPhoneVerified || !editForm.phoneNumberRaw.trim()}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleConfirmPhoneCode}
+                                            disabled={editedPhoneVerified || isConfirmingPhoneCode || phoneOtp.trim().length < 4}
+                                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0a8f45] px-4 py-3 text-xs font-black text-white transition hover:bg-[#08783b] disabled:cursor-not-allowed disabled:opacity-55"
+                                        >
+                                            {isConfirmingPhoneCode ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                                            Verify code
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                            <button
-                                type="button"
-                                onClick={handleConfirmPhoneCode}
-                                disabled={editedPhoneVerified || isConfirmingPhoneCode || phoneOtp.trim().length < 4}
-                                className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a8f45] px-3 py-2.5 text-xs font-black text-white transition hover:bg-[#08783b] disabled:cursor-not-allowed disabled:opacity-55"
-                            >
-                                {isConfirmingPhoneCode ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                                Verify SMS code
-                            </button>
                             {phoneVerifyMessage && <p className="mt-2 text-xs font-bold text-[#0a8f45]">{phoneVerifyMessage}</p>}
                             {phoneVerifyError && <p className="mt-2 text-xs font-bold text-[#c2410c]">{phoneVerifyError}</p>}
                         </Field>
@@ -1316,7 +1241,7 @@ export default function ProfilePage() {
     return (
         <RouteGuard allowedTypes={["customer", "business"]}>
             <main className="min-h-screen bg-[#fbfdfb] px-4 py-6 text-[#06111f] md:px-8">
-                <div id="needero-phone-recaptcha" className="hidden" />
+                <div id="needero-phone-recaptcha" className="pointer-events-none fixed bottom-0 right-0 h-px w-px overflow-hidden opacity-0" />
                 <div className="mx-auto max-w-6xl">
                     <section className="relative overflow-hidden rounded-[24px] border border-[#dfe8e3] bg-[radial-gradient(circle_at_88%_22%,rgba(10,143,69,0.12),transparent_34%),linear-gradient(180deg,#ffffff,#fbfdfb)] p-6 shadow-[0_18px_60px_rgba(15,23,42,0.08)] md:p-8">
                         <button
@@ -1642,9 +1567,7 @@ export default function ProfilePage() {
                                                 <span className={`rounded-full px-2.5 py-1 ${editedPhoneVerified ? "bg-[#e9f9f0] text-[#0a8f45]" : "bg-[#fff7ed] text-[#c2410c]"}`}>
                                                     {editedPhoneVerified ? "Phone verified" : "Phone required"}
                                                 </span>
-                                                <span className={`rounded-full px-2.5 py-1 ${profileEmailVerified ? "bg-[#e9f9f0] text-[#0a8f45]" : "bg-[#f1f5f9] text-[#64748b]"}`}>
-                                                    {profileEmailVerified ? "Email verified" : "Email optional"}
-                                                </span>
+                                                <span className="rounded-full bg-[#f1f5f9] px-2.5 py-1 text-[#64748b]">Email optional</span>
                                                 <span className="rounded-full bg-[#e9f9f0] px-2.5 py-1">Address added</span>
                                                 <span className="rounded-full bg-[#eef6ff] px-2.5 py-1 text-[#2563eb]">Trusted</span>
                                             </div>
