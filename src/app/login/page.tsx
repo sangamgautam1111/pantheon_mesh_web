@@ -32,16 +32,16 @@ const accountOptions: Array<{
     {
         type: "customer",
         title: "Customer account",
-        subtitle: "Post a Need, compare Offers, and choose the best nearby business.",
+        subtitle: "Post a phone repair Need, compare repair Offers, and choose the best nearby shop.",
         icon: UserRound,
-        points: ["Post Needs for free", "Compare price, time, warranty", "Contact unlocks after choosing"],
+        points: ["Post phone repair Needs for free", "Compare NPR price, time, warranty", "Contact unlocks after choosing"],
     },
     {
         type: "business",
         title: "Local Business account",
-        subtitle: "Browse nearby Needs, send Offers, and grow with a business subscription.",
+        subtitle: "Browse nearby phone repair Needs, send Repair Offers, and grow with a business subscription.",
         icon: Store,
-        points: ["Marketplace lead inbox", "Send price, time, warranty", "Profile, analytics, and plans"],
+        points: ["Repair lead inbox", "Send price, time, warranty", "Profile, analytics, and plans"],
     },
 ];
 
@@ -167,11 +167,11 @@ export default function LoginPage() {
                         </div>
 
                         <h1 className="relative max-w-2xl text-4xl font-black leading-[0.96] tracking-[-0.055em] text-[#06111f] md:text-6xl">
-                            One marketplace. Two clear account flows.
+                            Phone Repair Needero. Two clear account flows.
                         </h1>
 
                         <p className="relative mt-6 max-w-2xl text-base leading-7 text-[#64748b]">
-                            Customers post Needs once. Local businesses compete with clear Offers. Needero keeps
+                            Customers post one phone issue. Nearby repair shops send clear Repair Offers. Needero keeps
                             contact details protected until the customer chooses a shop.
                         </p>
 
@@ -179,17 +179,17 @@ export default function LoginPage() {
                             {[
                                 {
                                     title: "Customer",
-                                    copy: "Post any local Need, upload photos, and compare real Offers.",
+                                    copy: "Post a phone repair Need, upload proof, and compare real Repair Offers.",
                                     icon: UserRound,
                                 },
                                 {
                                     title: "Business",
-                                    copy: "Receive warm nearby leads and send price, time, and warranty.",
+                                    copy: "Receive nearby phone repair leads and send price, time, warranty, and parts quality.",
                                     icon: Store,
                                 },
                                 {
                                     title: "Marketplace",
-                                    copy: "Start with local Needs, nearby businesses, Offers, and messages.",
+                                    copy: "Start with phone repair Needs, repair shops, Offers, and messages.",
                                     icon: Building2,
                                 },
                             ].map((item) => {

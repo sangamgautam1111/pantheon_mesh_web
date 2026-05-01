@@ -40,6 +40,7 @@ type QuoteDraft = {
     time: string;
     warranty: string;
     included: string;
+    partsQuality: string;
     extraCharges: string;
     distance: string;
     distanceUnit: "m" | "km";
@@ -55,6 +56,7 @@ const emptyDraft: QuoteDraft = {
     time: "",
     warranty: "",
     included: "",
+    partsQuality: "High-quality copy",
     extraCharges: "",
     distance: "",
     distanceUnit: "m",
@@ -64,17 +66,17 @@ const emptyDraft: QuoteDraft = {
     note: "",
 };
 
-const serviceTypes = ["Visit Shop", "Home Visit", "Pickup & Return", "Delivery"];
-const travelServiceTypes = ["Home Visit", "Pickup & Return", "Delivery"];
+const serviceTypes = ["Visit Shop", "Home Repair", "Pickup & Return"];
+const travelServiceTypes = ["Home Repair", "Pickup & Return"];
+const partsQualityOptions = ["Original", "High-quality copy", "Refurbished", "Not sure"];
 const lateMinuteOptions = ["15 minutes", "30 minutes", "45 minutes", "60 minutes"];
 
 const needsTravelCharge = (serviceType: string) => travelServiceTypes.includes(serviceType);
 const chatContextKey = (needId: string, quoteId: string) => `needero-chat:${needId}:${quoteId}`;
 
 const extraChargeLabel = (serviceType: string) => {
-    if (serviceType === "Home Visit") return "Home visit fee";
+    if (serviceType === "Home Repair") return "Home repair fee";
     if (serviceType === "Pickup & Return") return "Pickup & return fee";
-    if (serviceType === "Delivery") return "Delivery fee";
     return "Extra charge";
 };
 
@@ -98,6 +100,7 @@ const draftFromOffer = (offer: OfferRecord): QuoteDraft => ({
     time: offer.time || "",
     warranty: offer.warranty || "",
     included: offer.included || "",
+    partsQuality: offer.partsQuality || "High-quality copy",
     extraCharges: offer.extraCharges || "",
     ...parseDistanceDraft(offer.distance),
     availability: offer.availability || "",
@@ -141,7 +144,7 @@ function MoneyInput({
 }) {
     return (
         <div className="flex overflow-hidden rounded-xl border border-[#dadbdd] bg-white focus-within:border-[#222325] focus-within:ring-4 focus-within:ring-black/5">
-            <span className="flex w-12 shrink-0 items-center justify-center border-r border-[#dadbdd] bg-[#f7f7f7] text-sm font-black text-[#74767e]">$</span>
+            <span className="flex w-16 shrink-0 items-center justify-center border-r border-[#dadbdd] bg-[#f7f7f7] text-xs font-black text-[#74767e]">NPR</span>
             <input
                 type="number"
                 min={min}
@@ -252,6 +255,7 @@ function QuoteRow({
                         ))}
                     </div>
                     <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
+                        <span className="rounded-2xl bg-white px-3 py-2 ring-1 ring-[#e4e5e7]"><strong>Parts:</strong> {offer.partsQuality || "Not listed"}</span>
                         <span className="rounded-2xl bg-white px-3 py-2 ring-1 ring-[#e4e5e7]"><strong>Includes:</strong> {offer.included || "Discuss in chat"}</span>
                         <span className="rounded-2xl bg-white px-3 py-2 ring-1 ring-[#e4e5e7]"><strong>Extra:</strong> {offer.extraCharges ? formatMoney(offer.extraCharges) || offer.extraCharges : "None listed"}</span>
                         <span className="rounded-2xl bg-white px-3 py-2 ring-1 ring-[#e4e5e7]"><strong>Late:</strong> {offer.delayRefundRule || "Not listed"}</span>
@@ -352,14 +356,6 @@ export default function NeedDetailPage() {
         setMessage("");
         try {
             const businessAvatar = profile?.photoURL || user.photoURL || null;
-            if (
-                needsTravelCharge(draft.serviceType) &&
-                (!draft.extraCharges.trim() || !draft.delayRefundRule.trim())
-            ) {
-                setMessage("For home visit, pickup & return, or delivery, add the travel fee and late arrival rule.");
-                setSaving(false);
-                return;
-            }
             if (editingOfferId) {
                 await updateOffer({
                     offerId: editingOfferId,
@@ -370,6 +366,7 @@ export default function NeedDetailPage() {
                     time: draft.time,
                     warranty: draft.warranty,
                     included: draft.included,
+                    partsQuality: draft.partsQuality,
                     extraCharges: needsTravelCharge(draft.serviceType) ? draft.extraCharges : "",
                     distance: formatDistanceDraft(draft.distance, draft.distanceUnit),
                     availability: draft.availability || draft.time,
@@ -389,6 +386,7 @@ export default function NeedDetailPage() {
                     time: draft.time,
                     warranty: draft.warranty,
                     included: draft.included,
+                    partsQuality: draft.partsQuality,
                     extraCharges: needsTravelCharge(draft.serviceType) ? draft.extraCharges : "",
                     distance: formatDistanceDraft(draft.distance, draft.distanceUnit),
                     availability: draft.availability || draft.time,
@@ -489,7 +487,7 @@ export default function NeedDetailPage() {
                 <div className="mx-auto max-w-7xl">
                     <Link href="/marketplace" className="inline-flex items-center gap-2 text-sm font-black text-[#62646a] hover:text-black">
                         <ArrowLeft size={16} />
-                        Back to Browse Needs
+                        Back to Browse Repair Offers
                     </Link>
 
                     {message && <div className="mt-5 rounded-xl border border-[#dadbdd] bg-white px-4 py-3 text-sm font-bold">{message}</div>}
@@ -570,8 +568,8 @@ export default function NeedDetailPage() {
 
                                     <div className="mt-6 flex items-center justify-between">
                                         <div>
-                                            <h2 className="text-2xl font-black">Offers from local businesses</h2>
-                                            <p className="mt-1 text-sm font-semibold text-[#74767e]">Compare price, time, warranty, service type, and trust before choosing.</p>
+                                            <h2 className="text-2xl font-black">Repair Offers from local shops</h2>
+                                            <p className="mt-1 text-sm font-semibold text-[#74767e]">Compare NPR price, repair time, warranty, parts quality, service type, and trust before choosing.</p>
                                         </div>
                                         <span className="rounded-full bg-[#0a8f45] px-4 py-2 text-sm font-black text-white">{offers.length} Offers</span>
                                     </div>
@@ -594,7 +592,7 @@ export default function NeedDetailPage() {
                                             <div className="rounded-[24px] border-2 border-dashed border-[#dadbdd] bg-white p-10 text-center">
                                                 <Store className="mx-auto text-[#b5b6ba]" size={34} />
                                                 <p className="mt-3 font-black">No Offers yet</p>
-                                                <p className="mt-1 text-sm text-[#74767e]">Businesses can be the first to quote this Need.</p>
+                                                <p className="mt-1 text-sm text-[#74767e]">Repair shops can be the first to quote this Need.</p>
                                             </div>
                                         )}
                                     </div>
@@ -612,8 +610,8 @@ export default function NeedDetailPage() {
                                             <form onSubmit={submitQuote} className="space-y-4">
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div>
-                                                        <h3 className="text-xl font-black">{editingOfferId ? "Edit Offer" : "Send an Offer"}</h3>
-                                                        <p className="mt-1 text-xs font-semibold text-[#74767e]">Customers compare price, service type, arrival time, warranty, and late policy.</p>
+                                                        <h3 className="text-xl font-black">{editingOfferId ? "Edit Repair Offer" : "Send Repair Offer"}</h3>
+                                                        <p className="mt-1 text-xs font-semibold text-[#74767e]">Customers compare NPR price, service type, repair time, warranty, parts quality, and availability.</p>
                                                     </div>
                                                     {editingOfferId && (
                                                         <button type="button" onClick={cancelEditOffer} className="rounded-full border border-[#dadbdd] p-2 hover:bg-[#f5f5f5]">
@@ -622,8 +620,8 @@ export default function NeedDetailPage() {
                                                     )}
                                                 </div>
                                                 <label className="block">
-                                                    <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Price</span>
-                                                    <MoneyInput value={draft.price} onChange={(value) => updateDraft("price", value)} placeholder="50" required min="1" />
+                                                    <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Price (NPR)</span>
+                                                    <MoneyInput value={draft.price} onChange={(value) => updateDraft("price", value)} placeholder="4500" required min="1" />
                                                 </label>
                                                 <label className="block">
                                                     <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Service type</span>
@@ -632,12 +630,15 @@ export default function NeedDetailPage() {
                                                     </select>
                                                 </label>
                                                 <label className="block">
-                                                    <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Specific arrival / completion time</span>
+                                                    <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Estimated repair time</span>
                                                     <input required type="datetime-local" value={draft.time} onChange={(e) => updateDraft("time", e.target.value)} className="nd-input rounded-xl" />
                                                 </label>
-                                                <input value={draft.availability} onChange={(e) => updateDraft("availability", e.target.value)} className="nd-input rounded-xl" placeholder="Availability note, e.g. 4:00 PM - 6:00 PM" />
-                                                <input value={draft.warranty} onChange={(e) => updateDraft("warranty", e.target.value)} className="nd-input rounded-xl" placeholder="Warranty / guarantee" />
-                                                <input value={draft.included} onChange={(e) => updateDraft("included", e.target.value)} className="nd-input rounded-xl" placeholder="What is included" />
+                                                <input value={draft.availability} onChange={(e) => updateDraft("availability", e.target.value)} className="nd-input rounded-xl" placeholder="Availability, e.g. today 4:00 PM" />
+                                                <input value={draft.warranty} onChange={(e) => updateDraft("warranty", e.target.value)} className="nd-input rounded-xl" placeholder="Warranty, e.g. 7 days" />
+                                                <select value={draft.partsQuality} onChange={(e) => updateDraft("partsQuality", e.target.value)} className="nd-select w-full rounded-xl">
+                                                    {partsQualityOptions.map((quality) => <option key={quality}>{quality}</option>)}
+                                                </select>
+                                                <input value={draft.included} onChange={(e) => updateDraft("included", e.target.value)} className="nd-input rounded-xl" placeholder="Included, e.g. screen part + labor" />
                                                 {needsTravelCharge(draft.serviceType) && (
                                                     <label className="block">
                                                         <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">{extraChargeLabel(draft.serviceType)}</span>
@@ -654,21 +655,10 @@ export default function NeedDetailPage() {
                                                         </select>
                                                     </div>
                                                 </label>
-                                                {needsTravelCharge(draft.serviceType) && (
-                                                    <label className="block">
-                                                        <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Late arrival rule</span>
-                                                        <select required value={draft.delayRefundRule} onChange={(e) => updateDraft("delayRefundRule", e.target.value)} className="nd-select w-full rounded-xl">
-                                                            <option value="">Select grace time</option>
-                                                            {lateMinuteOptions.map((option) => (
-                                                                <option key={option} value={`Late after ${option}`}>{option}</option>
-                                                            ))}
-                                                        </select>
-                                                    </label>
-                                                )}
-                                                <textarea required value={draft.note} onChange={(e) => updateDraft("note", e.target.value)} className="nd-input min-h-28 resize-none rounded-xl" placeholder="Write a useful note for the customer." />
+                                                <textarea required value={draft.note} onChange={(e) => updateDraft("note", e.target.value)} className="nd-input min-h-28 resize-none rounded-xl" placeholder="Explain diagnosis, repair risk, warranty, and pickup/return terms." />
                                                 <button disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a8f45] px-5 py-4 text-sm font-black text-white hover:bg-[#08783b] disabled:opacity-60">
                                                     {saving ? <Clock size={16} className="animate-spin" /> : <Send size={16} />}
-                                                    {editingOfferId ? "Save Offer" : "Send Offer"}
+                                                    {editingOfferId ? "Save Repair Offer" : "Send Repair Offer"}
                                                 </button>
                                             </form>
                                         )
@@ -689,7 +679,7 @@ export default function NeedDetailPage() {
                     ) : (
                         <div className="mt-10 rounded-[28px] border border-[#e4e5e7] bg-white p-12 text-center">
                             <p className="text-2xl font-black">Need not found</p>
-                            <Link href="/marketplace" className="mt-5 inline-flex rounded-xl bg-[#0a8f45] px-5 py-3 text-sm font-black text-white">Browse Needs</Link>
+                            <Link href="/marketplace" className="mt-5 inline-flex rounded-xl bg-[#0a8f45] px-5 py-3 text-sm font-black text-white">Browse Repair Offers</Link>
                         </div>
                     )}
                 </div>

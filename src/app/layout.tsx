@@ -4,8 +4,8 @@ import { ClientLayout } from "./ClientLayout";
 import { ReactNode } from "react";
 
 export const metadata: Metadata = {
-    title: "Needero - Local Offers From Nearby Businesses",
-    description: "Post a local problem once and compare offers from nearby businesses.",
+    title: "Needero - Phone Repair Offers From Nearby Shops",
+    description: "Post your phone issue once and compare repair offers from nearby shops.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

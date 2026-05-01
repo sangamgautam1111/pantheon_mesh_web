@@ -122,7 +122,7 @@ export default function DeliveryMap({ initialCoords, initialAddress, onSelect, o
                 {/* Header */}
                 <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white">
                     <div>
-                        <h2 className="text-xl font-black text-slate-950">Select Delivery Point</h2>
+                        <h2 className="text-xl font-black text-slate-950">Select Repair Location</h2>
                         <p className="text-xs font-bold text-slate-500">Click or search on the map to pinpoint your location</p>
                     </div>
                     <button 

@@ -41,6 +41,7 @@ type QuoteDraft = {
     time: string;
     warranty: string;
     included: string;
+    partsQuality: string;
     extraCharges: string;
     distance: string;
     distanceUnit: "m" | "km";
@@ -56,6 +57,7 @@ const emptyDraft: QuoteDraft = {
     time: "",
     warranty: "",
     included: "",
+    partsQuality: "High-quality copy",
     extraCharges: "",
     distance: "",
     distanceUnit: "m",
@@ -65,8 +67,9 @@ const emptyDraft: QuoteDraft = {
     note: "",
 };
 
-const serviceTypes = ["Visit Shop", "Home Visit", "Pickup & Return", "Delivery"];
-const travelServiceTypes = ["Home Visit", "Pickup & Return", "Delivery"];
+const serviceTypes = ["Visit Shop", "Home Repair", "Pickup & Return"];
+const travelServiceTypes = ["Home Repair", "Pickup & Return"];
+const partsQualityOptions = ["Original", "High-quality copy", "Refurbished", "Not sure"];
 const lateMinuteOptions = ["15 minutes", "30 minutes", "45 minutes", "60 minutes"];
 const quoteTabs = ["All Quotes", "Recommended", "Cheapest", "Fastest", "Selected"] as const;
 
@@ -108,7 +111,7 @@ function MoneyInput({
 }) {
     return (
         <div className="flex overflow-hidden rounded-xl border border-[#dadbdd] bg-white focus-within:border-[#222325] focus-within:ring-4 focus-within:ring-black/5">
-            <span className="flex w-12 shrink-0 items-center justify-center border-r border-[#dadbdd] bg-[#f7f7f7] text-sm font-black text-[#74767e]">$</span>
+            <span className="flex w-16 shrink-0 items-center justify-center border-r border-[#dadbdd] bg-[#f7f7f7] text-xs font-black text-[#74767e]">NPR</span>
             <input
                 type="number"
                 min={min}
@@ -140,9 +143,8 @@ const parseSpeedScore = (value: string) => {
 const needsTravelCharge = (serviceType: string) => travelServiceTypes.includes(serviceType);
 
 const extraChargeLabel = (serviceType: string) => {
-    if (serviceType === "Home Visit") return "Home visit fee";
+    if (serviceType === "Home Repair") return "Home repair fee";
     if (serviceType === "Pickup & Return") return "Pickup & return fee";
-    if (serviceType === "Delivery") return "Delivery fee";
     return "Extra charge";
 };
 
@@ -240,13 +242,11 @@ function QuoteCard({
 }) {
     const rows = [
         ["Service type", offer.serviceType || "Not specified"],
-        ["Time", offer.time || "Not specified"],
+        ["Estimated time", offer.time || "Not specified"],
         ["Warranty", offer.warranty || "Not specified"],
-        ["Included", offer.included || "Not specified"],
-        ["Extra charges", offer.extraCharges || "None listed"],
-        ["Distance", offer.distance || "Nearby"],
+        ["Parts quality", offer.partsQuality || "Not specified"],
         ["Availability", offer.availability || "Not specified"],
-        ["Late policy", offer.delayRefundRule || "Not specified"],
+        ["Included", offer.included || "Repair details in note"],
     ];
 
     return (
@@ -472,14 +472,6 @@ export default function Marketplace() {
         setSaving(true);
         setMessage("");
         try {
-            if (
-                needsTravelCharge(draft.serviceType) &&
-                (!draft.extraCharges.trim() || !draft.delayRefundRule.trim())
-            ) {
-                setMessage("For home visit, pickup & return, or delivery, add the travel fee and late arrival rule.");
-                setSaving(false);
-                return;
-            }
             await createOffer({
                 needId: selectedNeedId,
                 businessId: user.uid,
@@ -490,6 +482,7 @@ export default function Marketplace() {
                 time: draft.time,
                 warranty: draft.warranty,
                 included: draft.included,
+                partsQuality: draft.partsQuality,
                 extraCharges: needsTravelCharge(draft.serviceType) ? draft.extraCharges : "",
                 distance: formatDistanceDraft(draft.distance, draft.distanceUnit),
                 availability: draft.availability,
@@ -498,7 +491,7 @@ export default function Marketplace() {
                 note: draft.note,
             });
             setDraft(emptyDraft);
-            setMessage("Quote submitted. It is now inside the customer Quote Inbox.");
+            setMessage("Repair Offer submitted. It is now inside the customer Offer Inbox.");
             await loadOffers(selectedNeedId);
             await loadNeeds();
         } catch (error) {
@@ -554,13 +547,13 @@ export default function Marketplace() {
                         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                             <div>
                                 <p className="text-xs font-black uppercase tracking-[0.18em] mb-2" style={{color:"#222325"}}>
-                                    {isBusiness?"Lead Inbox":"Browse Needs"}
+                                    {isBusiness?"Repair Lead Inbox":"Browse Repair Offers"}
                                 </p>
                                 <h1 className="font-heading text-3xl font-black tracking-[-0.04em]" style={{color:"#222325"}}>
-                                    {isBusiness?"Customer Needs Near You":"Find Local Help"}
+                                    {isBusiness?"Phone Repair Needs Near You":"Find Phone Repair Offers"}
                                 </h1>
                                 <div className="mt-3 flex flex-wrap items-center gap-3 text-sm" style={{color:"#74767e"}}>
-                                    <span className="font-semibold">{loading ? "Loading" : `${needs.length} live`} Needs</span>
+                                    <span className="font-semibold">{loading ? "Loading" : `${needs.length} live`} repair Needs</span>
                                     <span className="h-1 w-1 rounded-full bg-[#b5b6ba]" />
                                     <span>{locationStatus}</span>
                                 </div>
@@ -580,8 +573,8 @@ export default function Marketplace() {
                         {/* Stats */}
                         <div className="hidden">
                             {[{label:"Live Needs",value:loading?"...":String(needs.length)},
-                              {label:"Pipeline",value:"Need→Quote→Booking"},
-                              {label:isBusiness?"Your action":"Your action",value:isBusiness?"Submit Quotes":"Choose Offer"},
+                              {label:"Pipeline",value:"Repair Need -> Offer -> Booking"},
+                              {label:isBusiness?"Your action":"Your action",value:isBusiness?"Send Repair Offers":"Choose Offer"},
                               {label:"Area",value:locationStatus}].map(s=>(
                                 <div key={s.label} className="flex flex-col">
                                     <p className="text-xs" style={{color:"#74767e"}}>{s.label}</p>
@@ -590,7 +583,7 @@ export default function Marketplace() {
                             ))}
                         </div>
                         <div className="mt-6 flex gap-3 overflow-x-auto pb-1">
-                            {["Category", "Service options", "Business details", "Budget", "Urgency"].map((filter) => (
+                            {["Phone issue", "Service option", "Shop trust", "NPR price", "Urgency"].map((filter) => (
                                 <button key={filter} className="whitespace-nowrap rounded-full border border-[#d7d9dc] bg-white px-5 py-2.5 text-sm font-bold text-[#222325] transition hover:border-[#222325]">
                                     {filter}
                                 </button>
@@ -614,10 +607,10 @@ export default function Marketplace() {
                         <div className="rounded-2xl border-2 border-dashed py-20 text-center" style={{borderColor:"#e4e5e7"}}>
                             <Briefcase size={40} className="mx-auto mb-4" style={{color:"#d1d5db"}}/>
                             <h2 className="text-xl font-bold mb-2" style={{color:"#404145"}}>
-                                {searchQuery?`No results for "${searchQuery}"`:'No live Needs loaded'}
+                                {searchQuery?`No results for "${searchQuery}"`:'No live phone repair Needs loaded'}
                             </h2>
                             <p className="text-sm mb-5" style={{color:"#74767e"}}>
-                                {searchQuery?'Try a different keyword.':'Needs appear here once customers post them.'}
+                                {searchQuery?'Try screen, battery, charging, or water damage.':'Phone repair Needs appear here once customers post them.'}
                             </p>
                             {!searchQuery&&(
                                 <button onClick={loadNeeds} className="rounded-full bg-[#222325] px-6 py-3 text-sm font-black text-white transition hover:bg-black">
@@ -715,7 +708,7 @@ export default function Marketplace() {
                                     <p className="text-sm leading-relaxed mb-5" style={{color:"#74767e"}}>{selectedNeed.issue}</p>
                                     <div className="flex gap-4">
                                         <div className="nd-stat-tile flex-1">
-                                            <p className="nd-stat-label">Budget</p>
+                                                <p className="nd-stat-label">Quote target</p>
                                             <p className="nd-stat-value" style={{fontSize:"20px"}}>{selectedNeed.budget||"Flexible"}</p>
                                         </div>
                                         <div className="nd-stat-tile flex-1">
@@ -737,7 +730,7 @@ export default function Marketplace() {
                                 {/* Offers section */}
                                 <div className="px-6 py-6">
                                     <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-                                        <h3 className="text-lg font-bold" style={{color:"#404145"}}>Offers ({offers.length})</h3>
+                                        <h3 className="text-lg font-bold" style={{color:"#404145"}}>Repair Offers ({offers.length})</h3>
                                         <div className="flex gap-2 flex-wrap">
                                             {quoteTabs.map(tab=>(
                                                 <button key={tab} onClick={()=>setQuoteTab(tab)}
@@ -759,7 +752,7 @@ export default function Marketplace() {
                                             <div className="rounded-2xl border-2 border-dashed py-12 text-center" style={{borderColor:"#e4e5e7"}}>
                                                 <MessageCircle size={32} className="mx-auto mb-3" style={{color:"#d1d5db"}}/>
                                                 <p className="text-sm font-semibold" style={{color:"#74767e"}}>No quotes yet</p>
-                                                <p className="text-xs mt-1" style={{color:"#b5b6ba"}}>Be the first to submit an offer!</p>
+                                                <p className="text-xs mt-1" style={{color:"#b5b6ba"}}>Be the first repair shop to send an Offer.</p>
                                             </div>
                                         ):(
                                             visibleOffers.map(offer=>(
@@ -783,15 +776,15 @@ export default function Marketplace() {
                                                     <ShieldCheck size={20} color="#fff"/>
                                                 </div>
                                                 <div>
-                                                    <h3 className="text-base font-bold" style={{color:"#404145"}}>Post Your Offer</h3>
-                                                    <p className="text-xs" style={{color:"#74767e"}}>Submit a professional, structured offer.</p>
+                                                    <h3 className="text-base font-bold" style={{color:"#404145"}}>Send Repair Offer</h3>
+                                                    <p className="text-xs" style={{color:"#74767e"}}>Submit price, time, warranty, parts quality, and availability.</p>
                                                 </div>
                                             </div>
                                             <form onSubmit={submitQuote} className="grid gap-4">
                                                 <div className="grid gap-4 md:grid-cols-2">
                                                     <div>
-                                                        <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Price ($)*</label>
-                                                        <MoneyInput value={draft.price} onChange={(value) => updateDraft("price", value)} placeholder="50" required min="1" />
+                                                        <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Price (NPR)*</label>
+                                                        <MoneyInput value={draft.price} onChange={(value) => updateDraft("price", value)} placeholder="4500" required min="1" />
                                                     </div>
                                                     <div>
                                                         <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Service Type</label>
@@ -800,7 +793,7 @@ export default function Marketplace() {
                                                         </select>
                                                     </div>
                                                     <div>
-                                                        <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Specific arrival / completion time*</label>
+                                                        <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Estimated repair time*</label>
                                                         <input type="datetime-local" value={draft.time} onChange={e=>updateDraft("time",e.target.value)} required className="nd-input"/>
                                                     </div>
                                                     <div>
@@ -808,12 +801,22 @@ export default function Marketplace() {
                                                         <input value={draft.warranty} onChange={e=>updateDraft("warranty",e.target.value)} placeholder="e.g. 30 days" className="nd-input"/>
                                                     </div>
                                                     <div className="md:col-span-2">
-                                                        <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>What's Included</label>
-                                                        <input value={draft.included} onChange={e=>updateDraft("included",e.target.value)} placeholder="e.g. Parts, Labor" className="nd-input"/>
+                                                        <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Parts quality</label>
+                                                        <select value={draft.partsQuality} onChange={e=>updateDraft("partsQuality",e.target.value)} className="nd-select w-full">
+                                                            {partsQualityOptions.map(t=><option key={t}>{t}</option>)}
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Availability</label>
+                                                        <input value={draft.availability} onChange={e=>updateDraft("availability",e.target.value)} placeholder="Available today 4 PM" className="nd-input"/>
+                                                    </div>
+                                                    <div className="md:col-span-2">
+                                                        <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Included / repair note</label>
+                                                        <input value={draft.included} onChange={e=>updateDraft("included",e.target.value)} placeholder="e.g. Screen part + labor included" className="nd-input"/>
                                                     </div>
                                                     {needsTravelCharge(draft.serviceType)&&(
                                                         <div>
-                                                            <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>{extraChargeLabel(draft.serviceType)} ($)</label>
+                                                            <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>{extraChargeLabel(draft.serviceType)} (NPR)</label>
                                                             <MoneyInput value={draft.extraCharges} onChange={(value) => updateDraft("extraCharges", value)} placeholder="0" required />
                                                         </div>
                                                     )}
@@ -827,23 +830,14 @@ export default function Marketplace() {
                                                             </select>
                                                         </div>
                                                     </div>
-                                                    {needsTravelCharge(draft.serviceType)&&(
-                                                        <div>
-                                                            <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Late arrival rule</label>
-                                                            <select value={draft.delayRefundRule} onChange={e=>updateDraft("delayRefundRule",e.target.value)} required className="nd-select w-full">
-                                                                <option value="">Select grace time</option>
-                                                                {lateMinuteOptions.map((option)=><option key={option} value={`Late after ${option}`}>{option}</option>)}
-                                                            </select>
-                                                        </div>
-                                                    )}
                                                 </div>
                                                 <div>
                                                     <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{color:"#74767e"}}>Message to Customer*</label>
-                                                    <textarea value={draft.note} onChange={e=>updateDraft("note",e.target.value)} placeholder="Why are you the best fit?" required rows={3} className="nd-input resize-none"/>
+                                                    <textarea value={draft.note} onChange={e=>updateDraft("note",e.target.value)} placeholder="Explain diagnosis, repair risk, warranty, and pickup/return terms." required rows={3} className="nd-input resize-none"/>
                                                 </div>
                                                 <button type="submit" disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#222325] py-3.5 text-base font-black text-white transition hover:bg-black disabled:opacity-60">
                                                     {saving?<Clock size={18} className="animate-spin"/>:<Send size={18}/>}
-                                                    Submit Offer to Customer
+                                                    Send Repair Offer
                                                 </button>
                                             </form>
                                         </div>
@@ -856,8 +850,8 @@ export default function Marketplace() {
                                             <div className="mx-auto h-14 w-14 flex items-center justify-center rounded-full mb-4" style={{background:"#ffffff",border:"1px solid #e4e5e7"}}>
                                                 <CheckCircle2 size={32} style={{color:"#222325"}}/>
                                             </div>
-                                            <h3 className="text-lg font-bold mb-2" style={{color:"#404145"}}>Offer Submitted!</h3>
-                                            <p className="text-sm" style={{color:"#74767e"}}>Your offer is visible in the list above.</p>
+                                            <h3 className="text-lg font-bold mb-2" style={{color:"#404145"}}>Repair Offer Submitted!</h3>
+                                            <p className="text-sm" style={{color:"#74767e"}}>Your repair Offer is visible in the list above.</p>
                                         </div>
                                     </div>
                                 )}

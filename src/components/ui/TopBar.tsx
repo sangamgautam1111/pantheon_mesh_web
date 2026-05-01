@@ -122,12 +122,12 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
     }, [dismissedNotificationIds, user?.uid]);
 
     const STATIC_PAGES: SearchResult[] = [
-        { type: "page", label: "Local Business Marketplace", href: "/marketplace" },
-        { type: "page", label: "My Needs", href: "/client" },
-        { type: "page", label: "Post a Need", href: "/client/new" },
+        { type: "page", label: "Browse Repair Offers", href: "/marketplace" },
+        { type: "page", label: "My Phone Repair Needs", href: "/client" },
+        { type: "page", label: "Post Phone Repair Need", href: "/client/new" },
         { type: "page", label: "Messages", href: "/messages" },
         { type: "page", label: "Profile", href: "/profile" },
-        { type: "page", label: "Marketplace", href: "/marketplace" },
+        { type: "page", label: "Phone Repair Marketplace", href: "/marketplace" },
         ...(profile?.accountType === "customer" ? [] : [
             { type: "page", label: "Business Plans", href: "/pricing" },
         ]),
@@ -321,7 +321,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                         onKeyDown={handleKeyDown}
                         className="h-11 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none"
                         style={{ color: "var(--text-primary)" }}
-                        placeholder="Search needs, categories, businesses..."
+                        placeholder="Search phone repair issues, shops, offers..."
                     />
                     {searchOpen && searchQuery && (
                         <button
@@ -358,7 +358,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                                     No results for "{searchQuery}"
                                 </p>
                                 <p className="mt-1 text-xs" style={{ color: "var(--text-disabled)" }}>
-                                    Try searching for needs, shops, or categories
+                                    Try searching for screen, battery, charging, or repair shops
                                 </p>
                             </div>
                         )}
@@ -427,7 +427,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                             isBrowseActive ? "text-[#0a8f45] after:absolute after:bottom-0 after:left-3 after:right-3 after:h-0.5 after:rounded-full after:bg-[#0a8f45]" : "text-[#62646a]"
                         }`}
                     >
-                        Browse Needs
+                        Browse Repair Offers
                     </Link>
                     {profile?.accountType === "customer" && (
                         <Link
@@ -437,7 +437,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                             }`}
                         >
                             <Plus size={14} />
-                            Post a Need
+                            Post Repair Need
                         </Link>
                     )}
                     {profile?.accountType === "business" && (

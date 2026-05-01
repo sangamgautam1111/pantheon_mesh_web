@@ -121,15 +121,15 @@ export default function RequestCenterPage() {
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#222325" }}>
-                                    {isBusiness ? "Lead Inbox" : "My Orders"}
+                                    {isBusiness ? "Repair Lead Inbox" : "My Repair Orders"}
                                 </p>
                                 <h1 className="font-heading text-3xl font-bold" style={{ color: "#404145" }}>
-                                    {isBusiness ? "Customer Needs Near You" : "My Needs"}
+                                    {isBusiness ? "Phone Repair Needs Near You" : "My Phone Repair Needs"}
                                 </h1>
                                 <p className="mt-1 text-sm" style={{ color: "#74767e" }}>
                                     {isBusiness
-                                        ? "Browse and submit Offers to open Needs in your area."
-                                        : "Track your posted Needs and the Offers you've received."}
+                                        ? "Browse and send repair Offers to open phone repair Needs in your area."
+                                        : "Track your posted phone repair Needs and the Offers you've received."}
                                 </p>
                             </div>
                             <div className="flex items-center gap-3">
@@ -146,7 +146,7 @@ export default function RequestCenterPage() {
                                     className="nd-btn nd-btn-primary rounded-full gap-2"
                                 >
                                     <Plus size={16} />
-                                    {isBusiness ? "Browse Marketplace" : "Post a Need"}
+                                    {isBusiness ? "Browse Repair Offers" : "New Phone Repair Need"}
                                 </Link>
                             </div>
                         </div>
@@ -154,7 +154,7 @@ export default function RequestCenterPage() {
                         {/* Stats row */}
                         <div className="mt-6 flex flex-wrap gap-6">
                             {[
-                                { label: "Total Needs", value: needs.length, icon: Briefcase },
+                                { label: "Repair Needs", value: needs.length, icon: Briefcase },
                                 { label: "Open", value: openNeeds, icon: Clock },
                                 { label: "Offers received", value: totalOffers, icon: MessageSquare },
                                 { label: "Booked", value: bookedNeeds, icon: CheckCircle2 },
@@ -202,7 +202,7 @@ export default function RequestCenterPage() {
                                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#74767e" }} />
                                 <input
                                     type="text"
-                                    placeholder="Search needs..."
+                                    placeholder="Search repair needs..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="nd-input rounded-full pl-9 pr-4 py-2 text-sm"
@@ -237,16 +237,16 @@ export default function RequestCenterPage() {
                         >
                             <Briefcase size={40} className="mx-auto mb-4" style={{ color: "#d1d5db" }} />
                             <p className="font-semibold text-lg mb-1" style={{ color: "#404145" }}>
-                                {searchQuery ? `No results for "${searchQuery}"` : "No Needs yet"}
+                                {searchQuery ? `No results for "${searchQuery}"` : "No phone repair Needs yet"}
                             </p>
                             <p className="text-sm mb-6" style={{ color: "#74767e" }}>
                                 {isBusiness
-                                    ? "No live Needs in your area yet."
-                                    : "Post your first Need to get Offers from local businesses."}
+                                    ? "No live phone repair Needs in your area yet."
+                                    : "Post your first phone repair Need to get Offers from local shops."}
                             </p>
                             {!isBusiness && (
                                 <Link href="/client/new" className="nd-btn nd-btn-primary rounded-full inline-flex">
-                                    <Plus size={16} /> Post a Need
+                                    <Plus size={16} /> Post Phone Repair Need
                                 </Link>
                             )}
                         </div>
@@ -306,7 +306,7 @@ export default function RequestCenterPage() {
                                                     href={isBusiness ? "/marketplace" : `/marketplace/${encodeURIComponent(need.id)}`}
                                                     className="nd-btn nd-btn-primary nd-btn-sm rounded-full flex-shrink-0 gap-1"
                                                 >
-                                                    {isBusiness ? "Send Offer" : "View Offers"}
+                                                    {isBusiness ? "Send Repair Offer" : "View Repair Offers"}
                                                     <ArrowRight size={13} />
                                                 </Link>
                                                 {!isBusiness && (

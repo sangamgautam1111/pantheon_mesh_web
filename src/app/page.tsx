@@ -14,6 +14,7 @@ import {
     Code2,
     CreditCard,
     DollarSign,
+    Droplets,
     GraduationCap,
     Headphones,
     Home as HomeIcon,
@@ -25,6 +26,7 @@ import {
     Search,
     ShieldCheck,
     ShoppingBag,
+    Smartphone,
     Sparkles,
     Star,
     Store,
@@ -38,7 +40,7 @@ import { useAuth } from "@/context/AuthContext";
 import { NeedRecord, getNeeds } from "@/lib/neederoDatabase";
 import { localRank, needDistanceLabel, ViewerLocation } from "@/lib/location";
 
-const HERO_SUGGESTIONS = ["Phone repair", "House cleaning", "Plumber", "Logo design", "Laptop repair"];
+const HERO_SUGGESTIONS = ["Screen repair", "Battery issue", "Charging problem", "Water damage", "Phone pickup repair"];
 
 type CategoryCard = {
     label: string;
@@ -53,26 +55,20 @@ type IconInfoCard = {
 };
 
 const CATEGORY_CARDS: CategoryCard[] = [
-    { label: "Phone & Electronics", icon: Code2, href: "/marketplace?q=phone%20electronics" },
-    { label: "Food & Groceries", icon: Store, href: "/marketplace?q=food%20groceries" },
-    { label: "Home Cleaning", icon: HomeIcon, href: "/marketplace?q=home%20cleaning" },
-    { label: "Plumbing", icon: Wrench, href: "/marketplace?q=plumbing" },
-    { label: "Electrician", icon: Zap, href: "/marketplace?q=electrician" },
-    { label: "Appliance Repair", icon: Briefcase, href: "/marketplace?q=appliance%20repair" },
-    { label: "Printing & Design", icon: Palette, href: "/marketplace?q=printing%20design" },
-    { label: "Delivery & Moving", icon: Truck, href: "/marketplace?q=delivery%20moving" },
-    { label: "Auto & Bike Repair", icon: Clock, href: "/marketplace?q=auto%20bike%20repair" },
-    { label: "Beauty & Grooming", icon: Sparkles, href: "/marketplace?q=beauty%20grooming" },
-    { label: "Hardware Products", icon: Store, href: "/marketplace?q=hardware%20products" },
-    { label: "Local Products", icon: ShoppingBag, href: "/marketplace?q=local%20products" },
+    { label: "Screen Repair", icon: Smartphone, href: "/marketplace?q=screen%20repair" },
+    { label: "Battery Repair", icon: Zap, href: "/marketplace?q=battery%20repair" },
+    { label: "Charging Port", icon: Wrench, href: "/marketplace?q=charging%20repair" },
+    { label: "Speaker / Mic", icon: Headphones, href: "/marketplace?q=speaker%20mic%20repair" },
+    { label: "Camera Repair", icon: Camera, href: "/marketplace?q=camera%20repair" },
+    { label: "Water Damage", icon: Droplets, href: "/marketplace?q=water%20damage" },
 ];
 
 const SERVICE_TILES = [
     { title: "Phone screen repair", copy: "Compare repair price, arrival time, warranty, and shop trust.", tone: "bg-[#06411f]" },
-    { title: "Home deep cleaning", copy: "Get clear service scope, visit time, extra fees, and booking details.", tone: "bg-[#123b66]" },
-    { title: "Logo and print work", copy: "Ask local designers and printers for package-ready Offers.", tone: "bg-[#5a3513]" },
-    { title: "Website support", copy: "Post a technical Need and let nearby specialists quote the fix.", tone: "bg-[#25213f]" },
-    { title: "Moving and delivery", copy: "Compare pickup, delivery, delay rules, and total service cost.", tone: "bg-[#4a1824]" },
+    { title: "Battery replacement", copy: "Get NPR quotes for battery health, parts quality, and repair time.", tone: "bg-[#123b66]" },
+    { title: "Charging problem", copy: "Ask repair shops for port cleaning, replacement, and warranty.", tone: "bg-[#5a3513]" },
+    { title: "Water damage check", copy: "Post once and compare diagnosis, price range, and safe handling.", tone: "bg-[#25213f]" },
+    { title: "Pickup & return repair", copy: "Compare pickup fee, repair time, return proof, and warranty.", tone: "bg-[#4a1824]" },
 ];
 
 const TRUST_ITEMS: IconInfoCard[] = [
@@ -92,26 +88,26 @@ const BUSINESS_ITEMS: IconInfoCard[] = [
 const PREVIEW_NEEDS = [
     {
         title: "Urgent phone screen repair",
-        category: "Repair & maintenance",
+        category: "Phone Repair",
         location: "New Road",
         offers: 3,
-        bestPrice: "$45",
+        bestPrice: "NPR 4,500",
         fastest: "45 min",
     },
     {
-        title: "Two-bedroom deep clean",
-        category: "Home services",
+        title: "Samsung battery replacement",
+        category: "Phone Repair",
         location: "Baneshwor",
         offers: 4,
-        bestPrice: "$28",
+        bestPrice: "NPR 2,800",
         fastest: "Today",
     },
     {
-        title: "Cafe logo and menu print",
-        category: "Design & printing",
+        title: "Charging port not working",
+        category: "Phone Repair",
         location: "Lalitpur",
         offers: 5,
-        bestPrice: "$55",
+        bestPrice: "NPR 1,500",
         fastest: "Tomorrow",
     },
 ];
@@ -120,27 +116,21 @@ const FOOTER_COLUMNS = [
     {
         title: "Categories",
         links: [
-            "Graphics & Design",
-            "Digital Marketing",
-            "Writing & Translation",
-            "Video & Animation",
-            "Music & Audio",
-            "Programming & Tech",
-            "AI Services",
-            "Consulting",
-            "Data",
-            "Business",
-            "Photography",
-            "Finance",
+            "Screen Repair",
+            "Battery Replacement",
+            "Charging Port Repair",
+            "Speaker & Mic Repair",
+            "Camera Repair",
+            "Water Damage",
         ],
     },
     {
         title: "For Customers",
         links: [
             "How Needero Works",
-            "Post a Need",
-            "Compare Offers",
-            "Choose a Business",
+            "Post Phone Repair Need",
+            "Compare Repair Offers",
+            "Choose a Repair Shop",
             "Quality Guide",
             "Safety Guide",
             "Browse by Category",
@@ -150,8 +140,8 @@ const FOOTER_COLUMNS = [
         title: "For Businesses",
         links: [
             "Join as a Business",
-            "Need Inbox",
-            "Quote Tools",
+            "Repair Inbox",
+            "Repair Offer Tools",
             "Business Profile",
             "Analytics",
             "Plans",
@@ -323,13 +313,13 @@ export default function Home() {
                 <div className="relative mx-auto grid min-h-[680px] max-w-7xl items-center gap-10 px-5 py-16 md:px-8 lg:grid-cols-[1fr_440px]">
                     <div className="max-w-4xl">
                             <p className="text-sm font-black uppercase tracking-[0.24em] text-white/70">
-                            Needero local marketplace
+                            Phone Repair Needero MVP
                         </p>
                         <h1 className="mt-7 max-w-4xl text-5xl font-black leading-[0.95] tracking-[-0.055em] text-white md:text-7xl">
-                            Post a Need. Get local Offers.
+                            Post your phone issue. Get repair prices.
                         </h1>
                         <p className="mt-6 max-w-2xl text-lg leading-8 text-white" style={{ color: "white" }}>
-                            Needero lets nearby businesses compete with price, time, warranty, and service type so you choose the best one safely.
+                            Needero helps people get phone repair Offers from nearby shops without calling every shop one by one.
                         </p>
 
                         <div className="mt-8 flex max-w-3xl items-center gap-2 rounded-[18px] bg-white p-2 shadow-2xl">
@@ -340,7 +330,7 @@ export default function Home() {
                                 onKeyDown={(event) => {
                                     if (event.key === "Enter") runSearch();
                                 }}
-                                placeholder="What service do you need today?"
+                                placeholder="Screen broken, battery issue, charging problem..."
                                 className="h-14 flex-1 bg-transparent px-2 text-base font-medium text-[#222325] outline-none"
                             />
                             <button
@@ -365,7 +355,7 @@ export default function Home() {
                         </div>
 
                         <div className="mt-10 flex flex-wrap gap-5 text-sm font-semibold text-white/70">
-                            {["Free for customers", "Structured Offers", "Contact protected", "Local businesses"].map((item) => (
+                            {["Free for customers", "NPR repair Offers", "Verified shops", "Pickup options"].map((item) => (
                                 <span key={item} className="inline-flex items-center gap-2">
                                     <CheckCircle2 size={17} className="text-[#24d381]" />
                                     {item}
@@ -386,7 +376,7 @@ export default function Home() {
                                 {[
                                     ["Offers", "3"],
                                     ["Fastest", "45 min"],
-                                    ["Best", "$45"],
+                                    ["Best", "NPR 4,500"],
                                 ].map(([label, value]) => (
                                     <div key={label} className="rounded-2xl bg-white p-3">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-[#95979d]">{label}</p>
@@ -405,7 +395,7 @@ export default function Home() {
                             </div>
                             <div className="mt-4 rounded-2xl bg-[#083b25] p-4 text-white">
                                 <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Quote</p>
-                                <p className="mt-1 text-2xl font-black">$45</p>
+                                <p className="mt-1 text-2xl font-black">NPR 4,500</p>
                                 <p className="mt-2 text-sm text-white/70">Home Visit - Today 4:00 PM - 7-day warranty</p>
                             </div>
                         </div>
@@ -433,11 +423,11 @@ export default function Home() {
                 <div className="mx-auto max-w-7xl">
                     <div className="mb-5 flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-bold text-white/55">Service catalog</p>
-                            <h2 className="mt-1 text-3xl font-black tracking-[-0.04em]">Local services at your fingertips</h2>
+                        <p className="text-sm font-bold text-white/55">Repair catalog</p>
+                            <h2 className="mt-1 text-3xl font-black tracking-[-0.04em]">Phone repair needs only</h2>
                         </div>
                         <Link href="/marketplace" className="hidden items-center gap-2 rounded-full border border-white/30 px-5 py-2 text-sm font-black text-white transition hover:bg-white hover:text-[#050816] md:inline-flex">
-                            Browse marketplace
+                            Browse repair offers
                             <ArrowRight size={16} />
                         </Link>
                     </div>
@@ -460,9 +450,9 @@ export default function Home() {
             <section className="border-y border-[#e4e5e7] bg-[#fbfbfb] px-5 py-12 md:px-8">
                 <div className="mx-auto max-w-7xl">
                     <div className="mb-5 flex items-center justify-between">
-                        <h2 className="text-3xl font-black tracking-[-0.04em]">Popular Need types</h2>
+                        <h2 className="text-3xl font-black tracking-[-0.04em]">Popular phone repair needs</h2>
                         <Link href="/client/new" className="rounded-xl bg-[#050816] px-5 py-3 text-sm font-black text-white transition hover:bg-black">
-                            Post a Need
+                            Post Phone Repair Need
                         </Link>
                     </div>
                     <div className="flex gap-5 overflow-x-auto pb-3">
@@ -480,9 +470,9 @@ export default function Home() {
                 <div className="mx-auto max-w-7xl">
                     <div className="grid gap-6 lg:grid-cols-3">
                         {[
-                            ["1", "Post a Need", "Describe the problem once. Needero turns messy input into a clean local request card."],
-                            ["2", "Receive Offers", "Nearby businesses submit structured Quotes with price, time, warranty, and service type."],
-                            ["3", "Compare & Choose", "Chat inside the Quote, choose the best Offer, then move into Booking and payment hold."],
+                            ["1", "Post Phone Repair Need", "Choose the issue, add model, proof, area, and urgency."],
+                            ["2", "Receive Repair Offers", "Nearby shops submit NPR price, time, warranty, parts quality, and service type."],
+                            ["3", "Compare & Choose", "Chat inside the Offer, choose the safest repair shop, then complete the order."],
                         ].map(([step, title, copy]) => (
                             <div key={step} className="rounded-[30px] border border-[#dfe8e3] bg-white p-7 shadow-sm">
                                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e9f9f0] text-lg font-black text-[#0a8f45]">{step}</div>
@@ -503,11 +493,11 @@ export default function Home() {
                             </p>
                             <h2 className="mt-2 text-4xl font-black tracking-[-0.05em]">See local demand in action</h2>
                             <p className="mt-2 max-w-2xl text-[#74767e]">
-                                New Needs appear as cards with category, location, budget, and Offer count. Preview cards keep the page useful while the live feed warms up.
+                                Phone repair Needs appear as cards with issue, location, urgency, and Offer count. Preview cards keep the page useful while the live feed warms up.
                             </p>
                         </div>
                         <Link href="/marketplace" className="inline-flex items-center gap-2 rounded-xl border border-[#0a8f45] px-5 py-3 text-sm font-black text-[#0a8f45] transition hover:bg-[#0a8f45] hover:text-white">
-                            Browse all Needs
+                            Browse repair Offers
                             <ArrowRight size={16} />
                         </Link>
                     </div>
@@ -528,7 +518,7 @@ export default function Home() {
                             Get nearby customers who already need your service.
                         </h2>
                         <p className="mt-5 max-w-xl text-lg leading-8 text-white/70">
-                            Needero gives businesses a Need inbox, structured quote tools, profile trust, analytics, and subscription growth without needing a full website.
+                            Needero gives repair shops a phone repair inbox, structured quote tools, profile trust, analytics, and subscription growth without needing a full website.
                         </p>
                         <div className="mt-8 flex flex-wrap gap-3">
                             <Link href="/login?role=business" className="rounded-xl bg-white px-6 py-4 text-sm font-black text-[#082c1d] transition hover:bg-[#e9f9f0]">
@@ -555,14 +545,14 @@ export default function Home() {
                 <div className="mx-auto max-w-4xl rounded-[34px] bg-[linear-gradient(135deg,#050816,#082c1d)] p-10 text-white shadow-2xl md:p-14">
                     <h2 className="text-4xl font-black tracking-[-0.05em]">Ready to get your first Offer?</h2>
                     <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-white/70">
-                        Post a Need for free and let nearby businesses compete with clear, structured Offers.
+                        Post a phone repair Need for free and let nearby shops compete with clear, structured Offers.
                     </p>
                     <div className="mt-8 flex flex-wrap justify-center gap-3">
                         <Link href={accountType === "business" ? "/marketplace" : "/client/new"} className="rounded-xl bg-white px-7 py-4 text-sm font-black text-[#083b25] transition hover:bg-[#e9f9f0]">
-                            {accountType === "business" ? "Browse Needs" : "Post a Need"}
+                            {accountType === "business" ? "Browse Repair Offers" : "Post Phone Repair Need"}
                         </Link>
                         <Link href="/marketplace" className="rounded-xl border border-white/20 px-7 py-4 text-sm font-black text-white transition hover:bg-white/10">
-                            Browse Needs
+                            Browse Repair Offers
                         </Link>
                     </div>
                 </div>

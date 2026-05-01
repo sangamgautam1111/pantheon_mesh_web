@@ -18,39 +18,28 @@ function getString(value: unknown) {
 }
 
 function fallbackCard(input: CleanRequestInput) {
-    const text = input.description.toLowerCase();
-    const category =
-        input.category ||
-        (/(phone|screen|battery|charge|laptop|repair|fix)/i.test(text)
-            ? "Repair & maintenance"
-            : /(clean|plumber|electric|home|room|house)/i.test(text)
-              ? "Home services"
-              : /(logo|print|design|banner|menu)/i.test(text)
-                ? "Design & printing"
-                : /(tutor|lesson|class|study)/i.test(text)
-                  ? "Lessons & tutoring"
-                  : "Other");
+    const category = "Phone Repair";
     const title = input.description.length > 70 ? `${input.description.slice(0, 67)}...` : input.description;
 
     return {
         category,
-        title: title || "New local Need",
+        title: title || "New phone repair Need",
         problem: input.description,
         knownDetails: input.description,
         missingInfo: [
             input.location ? "" : "Exact area or landmark",
             input.urgency ? "" : "When you need it",
-            input.budget ? "" : "Budget if you have one",
+            input.budget ? "" : "NPR budget if you have one",
         ].filter(Boolean),
         questions: [
             input.location ? "" : "Where should businesses be near?",
             input.urgency ? "" : "When do you need this done?",
-            input.budget ? "" : "Do you have a budget?",
+            input.budget ? "" : "Do you have an NPR budget?",
         ].filter(Boolean),
         summaryForBusinesses:
-            "Please send price, time, warranty or service details, availability, and any important conditions.",
+            "Please send NPR price, repair time, service type, warranty, parts quality, availability, and any important conditions.",
         customerSummary: input.description,
-        businessPrompt: "Send a clear quote with price, timing, warranty or service terms, and availability.",
+        businessPrompt: "Send a clear Repair Offer with NPR price, timing, service type, warranty, parts quality, and availability.",
         tags: [category],
         fallback: true,
     };
@@ -68,11 +57,10 @@ function parseJson(content: string) {
 
 async function callDeepSeek(input: CleanRequestInput, apiKey: string) {
     const systemPrompt = `You are Needero's AI Need Card cleaner.
-Needero is a reverse local service marketplace. Customers post a Need once; nearby businesses send Offers.
-Classify any local service category. Do not force phone repair.
+Needero MVP is phone repair only. Customers post one phone repair Need; nearby repair shops send Repair Offers.
 Return JSON only:
 {
-  "category": "simple local service category",
+  "category": "Phone Repair",
   "title": "short Need title",
   "problem": "plain problem summary",
   "knownDetails": "facts the customer already gave",
@@ -83,7 +71,7 @@ Return JSON only:
   "businessPrompt": "simple instruction businesses see before replying",
   "tags": ["short tag"]
 }
-Use simple words for non-technical users. If the category is unclear, choose Other. Keep it short and useful.`;
+Use simple words for non-technical users. Keep the category as Phone Repair and focus on brand, model, issue, service preference, location, urgency, photos, NPR price, warranty, and parts quality. Keep it short and useful.`;
 
     const response = await fetch(DEEPSEEK_API_URL, {
         method: "POST",

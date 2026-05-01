@@ -17,7 +17,7 @@ const PLANS = [
         features: [
             "Basic business profile",
             "5 offer replies/month",
-            "Appear in local Needs",
+            "Appear in phone repair Needs",
         ],
         cta: "Get Started Free",
     },
@@ -25,7 +25,7 @@ const PLANS = [
         id: "pro",
         name: "Pro",
         icon: Zap,
-        price: { monthly: 19, annually: 180 },
+        price: { monthly: 1999, annually: 19190 },
         caption: "For businesses ready to grow",
         popular: true,
         tone: "primary",
@@ -42,7 +42,7 @@ const PLANS = [
         id: "premium",
         name: "Premium",
         icon: Crown,
-        price: { monthly: 49, annually: 468 },
+        price: { monthly: 4999, annually: 47990 },
         caption: "For maximum growth and visibility",
         tone: "green",
         features: [
@@ -139,10 +139,10 @@ export default function PricingPage() {
                             Plans & Pricing
                         </span>
                         <h1 className="mt-5 text-4xl font-black leading-[1.05] tracking-[-0.055em] text-[#121a25] sm:text-5xl">
-                            Choose the right plan to <span className="text-[#0a8f45]">grow your local business</span>
+                            Choose the right plan to <span className="text-[#0a8f45]">grow your repair shop</span>
                         </h1>
                         <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-[#64748b]">
-                            Connect with local customers, send offers, and grow your revenue with Needero's powerful tools and visibility.
+                            Connect with phone repair customers, send Repair Offers, and grow your revenue with Needero's tools and visibility.
                         </p>
 
                         <div className="mt-7 inline-flex items-center gap-3 rounded-full border border-[#dfe8e3] bg-white px-3 py-2 shadow-sm">
@@ -201,12 +201,12 @@ export default function PricingPage() {
 
                                     <h2 className="mt-5 text-2xl font-black tracking-[-0.04em] text-[#121a25]">{plan.name}</h2>
                                     <div className="mt-2 flex items-end gap-1">
-                                        <span className="text-4xl font-black tracking-[-0.05em] text-[#121a25]">${price}</span>
+                                        <span className="text-4xl font-black tracking-[-0.05em] text-[#121a25]">NPR {price.toLocaleString("en-US")}</span>
                                         <span className="pb-1 text-sm font-semibold text-[#94a3b8]">/{billingLabel}</span>
                                     </div>
                                     {billingCycle === "annually" && monthlyEquivalent > 0 && (
                                         <p className="mt-1 text-xs font-bold text-[#0a8f45]">
-                                            Equals ${monthlyEquivalent}/month, billed yearly
+                                            Equals NPR {monthlyEquivalent.toLocaleString("en-US")}/month, billed yearly
                                         </p>
                                     )}
                                     <p className="mt-3 min-h-10 text-sm leading-6 text-[#64748b]">{plan.caption}</p>

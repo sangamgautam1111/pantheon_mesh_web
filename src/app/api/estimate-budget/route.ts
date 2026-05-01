@@ -15,18 +15,18 @@ export async function POST(req: Request) {
         const lower = description.toLowerCase();
 
         const quoteType = lower.includes("screen") || lower.includes("display")
-            ? "repair quote"
-            : lower.includes("logo") || lower.includes("design")
-              ? "design quote"
-              : lower.includes("clean") || lower.includes("leak") || lower.includes("ac")
-                ? "home service quote"
-                : "local service quote";
+            ? "screen repair quote"
+            : lower.includes("battery")
+              ? "battery repair quote"
+              : lower.includes("charging") || lower.includes("port")
+                ? "charging repair quote"
+                : "phone repair quote";
 
         return NextResponse.json({
-            service_category: "Local Need",
+            service_category: "Phone Repair",
             quote_type: quoteType,
             customer_pays_platform: 0,
-            customer_payment_note: "Customers do not pay Needero. The customer pays the chosen business directly.",
+            customer_payment_note: "Customers post free during the MVP. The customer pays the chosen repair shop directly in NPR.",
             request_quality: {
                 has_location: Boolean(location),
                 has_urgency: Boolean(urgency),

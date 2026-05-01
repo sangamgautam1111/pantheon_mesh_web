@@ -6,9 +6,9 @@
 export interface UserNeed {
     id?: string;
     uid: string;              // Customer who posted
-    title: string;            // Short summary (e.g., "Fix my Sink")
+    title: string;            // Short summary (e.g., "iPhone screen repair")
     description: string;      // Detailed requirement
-    category: string;         // e.g., "plumbing", "food", "delivery"
+    category: string;         // MVP: "Phone Repair"
     budget?: number;          // Optional: Customer's target price
     
     // Location Data (Using the system we built!)

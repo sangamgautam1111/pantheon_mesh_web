@@ -40,20 +40,20 @@ export default function Dashboard() {
                         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                             <div className="max-w-3xl">
                                 <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">
-                                    Needero local business dashboard
+                                    Needero phone repair shop dashboard
                                 </p>
                                 <h1 className="mt-4 text-4xl font-black leading-tight tracking-tight md:text-6xl">
-                                    Your Local Leads Pipeline.
+                                    Your Phone Repair Leads Pipeline.
                                 </h1>
                                 <p className="mt-5 text-base leading-8 text-slate-600">
-                                    Track matching Needs, submitted Quotes, customer chats, selected Bookings, active
-                                    work, completed jobs, and paid outcomes from one simple business account.
+                                    Track matching phone repair Needs, submitted Repair Offers, customer chats, selected
+                                    Bookings, active work, completed jobs, and paid outcomes from one simple shop account.
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-3">
                                 <Link href="/marketplace" className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white">
                                     <MessageSquare size={16} />
-                                    Open lead inbox
+                                    Open repair inbox
                                 </Link>
                                 <Link href="/pricing" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-black">
                                     Business plans
@@ -65,7 +65,7 @@ export default function Dashboard() {
 
                     <section className="mt-6 grid gap-4 md:grid-cols-4">
                         {[
-                            { label: "Requests posted", value: String(totalRequests), icon: MessageSquare },
+                            { label: "Repair Needs posted", value: String(totalRequests), icon: MessageSquare },
                             { label: "Useful quote rate", value: `${usefulQuoteRate}%`, icon: CheckCircle2 },
                             { label: "Chosen matches", value: String(chosenRequests), icon: ShieldCheck },
                             { label: "First paid plan", value: starterPlan.price, icon: Building2 },
@@ -89,10 +89,10 @@ export default function Dashboard() {
                             </div>
                             <div className="space-y-4">
                                 {[
-                                    ["Requests with at least 1 offer", `${requestsWithOffer}/${totalRequests}`],
-                                    ["Average first offer goal", "Under 30 minutes"],
-                                    ["Manual onboarding target", "10 local businesses"],
-                                    ["First revenue proof", "1 business pays after leads"],
+                                    ["Repair Needs with at least 1 offer", `${requestsWithOffer}/${totalRequests}`],
+                                    ["Average first repair offer goal", "Under 30 minutes"],
+                                    ["Manual onboarding target", "10 repair shops"],
+                                    ["First revenue proof", "1 shop pays after leads"],
                                 ].map(([label, value]) => (
                                     <div key={label} className="flex items-center justify-between gap-4 rounded-2xl bg-slate-50 p-4">
                                         <span className="text-sm font-semibold text-slate-600">{label}</span>
@@ -126,11 +126,11 @@ export default function Dashboard() {
                     <section className="mt-6 rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
                         <div className="mb-5 flex items-center gap-3">
                             <Clock size={20} />
-                            <h2 className="text-2xl font-black">Recent live Needs from customers</h2>
+                            <h2 className="text-2xl font-black">Recent live phone repair Needs</h2>
                         </div>
                         {recentNeeds.length === 0 ? (
                             <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm font-semibold text-slate-500">
-                                {loadError || "No customer Needs posted yet. Real posts will appear here automatically."}
+                                {loadError || "No phone repair Needs posted yet. Real posts will appear here automatically."}
                             </div>
                         ) : (
                             <div className="grid gap-4 lg:grid-cols-3">

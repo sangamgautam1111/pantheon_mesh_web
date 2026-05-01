@@ -13,7 +13,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "overview",
         route: "/",
         text:
-            "Needero is a simple local marketplace: customers post a Need, nearby businesses send Offers, and the customer chooses the best one. Customers do not pay Needero.",
+            "Needero MVP is phone repair only: customers post a phone issue once, nearby repair shops send Repair Offers, and the customer chooses the best shop. Customers do not pay Needero.",
     },
     {
         id: "customer-flow",
@@ -21,7 +21,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "customer",
         route: "/client/new",
         text:
-            "Customer flow: Post a Need, add area, urgency, optional budget, and optional image or video. Needero turns the text into a clean Need Card. Businesses send Offers. The customer compares price, time, warranty, distance, and note, then chooses one business.",
+            "Customer flow: Post a Phone Repair Need, choose the issue, add brand, model, area, urgency, service preference, and optional photo or video. Repair shops send Offers. The customer compares NPR price, repair time, service type, warranty, parts quality, and note, then chooses one shop.",
     },
     {
         id: "business-flow",
@@ -29,7 +29,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "business",
         route: "/marketplace",
         text:
-            "Local businesses browse nearby Needs in Marketplace and reply with clear Offers: price, time, warranty, distance, and a helpful note. The marketplace is the key business workspace.",
+            "Local repair shops browse nearby phone repair Needs in Marketplace and reply with clear Repair Offers: NPR price, estimated time, service type, warranty, parts quality, availability, and a helpful note. The marketplace is the key shop workspace.",
     },
     {
         id: "messages",
@@ -45,7 +45,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "pricing",
         route: "/pricing",
         text:
-            "Business plans are only for local business accounts. Free is $0/month with a basic profile, 5 offer replies per month, and relevant Need visibility. Pro is $19/month with unlimited offer replies, AI quote helper, verified profile, basic analytics, and higher placement. Premium is $49/month with Pro features plus priority placement, featured profile, instant lead alerts, advanced analytics, Top Rated eligibility, and stronger recommendation boost.",
+            "Business plans are only for local repair shop accounts. Free is NPR 0/month with a basic profile, 5 offer replies per month, and relevant phone repair Need visibility. Pro is NPR 1,999/month with unlimited offer replies, AI quote helper, verified profile, basic analytics, and higher placement. Premium is NPR 4,999/month with Pro features plus priority placement, featured profile, instant lead alerts, advanced analytics, Top Rated eligibility, and stronger recommendation boost.",
     },
     {
         id: "customer-pricing",
@@ -53,7 +53,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "pricing",
         route: "/client/new",
         text:
-            "Customers can post Needs for free. Needero should not show business subscription plans to customer accounts.",
+            "Customers can post phone repair Needs for free. Needero should not show business subscription plans to customer accounts.",
     },
     {
         id: "privacy",
@@ -69,7 +69,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "launch",
         route: "/marketplace",
         text:
-            "Needero can start broad in UI but should validate locally: onboard real local businesses, get real posted Needs, make sure Offers arrive fast, and only charge businesses after they see value.",
+            "Needero should validate phone repair first: onboard real local repair shops, get real phone repair Needs, make sure Repair Offers arrive fast, complete a few matches, and only charge shops after they see value.",
     },
     {
         id: "system-architecture",
@@ -101,6 +101,6 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "overview",
         route: "/profile",
         text:
-            "Needero detects user country via IP automatically, but explicitly operates 100% in USD ($) across all countries to standardize transactions and avoid conversion issues. It limits marketplace visibility logically (city first, country next) and stores monetary values securely in minor units (e.g. 5000 for $50.00).",
+            "Needero MVP uses NPR across the product while validating phone repair in Nepal first. It limits marketplace visibility logically (city first, country next) and stores monetary values securely in minor units.",
     }
 ];

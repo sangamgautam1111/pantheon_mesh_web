@@ -27,6 +27,7 @@ export type OfferRecord = BusinessOffer & {
     createdAt?: string;
     serviceType?: string;
     included?: string;
+    partsQuality?: string;
     extraCharges?: string;
     availability?: string;
     delayRefundRule?: string;
@@ -111,7 +112,7 @@ const normalizeStatus = (value: unknown): NeedStatus => {
 
 const formatBudget = (need: BackendRecord) => {
     const budgetValue = typeof need.budget_value === "number" ? need.budget_value : parseCurrencyAmount(String(need.budget_value || ""));
-    const formatBudgetValue = (value: number) => `$${value.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+    const formatBudgetValue = (value: number) => `NPR ${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
     if (typeof need.budget_type === "string" && need.budget_type.trim()) {
         const budgetType = need.budget_type.trim();
         if (/^\d+(?:\.\d+)?$/.test(budgetType)) return formatBudgetValue(Number(budgetType));
@@ -137,7 +138,7 @@ const parseCurrencyAmount = (value: string) => {
 export const formatMoney = (value: string | number | undefined | null) => {
     const amount = typeof value === "number" ? value : parseCurrencyAmount(String(value || ""));
     if (!Number.isFinite(amount) || amount <= 0) return "";
-    return `$${amount.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+    return `NPR ${amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 };
 
 export const normalizeNeedCard = (raw: unknown, messyText = "", category = "Other"): NeedCard => {
@@ -260,6 +261,7 @@ const mapOffer = (offer: BackendRecord): OfferRecord => {
         createdAt: offer.created_at || offer.createdAt,
         serviceType: String(parsedNote.details.serviceType || ""),
         included: String(parsedNote.details.included || ""),
+        partsQuality: String(parsedNote.details.partsQuality || parsedNote.details.parts_quality || ""),
         extraCharges: String(parsedNote.details.extraCharges || ""),
         availability: String(parsedNote.details.availability || ""),
         delayRefundRule: String(parsedNote.details.delayRefundRule || ""),
@@ -400,6 +402,7 @@ export async function createOffer(input: {
     warranty: string;
     distance: string;
     included?: string;
+    partsQuality?: string;
     extraCharges?: string;
     availability?: string;
     delayRefundRule?: string;
@@ -409,6 +412,7 @@ export async function createOffer(input: {
     const structuredNote = JSON.stringify({
         serviceType: input.serviceType || "",
         included: input.included || "",
+        partsQuality: input.partsQuality || "",
         extraCharges: formatMoney(input.extraCharges) || input.extraCharges || "",
         distance: input.distance || "",
         availability: input.availability || "",
@@ -446,6 +450,7 @@ export async function updateOffer(input: {
     warranty: string;
     serviceType?: string;
     included?: string;
+    partsQuality?: string;
     extraCharges?: string;
     distance?: string;
     availability?: string;
@@ -456,6 +461,7 @@ export async function updateOffer(input: {
     const structuredNote = JSON.stringify({
         serviceType: input.serviceType || "",
         included: input.included || "",
+        partsQuality: input.partsQuality || "",
         extraCharges: formatMoney(input.extraCharges) || input.extraCharges || "",
         distance: input.distance || "",
         availability: input.availability || "",

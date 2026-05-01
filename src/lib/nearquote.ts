@@ -61,28 +61,16 @@ export type BusinessOffer = {
 };
 
 export const NEED_CATEGORIES = [
-    "Food & grocery",
-    "Local products",
-    "Electronics & accessories",
-    "Repair & maintenance",
-    "Home services",
-    "Beauty & wellness",
-    "Lessons & tutoring",
-    "Events & photography",
-    "Design & printing",
-    "Business services",
-    "Transport & moving",
-    "Local shopping",
-    "Other",
+    "Phone Repair",
 ];
 
-export const URGENCY_OPTIONS = ["ASAP", "Today", "Tomorrow", "This week", "Flexible"];
+export const URGENCY_OPTIONS = ["Today", "Tomorrow", "Flexible"];
 
 export const BUDGET_OPTIONS = [
-    "No budget yet",
-    "Under $50",
-    "$50 - $200",
-    "$200+",
+    "Open for NPR repair quotes",
+    "Under NPR 2,000",
+    "NPR 2,000 - NPR 8,000",
+    "NPR 8,000+",
     "Custom",
 ];
 
@@ -90,7 +78,7 @@ export const NEEDARO_PLANS: NeederoPlan[] = [
     {
         id: "free",
         name: "Free",
-        price: "$0",
+        price: "NPR 0",
         cadence: "/month",
         quoteReplies: "5 offer replies/month",
         visibility: "Basic visibility",
@@ -100,14 +88,14 @@ export const NEEDARO_PLANS: NeederoPlan[] = [
         features: [
             "Basic business profile",
             "5 offer replies each month",
-            "Appear in relevant local Needs",
+            "Appear in relevant phone repair Needs",
             "Manual quote replies",
         ],
     },
     {
         id: "pro",
         name: "Pro",
-        price: "$19",
+        price: "NPR 1,999",
         cadence: "/month",
         quoteReplies: "Unlimited offer replies",
         visibility: "Higher placement",
@@ -125,7 +113,7 @@ export const NEEDARO_PLANS: NeederoPlan[] = [
     {
         id: "premium",
         name: "Premium",
-        price: "$49",
+        price: "NPR 4,999",
         cadence: "/month",
         quoteReplies: "Unlimited offer replies",
         visibility: "Priority placement",
@@ -147,8 +135,8 @@ export const NEEDARO_PLANS: NeederoPlan[] = [
 export const NEEDARO_METRICS = [
     { label: "Customer price", value: "Free" },
     { label: "Business model", value: "SaaS plans" },
-    { label: "Core object", value: "Need" },
-    { label: "Main action", value: "Send offer" },
+    { label: "Core object", value: "Phone Repair Need" },
+    { label: "Main action", value: "Send Repair Offer" },
 ];
 
 export function normalizeNeedaroPlan(planId: string | null | undefined) {
@@ -159,16 +147,16 @@ export function makeCategorySlug(category: string) {
     return category.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "other";
 }
 
-export function createFallbackNeedCard(description: string, category = "Other"): NeedCard {
+export function createFallbackNeedCard(description: string, category = "Phone Repair"): NeedCard {
     const clean = description.trim();
     return {
         category,
-        title: clean.length > 70 ? `${clean.slice(0, 67)}...` : clean || "New local Need",
-        problem: clean || "Customer needs help from a nearby business.",
+        title: clean.length > 70 ? `${clean.slice(0, 67)}...` : clean || "New phone repair Need",
+        problem: clean || "Customer needs phone repair help from a nearby shop.",
         knownDetails: clean || "No details added yet.",
-        missingInfo: ["Area", "Urgency", "Budget if available"].filter(Boolean),
-        questions: ["Where should businesses be near?", "When do you need this done?"],
-        summaryForBusinesses: clean || "Please send a clear price, time, warranty or service details, and your availability.",
+        missingInfo: ["Area", "Urgency", "NPR budget if available"].filter(Boolean),
+        questions: ["Where should repair shops be near?", "When do you need this repair done?"],
+        summaryForBusinesses: clean || "Please send NPR price, repair time, warranty, parts quality, service type, and availability.",
         tags: [category],
         fallback: true,
     };

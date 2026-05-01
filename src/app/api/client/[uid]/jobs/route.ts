@@ -26,10 +26,10 @@ export async function GET(request: Request, context: RouteContext) {
             id: request.id,
             title: request.title,
             description: request.description,
-            budget_usd: 0,
+            budget_npr: 0,
             status: request.status,
             created_at: request.created_at,
         })),
-        detail: "Live Needero Need feed.",
+        detail: "Live Needero phone repair Need feed.",
     });
 }

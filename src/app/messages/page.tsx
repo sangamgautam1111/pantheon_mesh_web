@@ -551,7 +551,7 @@ export default function MessagesPage() {
                                             <Send className="mx-auto mb-4 text-[#b5b6ba]" size={34} />
                                             <p className="text-sm font-black">Start the conversation</p>
                                             <p className="mt-2 text-sm leading-6 text-[#74767e]">
-                                                Ask about timing, warranty, pickup, delivery, or exact address. This thread will appear in both inboxes after the first message.
+                                                Ask about timing, warranty, pickup and return, or exact address. This thread will appear in both inboxes after the first message.
                                             </p>
                                         </div>
                                     ) : (

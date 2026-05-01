@@ -111,7 +111,7 @@ const emptyForm: ProfileForm = {
     stateCode: "",
     city: "",
     area: "",
-    currency: "USD",
+    currency: "NPR",
     currentAddress: "",
     category: "",
     openingHours: "",
@@ -119,7 +119,7 @@ const emptyForm: ProfileForm = {
     warrantyPolicy: "",
     deliveryAddress: "",
     deliveryCoords: null,
-    preferredServiceMethod: "In person or online",
+    preferredServiceMethod: "Ask shop to suggest",
     language: "English",
     shortBio: "",
     emailNotifications: true,
@@ -136,15 +136,11 @@ const tabItems: Array<{ key: EditTab; label: string; icon: LucideIcon }> = [
 ];
 
 const currencyOptions = [
-    { value: "USD", label: "USD - US Dollar" },
     { value: "NPR", label: "NPR - Nepalese Rupee" },
-    { value: "INR", label: "INR - Indian Rupee" },
-    { value: "EUR", label: "EUR - Euro" },
-    { value: "GBP", label: "GBP - British Pound" },
 ];
 
 const languageOptions = ["English", "Nepali", "Hindi", "Spanish", "French"];
-const serviceMethodOptions = ["In person or online", "In person only", "Online only", "Pickup / delivery"];
+const serviceMethodOptions = ["Visit shop", "Home repair", "Pickup & return", "Ask shop to suggest"];
 
 const inputClass =
     "mt-1 w-full rounded-xl border border-[#dfe8e3] bg-white px-3.5 py-3 text-sm font-semibold text-[#06111f] outline-none transition focus:border-[#0a8f45] focus:ring-4 focus:ring-[#e9f9f0] disabled:bg-[#f8faf9] disabled:text-[#94a3b8]";
@@ -191,7 +187,7 @@ function formFromProfile(profile: ReturnType<typeof useAuth>["profile"], isBusin
         stateCode: profile.stateCode || "",
         city: profile.city || "",
         area: profile.area || "",
-        currency: profile.currency || "USD",
+        currency: profile.currency || "NPR",
         currentAddress: profile.currentAddress || "",
         category: profile.category || "",
         openingHours: profile.openingHours || "",
@@ -199,7 +195,7 @@ function formFromProfile(profile: ReturnType<typeof useAuth>["profile"], isBusin
         warrantyPolicy: profile.warrantyPolicy || "",
         deliveryAddress: profile.deliveryAddress || "",
         deliveryCoords: profile.deliveryCoords || null,
-        preferredServiceMethod: profile.preferredServiceMethod || "In person or online",
+        preferredServiceMethod: profile.preferredServiceMethod || "Ask shop to suggest",
         language: profile.language || "English",
         shortBio: profile.shortBio || "",
         emailNotifications: profile.emailNotifications ?? true,
@@ -544,7 +540,7 @@ export default function ProfilePage() {
                             country: data.country_name,
                             countryCode: foundCountry?.isoCode || "",
                             city: data.city || "",
-                            currency: data.currency || "USD",
+                            currency: "NPR",
                         });
                         setShowLocationPrompt(true);
                     }
@@ -735,7 +731,7 @@ export default function ProfilePage() {
                                         className={inputClass}
                                         value={editForm.category}
                                         onChange={(event) => setEditForm({ ...editForm, category: event.target.value })}
-                                        placeholder="Plumber, Electrician, Designer..."
+                                        placeholder="Phone repair shop, mobile service center..."
                                     />
                                 </Field>
                             </>
@@ -848,7 +844,7 @@ export default function ProfilePage() {
                                         state: "",
                                         stateCode: "",
                                         city: "",
-                                        currency: editForm.currency || "USD",
+                                        currency: "NPR",
                                         dialCode: `+${selected.phonecode}`,
                                     });
                                 }}
@@ -939,7 +935,7 @@ export default function ProfilePage() {
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <p className="text-sm font-black text-[#06111f]">
-                                    {isBusiness ? "Precise Business Location" : "Precise Delivery Location"}
+                                    {isBusiness ? "Precise Business Location" : "Precise Repair Location"}
                                 </p>
                                 <p className="mt-1 text-xs leading-5 text-[#64748b]">Pin the exact place on the map for safer matching.</p>
                             </div>
@@ -956,7 +952,7 @@ export default function ProfilePage() {
                             className={`${inputClass} mt-4 bg-white`}
                             value={editForm.deliveryAddress}
                             onChange={(event) => setEditForm({ ...editForm, deliveryAddress: event.target.value })}
-                            placeholder={isBusiness ? "Search or pin your business location..." : "Search or pin a precise delivery point..."}
+                            placeholder={isBusiness ? "Search or pin your business location..." : "Search or pin a precise repair pickup point..."}
                         />
                         {editForm.deliveryCoords && (
                             <p className="mt-2 text-[10px] font-black uppercase tracking-[0.08em] text-[#0a8f45]">
@@ -1104,7 +1100,7 @@ export default function ProfilePage() {
                                             {profile?.country || "Add country"}
                                         </span>
                                         <span className="rounded-full bg-[#f1f5f9] px-3 py-1 text-[#475569]">
-                                            $ {profile?.currency || "USD"}
+                                            {profile?.currency || "NPR"}
                                         </span>
                                     </div>
                                 </div>
@@ -1114,7 +1110,7 @@ export default function ProfilePage() {
                                 className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#06111f] px-6 py-4 text-sm font-black text-white shadow-lg transition hover:bg-black"
                             >
                                 {isBusiness ? <Briefcase size={17} /> : <MessageSquare size={17} />}
-                                {isBusiness ? "Browse Needs" : "Post a Need"}
+                                {isBusiness ? "Browse Repair Offers" : "Post Phone Repair Need"}
                             </Link>
                         </div>
                     </section>
@@ -1158,16 +1154,16 @@ export default function ProfilePage() {
                             <div className="mt-6 grid gap-3 md:grid-cols-2">
                                 {isBusiness ? (
                                     <>
-                                        <WorkspaceTile icon={Store} title="Marketplace" copy="Browse local needs and send offers" href="/marketplace" />
+                                        <WorkspaceTile icon={Store} title="Repair Offers" copy="Browse phone repair Needs and send Offers" href="/marketplace" />
                                         <WorkspaceTile icon={Briefcase} title="Plans" copy="Upgrade visibility and lead access" href="/pricing" />
                                         <WorkspaceTile icon={MessageSquare} title="Messages" copy="Customer chats and offer updates" href="/messages" />
                                         <WorkspaceTile icon={ShieldCheck} title="Trust" copy="Warranty, contact, and safety settings" onClick={() => openEditor("security")} />
                                     </>
                                 ) : (
                                     <>
-                                        <WorkspaceTile icon={CheckCircle2} title="My Needs" copy="Active, completed, and cancelled Needs" href="/client" />
-                                        <WorkspaceTile icon={Briefcase} title="Orders / Bookings" copy="Booked local services and products" href="/client" />
-                                        <WorkspaceTile icon={Star} title="Reviews" copy="Reviews given to businesses" href="/messages" />
+                                        <WorkspaceTile icon={CheckCircle2} title="My Repair Needs" copy="Active, completed, and cancelled phone repairs" href="/client" />
+                                        <WorkspaceTile icon={Briefcase} title="Orders / Bookings" copy="Booked phone repair services" href="/client" />
+                                        <WorkspaceTile icon={Star} title="Reviews" copy="Reviews given to repair shops" href="/messages" />
                                         <WorkspaceTile icon={ShieldCheck} title="Safety" copy="Hidden contact settings and reports" onClick={() => openEditor("security")} />
                                     </>
                                 )}
@@ -1217,7 +1213,7 @@ export default function ProfilePage() {
                                                     country: selected.name,
                                                     countryCode: selected.isoCode,
                                                     city: "",
-                                                    currency: "USD",
+                                                    currency: "NPR",
                                                 });
                                             }
                                         }}
