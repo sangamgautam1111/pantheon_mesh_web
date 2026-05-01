@@ -987,13 +987,6 @@ export default function ProfilePage() {
                         </Field>
                     </div>
                     <ToggleRow
-                        icon={Mail}
-                        title="Email Notifications"
-                        copy="Receive important updates about your needs and bookings."
-                        checked={editForm.emailNotifications}
-                        onChange={(value) => setEditForm({ ...editForm, emailNotifications: value })}
-                    />
-                    <ToggleRow
                         icon={Bell}
                         title="SMS Notifications"
                         copy="Get SMS alerts about offers, messages, and bookings."
