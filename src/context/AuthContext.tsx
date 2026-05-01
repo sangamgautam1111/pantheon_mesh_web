@@ -244,6 +244,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     ? backendProfile.current_plan_id
                     : requestedPlanId
                 : null;
+        const authPhoneNumber = firebaseUser.phoneNumber || null;
+        const resolvedPhoneNumber =
+            typeof overrides.phoneNumber === "string"
+                ? overrides.phoneNumber
+                : typeof existing.phoneNumber === "string" && existing.phoneNumber.trim()
+                  ? existing.phoneNumber
+                  : authPhoneNumber;
+        const hasVerifiedAuthPhone = Boolean(authPhoneNumber && resolvedPhoneNumber);
 
         const profileData: UserProfile = {
             ...existing,
@@ -255,8 +263,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             createdAt: existing.createdAt || Date.now(),
             companyName,
             currentPlanId: resolvedPlanId,
-            phoneVerified: Boolean(existing.phoneVerified),
-            phoneVerifiedAt: typeof existing.phoneVerifiedAt === "number" ? existing.phoneVerifiedAt : null,
+            phoneNumber: resolvedPhoneNumber,
+            phoneVerified: Boolean(overrides.phoneVerified || existing.phoneVerified || hasVerifiedAuthPhone),
+            phoneVerifiedAt:
+                typeof overrides.phoneVerifiedAt === "number"
+                    ? overrides.phoneVerifiedAt
+                    : typeof existing.phoneVerifiedAt === "number"
+                      ? existing.phoneVerifiedAt
+                      : hasVerifiedAuthPhone
+                        ? Date.now()
+                        : null,
             emailVerified: Boolean(existing.emailVerified || firebaseUser.emailVerified),
             emailVerifiedAt:
                 typeof existing.emailVerifiedAt === "number"

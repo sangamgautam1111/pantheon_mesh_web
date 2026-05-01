@@ -42,7 +42,7 @@ import {
     type ReactNode,
 } from "react";
 import { PhoneAuthProvider, RecaptchaVerifier, updatePhoneNumber } from "firebase/auth";
-import { get, ref } from "firebase/database";
+import { get, ref, update } from "firebase/database";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase";
@@ -222,6 +222,10 @@ function firebaseErrorCode(error: unknown) {
     return typeof error === "object" && error && "code" in error ? String((error as { code?: string }).code) : "";
 }
 
+function firebaseErrorMessage(error: unknown) {
+    return typeof error === "object" && error && "message" in error ? String((error as { message?: string }).message) : "";
+}
+
 function phoneCodeErrorMessage(error: unknown) {
     const code = firebaseErrorCode(error);
     if (code === "auth/invalid-verification-code") {
@@ -239,9 +243,11 @@ function phoneCodeErrorMessage(error: unknown) {
     if (code === "auth/too-many-requests") {
         return "Too many attempts. Wait a few minutes before trying again.";
     }
-    return code
-        ? `Phone verification failed (${code}). Send a new SMS code and try again.`
-        : "Phone verification failed. Send a new SMS code and try again.";
+    const message = firebaseErrorMessage(error);
+    if (code) {
+        return `Phone verification failed (${code}). ${message || "Send a new SMS code and try again."}`;
+    }
+    return message || "Phone verification failed. Send a new SMS code and try again.";
 }
 
 function usernameFromProfile(displayName?: string | null, email?: string | null) {
@@ -911,12 +917,40 @@ export default function ProfilePage() {
         try {
             const credential = PhoneAuthProvider.credential(phoneVerificationId, code);
             await updatePhoneNumber(user, credential);
-            await updateUserProfile({
-                phoneNumber: editedPhoneDisplay || editedPhoneE164,
-                phoneVerified: true,
-                phoneVerifiedAt: Date.now(),
-                smsNotifications: editForm.smsNotifications,
-            });
+            await user.reload().catch(() => undefined);
+
+            const verifiedPhoneNumber = editedPhoneDisplay || editedPhoneE164;
+            const verifiedAt = Date.now();
+            try {
+                await updateUserProfile({
+                    phoneNumber: verifiedPhoneNumber,
+                    phoneVerified: true,
+                    phoneVerifiedAt: verifiedAt,
+                    smsNotifications: editForm.smsNotifications,
+                });
+            } catch (profileError) {
+                console.warn("Full profile phone verification save failed; trying minimal phone save:", profileError);
+                await update(ref(db, `users/${user.uid}`), {
+                    phoneNumber: verifiedPhoneNumber,
+                    phoneVerified: true,
+                    phoneVerifiedAt: verifiedAt,
+                    smsNotifications: editForm.smsNotifications,
+                });
+                if (accountType) {
+                    await update(ref(db, `accounts/${accountType}/${user.uid}`), {
+                        phoneNumber: verifiedPhoneNumber,
+                        phoneVerified: true,
+                        phoneVerifiedAt: verifiedAt,
+                        smsNotifications: editForm.smsNotifications,
+                    }).catch((mirrorError) => console.warn("Minimal phone mirror save failed:", mirrorError));
+                }
+            }
+
+            setEditForm((current) => ({
+                ...current,
+                dialCode: parsePhoneNumber(verifiedPhoneNumber).dialCode,
+                phoneNumberRaw: parsePhoneNumber(verifiedPhoneNumber).phoneNumberRaw,
+            }));
             setPhoneVerificationId("");
             setPhoneOtp("");
             setPhoneVerifyMessage("Phone number verified successfully.");
