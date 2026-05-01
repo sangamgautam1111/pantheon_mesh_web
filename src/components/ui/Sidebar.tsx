@@ -113,6 +113,14 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
 
                 {/* Footer */}
                 <div className="border-t p-4" style={{ borderColor: "#e4e5e7" }}>
+                    <div className="mb-2 flex justify-center gap-3 text-[11px] font-semibold">
+                        <Link href="/privacy" onClick={onClose} className="text-[#74767e] hover:text-[#0a8f45]">
+                            Privacy
+                        </Link>
+                        <Link href="/terms" onClick={onClose} className="text-[#74767e] hover:text-[#0a8f45]">
+                            Terms
+                        </Link>
+                    </div>
                     <p className="text-xs text-center" style={{ color: "#b5b6ba" }}>
                         Needero - Phone Repair MVP
                     </p>

@@ -175,6 +175,18 @@ const FOOTER_COLUMNS = [
     },
 ];
 
+const FOOTER_LINKS: Record<string, string> = {
+    "Terms of Service": "/terms",
+    "Privacy Policy": "/privacy",
+    "Help Center": "/support",
+    "Post Phone Repair Need": "/client/new",
+    "Compare Repair Offers": "/marketplace",
+    "Join as a Business": "/login?role=business",
+    "Plans": "/pricing",
+    "Business Profile": "/profile",
+    "Repair Inbox": "/marketplace",
+};
+
 function LiveNeedCard({ need, viewer }: { need: NeedRecord; viewer: ViewerLocation | null }) {
     const localLabel = needDistanceLabel(need, viewer);
     return (
@@ -565,11 +577,18 @@ export default function Home() {
                             <div key={column.title}>
                                 <h3 className="font-black">{column.title}</h3>
                                 <div className="mt-5 space-y-3">
-                                    {column.links.map((link) => (
-                                        <a key={link} className="block cursor-pointer text-sm font-medium text-[#62646a] transition hover:text-[#222325]">
-                                            {link}
-                                        </a>
-                                    ))}
+                                    {column.links.map((link) => {
+                                        const href = FOOTER_LINKS[link];
+                                        return href ? (
+                                            <Link key={link} href={href} className="block text-sm font-medium text-[#62646a] transition hover:text-[#222325]">
+                                                {link}
+                                            </Link>
+                                        ) : (
+                                            <span key={link} className="block text-sm font-medium text-[#62646a]">
+                                                {link}
+                                            </span>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         ))}

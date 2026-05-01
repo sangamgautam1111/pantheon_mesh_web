@@ -127,6 +127,8 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
         { type: "page", label: "Post Phone Repair Need", href: "/client/new" },
         { type: "page", label: "Messages", href: "/messages" },
         { type: "page", label: "Profile", href: "/profile" },
+        { type: "page", label: "Privacy Policy", href: "/privacy" },
+        { type: "page", label: "Terms of Service", href: "/terms" },
         { type: "page", label: "Phone Repair Marketplace", href: "/marketplace" },
         ...(profile?.accountType === "customer" ? [] : [
             { type: "page", label: "Business Plans", href: "/pricing" },
