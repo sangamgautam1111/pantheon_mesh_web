@@ -226,17 +226,9 @@ export default function MessagesPage() {
         } satisfies MessageThread;
     }, [accountType, orderContext, profile?.displayName, threads]);
 
-    const [filter, setFilter] = useState<"All" | "Unread">("All");
-
     const displayThreads = useMemo(() => {
         const needle = query.trim().toLowerCase();
         let base = threads.filter((thread) => thread.messageCount > 0);
-        
-        if (filter === "Unread") {
-            // For now, treat threads with unread messages as those not currently selected or something similar
-            // This is a placeholder since we don't have actual read/unread state in DB yet
-            base = base.filter((thread) => thread.lastMessage && thread.id !== selectedThread?.id);
-        }
 
         const merged = selectedThread && !base.some((thread) => thread.id === selectedThread.id)
             ? [selectedThread, ...base]
@@ -248,9 +240,7 @@ export default function MessagesPage() {
                 .toLowerCase()
                 .includes(needle),
         );
-    }, [query, selectedThread, threads, filter]);
-
-    const unreadCount = threads.filter((thread) => thread.lastMessage && thread.messageCount > 0).length;
+    }, [query, selectedThread, threads]);
 
     const loadThreads = async () => {
         if (!user) return;
@@ -513,7 +503,7 @@ ${recentMessages || "No chat messages yet."}`;
     return (
         <RouteGuard allowedTypes={["customer", "business"]}>
             <main className="min-h-screen bg-white text-[#222325]">
-                <div className={`grid min-h-[calc(100vh-64px)] w-full bg-white ${showOrderPanel ? "lg:grid-cols-[330px_1fr_310px]" : "lg:grid-cols-[330px_1fr]"}`}>
+                <div className={`grid min-h-[calc(100vh-64px)] w-full bg-white ${showOrderPanel ? "lg:grid-cols-[330px_minmax(0,1fr)_310px]" : "lg:grid-cols-[330px_minmax(0,1fr)]"}`}>
                     <aside className={`border-b border-[#e4e5e7] bg-white lg:border-b-0 lg:border-r ${selectedThread ? "hidden lg:block" : "block"}`}>
                         <div className="border-b border-[#e4e5e7] p-5">
                             <div className="flex items-start justify-between gap-3">
@@ -533,21 +523,6 @@ ${recentMessages || "No chat messages yet."}`;
                                     placeholder="Search conversations"
                                     className="h-11 min-w-0 flex-1 bg-transparent px-2 text-sm outline-none"
                                 />
-                            </div>
-                            <div className="mt-4 flex flex-wrap gap-2">
-                                {[
-                                    { label: "All", count: threads.filter(t => t.messageCount > 0).length, value: "All" as const },
-                                    { label: "Unread", count: unreadCount, value: "Unread" as const },
-                                ].map(({ label, count, value }) => (
-                                    <button
-                                        key={label}
-                                        type="button"
-                                        onClick={() => setFilter(value)}
-                                        className={`rounded-full px-3 py-1.5 text-xs font-black transition ${filter === value ? "bg-[#0a8f45] text-white" : "bg-[#f4f8f5] text-[#4b5563] hover:bg-[#e9f9f0]"}`}
-                                    >
-                                        {label} <span className="ml-1 opacity-70">{count}</span>
-                                    </button>
-                                ))}
                             </div>
                         </div>
 
@@ -590,7 +565,7 @@ ${recentMessages || "No chat messages yet."}`;
                         </div>
                     </aside>
 
-                    <section className={`flex lg:min-h-[720px] h-[calc(100vh-64px)] lg:h-auto flex-col bg-[#fbfbfb] ${!selectedThread || mobileShowDetails ? "hidden lg:flex" : "flex"}`}>
+                    <section className={`flex min-w-0 lg:min-h-[720px] h-[calc(100vh-64px)] lg:h-auto flex-col bg-[#fbfbfb] ${!selectedThread || mobileShowDetails ? "hidden lg:flex" : "flex"}`}>
                         {selectedThread ? (
                             <>
                                 <header className="flex flex-col gap-3 border-b border-[#e4e5e7] bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -633,12 +608,12 @@ ${recentMessages || "No chat messages yet."}`;
                                         messages.map((message) => {
                                             const mine = message.senderId === user?.uid;
                                             return (
-                                                <div key={message.id} className={`flex items-end gap-3 ${mine ? "justify-end" : "justify-start"}`}>
+                                                <div key={message.id} className={`flex w-full items-end gap-3 ${mine ? "justify-end" : "justify-start"}`}>
                                                     {!mine && (
-                                                        <AvatarCircle src={message.senderAvatar || selectedThread.otherAvatar} name={message.senderName} className="h-9 w-9" />
+                                                        <AvatarCircle src={message.senderAvatar || selectedThread.otherAvatar} name={message.senderName} className="h-9 w-9 shrink-0" />
                                                     )}
-                                                    <div className={`max-w-[74%] rounded-[22px] px-4 py-3 shadow-sm ${mine ? "bg-[#222325] text-white" : "bg-white text-[#222325]"}`}>
-                                                        <div className="mb-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-wide opacity-55">
+                                                    <div className={`min-w-0 max-w-[85%] sm:max-w-[74%] rounded-[22px] px-4 py-3 shadow-sm ${mine ? "bg-[#222325] text-white" : "bg-white text-[#222325]"}`}>
+                                                        <div className="mb-1 flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-wide opacity-55">
                                                             <span>{message.senderName}</span>
                                                             <span>{formatSender(message.senderType)}</span>
                                                             <span>{formatTime(message.createdAt)}</span>
@@ -755,7 +730,7 @@ ${recentMessages || "No chat messages yet."}`;
                                             placeholder={editingMessageId ? "Edit your message..." : "Type your message..."}
                                             className="min-h-[44px] flex-1 resize-none bg-transparent px-2 py-3 text-sm outline-none"
                                         />
-                                        <button type="submit" disabled={saving} className="flex h-11 w-11 items-center justify-center rounded-full bg-[#222325] text-white disabled:bg-[#b5b6ba]">
+                                        <button type="submit" disabled={saving} className="flex shrink-0 h-11 w-11 items-center justify-center rounded-full bg-[#222325] text-white disabled:bg-[#b5b6ba]">
                                             {saving ? <Loader2 size={18} className="animate-spin" /> : editingMessageId ? <Edit3 size={18} /> : <Send size={18} />}
                                         </button>
                                     </div>
