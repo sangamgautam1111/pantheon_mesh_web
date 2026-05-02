@@ -328,6 +328,7 @@ export default function MessagesPage() {
             const isCustomer = accountType === "customer";
             await submitReview({
                 needId: orderContext.needId,
+                needTitle: selectedThread.needTitle,
                 quoteId: orderContext.quoteId || undefined,
                 reviewerId: user.uid,
                 reviewerName: profile?.displayName || (isCustomer ? "Customer" : "Business"),

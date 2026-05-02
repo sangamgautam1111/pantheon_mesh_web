@@ -1864,7 +1864,12 @@ export default function ProfilePage() {
                                                 </div>
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-center justify-between gap-2">
-                                                        <p className="truncate text-sm font-black text-[#06111f]">{review.reviewerName}</p>
+                                                        <div className="flex flex-col">
+                                                            <p className="truncate text-sm font-black text-[#06111f]">{review.reviewerName}</p>
+                                                            {review.needTitle && (
+                                                                <p className="text-[11px] font-semibold text-[#64748b]">for <span className="font-bold text-[#06111f]">{review.needTitle}</span></p>
+                                                            )}
+                                                        </div>
                                                         <p className="shrink-0 text-[10px] font-semibold text-[#94a3b8]">
                                                             {new Date(review.createdAt).toLocaleDateString()}
                                                         </p>
@@ -1879,7 +1884,9 @@ export default function ProfilePage() {
                                                         ))}
                                                     </div>
                                                     {review.comment && (
-                                                        <p className="mt-2 text-xs leading-5 text-[#64748b]">{review.comment}</p>
+                                                        <div className="mt-3 rounded-xl bg-[#f1f5f9] p-3">
+                                                            <p className="text-xs leading-5 text-[#404145] font-medium italic">"{review.comment}"</p>
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>

@@ -730,6 +730,7 @@ export async function deleteThreadMessage(input: {
 export type ReviewRecord = {
     id: string;
     needId: string;
+    needTitle?: string;
     quoteId?: string;
     reviewerId: string;
     reviewerName: string;
@@ -806,6 +807,7 @@ export async function getOfferCompletionStatus(
 
 export async function submitReview(input: {
     needId: string;
+    needTitle?: string;
     quoteId?: string;
     reviewerId: string;
     reviewerName: string;
@@ -822,6 +824,7 @@ export async function submitReview(input: {
     const record: ReviewRecord = {
         id: newRef.key!,
         needId: input.needId,
+        needTitle: input.needTitle || "",
         quoteId: input.quoteId,
         reviewerId: input.reviewerId,
         reviewerName: input.reviewerName,
