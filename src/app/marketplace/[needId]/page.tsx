@@ -30,7 +30,9 @@ import {
     formatMoney,
     getNeedById,
     getOffers,
+    getReviewsForTarget,
     NeedRecord,
+    ReviewRecord,
     updateOffer,
 } from "@/lib/neederoDatabase";
 
@@ -224,6 +226,17 @@ function QuoteRow({
     onEdit: () => void;
     onDelete: () => void;
 }) {
+    const [reviews, setReviews] = useState<ReviewRecord[]>([]);
+
+    useEffect(() => {
+        if (!offer.businessId) return;
+        let cancelled = false;
+        void getReviewsForTarget(offer.businessId).then(data => {
+            if (!cancelled) setReviews(data);
+        }).catch(() => undefined);
+        return () => { cancelled = true; };
+    }, [offer.businessId]);
+
     const comparison = [
         ["Price", formatMoney(offer.price) || offer.price || "Open"],
         ["Arrival", offer.time || offer.availability || "Time not set"],
@@ -240,6 +253,15 @@ function QuoteRow({
                         <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-lg font-black text-[#222325]">{offer.businessName}</h3>
                             <span className="rounded-full bg-[#e9f9f0] px-3 py-1 text-[11px] font-black text-[#0a8f45]">Verified-ready</span>
+                            {reviews.length > 0 && (
+                                <div className="flex items-center gap-1 ml-1">
+                                    <Star size={14} className="fill-[#f59e0b] text-[#f59e0b]" />
+                                    <span className="text-xs font-black text-[#06111f]">
+                                        {(reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)}
+                                    </span>
+                                    <span className="text-[10px] font-semibold text-[#64748b]">({reviews.length})</span>
+                                </div>
+                            )}
                         </div>
                         <p className="mt-2 text-sm text-[#74767e]">
                             {offer.serviceType || "Service"} - {offer.time || offer.availability || "Time not set"} - {offer.distance || "Nearby"}
