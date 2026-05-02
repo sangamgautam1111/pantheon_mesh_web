@@ -343,11 +343,11 @@ export default function Home() {
                                     if (event.key === "Enter") runSearch();
                                 }}
                                 placeholder="Screen broken, battery issue, charging problem..."
-                                className="h-14 flex-1 bg-transparent px-2 text-base font-medium text-[#222325] outline-none"
+                                className="h-14 min-w-0 flex-1 bg-transparent px-2 text-base font-medium text-[#222325] outline-none"
                             />
                             <button
                                 onClick={runSearch}
-                                className="h-14 rounded-[14px] bg-[#0a8f45] px-7 text-sm font-black text-white transition hover:bg-[#08783b]"
+                                className="shrink-0 h-14 rounded-[14px] bg-[#0a8f45] px-4 text-sm font-black text-white transition hover:bg-[#08783b] md:px-7"
                             >
                                 Search
                             </button>
