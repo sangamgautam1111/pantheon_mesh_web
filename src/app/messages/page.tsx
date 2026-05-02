@@ -778,19 +778,33 @@ ${recentMessages || "No chat messages yet."}`;
                                 {selectedThread && orderContext.quoteId && (
                                     <div className="border-t border-[#e4e5e7] bg-gradient-to-r from-[#f4fbf7] to-[#f0f7ff] px-4 py-3">
                                         {!offerCompletion ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => void handleMarkComplete()}
-                                                disabled={completionSaving}
-                                                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0a8f45] px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-[#0a8f45]/20 transition-all hover:bg-[#078a3e] hover:shadow-xl hover:shadow-[#0a8f45]/30 active:scale-[0.98] disabled:opacity-60"
-                                            >
-                                                {completionSaving ? (
-                                                    <Loader2 size={18} className="animate-spin" />
-                                                ) : (
-                                                    <CheckCircle2 size={18} />
-                                                )}
-                                                Mark Offer Completed
-                                            </button>
+                                            accountType === "customer" ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => void handleMarkComplete()}
+                                                    disabled={completionSaving}
+                                                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0a8f45] px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-[#0a8f45]/20 transition-all hover:bg-[#078a3e] hover:shadow-xl hover:shadow-[#0a8f45]/30 active:scale-[0.98] disabled:opacity-60"
+                                                >
+                                                    {completionSaving ? (
+                                                        <Loader2 size={18} className="animate-spin" />
+                                                    ) : (
+                                                        <CheckCircle2 size={18} />
+                                                    )}
+                                                    Mark Offer Completed
+                                                </button>
+                                            ) : (
+                                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                                    <div className="flex items-center gap-2 text-sm">
+                                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f5f5f5] text-[#62646a]">
+                                                            <Clock size={16} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-black text-[#222325]">Waiting for Customer</p>
+                                                            <p className="text-[11px] font-semibold text-[#64748b]">The customer must mark the offer as completed.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )
                                         ) : (
                                             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                                 <div className="flex items-center gap-2 text-sm">

@@ -309,12 +309,21 @@ export async function getNeeds(customerId?: string, category?: string, includeMe
     if (includeMedia) params.append("include_media", "true");
     if (params.toString()) url += `?${params.toString()}`;
 
-    const response = await fetch(url, { cache: "no-store" });
+    const [response, statusesSnap] = await Promise.all([
+        fetch(url, { cache: "no-store" }),
+        get(ref(db, "needStatuses")).catch(() => ({ exists: () => false, val: () => ({}) }))
+    ]);
     if (!response.ok) {
         throw new Error(await readError(response, "Needero could not load Needs right now."));
     }
     const data = await response.json();
-    return Array.isArray(data.needs) ? data.needs.map(mapNeed) : [];
+    const statuses = statusesSnap.exists() ? statusesSnap.val() : {};
+
+    return Array.isArray(data.needs) ? data.needs.map((n: any) => {
+        const mapped = mapNeed(n);
+        if (statuses[mapped.id] === "solved") mapped.status = "solved";
+        return mapped;
+    }) : [];
 }
 
 export async function getNeedById(needId: string, includeMedia = true): Promise<NeedRecord | null> {
@@ -322,13 +331,21 @@ export async function getNeedById(needId: string, includeMedia = true): Promise<
     params.append("need_id", needId);
     if (includeMedia) params.append("include_media", "true");
 
-    const response = await fetch(`${API_URL}/v1/needs?${params.toString()}`, { cache: "no-store" });
+    const [response, statusSnap] = await Promise.all([
+        fetch(`${API_URL}/v1/needs?${params.toString()}`, { cache: "no-store" }),
+        get(ref(db, `needStatuses/${needId}`)).catch(() => ({ exists: () => false, val: () => null }))
+    ]);
     if (!response.ok) {
         throw new Error(await readError(response, "Needero could not load this Need right now."));
     }
     const data = await response.json();
     const needs = Array.isArray(data.needs) ? data.needs.map(mapNeed) : [];
-    return needs[0] || null;
+    const need = needs[0] || null;
+    
+    if (need && statusSnap.exists() && statusSnap.val() === "solved") {
+        need.status = "solved";
+    }
+    return need;
 }
 
 export async function createNeed(input: {
@@ -781,6 +798,10 @@ export async function markOfferComplete(input: {
     };
 
     await set(completionRef, record);
+
+    // Also store a quick lookup in Firebase since Postgres patch sometimes fails
+    const needStatusRef = ref(db, `needStatuses/${input.needId}`);
+    await set(needStatusRef, "solved");
 
     // Update the need status to "solved" on the backend
     try {
