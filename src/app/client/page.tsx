@@ -12,6 +12,8 @@ import { NeedRecord, deleteNeed, getNeeds } from "@/lib/neederoDatabase";
 
 function statusConfig(status: string) {
     switch (status) {
+        case "solved":
+            return { label: "Offer Completed", cls: "nd-badge nd-badge-green" };
         case "chosen":
             return { label: "Booked", cls: "nd-badge nd-badge-green" };
         case "quoted":

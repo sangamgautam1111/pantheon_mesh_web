@@ -53,7 +53,7 @@ import {
     requestBusinessVerification,
     type BusinessVerificationResult,
 } from "@/lib/businessVerification";
-import { getNeeds } from "@/lib/neederoDatabase";
+import { getNeeds, getReviewsForTarget, type ReviewRecord } from "@/lib/neederoDatabase";
 import { normalizeUsername, validateUsername } from "@/lib/usernames";
 
 const DeliveryMap = dynamic(() => import("@/components/profile/DeliveryMap"), {
@@ -633,6 +633,7 @@ export default function ProfilePage() {
     const [businessVerifyResult, setBusinessVerifyResult] = useState<BusinessVerificationResult | null>(null);
     const [businessVerifyError, setBusinessVerifyError] = useState("");
     const [isBusinessVerifying, setIsBusinessVerifying] = useState(false);
+    const [profileReviews, setProfileReviews] = useState<ReviewRecord[]>([]);
 
     const countries = useMemo(() => Country.getAllCountries(), []);
     const sortedCountries = useMemo(() => [...countries].sort((a, b) => a.name.localeCompare(b.name)), [countries]);
@@ -789,6 +790,18 @@ export default function ProfilePage() {
             cancelled = true;
         };
     }, [isBusiness, profile?.firstNeedCompleted, user?.uid]);
+
+    // Fetch reviews for the current user's profile
+    useEffect(() => {
+        if (!user?.uid) return;
+        let cancelled = false;
+        void getReviewsForTarget(user.uid)
+            .then((reviews) => {
+                if (!cancelled) setProfileReviews(reviews);
+            })
+            .catch(() => undefined);
+        return () => { cancelled = true; };
+    }, [user?.uid]);
 
     useEffect(() => {
         if (profile && !profile.country && !hasPromptedLocation) {
@@ -1795,6 +1808,86 @@ export default function ProfilePage() {
                                 )}
                             </div>
                         </SectionCard>
+
+                        {/* ── Reviews Section ── */}
+                        <SectionCard className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#0a8f45]">Reviews</p>
+                                    <h2 className="mt-2 text-2xl font-black text-[#06111f]">
+                                        {isBusiness ? "Customer Reviews" : "Business Reviews"}
+                                    </h2>
+                                </div>
+                                {profileReviews.length > 0 && (
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex">
+                                            {[1, 2, 3, 4, 5].map((s) => {
+                                                const avg = profileReviews.reduce((sum, r) => sum + r.rating, 0) / profileReviews.length;
+                                                return (
+                                                    <Star
+                                                        key={s}
+                                                        size={18}
+                                                        className={s <= Math.round(avg) ? "fill-[#f59e0b] text-[#f59e0b]" : "fill-[#e4e5e7] text-[#e4e5e7]"}
+                                                    />
+                                                );
+                                            })}
+                                        </div>
+                                        <span className="text-sm font-black text-[#06111f]">
+                                            {(profileReviews.reduce((sum, r) => sum + r.rating, 0) / profileReviews.length).toFixed(1)}
+                                        </span>
+                                        <span className="text-xs font-semibold text-[#64748b]">({profileReviews.length})</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {profileReviews.length === 0 ? (
+                                <div className="mt-6 rounded-2xl border-2 border-dashed border-[#dfe8e3] py-12 text-center">
+                                    <Star size={32} className="mx-auto mb-3 text-[#d1d5db]" />
+                                    <p className="text-sm font-black text-[#404145]">No reviews yet</p>
+                                    <p className="mt-1 text-xs text-[#64748b]">
+                                        {isBusiness
+                                            ? "Reviews from customers will appear here after completed offers."
+                                            : "Reviews from businesses will appear here after completed offers."}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="mt-6 space-y-4">
+                                    {profileReviews.map((review) => (
+                                        <div key={review.id} className="rounded-2xl border border-[#edf2ef] bg-[#fbfdfb] p-4">
+                                            <div className="flex items-start gap-3">
+                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#06111f] text-sm font-black text-white">
+                                                    {review.reviewerAvatar ? (
+                                                        <img src={review.reviewerAvatar} alt="" className="h-full w-full object-cover" />
+                                                    ) : (
+                                                        review.reviewerName.charAt(0).toUpperCase()
+                                                    )}
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <p className="truncate text-sm font-black text-[#06111f]">{review.reviewerName}</p>
+                                                        <p className="shrink-0 text-[10px] font-semibold text-[#94a3b8]">
+                                                            {new Date(review.createdAt).toLocaleDateString()}
+                                                        </p>
+                                                    </div>
+                                                    <div className="mt-1 flex gap-0.5">
+                                                        {[1, 2, 3, 4, 5].map((s) => (
+                                                            <Star
+                                                                key={s}
+                                                                size={13}
+                                                                className={s <= review.rating ? "fill-[#f59e0b] text-[#f59e0b]" : "fill-[#e4e5e7] text-[#e4e5e7]"}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                    {review.comment && (
+                                                        <p className="mt-2 text-xs leading-5 text-[#64748b]">{review.comment}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </SectionCard>
                     </div>
                 </div>
 
@@ -2272,9 +2365,9 @@ export default function ProfilePage() {
                                                 <span className="rounded-full bg-[#eef6ff] px-2.5 py-1 text-[#2563eb]">Trusted</span>
                                             </div>
                                             <div className="mt-4 grid grid-cols-3 gap-2">
-                                                <PreviewStat label={isBusiness ? "Offers" : "My Needs"} value={isBusiness ? "12" : "5"} />
-                                                <PreviewStat label="Rating" value="4.8" />
-                                                <PreviewStat label="Safety" value="High" />
+                                                <PreviewStat label={isBusiness ? "Offers" : "My Needs"} value={isBusiness ? "—" : String(customerNeedCount)} />
+                                                <PreviewStat label="Rating" value={profileReviews.length > 0 ? (profileReviews.reduce((s, r) => s + r.rating, 0) / profileReviews.length).toFixed(1) : "—"} />
+                                                <PreviewStat label="Reviews" value={String(profileReviews.length)} />
                                             </div>
                                             <button
                                                 type="button"

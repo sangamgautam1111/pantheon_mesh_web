@@ -1,6 +1,8 @@
 "use client";
 
 import { BusinessOffer, NeedCard, NeedStatus, ServiceRequest, createFallbackNeedCard } from "@/lib/nearquote";
+import { db } from "@/lib/firebase";
+import { ref, push, set, get, query as fbQuery, orderByChild, equalTo } from "firebase/database";
 
 const API_URL = "/api/needero";
 
@@ -719,4 +721,161 @@ export async function deleteThreadMessage(input: {
         throw new Error(await readError(response, "Needero could not delete this message right now."));
     }
     return await response.json();
+}
+
+/* ─────────────────────────────────────────────
+   Review & Offer Completion System (Firebase RTDB)
+   ───────────────────────────────────────────── */
+
+export type ReviewRecord = {
+    id: string;
+    needId: string;
+    quoteId?: string;
+    reviewerId: string;
+    reviewerName: string;
+    reviewerAvatar?: string | null;
+    reviewerType: "customer" | "business";
+    targetId: string;
+    targetName: string;
+    targetType: "customer" | "business";
+    rating: number; // 1-5 stars
+    comment: string;
+    createdAt: string;
+};
+
+export type OfferCompletion = {
+    needId: string;
+    quoteId: string;
+    completedBy: string;
+    completedByType: "customer" | "business";
+    completedAt: string;
+    customerReviewDone: boolean;
+    businessReviewDone: boolean;
+};
+
+const completionKey = (needId: string, quoteId: string) => `${needId}__${quoteId}`;
+
+export async function markOfferComplete(input: {
+    needId: string;
+    quoteId: string;
+    completedBy: string;
+    completedByType: "customer" | "business";
+}): Promise<OfferCompletion> {
+    const key = completionKey(input.needId, input.quoteId);
+    const completionRef = ref(db, `completedOffers/${key}`);
+    const existing = await get(completionRef);
+
+    if (existing.exists()) {
+        return existing.val() as OfferCompletion;
+    }
+
+    const record: OfferCompletion = {
+        needId: input.needId,
+        quoteId: input.quoteId,
+        completedBy: input.completedBy,
+        completedByType: input.completedByType,
+        completedAt: new Date().toISOString(),
+        customerReviewDone: false,
+        businessReviewDone: false,
+    };
+
+    await set(completionRef, record);
+
+    // Update the need status to "solved" on the backend
+    try {
+        await fetch(`${API_URL}/v1/needs/${input.needId}/status`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "solved" }),
+        });
+    } catch {
+        // Non-critical — completion is already recorded in Firebase
+    }
+
+    return record;
+}
+
+export async function getOfferCompletionStatus(
+    needId: string,
+    quoteId: string,
+): Promise<OfferCompletion | null> {
+    const key = completionKey(needId, quoteId);
+    const snapshot = await get(ref(db, `completedOffers/${key}`));
+    return snapshot.exists() ? (snapshot.val() as OfferCompletion) : null;
+}
+
+export async function submitReview(input: {
+    needId: string;
+    quoteId?: string;
+    reviewerId: string;
+    reviewerName: string;
+    reviewerAvatar?: string | null;
+    reviewerType: "customer" | "business";
+    targetId: string;
+    targetName: string;
+    targetType: "customer" | "business";
+    rating: number;
+    comment: string;
+}): Promise<ReviewRecord> {
+    const reviewsRef = ref(db, "reviews");
+    const newRef = push(reviewsRef);
+    const record: ReviewRecord = {
+        id: newRef.key!,
+        needId: input.needId,
+        quoteId: input.quoteId,
+        reviewerId: input.reviewerId,
+        reviewerName: input.reviewerName,
+        reviewerAvatar: input.reviewerAvatar || null,
+        reviewerType: input.reviewerType,
+        targetId: input.targetId,
+        targetName: input.targetName,
+        targetType: input.targetType,
+        rating: Math.max(1, Math.min(5, Math.round(input.rating))),
+        comment: input.comment,
+        createdAt: new Date().toISOString(),
+    };
+
+    await set(newRef, record);
+
+    // Mark the review as done on the completion record
+    if (input.quoteId) {
+        const key = completionKey(input.needId, input.quoteId);
+        const completionRef = ref(db, `completedOffers/${key}`);
+        const snap = await get(completionRef);
+        if (snap.exists()) {
+            const completion = snap.val() as OfferCompletion;
+            const update = input.reviewerType === "customer"
+                ? { ...completion, customerReviewDone: true }
+                : { ...completion, businessReviewDone: true };
+            await set(completionRef, update);
+        }
+    }
+
+    return record;
+}
+
+export async function getReviewsForTarget(targetId: string): Promise<ReviewRecord[]> {
+    try {
+        const snapshot = await get(ref(db, "reviews"));
+        if (!snapshot.exists()) return [];
+        const all = snapshot.val() as Record<string, ReviewRecord>;
+        return Object.values(all)
+            .filter((r) => r.targetId === targetId)
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } catch {
+        return [];
+    }
+}
+
+export async function getReviewsForNeed(needId: string): Promise<ReviewRecord[]> {
+    try {
+        const snapshot = await get(ref(db, "reviews"));
+        if (!snapshot.exists()) return [];
+        const all = snapshot.val() as Record<string, ReviewRecord>;
+        return Object.values(all)
+            .filter((r) => r.needId === needId)
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } catch {
+        return [];
+    }
 }

@@ -1,19 +1,23 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { ArrowLeft, CheckCircle2, Edit3, FileText, Image as ImageIcon, Info, Loader2, MapPin, Paperclip, Search, Send, SlidersHorizontal, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowLeft, Award, CheckCircle2, Edit3, FileText, Image as ImageIcon, Info, Loader2, MapPin, Paperclip, Search, Send, SlidersHorizontal, Sparkles, Star, Trash2, X } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import {
     MessageAttachment,
     MessageMapLocation,
     MessageThread,
+    OfferCompletion,
     ThreadMessage,
     deleteThreadMessage,
     getMessageThreads,
     getMessages,
+    getOfferCompletionStatus,
+    markOfferComplete,
     sendThreadMessage,
+    submitReview,
     updateThreadMessage,
 } from "@/lib/neederoDatabase";
 import { storage } from "@/lib/firebase";
@@ -164,6 +168,13 @@ export default function MessagesPage() {
     const [assistantLoadingAction, setAssistantLoadingAction] = useState<string | null>(null);
     const [assistantOutput, setAssistantOutput] = useState("");
     const [mobileShowDetails, setMobileShowDetails] = useState(false);
+    const [offerCompletion, setOfferCompletion] = useState<OfferCompletion | null>(null);
+    const [showReviewModal, setShowReviewModal] = useState(false);
+    const [reviewRating, setReviewRating] = useState(5);
+    const [reviewHover, setReviewHover] = useState(0);
+    const [reviewComment, setReviewComment] = useState("");
+    const [reviewSaving, setReviewSaving] = useState(false);
+    const [completionSaving, setCompletionSaving] = useState(false);
     const showOrderPanel = accountType === "customer";
 
     const clearThread = () => {
@@ -274,6 +285,75 @@ export default function MessagesPage() {
         const interval = setInterval(loadMessages, 3500);
         return () => clearInterval(interval);
     }, [orderContext.needId, orderContext.quoteId, user?.uid]);
+
+    // Check offer completion status when thread changes
+    useEffect(() => {
+        if (!orderContext.needId || !orderContext.quoteId) {
+            setOfferCompletion(null);
+            return;
+        }
+        getOfferCompletionStatus(orderContext.needId, orderContext.quoteId)
+            .then(setOfferCompletion)
+            .catch(() => setOfferCompletion(null));
+    }, [orderContext.needId, orderContext.quoteId]);
+
+    const handleMarkComplete = async () => {
+        if (!user || !accountType || !orderContext.needId || !orderContext.quoteId) return;
+        setCompletionSaving(true);
+        try {
+            const completion = await markOfferComplete({
+                needId: orderContext.needId,
+                quoteId: orderContext.quoteId,
+                completedBy: user.uid,
+                completedByType: accountType,
+            });
+            setOfferCompletion(completion);
+            setShowReviewModal(true);
+        } catch (error) {
+            setStatus(error instanceof Error ? error.message : "Could not mark offer as complete.");
+        } finally {
+            setCompletionSaving(false);
+        }
+    };
+
+    const alreadyReviewed = useMemo(() => {
+        if (!offerCompletion || !accountType) return false;
+        return accountType === "customer" ? offerCompletion.customerReviewDone : offerCompletion.businessReviewDone;
+    }, [offerCompletion, accountType]);
+
+    const handleSubmitReview = async () => {
+        if (!user || !accountType || !selectedThread) return;
+        setReviewSaving(true);
+        try {
+            const isCustomer = accountType === "customer";
+            await submitReview({
+                needId: orderContext.needId,
+                quoteId: orderContext.quoteId || undefined,
+                reviewerId: user.uid,
+                reviewerName: profile?.displayName || (isCustomer ? "Customer" : "Business"),
+                reviewerAvatar: profile?.photoURL || user.photoURL || null,
+                reviewerType: accountType,
+                targetId: isCustomer ? (selectedThread.businessId || "") : (selectedThread.customerId || ""),
+                targetName: isCustomer ? selectedThread.businessName : selectedThread.customerName,
+                targetType: isCustomer ? "business" : "customer",
+                rating: reviewRating,
+                comment: reviewComment.trim(),
+            });
+            // Refresh completion status
+            if (orderContext.quoteId) {
+                const updated = await getOfferCompletionStatus(orderContext.needId, orderContext.quoteId);
+                setOfferCompletion(updated);
+            }
+            setShowReviewModal(false);
+            setReviewComment("");
+            setReviewRating(5);
+            setStatus("Review submitted! Thank you for your feedback.");
+        } catch (error) {
+            setStatus(error instanceof Error ? error.message : "Could not submit review.");
+        } finally {
+            setReviewSaving(false);
+        }
+    };
 
     useEffect(() => {
         if (!orderContext.draftText || messages.length > 0 || text || editingMessageId) return;
@@ -686,6 +766,54 @@ ${recentMessages || "No chat messages yet."}`;
                                     )}
                                 </div>
 
+                                {/* ── Mark Offer Complete / Review Banner ── */}
+                                {selectedThread && orderContext.quoteId && (
+                                    <div className="border-t border-[#e4e5e7] bg-gradient-to-r from-[#f4fbf7] to-[#f0f7ff] px-4 py-3">
+                                        {!offerCompletion ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => void handleMarkComplete()}
+                                                disabled={completionSaving}
+                                                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0a8f45] px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-[#0a8f45]/20 transition-all hover:bg-[#078a3e] hover:shadow-xl hover:shadow-[#0a8f45]/30 active:scale-[0.98] disabled:opacity-60"
+                                            >
+                                                {completionSaving ? (
+                                                    <Loader2 size={18} className="animate-spin" />
+                                                ) : (
+                                                    <CheckCircle2 size={18} />
+                                                )}
+                                                Mark Offer Completed
+                                            </button>
+                                        ) : (
+                                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                                <div className="flex items-center gap-2 text-sm">
+                                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0a8f45] text-white">
+                                                        <Award size={16} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-black text-[#0a8f45]">Offer Completed</p>
+                                                        <p className="text-[11px] font-semibold text-[#64748b]">{formatTime(offerCompletion.completedAt)}</p>
+                                                    </div>
+                                                </div>
+                                                {!alreadyReviewed ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowReviewModal(true)}
+                                                        className="flex items-center gap-2 rounded-xl bg-[#f59e0b] px-4 py-2.5 text-sm font-black text-white shadow-md transition-all hover:bg-[#d97706] hover:shadow-lg active:scale-[0.98]"
+                                                    >
+                                                        <Star size={16} />
+                                                        Leave a Review
+                                                    </button>
+                                                ) : (
+                                                    <span className="flex items-center gap-1.5 rounded-xl bg-[#e9f9f0] px-4 py-2.5 text-xs font-black text-[#0a8f45]">
+                                                        <CheckCircle2 size={14} />
+                                                        Review Submitted
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
                                 <form onSubmit={submitMessage} className="border-t border-[#e4e5e7] bg-white p-4">
                                     {status && <p className="mb-3 text-sm font-semibold text-[#62646a]">{status}</p>}
                                     {editingMessageId && (
@@ -851,6 +979,110 @@ ${recentMessages || "No chat messages yet."}`;
                             setIsMapPickerOpen(false);
                         }}
                     />
+                )}
+
+                {/* ── Review Modal ── */}
+                {showReviewModal && selectedThread && (
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                        <div className="w-full max-w-md animate-in fade-in zoom-in-95 rounded-3xl bg-white p-6 shadow-2xl">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#f59e0b] to-[#d97706] text-white">
+                                        <Star size={22} />
+                                    </div>
+                                    <div>
+                                        <p className="text-lg font-black">Leave a Review</p>
+                                        <p className="text-xs font-semibold text-[#74767e]">
+                                            {accountType === "customer" ? "Rate this business" : "Rate this customer"}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowReviewModal(false)}
+                                    className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-[#f7f7f7]"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+
+                            <div className="mt-5 rounded-2xl border border-[#e4e5e7] bg-[#fbfbfb] p-4">
+                                <div className="flex items-center gap-3">
+                                    <AvatarCircle
+                                        src={selectedThread.otherAvatar}
+                                        name={selectedThread.otherName}
+                                        className="h-11 w-11 text-sm"
+                                    />
+                                    <div className="min-w-0">
+                                        <p className="truncate font-black">{selectedThread.otherName}</p>
+                                        <p className="truncate text-xs font-semibold text-[#74767e]">{selectedThread.needTitle}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Star Rating */}
+                            <div className="mt-6 flex flex-col items-center gap-2">
+                                <p className="text-sm font-black text-[#62646a]">How was your experience?</p>
+                                <div className="flex gap-1.5">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <button
+                                            key={star}
+                                            type="button"
+                                            onMouseEnter={() => setReviewHover(star)}
+                                            onMouseLeave={() => setReviewHover(0)}
+                                            onClick={() => setReviewRating(star)}
+                                            className="rounded-lg p-1 transition-transform hover:scale-110 active:scale-95"
+                                        >
+                                            <Star
+                                                size={36}
+                                                className={`transition-colors ${
+                                                    star <= (reviewHover || reviewRating)
+                                                        ? "fill-[#f59e0b] text-[#f59e0b]"
+                                                        : "fill-[#e4e5e7] text-[#e4e5e7]"
+                                                }`}
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="text-xs font-bold text-[#f59e0b]">
+                                    {["Terrible", "Poor", "Okay", "Good", "Excellent"][((reviewHover || reviewRating) - 1)] || ""}
+                                </p>
+                            </div>
+
+                            {/* Comment */}
+                            <textarea
+                                value={reviewComment}
+                                onChange={(e) => setReviewComment(e.target.value)}
+                                placeholder="Share details of your experience..."
+                                rows={3}
+                                className="mt-4 w-full resize-none rounded-2xl border border-[#e4e5e7] bg-[#fbfbfb] p-4 text-sm outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/20"
+                            />
+
+                            {/* Actions */}
+                            <div className="mt-5 flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowReviewModal(false)}
+                                    className="flex-1 rounded-2xl border border-[#e4e5e7] px-5 py-3 text-sm font-black text-[#62646a] hover:bg-[#f7f7f7]"
+                                >
+                                    Later
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => void handleSubmitReview()}
+                                    disabled={reviewSaving}
+                                    className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#f59e0b] px-5 py-3 text-sm font-black text-white shadow-lg shadow-[#f59e0b]/20 transition-all hover:bg-[#d97706] disabled:opacity-60"
+                                >
+                                    {reviewSaving ? (
+                                        <Loader2 size={16} className="animate-spin" />
+                                    ) : (
+                                        <Star size={16} />
+                                    )}
+                                    Submit Review
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </main>
         </RouteGuard>
