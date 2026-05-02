@@ -1,6 +1,7 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GithubAuthProvider, GoogleAuthProvider, EmailAuthProvider } from "firebase/auth";
 import { getDatabase } from "firebase/database";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDummy_REPLACE_ME",
@@ -15,6 +16,7 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
 const db = getDatabase(app);
+const storage = getStorage(app);
 
 const githubProvider = new GithubAuthProvider();
 githubProvider.addScope("read:user");
@@ -24,4 +26,4 @@ const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope("email");
 googleProvider.addScope("profile");
 
-export { app, auth, db, githubProvider, googleProvider };
+export { app, auth, db, storage, githubProvider, googleProvider };

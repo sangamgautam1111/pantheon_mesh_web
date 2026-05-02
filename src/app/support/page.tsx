@@ -2,16 +2,35 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Headphones, Mail, MessageSquare, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Headphones, Loader2, Mail, MessageSquare, Send, Sparkles } from "lucide-react";
+import { db } from "@/lib/firebase";
+import { push, ref } from "firebase/database";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SupportPage() {
+    const { user } = useAuth();
     const [feedback, setFeedback] = useState("");
     const [submitted, setSubmitted] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-    const submitFeedback = (event: FormEvent<HTMLFormElement>) => {
+    const submitFeedback = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (!feedback.trim()) return;
-        setSubmitted(true);
+        if (!feedback.trim() || loading) return;
+        setLoading(true);
+        try {
+            await push(ref(db, "feedbacks"), {
+                text: feedback,
+                userId: user?.uid || "anonymous",
+                createdAt: new Date().toISOString(),
+            });
+            setSubmitted(true);
+            setFeedback("");
+        } catch (error) {
+            console.error("Feedback failed:", error);
+            alert("Failed to submit feedback. Please try again.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -45,8 +64,8 @@ export default function SupportPage() {
                                     placeholder="Example: Message button opens an error, or I cannot see nearby Needs..."
                                 />
                             </label>
-                            <button className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-[#0a8f45] px-7 py-4 text-sm font-black text-white shadow-lg shadow-[#0a8f45]/20 transition hover:bg-[#08783b]">
-                                <Send size={16} />
+                            <button disabled={loading} className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-[#0a8f45] px-7 py-4 text-sm font-black text-white shadow-lg shadow-[#0a8f45]/20 transition hover:bg-[#08783b] disabled:opacity-50">
+                                {loading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                                 Submit feedback
                             </button>
                         </form>

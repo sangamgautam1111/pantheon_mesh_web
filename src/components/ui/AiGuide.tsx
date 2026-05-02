@@ -293,7 +293,7 @@ export const AiGuide = () => {
 
     return (
         <>
-            {!open && (
+            {!open && !pathname?.startsWith("/messages") && (
                 <button
                     onClick={() => setOpen(true)}
                     className="group fixed z-[70] flex items-center justify-center rounded-full bg-[#0a8f45] shadow-2xl shadow-[#0a8f45]/25 transition-all hover:scale-110 hover:bg-[#08783b] active:scale-95"

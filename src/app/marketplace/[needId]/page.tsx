@@ -266,10 +266,12 @@ function QuoteRow({
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/55">Offer price</p>
                     <p className="mt-1 text-3xl font-black">{formatMoney(offer.price) || offer.price || "Open"}</p>
                     <div className="mt-4 grid gap-2">
-                        <button onClick={onMessage} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 px-4 py-3 text-sm font-black text-white hover:bg-white/10">
-                            <MessageSquare size={15} />
-                            Message
-                        </button>
+                        {!canManage && (
+                            <button onClick={onMessage} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 px-4 py-3 text-sm font-black text-white hover:bg-white/10">
+                                <MessageSquare size={15} />
+                                Message
+                            </button>
+                        )}
                         {canManage && (
                             <div className="grid grid-cols-2 gap-2">
                                 <button onClick={onEdit} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 px-3 py-3 text-xs font-black text-white hover:bg-white/10">

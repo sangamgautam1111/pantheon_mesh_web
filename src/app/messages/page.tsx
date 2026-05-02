@@ -2,7 +2,7 @@
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { CheckCircle2, Edit3, FileText, Image as ImageIcon, Info, Loader2, MapPin, Paperclip, Search, Send, SlidersHorizontal, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Edit3, FileText, Image as ImageIcon, Info, Loader2, MapPin, Paperclip, Search, Send, SlidersHorizontal, Sparkles, Trash2, X } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -16,6 +16,8 @@ import {
     sendThreadMessage,
     updateThreadMessage,
 } from "@/lib/neederoDatabase";
+import { storage } from "@/lib/firebase";
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const DeliveryMap = dynamic(() => import("@/components/profile/DeliveryMap"), {
     ssr: false,
@@ -151,7 +153,7 @@ export default function MessagesPage() {
     const [threads, setThreads] = useState<MessageThread[]>([]);
     const [messages, setMessages] = useState<ThreadMessage[]>([]);
     const [text, setText] = useState("");
-    const [attachments, setAttachments] = useState<MessageAttachment[]>([]);
+    const [pendingFiles, setPendingFiles] = useState<File[]>([]);
     const [mapLocation, setMapLocation] = useState<MessageMapLocation | null>(null);
     const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -161,7 +163,16 @@ export default function MessagesPage() {
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [assistantLoadingAction, setAssistantLoadingAction] = useState<string | null>(null);
     const [assistantOutput, setAssistantOutput] = useState("");
+    const [mobileShowDetails, setMobileShowDetails] = useState(false);
     const showOrderPanel = accountType === "customer";
+
+    const clearThread = () => {
+        setOrderContext(emptyContext);
+        setMobileShowDetails(false);
+        if (typeof window !== "undefined") {
+            window.history.pushState({}, "", "/messages");
+        }
+    };
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -215,9 +226,18 @@ export default function MessagesPage() {
         } satisfies MessageThread;
     }, [accountType, orderContext, profile?.displayName, threads]);
 
+    const [filter, setFilter] = useState<"All" | "Unread">("All");
+
     const displayThreads = useMemo(() => {
         const needle = query.trim().toLowerCase();
-        const base = threads.filter((thread) => thread.messageCount > 0);
+        let base = threads.filter((thread) => thread.messageCount > 0);
+        
+        if (filter === "Unread") {
+            // For now, treat threads with unread messages as those not currently selected or something similar
+            // This is a placeholder since we don't have actual read/unread state in DB yet
+            base = base.filter((thread) => thread.lastMessage && thread.id !== selectedThread?.id);
+        }
+
         const merged = selectedThread && !base.some((thread) => thread.id === selectedThread.id)
             ? [selectedThread, ...base]
             : base;
@@ -228,9 +248,9 @@ export default function MessagesPage() {
                 .toLowerCase()
                 .includes(needle),
         );
-    }, [query, selectedThread, threads]);
+    }, [query, selectedThread, threads, filter]);
 
-    const unreadCount = displayThreads.filter((thread) => thread.lastMessage && thread.messageCount > 0).length;
+    const unreadCount = threads.filter((thread) => thread.lastMessage && thread.messageCount > 0).length;
 
     const loadThreads = async () => {
         if (!user) return;
@@ -291,21 +311,9 @@ export default function MessagesPage() {
         const files = Array.from(event.target.files || []).slice(0, 3);
         if (files.length === 0) return;
 
-        Promise.all(
-            files.map(
-                (file) =>
-                    new Promise<MessageAttachment>((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = () =>
-                            resolve({
-                                name: file.name,
-                                type: file.type || "file",
-                                dataUrl: typeof reader.result === "string" ? reader.result : undefined,
-                            });
-                        reader.readAsDataURL(file);
-                    }),
-            ),
-        ).then(setAttachments);
+        // Note: With Firebase Storage, we no longer need the 5MB limit for DB payload reasons, 
+        // but we can keep a higher reasonable limit if desired. For now, we allow any size.
+        setPendingFiles(files);
     };
 
     const useLocation = () => {
@@ -316,7 +324,7 @@ export default function MessagesPage() {
     const submitMessage = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (!user || !accountType || !orderContext.needId) return;
-        if (!text.trim() && attachments.length === 0 && !mapLocation) return;
+        if (!text.trim() && pendingFiles.length === 0 && !mapLocation) return;
 
         setSaving(true);
         setStatus("");
@@ -343,12 +351,24 @@ export default function MessagesPage() {
                             : thread,
                     ),
                 );
-                setEditingMessageId(null);
-                setText("");
-                setAttachments([]);
-                setMapLocation(null);
-                await loadThreads();
+                cancelEditMessage();
             } else {
+                let finalAttachments: MessageAttachment[] = [];
+                if (pendingFiles.length > 0) {
+                    setStatus("Uploading files...");
+                    for (const file of pendingFiles) {
+                        const fileRef = storageRef(storage, `chats/${orderContext.needId}/${Date.now()}_${file.name}`);
+                        await uploadBytes(fileRef, file);
+                        const downloadUrl = await getDownloadURL(fileRef);
+                        finalAttachments.push({
+                            name: file.name,
+                            type: file.type || "file",
+                            dataUrl: downloadUrl,
+                        });
+                    }
+                    setStatus("");
+                }
+
                 const messageText = text.trim();
                 const senderAvatar = profile?.photoURL || user.photoURL || null;
                 const receiverId = accountType === "customer"
@@ -364,7 +384,7 @@ export default function MessagesPage() {
                     senderType: accountType,
                     senderAvatar,
                     text: messageText,
-                    attachments,
+                    attachments: finalAttachments,
                     mapLocation,
                 });
                 const optimisticMessage: ThreadMessage = {
@@ -377,7 +397,7 @@ export default function MessagesPage() {
                     senderType: accountType,
                     senderAvatar,
                     text: messageText,
-                    attachments,
+                    attachments: finalAttachments,
                     mapLocation,
                     createdAt: new Date().toISOString(),
                 };
@@ -386,7 +406,7 @@ export default function MessagesPage() {
                     setThreads((current) => {
                         const nextThread = {
                             ...selectedThread,
-                            lastMessage: messageText || attachments[0]?.name || (mapLocation ? "Location shared" : "Message sent"),
+                            lastMessage: messageText || finalAttachments[0]?.name || (mapLocation ? "Location shared" : "Message sent"),
                             lastMessageAt: optimisticMessage.createdAt,
                             messageCount: Math.max(1, selectedThread.messageCount + 1),
                         };
@@ -397,7 +417,7 @@ export default function MessagesPage() {
                     });
                 }
                 setText("");
-                setAttachments([]);
+                setPendingFiles([]);
                 setMapLocation(null);
                 await Promise.all([loadMessages(), loadThreads()]);
             }
@@ -411,7 +431,7 @@ export default function MessagesPage() {
     const startEditMessage = (message: ThreadMessage) => {
         setEditingMessageId(message.id);
         setText(message.text || "");
-        setAttachments([]);
+        setPendingFiles([]);
         setMapLocation(null);
         setStatus("Editing your message.");
     };
@@ -494,7 +514,7 @@ ${recentMessages || "No chat messages yet."}`;
         <RouteGuard allowedTypes={["customer", "business"]}>
             <main className="min-h-screen bg-white text-[#222325]">
                 <div className={`grid min-h-[calc(100vh-64px)] w-full bg-white ${showOrderPanel ? "lg:grid-cols-[330px_1fr_310px]" : "lg:grid-cols-[330px_1fr]"}`}>
-                    <aside className="border-b border-[#e4e5e7] bg-white lg:border-b-0 lg:border-r">
+                    <aside className={`border-b border-[#e4e5e7] bg-white lg:border-b-0 lg:border-r ${selectedThread ? "hidden lg:block" : "block"}`}>
                         <div className="border-b border-[#e4e5e7] p-5">
                             <div className="flex items-start justify-between gap-3">
                                 <div>
@@ -516,13 +536,14 @@ ${recentMessages || "No chat messages yet."}`;
                             </div>
                             <div className="mt-4 flex flex-wrap gap-2">
                                 {[
-                                    ["All", displayThreads.length],
-                                    ["Unread", unreadCount],
-                                ].map(([label, count], index) => (
+                                    { label: "All", count: threads.filter(t => t.messageCount > 0).length, value: "All" as const },
+                                    { label: "Unread", count: unreadCount, value: "Unread" as const },
+                                ].map(({ label, count, value }) => (
                                     <button
                                         key={label}
                                         type="button"
-                                        className={`rounded-full px-3 py-1.5 text-xs font-black transition ${index === 0 ? "bg-[#0a8f45] text-white" : "bg-[#f4f8f5] text-[#4b5563] hover:bg-[#e9f9f0]"}`}
+                                        onClick={() => setFilter(value)}
+                                        className={`rounded-full px-3 py-1.5 text-xs font-black transition ${filter === value ? "bg-[#0a8f45] text-white" : "bg-[#f4f8f5] text-[#4b5563] hover:bg-[#e9f9f0]"}`}
                                     >
                                         {label} <span className="ml-1 opacity-70">{count}</span>
                                     </button>
@@ -569,11 +590,14 @@ ${recentMessages || "No chat messages yet."}`;
                         </div>
                     </aside>
 
-                    <section className="flex min-h-[720px] flex-col bg-[#fbfbfb]">
+                    <section className={`flex lg:min-h-[720px] h-[calc(100vh-64px)] lg:h-auto flex-col bg-[#fbfbfb] ${!selectedThread || mobileShowDetails ? "hidden lg:flex" : "flex"}`}>
                         {selectedThread ? (
                             <>
                                 <header className="flex flex-col gap-3 border-b border-[#e4e5e7] bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="flex min-w-0 items-center gap-3">
+                                        <button onClick={clearThread} className="lg:hidden -ml-2 p-2 text-[#62646a] hover:bg-[#f7f7f7] rounded-xl">
+                                            <ArrowLeft size={20} />
+                                        </button>
                                         <AvatarCircle src={selectedThread.otherAvatar} name={selectedThread.otherName} className="h-12 w-12 text-sm" />
                                         <div className="min-w-0">
                                             <p className="flex items-center gap-2 truncate font-black">
@@ -588,9 +612,11 @@ ${recentMessages || "No chat messages yet."}`;
                                             {orderContext.orderStarted ? "Booking" : "Quote Chat"}
                                         </span>
                                         <span className="rounded-full bg-[#f1efff] px-3 py-1.5 text-xs font-black text-[#5746d8]">Offer #1</span>
-                                        <button type="button" className="flex h-9 w-9 items-center justify-center rounded-full border border-[#dadbdd] text-[#62646a] hover:bg-[#f7f7f7]">
-                                            <Info size={15} />
-                                        </button>
+                                        {showOrderPanel && (
+                                            <button type="button" onClick={() => setMobileShowDetails(true)} className="flex lg:hidden h-9 w-9 items-center justify-center rounded-full border border-[#dadbdd] text-[#62646a] hover:bg-[#f7f7f7]">
+                                                <Info size={15} />
+                                            </button>
+                                        )}
                                     </div>
                                 </header>
 
@@ -695,11 +721,11 @@ ${recentMessages || "No chat messages yet."}`;
                                             </button>
                                         </div>
                                     )}
-                                    {attachments.length > 0 && (
+                                    {pendingFiles.length > 0 && (
                                         <div className="mb-3 flex flex-wrap gap-2">
-                                            {attachments.map((attachment) => (
-                                                <span key={attachment.name} className="rounded-full bg-[#f5f5f5] px-3 py-1 text-xs font-bold text-[#62646a]">
-                                                    {attachment.name}
+                                            {pendingFiles.map((file) => (
+                                                <span key={file.name} className="rounded-full bg-[#f5f5f5] px-3 py-1 text-xs font-bold text-[#62646a]">
+                                                    {file.name}
                                                 </span>
                                             ))}
                                         </div>
@@ -755,11 +781,14 @@ ${recentMessages || "No chat messages yet."}`;
                     </section>
 
                     {showOrderPanel && (
-                        <aside className="border-t border-[#e4e5e7] bg-[#fbfdfb] p-4 lg:border-l lg:border-t-0">
+                        <aside className={`border-t border-[#e4e5e7] bg-[#fbfdfb] p-4 lg:border-l lg:border-t-0 ${!mobileShowDetails ? "hidden lg:block" : "block"}`}>
                             <div className="sticky top-20 space-y-4">
                                 <section className="rounded-2xl border border-[#dfe8e3] bg-white p-4 shadow-sm">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
+                                            <button onClick={() => setMobileShowDetails(false)} className="lg:hidden p-2 -ml-2 text-[#62646a] hover:bg-[#f7f7f7] rounded-xl">
+                                                <ArrowLeft size={20} />
+                                            </button>
                                             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#e9f9f0] text-[#0a8f45]">
                                                 <Sparkles size={18} />
                                             </div>
