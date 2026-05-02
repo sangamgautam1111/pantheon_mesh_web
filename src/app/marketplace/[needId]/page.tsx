@@ -342,8 +342,11 @@ export default function NeedDetailPage() {
     const [message, setMessage] = useState("");
 
     const isBusiness = accountType === "business";
-    const canSendBusinessOffer = Boolean(isBusiness && profile?.phoneVerified && profile?.phoneNumber);
-    const businessQuoteBlocker = !canSendBusinessOffer
+    const needSolved = need?.status === "solved";
+    const canSendBusinessOffer = Boolean(isBusiness && profile?.phoneVerified && profile?.phoneNumber && !needSolved);
+    const businessQuoteBlocker = needSolved
+        ? "This Need has been completed. No new offers can be sent."
+        : !canSendBusinessOffer
         ? "Verify your phone number with SMS OTP from Profile before sending Repair Offers."
         : "";
     const isOwner = accountType === "customer" && need?.customerId === user?.uid;
@@ -543,6 +546,11 @@ export default function NeedDetailPage() {
                                         <span className="rounded-full bg-[#e9f9f0] px-3 py-1 text-xs font-black text-[#0a8f45]">{need.category}</span>
                                         <span className="rounded-full bg-[#f4f8f5] px-3 py-1 text-xs font-black text-[#4b5563]">{need.urgency || "Flexible"}</span>
                                         <span className="rounded-full bg-[#f4f8f5] px-3 py-1 text-xs font-black text-[#4b5563]">{offers.length} Offer{offers.length === 1 ? "" : "s"}</span>
+                                        {needSolved && (
+                                            <span className="rounded-full bg-green-600 px-3 py-1 text-xs font-black text-white flex items-center gap-1">
+                                                <CheckCircle2 size={13} /> Offer Completed
+                                            </span>
+                                        )}
                                     </div>
                                     <h1 className="mt-5 max-w-4xl text-3xl font-black leading-tight tracking-[-0.05em] text-[#050816] sm:text-5xl">
                                         {need.title}
@@ -674,7 +682,13 @@ export default function NeedDetailPage() {
 
                                 <aside className="h-fit rounded-[28px] border border-[#e4e5e7] bg-white p-6 shadow-sm">
                                     {isBusiness ? (
-                                        hasSubmittedQuote && !editingOfferId ? (
+                                        needSolved ? (
+                                            <div className="text-center">
+                                                <CheckCircle2 className="mx-auto text-green-600" size={36} />
+                                                <p className="mt-3 font-black">Offer Completed</p>
+                                                <p className="mt-1 text-sm text-[#74767e]">This Need has been completed. No new offers can be sent.</p>
+                                            </div>
+                                        ) : hasSubmittedQuote && !editingOfferId ? (
                                             <div className="text-center">
                                                 <CheckCircle2 className="mx-auto text-[#222325]" size={36} />
                                                 <p className="mt-3 font-black">Offer already submitted</p>
