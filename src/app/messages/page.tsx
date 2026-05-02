@@ -4,6 +4,7 @@ import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useState } fro
 import dynamic from "next/dynamic";
 import { ArrowLeft, Award, CheckCircle2, Edit3, FileText, Image as ImageIcon, Info, Loader2, MapPin, Paperclip, Search, Send, SlidersHorizontal, Sparkles, Star, Trash2, X } from "lucide-react";
 import { RouteGuard } from "@/components/auth/RouteGuard";
+import { toast } from "react-hot-toast";
 import { useAuth } from "@/context/AuthContext";
 import {
     MessageAttachment,
@@ -308,9 +309,12 @@ export default function MessagesPage() {
                 completedByType: accountType,
             });
             setOfferCompletion(completion);
+            toast.success("Offer marked as completed!");
             setShowReviewModal(true);
         } catch (error) {
-            setStatus(error instanceof Error ? error.message : "Could not mark offer as complete.");
+            const errorMsg = error instanceof Error ? error.message : "Could not mark offer as complete.";
+            setStatus(errorMsg);
+            toast.error(errorMsg);
         } finally {
             setCompletionSaving(false);
         }
@@ -349,8 +353,11 @@ export default function MessagesPage() {
             setReviewComment("");
             setReviewRating(5);
             setStatus("Review submitted! Thank you for your feedback.");
+            toast.success("Review submitted successfully!");
         } catch (error) {
-            setStatus(error instanceof Error ? error.message : "Could not submit review.");
+            const errorMsg = error instanceof Error ? error.message : "Could not submit review.";
+            setStatus(errorMsg);
+            toast.error(errorMsg);
         } finally {
             setReviewSaving(false);
         }

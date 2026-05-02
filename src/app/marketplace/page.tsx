@@ -639,6 +639,11 @@ export default function Marketplace() {
                                 >
                                     <div className="relative w-full overflow-hidden bg-gray-100" style={{aspectRatio:"4/3"}}>
                                         <NeedMedia src={need.photoPreview} title={need.title} category={need.category} />
+                                        {need.status === "solved" && (
+                                            <span className="absolute top-2 right-2 rounded bg-green-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm flex items-center">
+                                                <CheckCircle2 size={12} className="mr-1" /> Offer Completed
+                                            </span>
+                                        )}
                                         {need.urgency==="Immediate"&&(
                                             <span className="absolute top-2 left-2 nd-badge nd-badge-red" style={{fontSize:"10px",padding:"2px 8px"}}>
                                                 <Flame size={10} className="mr-1 fill-current" /> Urgent

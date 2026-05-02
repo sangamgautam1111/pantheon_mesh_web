@@ -31,6 +31,7 @@ import {
     getNeedById,
     getOffers,
     getReviewsForTarget,
+    getReviewsForNeed,
     NeedRecord,
     ReviewRecord,
     updateOffer,
@@ -253,6 +254,11 @@ function QuoteRow({
                         <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-lg font-black text-[#222325]">{offer.businessName}</h3>
                             <span className="rounded-full bg-[#e9f9f0] px-3 py-1 text-[11px] font-black text-[#0a8f45]">Verified-ready</span>
+                            {offer.status === "chosen" && (
+                                <span className="rounded-full bg-green-600 px-3 py-1 text-[11px] font-black text-white flex items-center">
+                                    <CheckCircle2 size={12} className="mr-1" /> Offer Completed
+                                </span>
+                            )}
                             {reviews.length > 0 && (
                                 <div className="flex items-center gap-1 ml-1">
                                     <Star size={14} className="fill-[#f59e0b] text-[#f59e0b]" />
@@ -325,6 +331,7 @@ export default function NeedDetailPage() {
     const { user, profile, accountType } = useAuth();
     const [need, setNeed] = useState<NeedRecord | null>(null);
     const [offers, setOffers] = useState<OfferRecord[]>([]);
+    const [reviews, setReviews] = useState<ReviewRecord[]>([]);
     const [draft, setDraft] = useState<QuoteDraft>(emptyDraft);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -348,12 +355,14 @@ export default function NeedDetailPage() {
         if (!params.needId) return;
         setLoading(true);
         try {
-            const [loadedNeed, loadedOffers] = await Promise.all([
+            const [loadedNeed, loadedOffers, loadedReviews] = await Promise.all([
                 getNeedById(params.needId, true),
                 getOffers(params.needId),
+                getReviewsForNeed(params.needId),
             ]);
             setNeed(loadedNeed);
             setOffers(loadedOffers);
+            setReviews(loadedReviews);
         } catch (error) {
             setMessage(error instanceof Error ? error.message : "Could not load this Need.");
         } finally {
@@ -628,6 +637,39 @@ export default function NeedDetailPage() {
                                             </div>
                                         )}
                                     </div>
+
+                                    {reviews.length > 0 && (
+                                        <div className="mt-10">
+                                            <h2 className="text-2xl font-black mb-4">Reviews for this Need</h2>
+                                            <div className="space-y-4">
+                                                {reviews.map((review) => (
+                                                    <div key={review.id} className="rounded-[24px] border border-[#dfe8e3] bg-white p-5 shadow-sm">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="h-10 w-10 overflow-hidden rounded-full bg-gray-200">
+                                                                {review.reviewerAvatar ? (
+                                                                    <img src={review.reviewerAvatar} alt={review.reviewerName} className="h-full w-full object-cover" />
+                                                                ) : (
+                                                                    <div className="flex h-full w-full items-center justify-center bg-[#222325] text-lg font-black text-white">
+                                                                        {review.reviewerName?.charAt(0).toUpperCase() || "U"}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-black text-[#222325]">{review.reviewerName}</p>
+                                                                <div className="flex items-center gap-1 text-xs font-semibold text-[#74767e]">
+                                                                    <Star size={12} className="fill-[#f59e0b] text-[#f59e0b]" />
+                                                                    <span>{review.rating}.0</span>
+                                                                    <span>•</span>
+                                                                    <span className="capitalize">{review.reviewerType}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <p className="mt-4 text-sm leading-6 text-[#62646a]">{review.comment}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <aside className="h-fit rounded-[28px] border border-[#e4e5e7] bg-white p-6 shadow-sm">

@@ -9,6 +9,7 @@ import { TopBar } from "@/components/ui/TopBar";
 import { Sidebar } from "@/components/ui/Sidebar";
 import { AiGuide } from "@/components/ui/AiGuide";
 import { GuideOverlay } from "@/components/ui/GuideOverlay";
+import { Toaster } from "react-hot-toast";
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -24,6 +25,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         <ThemeProvider>
             <AuthProvider>
                 <GuideProvider>
+                    <Toaster position="top-center" />
                     {!isAuthPage && <TopBar onMenuToggle={() => setMobileMenuOpen(prev => !prev)} />}
                     {!isAuthPage && <Sidebar mobileOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />}
                     {/* 
