@@ -908,61 +908,48 @@ ${recentMessages || "No chat messages yet."}`;
                     {showOrderPanel && (
                         <aside className={`border-t border-[#e4e5e7] bg-[#fbfdfb] p-4 lg:border-l lg:border-t-0 ${!mobileShowDetails ? "hidden lg:block" : "block"}`}>
                             <div className="sticky top-20 space-y-4">
-                                <section className="rounded-2xl border border-[#dfe8e3] bg-white p-4 shadow-sm">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <button onClick={() => setMobileShowDetails(false)} className="lg:hidden p-2 -ml-2 text-[#62646a] hover:bg-[#f7f7f7] rounded-xl">
-                                                <ArrowLeft size={20} />
-                                            </button>
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#e9f9f0] text-[#0a8f45]">
-                                                <Sparkles size={18} />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-black">Needero AI Assistant</p>
-                                                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#0a8f45]">Beta</p>
-                                            </div>
+                                <section className="rounded-2xl border border-[#dfe8e3] bg-white p-5 shadow-sm">
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={() => setMobileShowDetails(false)} className="lg:hidden p-2 -ml-2 text-[#62646a] hover:bg-[#f7f7f7] rounded-xl">
+                                            <ArrowLeft size={20} />
+                                        </button>
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#0a8f45] text-white">
+                                            <Award size={18} />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-black">Order Summary</p>
+                                            <p className="text-[11px] font-bold text-[#64748b]">Ready to place order</p>
                                         </div>
                                     </div>
-                                    <p className="mt-4 text-xs leading-5 text-[#64748b]">
-                                        I can help compare this repair Offer and draft a careful customer reply.
-                                    </p>
-                                    <div className="mt-4 grid gap-2">
-                                        {["Suggest reply", "Compare offer", "Check warranty"].map((action) => (
-                                            <button
-                                                key={action}
-                                                type="button"
-                                                onClick={() => void runAssistantAction(action)}
-                                                disabled={Boolean(assistantLoadingAction)}
-                                                className="rounded-xl border border-[#dfe8e3] bg-[#fbfdfb] px-3 py-2 text-xs font-black text-[#334155] hover:bg-[#e9f9f0] disabled:cursor-not-allowed disabled:opacity-60"
-                                            >
-                                                {assistantLoadingAction === action ? "Generating..." : action}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    {assistantOutput && (
-                                        <p className="mt-3 rounded-xl bg-[#f7faf8] p-3 text-xs font-semibold leading-5 text-[#334155]">
-                                            {assistantOutput}
-                                        </p>
-                                    )}
-                                </section>
 
-                                <section className="rounded-2xl border border-[#dfe8e3] bg-white p-4 shadow-sm">
-                                    <p className="text-sm font-black">Conversation context</p>
-                                    <div className="mt-4 space-y-3 text-xs">
+                                    <div className="mt-5 space-y-3 text-xs">
                                         <div className="rounded-xl bg-[#f7faf8] p-3">
-                                            <p className="font-black text-[#94a3b8]">Need</p>
+                                            <p className="font-black text-[#94a3b8]">Service Needed</p>
                                             <p className="mt-1 font-bold text-[#0f172a]">{selectedThread?.needTitle || "Open from Marketplace"}</p>
                                         </div>
                                         <div className="grid grid-cols-2 gap-2">
                                             <div className="rounded-xl bg-[#f7faf8] p-3">
-                                                <p className="font-black text-[#94a3b8]">Business</p>
+                                                <p className="font-black text-[#94a3b8]">Shop</p>
                                                 <p className="mt-1 truncate font-bold text-[#0f172a]">{selectedThread?.businessName || "Not selected"}</p>
                                             </div>
                                             <div className="rounded-xl bg-[#f7faf8] p-3">
-                                                <p className="font-black text-[#94a3b8]">Offer</p>
-                                                <p className="mt-1 font-bold text-[#0f172a]">{selectedThread?.offerPrice || "Not selected"}</p>
+                                                <p className="font-black text-[#94a3b8]">Offer Price</p>
+                                                <p className="mt-1 font-bold text-[#0a8f45]">{selectedThread?.offerPrice || "Not selected"}</p>
                                             </div>
                                         </div>
+                                        <div className="rounded-xl bg-[#f7faf8] p-3">
+                                            <p className="font-black text-[#94a3b8]">Shop Details</p>
+                                            <p className="mt-1 font-bold leading-5 text-[#0f172a]">Professional local repair shop offering fast service. We specialize in electronics and offer a warranty on labor.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-5">
+                                        <a href={`/payment?needId=${selectedThread?.needId}&quoteId=${selectedThread?.quoteId}`} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0a8f45] px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-[#0a8f45]/20 transition-all hover:bg-[#078a3e] hover:shadow-xl hover:shadow-[#0a8f45]/30 active:scale-[0.98]">
+                                            Place Offer ({selectedThread?.offerPrice || "N/A"})
+                                        </a>
+                                        <p className="mt-3 text-center text-[10px] font-semibold leading-4 text-[#64748b]">
+                                            When the offer is complete, confirm the offer to release the payment to the local shop. If you don't confirm within 3 days, it gets automatically transferred.
+                                        </p>
                                     </div>
                                 </section>
 
@@ -970,9 +957,9 @@ ${recentMessages || "No chat messages yet."}`;
                                     <p className="text-sm font-black">Recommended next steps</p>
                                     <div className="mt-4 space-y-3 text-xs font-semibold text-[#334155]">
                                         {[
-                                            "Confirm arrival time with the business",
-                                            "Ask if warranty covers the exact work",
-                                            "Share address only when ready",
+                                            "Place your order to secure the price",
+                                            "Share exact location/address",
+                                            "Coordinate arrival time",
                                         ].map((step) => (
                                             <div key={step} className="flex gap-2">
                                                 <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-[#0a8f45]" />
