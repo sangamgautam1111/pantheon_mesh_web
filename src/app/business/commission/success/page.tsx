@@ -1,10 +1,11 @@
 'use client';
 
+import { Suspense } from 'react';
 import { CheckCircle, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-export default function CommissionSuccessPage() {
+function SuccessContent() {
     const searchParams = useSearchParams();
     const encodedData = searchParams.get('data');
     
@@ -33,5 +34,13 @@ export default function CommissionSuccessPage() {
 
             </div>
         </div>
+    );
+}
+
+export default function CommissionSuccessPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>}>
+            <SuccessContent />
+        </Suspense>
     );
 }
