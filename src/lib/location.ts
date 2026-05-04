@@ -71,14 +71,5 @@ export const needDistanceLabel = (need: {
     latitude?: number | null;
     longitude?: number | null;
 }, viewer: ViewerLocation | null) => {
-    if (!viewer) return "";
-    const km = distanceKm(need.latitude, need.longitude, viewer.latitude, viewer.longitude);
-    if (km !== null) {
-        if (km < 1) return "Under 1 km";
-        return `${km.toFixed(km < 10 ? 1 : 0)} km away`;
-    }
-    if (normalizePlace(need.city) && normalizePlace(need.city) === normalizePlace(viewer.city)) return "Same city";
-    if (normalizePlace(need.stateCode) && normalizePlace(need.stateCode) === normalizePlace(viewer.regionCode)) return "Same region";
-    if (normalizePlace(need.countryCode) && normalizePlace(need.countryCode) === normalizePlace(viewer.countryCode)) return "Same country";
-    return "";
+    return "Anywhere in Nepal";
 };
