@@ -415,24 +415,22 @@ export default function Home() {
                 </div>
             </section>
 
-            <div className="flex overflow-hidden bg-[#0a8f45] py-3 text-white border-y border-[#08783b]">
-                <div className="flex min-w-full shrink-0 animate-marquee items-center gap-12 px-4 text-sm font-semibold tracking-wide">
-                    <span className="flex items-center gap-2 text-[#24d381] font-black">● RECENT REVIEWS</span>
-                    <span className="flex items-center gap-2"><Star size={14} className="fill-white" /> Ram Nepal: "Thanks. Was a great experience. This app helped me to get customer."</span>
-                    <span className="flex items-center gap-2"><Star size={14} className="fill-white" /> Sangam Gautam: "Great display attached. Now my phone is working. Thanks!"</span>
-                    
-                    <span className="flex items-center gap-2 text-[#24d381] font-black">● RECENT REVIEWS</span>
-                    <span className="flex items-center gap-2"><Star size={14} className="fill-white" /> Ram Nepal: "Thanks. Was a great experience. This app helped me to get customer."</span>
-                    <span className="flex items-center gap-2"><Star size={14} className="fill-white" /> Sangam Gautam: "Great display attached. Now my phone is working. Thanks!"</span>
+            <div className="flex overflow-hidden py-6 border-y border-[#e4e5e7] bg-[#fbfbfb]">
+                <div className="flex min-w-full shrink-0 animate-marquee items-center gap-6 px-4">
+                    <img src="/reviews/review_1.png" alt="Review 1" className="h-28 object-contain rounded-2xl shadow-sm border border-[#e4e5e7] bg-white" />
+                    <img src="/reviews/review_2.png" alt="Review 2" className="h-28 object-contain rounded-2xl shadow-sm border border-[#e4e5e7] bg-white" />
+                    <img src="/reviews/review_1.png" alt="Review 1" className="h-28 object-contain rounded-2xl shadow-sm border border-[#e4e5e7] bg-white" />
+                    <img src="/reviews/review_2.png" alt="Review 2" className="h-28 object-contain rounded-2xl shadow-sm border border-[#e4e5e7] bg-white" />
+                    <img src="/reviews/review_1.png" alt="Review 1" className="h-28 object-contain rounded-2xl shadow-sm border border-[#e4e5e7] bg-white" />
+                    <img src="/reviews/review_2.png" alt="Review 2" className="h-28 object-contain rounded-2xl shadow-sm border border-[#e4e5e7] bg-white" />
                 </div>
-                <div className="flex min-w-full shrink-0 animate-marquee items-center gap-12 px-4 text-sm font-semibold tracking-wide" aria-hidden="true">
-                    <span className="flex items-center gap-2 text-[#24d381] font-black">● RECENT REVIEWS</span>
-                    <span className="flex items-center gap-2"><Star size={14} className="fill-white" /> Ram Nepal: "Thanks. Was a great experience. This app helped me to get customer."</span>
-                    <span className="flex items-center gap-2"><Star size={14} className="fill-white" /> Sangam Gautam: "Great display attached. Now my phone is working. Thanks!"</span>
-                    
-                    <span className="flex items-center gap-2 text-[#24d381] font-black">● RECENT REVIEWS</span>
-                    <span className="flex items-center gap-2"><Star size={14} className="fill-white" /> Ram Nepal: "Thanks. Was a great experience. This app helped me to get customer."</span>
-                    <span className="flex items-center gap-2"><Star size={14} className="fill-white" /> Sangam Gautam: "Great display attached. Now my phone is working. Thanks!"</span>
+                <div className="flex min-w-full shrink-0 animate-marquee items-center gap-6 px-4" aria-hidden="true">
+                    <img src="/reviews/review_1.png" alt="Review 1" className="h-28 object-contain rounded-2xl shadow-sm border border-[#e4e5e7] bg-white" />
+                    <img src="/reviews/review_2.png" alt="Review 2" className="h-28 object-contain rounded-2xl shadow-sm border border-[#e4e5e7] bg-white" />
+                    <img src="/reviews/review_1.png" alt="Review 1" className="h-28 object-contain rounded-2xl shadow-sm border border-[#e4e5e7] bg-white" />
+                    <img src="/reviews/review_2.png" alt="Review 2" className="h-28 object-contain rounded-2xl shadow-sm border border-[#e4e5e7] bg-white" />
+                    <img src="/reviews/review_1.png" alt="Review 1" className="h-28 object-contain rounded-2xl shadow-sm border border-[#e4e5e7] bg-white" />
+                    <img src="/reviews/review_2.png" alt="Review 2" className="h-28 object-contain rounded-2xl shadow-sm border border-[#e4e5e7] bg-white" />
                 </div>
             </div>
 
