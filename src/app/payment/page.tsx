@@ -11,6 +11,7 @@ function PaymentContent() {
     const searchParams = useSearchParams();
     const needId = searchParams.get("needId");
     const quoteId = searchParams.get("quoteId");
+    const offerPrice = searchParams.get("price") || "Rs. 0";
 
     const [selectedMethod, setSelectedMethod] = useState<"esewa" | "khalti">("esewa");
     const [isProcessing, setIsProcessing] = useState(false);
@@ -143,17 +144,17 @@ function PaymentContent() {
                             <div className="mt-6 space-y-4 text-sm font-semibold text-[#62646a]">
                                 <div className="flex justify-between">
                                     <span>Subtotal</span>
-                                    <span className="font-black text-[#222325]">Offer Price</span>
+                                    <span className="font-black text-[#222325]">{offerPrice}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span>Service Fee</span>
-                                    <span className="font-black text-[#222325]">Rs. 0.00</span>
+                                    <span className="font-black text-[#222325]">Rs. 0</span>
                                 </div>
                             </div>
                             <div className="my-6 border-t border-[#e4e5e7]" />
                             <div className="flex items-center justify-between">
                                 <span className="font-black text-[#222325]">Total</span>
-                                <span className="text-xl font-black text-[#0a8f45]">As per Quote</span>
+                                <span className="text-xl font-black text-[#0a8f45]">{offerPrice}</span>
                             </div>
 
                             <div className="mt-8 rounded-xl bg-[#f7faf8] p-4">

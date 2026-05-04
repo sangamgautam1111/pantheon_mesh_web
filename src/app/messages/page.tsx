@@ -934,7 +934,7 @@ ${recentMessages || "No chat messages yet."}`;
                                             </div>
                                             <div className="rounded-xl bg-[#f7faf8] p-3">
                                                 <p className="font-black text-[#94a3b8]">Offer Price</p>
-                                                <p className="mt-1 font-bold text-[#0a8f45]">{selectedThread?.offerPrice || "Not selected"}</p>
+                                                <p className="mt-1 font-bold text-[#0a8f45]">{selectedThread?.offerPrice || "Awaiting quote"}</p>
                                             </div>
                                         </div>
                                         <div className="rounded-xl bg-[#f7faf8] p-3">
@@ -944,9 +944,15 @@ ${recentMessages || "No chat messages yet."}`;
                                     </div>
 
                                     <div className="mt-5">
-                                        <a href={`/payment?needId=${selectedThread?.needId}&quoteId=${selectedThread?.quoteId}`} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0a8f45] px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-[#0a8f45]/20 transition-all hover:bg-[#078a3e] hover:shadow-xl hover:shadow-[#0a8f45]/30 active:scale-[0.98]">
-                                            Place Offer ({selectedThread?.offerPrice || "N/A"})
-                                        </a>
+                                        {selectedThread?.offerPrice ? (
+                                            <a href={`/payment?needId=${selectedThread.needId}&quoteId=${selectedThread.quoteId}&price=${encodeURIComponent(selectedThread.offerPrice)}`} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0a8f45] px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-[#0a8f45]/20 transition-all hover:bg-[#078a3e] hover:shadow-xl hover:shadow-[#0a8f45]/30 active:scale-[0.98]">
+                                                Place Offer ({selectedThread.offerPrice})
+                                            </a>
+                                        ) : (
+                                            <button disabled className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e4e5e7] px-5 py-3.5 text-sm font-black text-[#95979d]">
+                                                Place Offer
+                                            </button>
+                                        )}
                                         <p className="mt-3 text-center text-[10px] font-semibold leading-4 text-[#64748b]">
                                             When the offer is complete, confirm the offer to release the payment to the local shop. If you don't confirm within 3 days, it gets automatically transferred.
                                         </p>
