@@ -944,6 +944,7 @@ ${recentMessages || "No chat messages yet."}`;
                                     </div>
 
                                     <div className="mt-5">
+                                        {/* Payment pipeline temporarily hidden for production
                                         {selectedThread?.offerPrice ? (
                                             <a href={`/payment?needId=${selectedThread.needId}&quoteId=${selectedThread.quoteId}&price=${encodeURIComponent(selectedThread.offerPrice)}`} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0a8f45] px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-[#0a8f45]/20 transition-all hover:bg-[#078a3e] hover:shadow-xl hover:shadow-[#0a8f45]/30 active:scale-[0.98]">
                                                 Place Offer ({selectedThread.offerPrice})
@@ -956,6 +957,7 @@ ${recentMessages || "No chat messages yet."}`;
                                         <p className="mt-3 text-center text-[10px] font-semibold leading-4 text-[#64748b]">
                                             When the offer is complete, confirm the offer to release the payment to the local shop. If you don't confirm within 3 days, it gets automatically transferred.
                                         </p>
+                                        */}
                                     </div>
                                 </section>
 
