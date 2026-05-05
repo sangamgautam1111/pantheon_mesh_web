@@ -10,9 +10,11 @@ import {
     Clock,
     Edit3,
     FileText,
-    ImageIcon,
+    Image as ImageIcon,
     MapPin,
     MessageSquare,
+    Send,
+    ShieldCheck,
     ShoppingBag,
     Star,
     Store,
@@ -226,6 +228,7 @@ function QuoteRow({
     deleting,
     onEdit,
     onDelete,
+    category,
 }: {
     offer: OfferRecord;
     canOrder: boolean;
@@ -236,6 +239,7 @@ function QuoteRow({
     deleting: boolean;
     onEdit: () => void;
     onDelete: () => void;
+    category?: string;
 }) {
     const [reviews, setReviews] = useState<ReviewRecord[]>([]);
 
@@ -646,6 +650,7 @@ export default function NeedDetailPage() {
                                                 deleting={deletingOfferId === offer.id}
                                                 onEdit={() => startEditOffer(offer)}
                                                 onDelete={() => void removeOffer(offer)}
+                                                category={need.category}
                                             />
                                         )) : (
                                             <div className="rounded-[24px] border-2 border-dashed border-[#dadbdd] bg-white p-10 text-center">
