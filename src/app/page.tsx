@@ -40,7 +40,7 @@ import { useAuth } from "@/context/AuthContext";
 import { NeedRecord, getNeeds } from "@/lib/neederoDatabase";
 import { localRank, needDistanceLabel, ViewerLocation } from "@/lib/location";
 
-const HERO_SUGGESTIONS = ["Screen repair", "Battery issue", "Charging problem", "Water damage", "Phone pickup repair"];
+const HERO_SUGGESTIONS = ["Phone repair", "Food delivery", "Screen broken", "Order grocery", "Battery replacement"];
 
 type CategoryCard = {
     label: string;
@@ -55,12 +55,8 @@ type IconInfoCard = {
 };
 
 const CATEGORY_CARDS: CategoryCard[] = [
-    { label: "Screen Repair", icon: Smartphone, href: "/marketplace?q=screen%20repair" },
-    { label: "Battery Repair", icon: Zap, href: "/marketplace?q=battery%20repair" },
-    { label: "Charging Port", icon: Wrench, href: "/marketplace?q=charging%20repair" },
-    { label: "Speaker / Mic", icon: Headphones, href: "/marketplace?q=speaker%20mic%20repair" },
-    { label: "Camera Repair", icon: Camera, href: "/marketplace?q=camera%20repair" },
-    { label: "Water Damage", icon: Droplets, href: "/marketplace?q=water%20damage" },
+    { label: "Phone Repair & Maintenance", icon: Smartphone, href: "/marketplace?q=phone%20repair" },
+    { label: "Food Service & Delivery", icon: ShoppingBag, href: "/marketplace?q=food" },
 ];
 
 const SERVICE_TILES = [
@@ -116,12 +112,8 @@ const FOOTER_COLUMNS = [
     {
         title: "Categories",
         links: [
-            "Screen Repair",
-            "Battery Replacement",
-            "Charging Port Repair",
-            "Speaker & Mic Repair",
-            "Camera Repair",
-            "Water Damage",
+            "Phone Repair & Maintenance",
+            "Food Service & Delivery",
         ],
     },
     {

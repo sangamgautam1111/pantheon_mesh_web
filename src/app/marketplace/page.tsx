@@ -239,14 +239,16 @@ function QuoteCard({
     ordering: boolean;
     onChat: () => void;
     onOrder: () => void;
+    category?: string;
 }) {
+    const isFood = category === "Food Service & Delivery";
     const rows = [
         ["Service type", offer.serviceType || "Not specified"],
-        ["Estimated time", offer.time || "Not specified"],
-        ["Warranty", offer.warranty || "Not specified"],
-        ["Parts quality", offer.partsQuality || "Not specified"],
+        [isFood ? "Prep/Delivery time" : "Estimated time", offer.time || "Not specified"],
+        [isFood ? "Special Note" : "Warranty", offer.warranty || "Not specified"],
+        [isFood ? "Food Source" : "Parts quality", offer.partsQuality || "Not specified"],
         ["Availability", offer.availability || "Not specified"],
-        ["Included", offer.included || "Repair details in note"],
+        ["Included", offer.included || (isFood ? "Order details in note" : "Repair details in note")],
     ];
 
     return (
@@ -499,7 +501,7 @@ export default function Marketplace() {
                 note: draft.note,
             });
             setDraft(emptyDraft);
-            setMessage("Repair Offer submitted. It is now inside the customer Offer Inbox.");
+            setMessage("Offer submitted. It is now inside the customer Offer Inbox.");
             await loadOffers(selectedNeedId);
             await loadNeeds();
         } catch (error) {
@@ -555,13 +557,13 @@ export default function Marketplace() {
                         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                             <div>
                                 <p className="text-xs font-black uppercase tracking-[0.18em] mb-2" style={{color:"#222325"}}>
-                                    {isBusiness?"Repair Lead Inbox":"Browse Repair Offers"}
+                                    {isBusiness?"Lead Inbox":"Browse Offers"}
                                 </p>
                                 <h1 className="font-heading text-3xl font-black tracking-[-0.04em]" style={{color:"#222325"}}>
-                                    {isBusiness?"Phone Repair Needs Near You":"Find Phone Repair Offers"}
+                                    {isBusiness?"Needs Near You":"Find Service Offers"}
                                 </h1>
                                 <div className="mt-3 flex flex-wrap items-center gap-3 text-sm" style={{color:"#74767e"}}>
-                                    <span className="font-semibold">{loading ? "Loading" : `${needs.length} live`} repair Needs</span>
+                                    <span className="font-semibold">{loading ? "Loading" : `${needs.length} live`} marketplace needs</span>
                                     <span className="h-1 w-1 rounded-full bg-[#b5b6ba]" />
                                     <span>{locationStatus}</span>
                                 </div>
@@ -581,8 +583,8 @@ export default function Marketplace() {
                         {/* Stats */}
                         <div className="hidden">
                             {[{label:"Live Needs",value:loading?"...":String(needs.length)},
-                              {label:"Pipeline",value:"Repair Need -> Offer -> Customer choice"},
-                              {label:isBusiness?"Your action":"Your action",value:isBusiness?"Send Repair Offers":"Choose Offer"},
+                              {label:"Pipeline",value:"Need -> Offer -> Customer choice"},
+                              {label:isBusiness?"Your action":"Your action",value:isBusiness?"Send Offers":"Choose Offer"},
                               {label:"Area",value:locationStatus}].map(s=>(
                                 <div key={s.label} className="flex flex-col">
                                     <p className="text-xs" style={{color:"#74767e"}}>{s.label}</p>
@@ -591,7 +593,7 @@ export default function Marketplace() {
                             ))}
                         </div>
                         <div className="mt-6 flex gap-3 overflow-x-auto pb-1">
-                            {["Phone issue", "Service option", "Shop trust", "NPR price", "Urgency"].map((filter) => (
+                            {["Issue", "Service option", "Trust", "Price", "Urgency"].map((filter) => (
                                 <button key={filter} className="whitespace-nowrap rounded-full border border-[#d7d9dc] bg-white px-5 py-2.5 text-sm font-bold text-[#222325] transition hover:border-[#222325]">
                                     {filter}
                                 </button>
@@ -615,10 +617,10 @@ export default function Marketplace() {
                         <div className="rounded-2xl border-2 border-dashed py-20 text-center" style={{borderColor:"#e4e5e7"}}>
                             <Briefcase size={40} className="mx-auto mb-4" style={{color:"#d1d5db"}}/>
                             <h2 className="text-xl font-bold mb-2" style={{color:"#404145"}}>
-                                {searchQuery?`No results for "${searchQuery}"`:'No live phone repair Needs loaded'}
+                                {searchQuery?`No results for "${searchQuery}"`:'No live marketplace needs loaded'}
                             </h2>
                             <p className="text-sm mb-5" style={{color:"#74767e"}}>
-                                {searchQuery?'Try screen, battery, charging, or water damage.':'Phone repair Needs appear here once customers post them.'}
+                                {searchQuery?'Try food delivery, screen repair, or local services.':'Service Needs appear here once customers post them.'}
                             </p>
                             {!searchQuery&&(
                                 <button onClick={loadNeeds} className="rounded-full bg-[#222325] px-6 py-3 text-sm font-black text-white transition hover:bg-black">
@@ -774,6 +776,7 @@ export default function Marketplace() {
                                                     canOrder={canOrderSelectedNeed}
                                                     canChat={canOrderSelectedNeed}
                                                     ordering={orderingOfferId===offer.id}
+                                                    category={selectedNeed?.category}
                                                     onChat={()=>void startQuoteChat(offer, "chat")}
                                                     onOrder={()=>void chooseQuote(offer)}/>
                                             ))

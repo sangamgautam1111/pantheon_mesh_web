@@ -19,10 +19,14 @@ import {
     Loader2,
     MapPin,
     Mic,
+    Pizza,
     PlugZap,
+    ShoppingBag,
+    ShoppingCart,
     Smartphone,
     Store,
     UploadCloud,
+    Utensils,
     Wrench,
 } from "lucide-react";
 import { City, Country, State } from "country-state-city";
@@ -54,11 +58,17 @@ type PinPoint = {
 };
 
 const steps = [
-    { label: "Issue", helper: "What happened?" },
-    { label: "Phone details", helper: "Brand and proof" },
-    { label: "Preference", helper: "How to repair" },
+    { label: "Category", helper: "What do you need?" },
+    { label: "Problem", helper: "Choose specific issue" },
+    { label: "Details", helper: "Add descriptions" },
+    { label: "Preference", helper: "How to receive service" },
     { label: "Location", helper: "Area and urgency" },
-    { label: "Review", helper: "Post repair need" },
+    { label: "Review", helper: "Post your need" },
+];
+
+const categoryOptions = [
+    { label: "Phone Repair & Maintenance", value: "Phone Repair", icon: Smartphone, tone: "bg-[#e9f9f0] text-[#0a8f45]" },
+    { label: "Food Service & Delivery", value: "Food Service", icon: ShoppingBag, tone: "bg-[#fdf2f8] text-[#be185d]" },
 ];
 
 const issueOptions = [
@@ -72,8 +82,17 @@ const issueOptions = [
     { label: "Other issue", value: "Other issue", icon: HelpCircle, tone: "bg-[#f8fafc] text-[#475569]" },
 ];
 
+const foodIssueOptions = [
+    { label: "Restaurant Order", value: "Restaurant Order", icon: Utensils, tone: "bg-[#fdf2f8] text-[#be185d]" },
+    { label: "Grocery Items", value: "Grocery Items", icon: ShoppingCart, tone: "bg-[#eef6ff] text-[#2563eb]" },
+    { label: "Bakery & Sweets", value: "Bakery & Sweets", icon: Pizza, tone: "bg-[#fff7ed] text-[#c2410c]" },
+    { label: "Fresh Vegetables", value: "Fresh Vegetables", icon: Store, tone: "bg-[#e9f9f0] text-[#0a8f45]" },
+    { label: "Custom Food Task", value: "Custom Food Task", icon: HelpCircle, tone: "bg-[#f8fafc] text-[#475569]" },
+];
+
 const brandOptions = ["Apple iPhone", "Samsung", "Xiaomi / Redmi", "Oppo", "Vivo", "OnePlus", "Google Pixel", "Realme", "Other"];
 const servicePreferences = ["Visit shop", "Home repair", "Pickup & return", "Ask shop to suggest"];
+const foodPreferences = ["Delivery to my door", "Self pickup", "Order & I will collect", "Dine-in booking"];
 const urgencyOptions = ["Today", "Tomorrow", "Flexible"];
 
 const issueTitleMap: Record<string, string> = {
@@ -127,7 +146,8 @@ function buildRepairTitle(brand: string, model: string, issue: string, urgency: 
     return `${device} ${repair} ${time}`;
 }
 
-function buildRepairCard(input: {
+function buildNeedCard(input: {
+    category: "Phone Repair" | "Food Service";
     brand: string;
     model: string;
     issueType: string;
@@ -138,32 +158,43 @@ function buildRepairCard(input: {
     budget: string;
     customerAvatar?: string | null;
 }): NeedCard {
-    const title = buildRepairTitle(input.brand, input.model, input.issueType, input.urgency);
-    const details = [
-        `Issue: ${input.issueType}`,
-        `Phone: ${[input.brand, input.model].filter(Boolean).join(" ") || "Not specified"}`,
-        input.issueDescription ? `Details: ${input.issueDescription}` : "",
-        `Service preference: ${input.servicePreference}`,
-        `Customer budget: ${input.budget || "Open for NPR repair quotes"}`,
-        `Urgency: ${input.urgency}`,
-        `Area: ${input.location}`,
-    ]
-        .filter(Boolean)
-        .join("\n");
+    const isFood = input.category === "Food Service";
+    const title = isFood 
+        ? `${input.issueType} needed in ${input.location.split(",")[0] || "area"}`
+        : buildRepairTitle(input.brand, input.model, input.issueType, input.urgency);
+
+    const details = isFood
+        ? [
+            `Service: ${input.issueType}`,
+            input.issueDescription ? `Details: ${input.issueDescription}` : "",
+            `Delivery preference: ${input.servicePreference}`,
+            `Estimated budget: ${input.budget || "Open for quotes"}`,
+            `Urgency: ${input.urgency}`,
+            `Area: ${input.location}`,
+          ].filter(Boolean).join("\n")
+        : [
+            `Issue: ${input.issueType}`,
+            `Phone: ${[input.brand, input.model].filter(Boolean).join(" ") || "Not specified"}`,
+            input.issueDescription ? `Details: ${input.issueDescription}` : "",
+            `Service preference: ${input.servicePreference}`,
+            `Customer budget: ${input.budget || "Open for NPR repair quotes"}`,
+            `Urgency: ${input.urgency}`,
+            `Area: ${input.location}`,
+          ].filter(Boolean).join("\n");
 
     return {
-        category: "Phone Repair",
+        category: input.category,
         title,
-        problem: input.issueDescription || `${input.issueType} on ${input.model || "phone"}.`,
+        problem: input.issueDescription || `${input.issueType} needed.`,
         knownDetails: details,
-        missingInfo: ["Repair price", "Estimated time", "Warranty", "Parts quality"],
-        questions: ["What is your repair price in NPR?", "How long will it take?", "What warranty and parts quality do you provide?"],
-        summaryForBusinesses: "Send repair price in NPR, estimated time, warranty, parts quality, availability, and service method.",
-        tags: ["Phone Repair", input.issueType, input.servicePreference],
+        missingInfo: isFood ? ["Availability", "Price with delivery", "Time of delivery"] : ["Repair price", "Estimated time", "Warranty", "Parts quality"],
+        questions: isFood ? ["Can you deliver this?", "What is the total price?", "How long will it take?"] : ["What is your repair price in NPR?", "How long will it take?", "What warranty and parts quality do you provide?"],
+        summaryForBusinesses: isFood ? "Send delivery price, availability, and estimated time." : "Send repair price in NPR, estimated time, warranty, parts quality, availability, and service method.",
+        tags: [input.category, input.issueType, input.servicePreference],
         customerAvatar: input.customerAvatar || null,
         serviceMode: input.servicePreference,
         preferredTime: input.urgency,
-        warrantyImportant: "Yes, repair warranty preferred",
+        warrantyImportant: isFood ? "N/A" : "Yes, repair warranty preferred",
     };
 }
 
@@ -171,13 +202,14 @@ export default function NewCustomerRequestPage() {
     const router = useRouter();
     const { user, profile, updateUserProfile } = useAuth();
     const [step, setStep] = useState(0);
-    const [issueType, setIssueType] = useState(issueOptions[0].value);
+    const [category, setCategory] = useState<"Phone Repair" | "Food Service">("Phone Repair");
+    const [issueType, setIssueType] = useState("");
     const [phoneBrand, setPhoneBrand] = useState(brandOptions[0]);
     const [phoneModel, setPhoneModel] = useState("");
     const [issueDescription, setIssueDescription] = useState("");
     const [uploadedMedia, setUploadedMedia] = useState<UploadedMedia | null>(null);
-    const [servicePreference, setServicePreference] = useState(servicePreferences[0]);
-    const [budget, setBudget] = useState("Open for NPR repair quotes");
+    const [servicePreference, setServicePreference] = useState("");
+    const [budget, setBudget] = useState("");
     const [urgency, setUrgency] = useState(urgencyOptions[0]);
     const [countryCode, setCountryCode] = useState(profile?.countryCode || "NP");
     const [stateCode, setStateCode] = useState(profile?.stateCode || "");
@@ -209,7 +241,8 @@ export default function NewCustomerRequestPage() {
     const locationString = [area, city, selectedState?.name, selectedCountry?.name].filter(Boolean).join(", ") || "Location not set";
     const repairCard = useMemo(
         () =>
-            buildRepairCard({
+            buildNeedCard({
+                category,
                 brand: phoneBrand,
                 model: phoneModel,
                 issueType,
@@ -220,8 +253,26 @@ export default function NewCustomerRequestPage() {
                 location: locationString,
                 customerAvatar: profileAvatar,
             }),
-        [budget, issueType, issueDescription, locationString, phoneBrand, phoneModel, profileAvatar, servicePreference, urgency],
+        [category, budget, issueType, issueDescription, locationString, phoneBrand, phoneModel, profileAvatar, servicePreference, urgency],
     );
+
+    useEffect(() => {
+        if (!issueType) {
+            setIssueType(category === "Food Service" ? foodIssueOptions[0].value : issueOptions[0].value);
+        }
+    }, [category, issueType]);
+
+    useEffect(() => {
+        if (!servicePreference) {
+            setServicePreference(category === "Food Service" ? foodPreferences[0] : servicePreferences[0]);
+        }
+    }, [category, servicePreference]);
+
+    useEffect(() => {
+        if (!budget) {
+            setBudget(category === "Food Service" ? "Estimated NPR 500 - 2,000" : "Open for NPR repair quotes");
+        }
+    }, [category, budget]);
 
     useEffect(() => {
         if (profile?.countryCode) return;
@@ -256,9 +307,9 @@ export default function NewCustomerRequestPage() {
     };
 
     const validateStep = () => {
-        if (step === 0 && !issueType) return "Choose what happened to your phone.";
-        if (step === 1 && !phoneBrand) return "Choose the phone brand. The exact model is optional.";
-        if (step === 3 && (!city || !area)) return "Add city and area so nearby repair shops can find this request.";
+        if (step === 0 && !category) return "Please select a category.";
+        if (step === 1 && !issueType) return category === "Food Service" ? "Choose what type of food service you need." : "Choose what happened to your phone.";
+        if (step === 4 && (!city || !area)) return "Add city and area so nearby businesses can find this request.";
         return "";
     };
 
@@ -307,7 +358,7 @@ export default function NewCustomerRequestPage() {
                 customerAvatar: profileAvatar,
                 title: repairCard.title,
                 description,
-                category: "Phone Repair",
+                category,
                 location: locationString,
                 countryCode,
                 stateCode,
@@ -336,13 +387,56 @@ export default function NewCustomerRequestPage() {
         if (step === 0) {
             return (
                 <section>
-                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 1 of 5</p>
-                    <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">What happened to your phone?</h1>
+                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 1 of 6</p>
+                    <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">What do you need help with?</h1>
                     <p className="mt-3 max-w-2xl text-sm leading-7 text-[#64748b]">
-                        Choose one repair issue. Needero MVP is focused only on phone repair so nearby shops can quote fast.
+                        Needero is expanding. Choose a category below to post your request and receive custom offers from nearby businesses.
+                    </p>
+                    <div className="mt-7 grid gap-4 sm:grid-cols-2">
+                        {categoryOptions.map((option) => {
+                            const Icon = option.icon;
+                            const active = category === option.value;
+                            return (
+                                <button
+                                    key={option.value}
+                                    type="button"
+                                    onClick={() => {
+                                        setCategory(option.value as any);
+                                        setIssueType("");
+                                        setServicePreference("");
+                                        setBudget("");
+                                    }}
+                                    className={`min-h-[140px] rounded-2xl border p-6 text-left transition ${
+                                        active ? "border-[#0a8f45] bg-[#f0fbf4] ring-4 ring-[#e9f9f0]" : "border-[#dfe8e3] bg-white hover:border-[#9bd6b2]"
+                                    }`}
+                                >
+                                    <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${option.tone}`}>
+                                        <Icon size={24} />
+                                    </div>
+                                    <p className="mt-5 text-lg font-black text-[#06111f]">{option.label}</p>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </section>
+            );
+        }
+
+        if (step === 1) {
+            const options = category === "Food Service" ? foodIssueOptions : issueOptions;
+            return (
+                <section>
+                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 2 of 6</p>
+                    <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">
+                        {category === "Food Service" ? "What food service do you need?" : "What happened to your phone?"}
+                    </h1>
+                    <p className="mt-3 max-w-2xl text-sm leading-7 text-[#64748b]">
+                        {category === "Food Service" 
+                            ? "Tell us what you are looking for. Nearby restaurants and delivery partners will respond with offers."
+                            : "Choose one repair issue. Needero started with phone repair so nearby shops can quote fast."}
                     </p>
                     <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        {issueOptions.map((option) => {
+                        {options.map((option) => {
                             const Icon = option.icon;
                             const active = issueType === option.value;
                             return (
@@ -366,32 +460,44 @@ export default function NewCustomerRequestPage() {
             );
         }
 
-        if (step === 1) {
+        if (step === 2) {
             return (
                 <section>
-                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 2 of 5</p>
-                    <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">Add phone details.</h1>
-                    <p className="mt-3 text-sm leading-7 text-[#64748b]">Choose the brand. Add the model only if you know it; clear photos can help shops quote the right part and price.</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 3 of 6</p>
+                    <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">
+                        {category === "Food Service" ? "Add order details." : "Add phone details."}
+                    </h1>
+                    <p className="mt-3 text-sm leading-7 text-[#64748b]">
+                        {category === "Food Service"
+                            ? "List the items you need, special instructions, or restaurant names if preferred."
+                            : "Choose the brand. Add the model only if you know it; clear photos can help shops quote the right part and price."}
+                    </p>
                     <div className="mt-7 grid gap-4 md:grid-cols-2">
-                        <label>
-                            <span className={labelClass}>Phone brand</span>
-                            <select value={phoneBrand} onChange={(event) => setPhoneBrand(event.target.value)} className={inputClass}>
-                                {brandOptions.map((option) => (
-                                    <option key={option}>{option}</option>
-                                ))}
-                            </select>
-                        </label>
-                        <label>
-                            <span className={labelClass}>Model optional</span>
-                            <input value={phoneModel} onChange={(event) => setPhoneModel(event.target.value)} className={inputClass} placeholder="Optional: iPhone 13, Redmi Note 12..." />
-                        </label>
+                        {category === "Phone Repair" && (
+                            <>
+                                <label>
+                                    <span className={labelClass}>Phone brand</span>
+                                    <select value={phoneBrand} onChange={(event) => setPhoneBrand(event.target.value)} className={inputClass}>
+                                        {brandOptions.map((option) => (
+                                            <option key={option}>{option}</option>
+                                        ))}
+                                    </select>
+                                </label>
+                                <label>
+                                    <span className={labelClass}>Model optional</span>
+                                    <input value={phoneModel} onChange={(event) => setPhoneModel(event.target.value)} className={inputClass} placeholder="Optional: iPhone 13, Redmi Note 12..." />
+                                </label>
+                            </>
+                        )}
                         <label className="md:col-span-2">
-                            <span className={labelClass}>Issue description</span>
+                            <span className={labelClass}>{category === "Food Service" ? "Order list / Details" : "Issue description"}</span>
                             <textarea
                                 value={issueDescription}
                                 onChange={(event) => setIssueDescription(event.target.value)}
                                 className={`${inputClass} min-h-[150px] resize-y`}
-                                placeholder="Example: screen cracked, touch still works, need repair today near Kathmandu."
+                                placeholder={category === "Food Service" 
+                                    ? "Example: 2x Chicken Momos, 1x Coke 500ml. Please deliver to Thapathali Heights." 
+                                    : "Example: screen cracked, touch still works, need repair today near Kathmandu."}
                             />
                         </label>
                     </div>
@@ -402,8 +508,8 @@ export default function NewCustomerRequestPage() {
                                 <UploadCloud size={22} />
                             </div>
                             <div>
-                                <p className="font-black text-[#06111f]">Upload phone photo or video</p>
-                                <p className="mt-1 text-sm text-[#64748b]">Optional, but cracked screens and charging ports are easier to quote with proof.</p>
+                                <p className="font-black text-[#06111f]">{category === "Food Service" ? "Upload food or menu photo" : "Upload phone photo or video"}</p>
+                                <p className="mt-1 text-sm text-[#64748b]">Optional, but helpful for businesses to understand your need.</p>
                             </div>
                         </div>
                         {uploadedMedia ? <UploadedMediaPreview media={uploadedMedia} /> : null}
@@ -412,16 +518,17 @@ export default function NewCustomerRequestPage() {
             );
         }
 
-        if (step === 2) {
+        if (step === 3) {
+            const preferences = category === "Food Service" ? foodPreferences : servicePreferences;
             return (
                 <section>
-                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 3 of 5</p>
-                    <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">Set your repair preference.</h1>
-                    <p className="mt-3 text-sm leading-7 text-[#64748b]">Shops can still suggest alternatives, but this helps them send useful Offers.</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 4 of 6</p>
+                    <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">Set your preference.</h1>
+                    <p className="mt-3 text-sm leading-7 text-[#64748b]">Businesses can still suggest alternatives, but this helps them send useful Offers.</p>
                     <div className="mt-7 grid gap-3 md:grid-cols-2">
-                        {servicePreferences.map((option) => {
+                        {preferences.map((option) => {
                             const active = servicePreference === option;
-                            const Icon = option === "Visit shop" ? Store : option === "Home repair" ? Home : option === "Pickup & return" ? MapPin : Wrench;
+                            const Icon = category === "Food Service" ? ShoppingBag : (option === "Visit shop" ? Store : option === "Home repair" ? Home : option === "Pickup & return" ? MapPin : Wrench);
                             return (
                                 <button
                                     type="button"
@@ -437,13 +544,7 @@ export default function NewCustomerRequestPage() {
                                     <div>
                                         <p className="text-sm font-black text-[#06111f]">{option}</p>
                                         <p className="mt-1 text-xs leading-5 text-[#64748b]">
-                                            {option === "Visit shop"
-                                                ? "You go to the repair shop."
-                                                : option === "Home repair"
-                                                  ? "Shop visits your place if possible."
-                                                  : option === "Pickup & return"
-                                                    ? "Shop collects, repairs, and returns."
-                                                    : "Let shop choose the safest method."}
+                                            {category === "Food Service" ? "Choose how you want to receive your food." : "Choose how you want your phone repaired."}
                                         </p>
                                     </div>
                                 </button>
@@ -451,24 +552,24 @@ export default function NewCustomerRequestPage() {
                         })}
                     </div>
                     <label className="mt-5 block">
-                        <span className={labelClass}>Customer budget</span>
+                        <span className={labelClass}>{category === "Food Service" ? "Estimated budget" : "Customer budget"}</span>
                         <input
                             value={budget}
                             onChange={(event) => setBudget(event.target.value)}
                             className={inputClass}
-                            placeholder="Open for NPR repair quotes or NPR 4,500"
+                            placeholder={category === "Food Service" ? "Example: NPR 1,500" : "Open for NPR repair quotes or NPR 4,500"}
                         />
                     </label>
                 </section>
             );
         }
 
-        if (step === 3) {
+        if (step === 4) {
             return (
                 <section>
-                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 4 of 5</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 5 of 6</p>
                     <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">Location & urgency.</h1>
-                    <p className="mt-3 text-sm leading-7 text-[#64748b]">Exact address is optional. Shops see area first and quote in NPR.</p>
+                    <p className="mt-3 text-sm leading-7 text-[#64748b]">Exact address is optional. Businesses see area first and quote in NPR.</p>
                     <div className="mt-7 grid gap-4 md:grid-cols-2">
                         <label>
                             <span className={labelClass}>Country</span>
@@ -535,7 +636,7 @@ export default function NewCustomerRequestPage() {
                                 </div>
                                 <div>
                                     <p className="font-black text-[#06111f]">Map pin optional</p>
-                                    <p className="mt-1 text-sm leading-6 text-[#64748b]">{pinPoint?.address || "Pin only if pickup, return, or home repair needs exact navigation."}</p>
+                                    <p className="mt-1 text-sm leading-6 text-[#64748b]">{pinPoint?.address || "Pin only if pickup, return, or home delivery needs exact navigation."}</p>
                                 </div>
                             </div>
                             <button type="button" onClick={() => setIsMapOpen(true)} className="rounded-xl bg-[#06111f] px-5 py-3 text-sm font-black text-white">
@@ -549,9 +650,9 @@ export default function NewCustomerRequestPage() {
 
         return (
             <section>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 5 of 5</p>
-                <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">Review your phone repair Need.</h1>
-                <p className="mt-3 text-sm leading-7 text-[#64748b]">Shops can send price, time, warranty, parts quality, availability, and repair notes.</p>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 6 of 6</p>
+                <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">Review your Need.</h1>
+                <p className="mt-3 text-sm leading-7 text-[#64748b]">Businesses can send price, time, and service details in their Offers.</p>
                 <NeedPreview card={repairCard} location={locationString} urgency={urgency} budget={budget} media={uploadedMedia} pinPoint={pinPoint} />
             </section>
         );
@@ -650,7 +751,7 @@ export default function NewCustomerRequestPage() {
                                             className="inline-flex items-center gap-2 rounded-xl bg-[#0a8f45] px-6 py-3 text-sm font-black text-white hover:bg-[#08783b] disabled:opacity-50"
                                         >
                                             {posting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-                                            {profile?.phoneVerified ? "Post Phone Repair Need" : "Verify phone first"}
+                                            {profile?.phoneVerified ? `Post ${category} Need` : "Verify phone first"}
                                         </button>
                                     )}
                                 </div>
@@ -661,9 +762,9 @@ export default function NewCustomerRequestPage() {
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#94a3b8]">Live preview</p>
-                                            <h2 className="mt-2 text-xl font-black text-[#06111f]">Repair Need Card</h2>
+                                            <h2 className="mt-2 text-xl font-black text-[#06111f]">{category} Card</h2>
                                         </div>
-                                        <Smartphone size={22} className="text-[#0a8f45]" />
+                                        {category === "Food Service" ? <ShoppingBag size={22} className="text-[#be185d]" /> : <Smartphone size={22} className="text-[#0a8f45]" />}
                                     </div>
                                     <NeedPreview compact card={repairCard} location={locationString} urgency={urgency} budget={budget} media={uploadedMedia} pinPoint={pinPoint} />
                                 </div>
