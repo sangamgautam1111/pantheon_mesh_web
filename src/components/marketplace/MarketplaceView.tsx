@@ -4,22 +4,16 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-    Bell,
     Briefcase,
     CheckCircle2,
     Clock,
     FileText,
     Flame,
     MapPin,
-    MessageCircle,
     MessageSquare,
     Navigation,
     Search,
-    Send,
-    ShieldCheck,
     ShoppingBag,
-    X,
-    Star,
 } from "lucide-react";
 import {
     localRank,
@@ -35,7 +29,6 @@ import {
     getNeeds,
     getOffers,
     NeedRecord,
-    formatMoney,
 } from "@/lib/neederoDatabase";
 
 type QuoteDraft = {

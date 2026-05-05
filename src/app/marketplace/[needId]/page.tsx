@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
     ArrowLeft,
+    Briefcase,
     CheckCircle2,
     Clock,
     Edit3,
@@ -12,8 +13,6 @@ import {
     ImageIcon,
     MapPin,
     MessageSquare,
-    Send,
-    ShieldCheck,
     ShoppingBag,
     Star,
     Store,
@@ -27,7 +26,6 @@ import {
     createOffer,
     deleteNeed,
     deleteOffer,
-    formatMoney,
     getNeedById,
     getOffers,
     getReviewsForTarget,
@@ -35,6 +33,7 @@ import {
     NeedRecord,
     ReviewRecord,
     updateOffer,
+    formatMoney,
 } from "@/lib/neederoDatabase";
 
 type QuoteDraft = {
