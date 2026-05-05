@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ShieldCheck, CheckCircle, ArrowRight } from 'lucide-react';
+import { ShieldCheck, CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
 
-export default function BusinessCommissionPage() {
+function CommissionContent() {
     const searchParams = useSearchParams();
     const [loading, setLoading] = useState(false);
 
@@ -126,5 +126,17 @@ export default function BusinessCommissionPage() {
 
             </div>
         </div>
+    );
+}
+
+export default function BusinessCommissionPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+            </div>
+        }>
+            <CommissionContent />
+        </Suspense>
     );
 }
