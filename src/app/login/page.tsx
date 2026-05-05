@@ -11,39 +11,17 @@ import {
     Github,
     Loader2,
     Mail,
-    Store,
     UserRound,
     Lock,
+    Smartphone,
+    UtensilsCrossed,
+    Home,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ActiveAccountType, useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 
-const destinationFor = (accountType: ActiveAccountType | null | undefined) =>
-    accountType === "business" ? "/marketplace" : "/client";
-
-const accountOptions: Array<{
-    type: ActiveAccountType;
-    title: string;
-    subtitle: string;
-    icon: typeof UserRound;
-    points: string[];
-}> = [
-    {
-        type: "customer",
-        title: "Customer account",
-        subtitle: "Post a service Need, compare service Offers, and choose the best nearby business.",
-        icon: UserRound,
-        points: ["Post service Needs for free", "Compare NPR price, time, warranty", "Contact unlocks after choosing"],
-    },
-    {
-        type: "business",
-        title: "Local Business account",
-        subtitle: "Browse nearby service Needs, send Service Offers, and grow with a business subscription.",
-        icon: Store,
-        points: ["Service lead inbox", "Send price, time, warranty", "Profile, analytics, and plans"],
-    },
-];
+const destinationFor = () => "/client";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -58,7 +36,6 @@ export default function LoginPage() {
     } = useAuth();
 
     const [emailMode, setEmailMode] = useState<"signin" | "signup" | null>(null);
-    const [selectedAccountType, setSelectedAccountType] = useState<ActiveAccountType>("customer");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [displayName, setDisplayName] = useState("");
@@ -68,16 +45,9 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (user && !authLoading && accountType) {
-            router.push(destinationFor(accountType));
+            router.push(accountType === "business" ? "/marketplace" : "/client");
         }
     }, [user, authLoading, accountType, router]);
-
-    useEffect(() => {
-        const role = new URLSearchParams(window.location.search).get("role");
-        if (role === "business" || role === "customer") {
-            setSelectedAccountType(role);
-        }
-    }, []);
 
     const handleProviderSignIn = async (provider: "google" | "github") => {
         setError(null);
@@ -85,9 +55,9 @@ export default function LoginPage() {
 
         try {
             if (provider === "google") {
-                await signInWithGoogle(selectedAccountType);
+                await signInWithGoogle("customer");
             } else {
-                await signInWithGitHub(selectedAccountType);
+                await signInWithGitHub("customer");
             }
         } catch (err: any) {
             setError(err?.code === "auth/popup-closed-by-user"
@@ -106,15 +76,15 @@ export default function LoginPage() {
         try {
             if (emailMode === "signup") {
                 if (!displayName.trim()) {
-                    setError(selectedAccountType === "business" ? "Business or owner name is required." : "Your name is required.");
+                    setError("Your name is required.");
                     return;
                 }
-                await signUpWithEmail(email, password, displayName.trim(), selectedAccountType);
+                await signUpWithEmail(email, password, displayName.trim(), "customer");
             } else {
-                await signInWithEmail(email, password, selectedAccountType);
+                await signInWithEmail(email, password, "customer");
             }
 
-            router.push(destinationFor(selectedAccountType));
+            router.push(destinationFor());
         } catch (err: any) {
             if (err.code === "auth/user-not-found") {
                 setError("No account was found for that email.");
@@ -163,34 +133,33 @@ export default function LoginPage() {
                         <div className="absolute bottom-0 left-0 h-44 w-72 rounded-tr-[120px] bg-[repeating-linear-gradient(45deg,rgba(10,143,69,0.05)_0,rgba(10,143,69,0.05)_1px,transparent_1px,transparent_12px)]" />
                         <div className="relative mb-8 inline-flex items-center gap-2 rounded-full border border-[#dfe8e3] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#0a8f45] shadow-sm">
                             <Building2 size={14} />
-                            Needero account system
+                            Customer Sign In
                         </div>
 
                         <h1 className="relative max-w-2xl text-4xl font-black leading-[0.96] tracking-[-0.055em] text-[#06111f] md:text-6xl">
-                            Local Service Needero. Two clear account flows.
+                            Get things done. Post a Need, get Offers.
                         </h1>
 
                         <p className="relative mt-6 max-w-2xl text-base leading-7 text-[#64748b]">
-                            Customers post one local issue. Nearby local businesses send clear Service Offers. Needero keeps
-                            contact details protected until the customer chooses a business.
+                            Post what you need — mobile repair, food delivery, or home service — and local businesses compete to give you the best offer. Quick, transparent, and hassle-free.
                         </p>
 
                         <div className="relative mt-10 grid gap-4 md:grid-cols-3">
                             {[
                                 {
-                                    title: "Customer",
-                                    copy: "Post a service Need, upload proof, and compare real Service Offers.",
-                                    icon: UserRound,
+                                    title: "Mobile Repair",
+                                    copy: "Cracked screen, battery issue, or any phone problem. Get quotes from verified technicians.",
+                                    icon: Smartphone,
                                 },
                                 {
-                                    title: "Business",
-                                    copy: "Receive nearby service leads and send price, time, warranty, and quality details.",
-                                    icon: Store,
+                                    title: "Food Delivery",
+                                    copy: "Order food from nearby restaurants and shops. Compare delivery offers instantly.",
+                                    icon: UtensilsCrossed,
                                 },
                                 {
-                                    title: "Marketplace",
-                                    copy: "Start with service Needs, local businesses, Offers, and messages.",
-                                    icon: Building2,
+                                    title: "Home Service",
+                                    copy: "Plumbing, electrical, cleaning — post your task and let professionals bid for the job.",
+                                    icon: Home,
                                 },
                             ].map((item) => {
                                 const Icon = item.icon;
@@ -212,65 +181,41 @@ export default function LoginPage() {
                     <section className="rounded-[18px] border border-[#dfe8e3] bg-white p-7 shadow-[0_24px_80px_rgba(15,23,42,0.08)] md:p-9">
                         <div className="mb-8">
                             <p className="text-xs font-black uppercase tracking-[0.26em] text-[#64748b]">
-                                Choose account type
+                                Customer account
                             </p>
                             <h2 className="mt-3 text-3xl font-black tracking-[-0.045em] text-[#06111f]">
-                                Access Needero
+                                Sign In to Needero
                             </h2>
                             <p className="mt-2 text-sm leading-6 text-[#64748b]">
-                                Pick the role that best describes you.
+                                Post a Need, compare Offers, and choose the best local business.
                             </p>
                         </div>
 
-                        <div className="mb-6 grid gap-3">
-                            {accountOptions.map((option) => {
-                                const OptionIcon = option.icon;
-                                const selected = selectedAccountType === option.type;
-
-                                return (
-                                    <button
-                                        key={option.type}
-                                        type="button"
-                                        onClick={() => setSelectedAccountType(option.type)}
-                                        className={`rounded-[18px] border p-4 text-left transition-all ${
-                                            selected
-                                                ? "border-[#0a8f45] bg-[#06111f] text-white shadow-xl shadow-[#06111f]/10 ring-2 ring-[#0a8f45]/30"
-                                                : "border-[#dfe8e3] bg-white text-[#06111f] hover:border-[#0a8f45]"
-                                        }`}
-                                    >
-                                        <div className="flex items-start gap-3">
-                                            <div
-                                                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
-                                                    selected ? "bg-white text-slate-950" : "bg-slate-100 text-slate-700"
-                                                }`}
+                        <div className="mb-6 rounded-[18px] border border-[#0a8f45] bg-[#06111f] p-4 text-white shadow-xl shadow-[#06111f]/10 ring-2 ring-[#0a8f45]/30">
+                            <div className="flex items-start gap-3">
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-slate-950">
+                                    <UserRound size={20} />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <h3 className="text-base font-black">Customer account</h3>
+                                        <CheckCircle2 size={18} className="text-[#8bf3b4]" />
+                                    </div>
+                                    <p className="mt-1 text-sm leading-6 text-white/75">
+                                        Post service Needs, compare NPR price and timing, choose the best offer.
+                                    </p>
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                        {["Post Needs for free", "Compare offers", "Contact unlocks after choosing"].map((point) => (
+                                            <span
+                                                key={point}
+                                                className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold text-white"
                                             >
-                                                <OptionIcon size={20} />
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="flex items-center justify-between gap-3">
-                                                    <h3 className="text-base font-black">{option.title}</h3>
-                                                    {selected && <CheckCircle2 size={18} className="text-[#8bf3b4]" />}
-                                                </div>
-                                                <p className={`mt-1 text-sm leading-6 ${selected ? "text-white/75" : "text-slate-500"}`}>
-                                                    {option.subtitle}
-                                                </p>
-                                                <div className="mt-3 flex flex-wrap gap-2">
-                                                    {option.points.map((point) => (
-                                                        <span
-                                                            key={point}
-                                                            className={`rounded-full px-3 py-1 text-[10px] font-bold ${
-                                                                selected ? "bg-white/10 text-white" : "bg-slate-100 text-slate-600"
-                                                            }`}
-                                                        >
-                                                            {point}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </button>
-                                );
-                            })}
+                                                {point}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         {!emailMode ? (
@@ -278,7 +223,7 @@ export default function LoginPage() {
                                 <div className="flex items-center gap-3 py-1">
                                     <div className="h-px flex-1 bg-[#e4ebe7]" />
                                     <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#94a3b8]">
-                                        Or continue as {selectedAccountType}
+                                        Continue as customer
                                     </span>
                                     <div className="h-px flex-1 bg-[#e4ebe7]" />
                                 </div>
@@ -297,7 +242,7 @@ export default function LoginPage() {
                                             <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
                                         </svg>
                                     )}
-                                    Continue with Google as {selectedAccountType === "business" ? "Local Business" : "Customer"}
+                                    Continue with Google
                                 </button>
 
                                 <button
@@ -310,7 +255,7 @@ export default function LoginPage() {
                                     ) : (
                                         <Github size={20} />
                                     )}
-                                    Continue with GitHub as {selectedAccountType === "business" ? "Local Business" : "Customer"}
+                                    Continue with GitHub
                                 </button>
 
                                 <button
@@ -321,7 +266,7 @@ export default function LoginPage() {
                                     className="flex w-full items-center justify-center gap-3 rounded-xl bg-[#06111f] px-6 py-3 text-sm font-black text-white transition-all hover:bg-black"
                                 >
                                     <Mail size={20} />
-                                    Continue with Email as {selectedAccountType === "business" ? "Local Business" : "Customer"}
+                                    Continue with Email
                                 </button>
                             </div>
                         ) : (
@@ -341,14 +286,14 @@ export default function LoginPage() {
                                 {emailMode === "signup" && (
                                     <div>
                                         <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-gcp-text-secondary">
-                                            {selectedAccountType === "business" ? "Business or owner name" : "Your name"}
+                                            Your name
                                         </label>
                                         <input
                                             type="text"
                                             value={displayName}
                                             onChange={(event) => setDisplayName(event.target.value)}
                                             className="gcp-input w-full"
-                                            placeholder={selectedAccountType === "business" ? "Your business name" : "Your name"}
+                                            placeholder="Your name"
                                             required
                                         />
                                     </div>
@@ -363,7 +308,7 @@ export default function LoginPage() {
                                         value={email}
                                         onChange={(event) => setEmail(event.target.value)}
                                         className="gcp-input w-full"
-                                        placeholder={selectedAccountType === "business" ? "business@needero.com" : "you@example.com"}
+                                        placeholder="you@example.com"
                                         required
                                     />
                                 </div>
@@ -399,9 +344,7 @@ export default function LoginPage() {
                                 >
                                     {loading === "email" ? <Loader2 size={18} className="animate-spin" /> : <Mail size={18} />}
                                     {emailMode === "signup"
-                                        ? selectedAccountType === "business"
-                                            ? "Create local business account"
-                                            : "Create customer account"
+                                        ? "Create customer account"
                                         : "Sign in"}
                                 </button>
 

@@ -618,7 +618,7 @@ ${recentMessages || "No chat messages yet."}`;
                                 />
                             </div>
                             <div className="mt-4 flex gap-1.5 overflow-x-auto scrollbar-hide">
-                                {["All Categories", "General Service", "Food Service & Delivery", "Home Service"].map((cat) => (
+                                {["All Categories", "Mobile Repair", "Food Service & Delivery", "Home Service"].map((cat) => (
                                     <button
                                         key={cat}
                                         onClick={() => setSelectedCategory(cat)}

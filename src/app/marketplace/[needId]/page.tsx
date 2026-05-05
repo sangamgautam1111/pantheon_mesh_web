@@ -76,7 +76,7 @@ const qualityLevelOptions = ["Premium", "Standard", "Economy", "N/A"];
 const lateMinuteOptions = ["15 minutes", "30 minutes", "45 minutes", "60 minutes"];
 
 const categorySlugs: Record<string, string> = {
-    "general": "General Service",
+    "mobile": "Mobile Repair",
     "food": "Food Service & Delivery",
     "home": "Home Service",
 };

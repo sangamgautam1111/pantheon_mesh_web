@@ -59,15 +59,13 @@ type PinPoint = {
 
 const steps = [
     { label: "Category", helper: "What do you need?" },
-    { label: "Problem", helper: "Choose specific issue" },
-    { label: "Details", helper: "Add descriptions" },
-    { label: "Preference", helper: "How to receive service" },
-    { label: "Location", helper: "Area and urgency" },
-    { label: "Review", helper: "Post your need" },
+    { label: "Details", helper: "Issue, description & photos" },
+    { label: "Delivery", helper: "Preference, budget & location" },
+    { label: "Review", helper: "Confirm and post" },
 ];
 
 const categoryOptions = [
-    { label: "General Service & Maintenance", value: "General Service", icon: Smartphone, tone: "bg-[#e9f9f0] text-[#0a8f45]" },
+    { label: "Mobile Repair", value: "Mobile Repair", icon: Smartphone, tone: "bg-[#e9f9f0] text-[#0a8f45]" },
     { label: "Food Service & Delivery", value: "Food Service & Delivery", icon: ShoppingBag, tone: "bg-[#fdf2f8] text-[#be185d]" },
     { label: "Home & Local Services", value: "Home Service", icon: Home, tone: "bg-[#eef6ff] text-[#2563eb]" },
 ];
@@ -150,8 +148,8 @@ function UploadedMediaPreview({ media, compact = false }: { media: UploadedMedia
 }
 
 function buildServiceTitle(category: string, issue: string, urgency: string, brand?: string, model?: string) {
-    if (category === "General Service") {
-        const device = [brand === "Other" ? "" : brand, model].filter(Boolean).join(" ").trim() || "Service";
+    if (category === "Mobile Repair") {
+        const device = [brand === "Other" ? "" : brand, model].filter(Boolean).join(" ").trim() || "Device";
         const repair = issueTitleMap[issue] || "service";
         const time = urgency === "Flexible" ? "needed" : `needed ${urgency.toLowerCase()}`;
         return `${device} ${repair} ${time}`;
@@ -161,7 +159,7 @@ function buildServiceTitle(category: string, issue: string, urgency: string, bra
 }
 
 function buildNeedCard(input: {
-    category: "General Service" | "Food Service & Delivery" | "Home Service";
+    category: "Mobile Repair" | "Food Service & Delivery" | "Home Service";
     brand: string;
     model: string;
     issueType: string;
@@ -224,7 +222,7 @@ export default function NewCustomerRequestPage() {
     const router = useRouter();
     const { user, profile, updateUserProfile } = useAuth();
     const [step, setStep] = useState(0);
-    const [category, setCategory] = useState<"General Service" | "Food Service & Delivery" | "Home Service">("General Service");
+    const [category, setCategory] = useState<"Mobile Repair" | "Food Service & Delivery" | "Home Service">("Mobile Repair");
     const [issueType, setIssueType] = useState("");
     const [phoneBrand, setPhoneBrand] = useState(brandOptions[0]);
     const [phoneModel, setPhoneModel] = useState("");
@@ -292,7 +290,7 @@ export default function NewCustomerRequestPage() {
 
     useEffect(() => {
         if (!budget) {
-            setBudget(category === "General Service" ? "Open for local service quotes" : "Open for quotes");
+            setBudget(category === "Mobile Repair" ? "Open for local repair quotes" : "Open for quotes");
         }
     }, [category, budget]);
 
@@ -331,7 +329,7 @@ export default function NewCustomerRequestPage() {
     const validateStep = () => {
         if (step === 0 && !category) return "Please select a category.";
         if (step === 1 && !issueType) return "Please choose what service you need.";
-        if (step === 4 && (!city || !area)) return "Add city and area so nearby businesses can find this request.";
+        if (step === 2 && (!city || !area)) return "Add city and area so nearby businesses can find this request.";
         return "";
     };
 
@@ -409,32 +407,19 @@ export default function NewCustomerRequestPage() {
         if (step === 0) {
             return (
                 <section>
-                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 1 of 6</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 1 of 4</p>
                     <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">What do you need help with?</h1>
-                    <p className="mt-3 max-w-2xl text-sm leading-7 text-[#64748b]">
-                        Needero is expanding. Choose a category below to post your request and receive custom offers from nearby businesses.
-                    </p>
-                    <div className="mt-7 grid gap-4 sm:grid-cols-2">
+                    <p className="mt-3 max-w-2xl text-sm leading-7 text-[#64748b]">Choose a category. Local businesses will compete to give you the best offer.</p>
+                    <div className="mt-7 grid gap-4 sm:grid-cols-3">
                         {categoryOptions.map((option) => {
                             const Icon = option.icon;
                             const active = category === option.value;
                             return (
-                                <button
-                                    key={option.value}
-                                    type="button"
-                                    onClick={() => {
-                                        setCategory(option.value as any);
-                                        setIssueType("");
-                                        setServicePreference("");
-                                        setBudget("");
-                                    }}
-                                    className={`min-h-[140px] rounded-2xl border p-6 text-left transition ${
-                                        active ? "border-[#0a8f45] bg-[#f0fbf4] ring-4 ring-[#e9f9f0]" : "border-[#dfe8e3] bg-white hover:border-[#9bd6b2]"
-                                    }`}
+                                <button key={option.value} type="button"
+                                    onClick={() => { setCategory(option.value as any); setIssueType(""); setServicePreference(""); setBudget(""); }}
+                                    className={`min-h-[140px] rounded-2xl border p-6 text-left transition ${active ? "border-[#0a8f45] bg-[#f0fbf4] ring-4 ring-[#e9f9f0]" : "border-[#dfe8e3] bg-white hover:border-[#9bd6b2]"}`}
                                 >
-                                    <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${option.tone}`}>
-                                        <Icon size={24} />
-                                    </div>
+                                    <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${option.tone}`}><Icon size={24} /></div>
                                     <p className="mt-5 text-lg font-black text-[#06111f]">{option.label}</p>
                                 </button>
                             );
@@ -448,96 +433,55 @@ export default function NewCustomerRequestPage() {
             const options = category === "Food Service & Delivery" ? foodIssueOptions : category === "Home Service" ? homeIssueOptions : issueOptions;
             return (
                 <section>
-                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 2 of 6</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 2 of 4</p>
                     <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">
-                        {category === "Food Service & Delivery" ? "What food service do you need?" : category === "Home Service" ? "What service do you need?" : "What service do you need help with?"}
+                        {category === "Food Service & Delivery" ? "What would you like to order?" : category === "Home Service" ? "What's the issue?" : "What's wrong with your device?"}
                     </h1>
                     <p className="mt-3 max-w-2xl text-sm leading-7 text-[#64748b]">
-                        {category === "Food Service & Delivery" 
-                            ? "Tell us what you are looking for. Nearby restaurants and delivery partners will respond with offers."
-                            : category === "Home Service"
-                            ? "Tell us what help you need. Local professionals will respond with custom offers."
-                            : "Choose a service category. Nearby businesses will quote their best prices for you."}
+                        {category === "Food Service & Delivery" ? "Select a type, add items and special instructions." : category === "Home Service" ? "Pick a service type and describe the problem." : "Select the issue, add phone details, and upload a photo."}
                     </p>
-                    <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="mt-7 grid gap-3 grid-cols-2 sm:grid-cols-3 xl:grid-cols-4">
                         {options.map((option) => {
                             const Icon = option.icon;
                             const active = issueType === option.value;
                             return (
-                                <button
-                                    key={option.value}
-                                    type="button"
-                                    onClick={() => setIssueType(option.value)}
-                                    className={`min-h-[110px] rounded-2xl border p-4 text-left transition ${
-                                        active ? "border-[#0a8f45] bg-[#f0fbf4] ring-4 ring-[#e9f9f0]" : "border-[#dfe8e3] bg-white hover:border-[#9bd6b2]"
-                                    }`}
+                                <button key={option.value} type="button" onClick={() => setIssueType(option.value)}
+                                    className={`min-h-[90px] rounded-2xl border p-4 text-left transition ${active ? "border-[#0a8f45] bg-[#f0fbf4] ring-4 ring-[#e9f9f0]" : "border-[#dfe8e3] bg-white hover:border-[#9bd6b2]"}`}
                                 >
-                                    <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${option.tone}`}>
-                                        <Icon size={20} />
-                                    </div>
-                                    <p className="mt-4 text-sm font-black text-[#06111f]">{option.label}</p>
+                                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${option.tone}`}><Icon size={18} /></div>
+                                    <p className="mt-3 text-xs font-black text-[#06111f]">{option.label}</p>
                                 </button>
                             );
                         })}
                     </div>
-                </section>
-            );
-        }
-
-        if (step === 2) {
-            return (
-                <section>
-                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 3 of 6</p>
-                    <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">
-                        {category === "Food Service & Delivery" ? "Add order details." : category === "Home Service" ? "Add service details." : "Add task details."}
-                    </h1>
-                    <p className="mt-3 text-sm leading-7 text-[#64748b]">
-                        {category === "Food Service & Delivery"
-                            ? "List the items you need, special instructions, or restaurant names if preferred."
-                            : category === "Home Service"
-                            ? "Describe the task, specific requirements, or any tools needed."
-                            : "Provide a brand or type if applicable. Add specific details if you know them; clear photos can help businesses quote accurately."}
-                    </p>
                     <div className="mt-7 grid gap-4 md:grid-cols-2">
-                        {category === "General Service" && (
+                        {category === "Mobile Repair" && (
                             <>
-                                <label>
-                                    <span className={labelClass}>Phone brand</span>
+                                <label><span className={labelClass}>Phone brand</span>
                                     <select value={phoneBrand} onChange={(event) => setPhoneBrand(event.target.value)} className={inputClass}>
-                                        {brandOptions.map((option) => (
-                                            <option key={option}>{option}</option>
-                                        ))}
+                                        {brandOptions.map((option) => (<option key={option}>{option}</option>))}
                                     </select>
                                 </label>
-                                <label>
-                                    <span className={labelClass}>Model optional</span>
-                                    <input value={phoneModel} onChange={(event) => setPhoneModel(event.target.value)} className={inputClass} placeholder="Optional: iPhone 13, Redmi Note 12..." />
+                                <label><span className={labelClass}>Model (optional)</span>
+                                    <input value={phoneModel} onChange={(event) => setPhoneModel(event.target.value)} className={inputClass} placeholder="iPhone 13, Redmi Note 12..." />
                                 </label>
                             </>
                         )}
                         <label className="md:col-span-2">
-                            <span className={labelClass}>{category === "Food Service & Delivery" ? "Order list / Details" : category === "Home Service" ? "Task description" : "Issue description"}</span>
-                            <textarea
-                                value={issueDescription}
-                                onChange={(event) => setIssueDescription(event.target.value)}
-                                className={`${inputClass} min-h-[150px] resize-y`}
-                                placeholder={category === "Food Service & Delivery" 
-                                    ? "Example: 2x Chicken Momos, 1x Coke 500ml. Please deliver to Thapathali Heights." 
-                                    : category === "Home Service"
-                                    ? "Example: I need a plumber to fix a leaking pipe in my kitchen. Urgent help needed."
-                                    : "Example: screen cracked, touch still works, need repair today near Kathmandu."}
+                            <span className={labelClass}>{category === "Food Service & Delivery" ? "Order list / special instructions" : category === "Home Service" ? "Describe the problem" : "Describe the issue"}</span>
+                            <textarea value={issueDescription} onChange={(event) => setIssueDescription(event.target.value)}
+                                className={`${inputClass} min-h-[120px] resize-y`}
+                                placeholder={category === "Food Service & Delivery" ? "e.g. 2x Chicken Momos, 1x Coke 500ml, deliver to Thapathali" : category === "Home Service" ? "e.g. Leaking pipe in kitchen, need plumber urgently" : "e.g. Screen cracked, touch still works, need repair today"}
                             />
                         </label>
                     </div>
                     <label className="mt-5 block cursor-pointer rounded-2xl border border-dashed border-[#bdddc8] bg-[#fbfdfb] p-5 transition hover:border-[#0a8f45]">
                         <input type="file" accept="image/*,video/*,application/pdf,.pdf" onChange={handleMedia} className="hidden" />
                         <div className="flex items-center gap-4">
-                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e9f9f0] text-[#0a8f45]">
-                                <UploadCloud size={22} />
-                            </div>
+                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e9f9f0] text-[#0a8f45]"><UploadCloud size={20} /></div>
                             <div>
-                                <p className="font-black text-[#06111f]">{category === "Food Service & Delivery" ? "Upload food or menu photo" : category === "Home Service" ? "Upload task related photo" : "Upload media or photo proof"}</p>
-                                <p className="mt-1 text-sm text-[#64748b]">Optional, but helpful for businesses to understand your need.</p>
+                                <p className="text-sm font-black text-[#06111f]">{category === "Food Service & Delivery" ? "Upload food or menu photo" : category === "Home Service" ? "Upload photo of the issue" : "Upload photo of the damage"}</p>
+                                <p className="mt-1 text-xs text-[#64748b]">Optional — helps businesses quote accurately</p>
                             </div>
                         </div>
                         {uploadedMedia ? <UploadedMediaPreview media={uploadedMedia} /> : null}
@@ -546,125 +490,67 @@ export default function NewCustomerRequestPage() {
             );
         }
 
-        if (step === 3) {
+        if (step === 2) {
             const preferences = category === "Food Service & Delivery" ? foodPreferences : category === "Home Service" ? homePreferences : servicePreferences;
             return (
                 <section>
-                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 4 of 6</p>
-                    <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">Set your preference.</h1>
-                    <p className="mt-3 text-sm leading-7 text-[#64748b]">Businesses can still suggest alternatives, but this helps them send useful Offers.</p>
-                    <div className="mt-7 grid gap-3 md:grid-cols-2">
+                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 3 of 4</p>
+                    <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">How, where & when?</h1>
+                    <p className="mt-3 text-sm leading-7 text-[#64748b]">Set your preference, budget, and location so businesses can send relevant offers.</p>
+                    <p className="mt-7 text-xs font-black uppercase tracking-[0.12em] text-[#64748b]">Service preference</p>
+                    <div className="mt-3 grid gap-3 grid-cols-2 md:grid-cols-4">
                         {preferences.map((option) => {
                             const active = servicePreference === option;
-                            const Icon = category === "Food Service & Delivery" ? ShoppingBag : (option === "Visit business" ? Store : option === "Home service" ? Home : option === "Pickup & return" ? MapPin : Wrench);
                             return (
-                                <button
-                                    type="button"
-                                    key={option}
-                                    onClick={() => setServicePreference(option)}
-                                    className={`flex min-h-[92px] items-center gap-4 rounded-2xl border p-4 text-left transition ${
-                                        active ? "border-[#0a8f45] bg-[#f0fbf4] ring-4 ring-[#e9f9f0]" : "border-[#dfe8e3] bg-white hover:border-[#9bd6b2]"
-                                    }`}
-                                >
-                                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e9f9f0] text-[#0a8f45]">
-                                        <Icon size={20} />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-black text-[#06111f]">{option}</p>
-                                        <p className="mt-1 text-xs leading-5 text-[#64748b]">
-                                            Choose how you want to receive this service.
-                                        </p>
-                                    </div>
-                                </button>
+                                <button type="button" key={option} onClick={() => setServicePreference(option)}
+                                    className={`rounded-2xl border px-4 py-3 text-left transition ${active ? "border-[#0a8f45] bg-[#f0fbf4] ring-4 ring-[#e9f9f0]" : "border-[#dfe8e3] bg-white hover:border-[#9bd6b2]"}`}
+                                ><p className="text-xs font-black text-[#06111f]">{option}</p></button>
                             );
                         })}
                     </div>
-                    <label className="mt-5 block">
-                        <span className={labelClass}>Expected budget</span>
-                        <input
-                            value={budget}
-                            onChange={(event) => setBudget(event.target.value)}
-                            className={inputClass}
-                            placeholder="Example: NPR 1,500 or Open for quotes"
-                        />
-                    </label>
-                </section>
-            );
-        }
-
-        if (step === 4) {
-            return (
-                <section>
-                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 5 of 6</p>
-                    <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">Location & urgency.</h1>
-                    <p className="mt-3 text-sm leading-7 text-[#64748b]">Exact address is optional. Businesses see area first and quote in NPR.</p>
-                    <div className="mt-7 grid gap-4 md:grid-cols-2">
-                        <label>
-                            <span className={labelClass}>Country</span>
-                            <select
-                                value={countryCode}
-                                onChange={(event) => {
-                                    setCountryCode(event.target.value);
-                                    setStateCode("");
-                                    setCity("");
-                                }}
-                                className={inputClass}
-                            >
-                                {countries.map((country) => (
-                                    <option key={country.isoCode} value={country.isoCode}>
-                                        {country.flag} {country.name}
-                                    </option>
-                                ))}
+                    <div className="mt-6 grid gap-4 md:grid-cols-2">
+                        <label><span className={labelClass}>Expected budget</span>
+                            <input value={budget} onChange={(event) => setBudget(event.target.value)} className={inputClass} placeholder="NPR 1,500 or Open for quotes" />
+                        </label>
+                        <label><span className={labelClass}>Urgency</span>
+                            <select value={urgency} onChange={(event) => setUrgency(event.target.value)} className={inputClass}>
+                                {urgencyOptions.map((option) => (<option key={option}>{option}</option>))}
                             </select>
                         </label>
-                        <label>
-                            <span className={labelClass}>State / province</span>
+                    </div>
+                    <p className="mt-7 text-xs font-black uppercase tracking-[0.12em] text-[#64748b]">Your location</p>
+                    <div className="mt-3 grid gap-4 md:grid-cols-2">
+                        <label><span className={labelClass}>Country</span>
+                            <select value={countryCode} onChange={(event) => { setCountryCode(event.target.value); setStateCode(""); setCity(""); }} className={inputClass}>
+                                {countries.map((country) => (<option key={country.isoCode} value={country.isoCode}>{country.flag} {country.name}</option>))}
+                            </select>
+                        </label>
+                        <label><span className={labelClass}>State / province</span>
                             <select value={stateCode} onChange={(event) => setStateCode(event.target.value)} className={inputClass} disabled={!countryCode}>
                                 <option value="">Select state</option>
-                                {states.map((state) => (
-                                    <option key={state.isoCode} value={state.isoCode}>
-                                        {state.name}
-                                    </option>
-                                ))}
+                                {states.map((state) => (<option key={state.isoCode} value={state.isoCode}>{state.name}</option>))}
                             </select>
                         </label>
-                        <label>
-                            <span className={labelClass}>City</span>
+                        <label><span className={labelClass}>City</span>
                             <select value={city} onChange={(event) => setCity(event.target.value)} className={inputClass} disabled={!countryCode}>
                                 <option value="">Select city</option>
-                                {cities.map((option) => (
-                                    <option key={`${option.name}-${option.latitude}-${option.longitude}`} value={option.name}>
-                                        {option.name}
-                                    </option>
-                                ))}
+                                {cities.map((option) => (<option key={`${option.name}-${option.latitude}-${option.longitude}`} value={option.name}>{option.name}</option>))}
                             </select>
                         </label>
-                        <label>
-                            <span className={labelClass}>Area</span>
+                        <label><span className={labelClass}>Area</span>
                             <input value={area} onChange={(event) => setArea(event.target.value)} className={inputClass} placeholder="Thapathali, New Road, Baneshwor..." />
                         </label>
-                        <label>
-                            <span className={labelClass}>Urgency</span>
-                            <select value={urgency} onChange={(event) => setUrgency(event.target.value)} className={inputClass}>
-                                {urgencyOptions.map((option) => (
-                                    <option key={option}>{option}</option>
-                                ))}
-                            </select>
-                        </label>
-                        <label>
-                            <span className={labelClass}>Exact address optional</span>
-                            <input value={exactAddress} onChange={(event) => setExactAddress(event.target.value)} className={inputClass} placeholder="Only share after choosing a business if needed" />
+                        <label><span className={labelClass}>Exact address (optional)</span>
+                            <input value={exactAddress} onChange={(event) => setExactAddress(event.target.value)} className={inputClass} placeholder="Share after choosing a business" />
                         </label>
                     </div>
                     <div className="mt-5 rounded-2xl border border-[#dfe8e3] bg-white p-5">
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-start gap-3">
-                                <div className="rounded-2xl bg-[#06111f] p-3 text-white">
-                                    <MapPin size={20} />
-                                </div>
+                                <div className="rounded-2xl bg-[#06111f] p-3 text-white"><MapPin size={20} /></div>
                                 <div>
-                                    <p className="font-black text-[#06111f]">Map pin optional</p>
-                                    <p className="mt-1 text-sm leading-6 text-[#64748b]">{pinPoint?.address || "Pin only if pickup, return, or home delivery needs exact navigation."}</p>
+                                    <p className="font-black text-[#06111f]">Map pin (optional)</p>
+                                    <p className="mt-1 text-sm leading-6 text-[#64748b]">{pinPoint?.address || "Pin for pickup, delivery, or home service navigation."}</p>
                                 </div>
                             </div>
                             <button type="button" onClick={() => setIsMapOpen(true)} className="rounded-xl bg-[#06111f] px-5 py-3 text-sm font-black text-white">
@@ -678,9 +564,9 @@ export default function NewCustomerRequestPage() {
 
         return (
             <section>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 6 of 6</p>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 4 of 4</p>
                 <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">Review your Need.</h1>
-                <p className="mt-3 text-sm leading-7 text-[#64748b]">Businesses can send price, time, and service details in their Offers.</p>
+                <p className="mt-3 text-sm leading-7 text-[#64748b]">Businesses will send price, time, and service details in their Offers.</p>
                 <NeedPreview card={repairCard} location={locationString} urgency={urgency} budget={budget} media={uploadedMedia} pinPoint={pinPoint} />
             </section>
         );

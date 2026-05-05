@@ -188,7 +188,7 @@ export default function RequestCenterPage() {
                         <div className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                             {/* Status filters */}
                             <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-                                {["All Categories", "General Service", "Food Service & Delivery"].map((cat) => (
+                                {["All Categories", "Mobile Repair", "Food Service & Delivery", "Home Service"].map((cat) => (
                                     <button
                                         key={cat}
                                         onClick={() => setSelectedCategory(cat)}

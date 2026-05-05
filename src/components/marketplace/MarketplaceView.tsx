@@ -269,7 +269,7 @@ function QuoteCard({
 
 const categorySlugs: Record<string, string> = {
     "all": "All Categories",
-    "general": "General Service",
+    "mobile": "Mobile Repair",
     "food": "Food Service & Delivery",
     "home": "Home Service",
 };
