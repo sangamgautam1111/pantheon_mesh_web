@@ -257,6 +257,8 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
     const isBrowseActive = pathname?.startsWith("/marketplace");
     const isPostActive = pathname?.startsWith("/client/new");
     const isMessagesActive = pathname?.startsWith("/messages");
+    const isServicesActive = pathname === "/restaurants" || pathname === "/repair-shops" || pathname === "/home-services";
+    const isPartnerActive = pathname?.startsWith("/register");
     const formatNotificationTime = (value?: string | null) => {
         if (!value) return "";
         const date = new Date(value);
@@ -455,6 +457,16 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                     >
                         Messages
                     </Link>
+                    {!user && (
+                        <Link
+                            href="/register"
+                            className={`relative px-3 py-5 text-sm font-bold transition-colors hover:text-[#0a8f45] ${
+                                isPartnerActive ? "text-[#0a8f45] after:absolute after:bottom-0 after:left-3 after:right-3 after:h-0.5 after:rounded-full after:bg-[#0a8f45]" : "text-[#62646a]"
+                            }`}
+                        >
+                            Become a Partner
+                        </Link>
+                    )}
                 </nav>
 
                 {/* AI Assistant */}
