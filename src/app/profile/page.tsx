@@ -123,8 +123,8 @@ type BusinessVerificationForm = {
     country: string;
     googleMapsUrl: string;
     socialLinks: string;
-    shopFrontPhoto: string;
-    insideShopPhoto: string;
+    businessFrontPhoto: string;
+    businessInsidePhoto: string;
     documentUrl: string;
 };
 
@@ -149,7 +149,7 @@ const emptyForm: ProfileForm = {
     warrantyPolicy: "",
     deliveryAddress: "",
     deliveryCoords: null,
-    preferredServiceMethod: "Ask shop to suggest",
+    preferredServiceMethod: "Ask Provider to suggest",
     language: "English",
     shortBio: "",
     emailNotifications: true,
@@ -170,7 +170,7 @@ const currencyOptions = [
 ];
 
 const languageOptions = ["English", "Nepali", "Hindi", "Spanish", "French"];
-const serviceMethodOptions = ["Visit shop", "Home repair", "Pickup & return", "Ask shop to suggest"];
+const serviceMethodOptions = ["Visit Business", "Home Service", "Pickup & Return", "Ask Provider to suggest"];
 
 const inputClass =
     "mt-1 w-full rounded-xl border border-[#dfe8e3] bg-white px-3.5 py-3 text-sm font-semibold text-[#06111f] outline-none transition focus:border-[#0a8f45] focus:ring-4 focus:ring-[#e9f9f0] disabled:bg-[#f8faf9] disabled:text-[#94a3b8]";
@@ -286,7 +286,7 @@ function formFromProfile(profile: ReturnType<typeof useAuth>["profile"], isBusin
         warrantyPolicy: profile.warrantyPolicy || "",
         deliveryAddress: profile.deliveryAddress || "",
         deliveryCoords: profile.deliveryCoords || null,
-        preferredServiceMethod: profile.preferredServiceMethod || "Ask shop to suggest",
+        preferredServiceMethod: profile.preferredServiceMethod || "Ask Provider to suggest",
         language: profile.language || "English",
         shortBio: profile.shortBio || "",
         emailNotifications: profile.emailNotifications ?? true,
@@ -343,8 +343,8 @@ function businessVerificationFormFromProfile(profile: ReturnType<typeof useAuth>
         country: profile?.country || "",
         googleMapsUrl: profile?.googleMapsUrl || "",
         socialLinks: Array.isArray(profile?.businessSocialLinks) ? profile.businessSocialLinks.join("\n") : "",
-        shopFrontPhoto: profile?.shopFrontPhotoUrl || "",
-        insideShopPhoto: profile?.shopInsidePhotoUrl || "",
+        businessFrontPhoto: profile?.businessFrontPhotoUrl || "",
+        businessInsidePhoto: profile?.businessInsidePhotoUrl || "",
         documentUrl: profile?.businessDocumentUrl || "",
     };
 }
@@ -1100,7 +1100,7 @@ export default function ProfilePage() {
         setIsBusinessVerifyOpen(true);
     };
 
-    const processBusinessVerificationFile = (field: "shopFrontPhoto" | "insideShopPhoto" | "documentUrl", file?: File) => {
+    const processBusinessVerificationFile = (field: "businessFrontPhoto" | "businessInsidePhoto" | "documentUrl", file?: File) => {
         if (!file) return;
 
         const loader = file.type.startsWith("image/") ? resizeProfilePhoto(file) : readFileAsDataUrl(file);
@@ -1134,8 +1134,8 @@ export default function ProfilePage() {
                 country: businessVerifyForm.country,
                 coordinates: profile.deliveryCoords || null,
                 logoUrl: profile.photoURL || "",
-                shopFrontPhoto: businessVerifyForm.shopFrontPhoto,
-                insideShopPhoto: businessVerifyForm.insideShopPhoto,
+                businessFrontPhoto: businessVerifyForm.businessFrontPhoto,
+                businessInsidePhoto: businessVerifyForm.businessInsidePhoto,
                 documentUrl: businessVerifyForm.documentUrl || null,
                 socialLinks,
                 googleMapsUrl: businessVerifyForm.googleMapsUrl || null,
@@ -1149,8 +1149,8 @@ export default function ProfilePage() {
                 country: businessVerifyForm.country,
                 googleMapsUrl: businessVerifyForm.googleMapsUrl || null,
                 businessSocialLinks: socialLinks,
-                shopFrontPhotoUrl: businessVerifyForm.shopFrontPhoto,
-                shopInsidePhotoUrl: businessVerifyForm.insideShopPhoto,
+                businessFrontPhotoUrl: businessVerifyForm.businessFrontPhoto,
+                businessInsidePhotoUrl: businessVerifyForm.businessInsidePhoto,
                 businessDocumentUrl: businessVerifyForm.documentUrl || null,
                 businessVerificationStatus: result.status,
                 businessVerificationScore: result.score,
@@ -1287,7 +1287,7 @@ export default function ProfilePage() {
                                         className={inputClass}
                                         value={editForm.category}
                                         onChange={(event) => setEditForm({ ...editForm, category: event.target.value })}
-                                        placeholder="Phone repair shop, mobile service center..."
+                                        placeholder="Service provider, shop, or agency..."
                                     />
                                 </Field>
                             </>
@@ -1346,14 +1346,14 @@ export default function ProfilePage() {
                     <div className="grid gap-4 md:grid-cols-2">
                         <Field
                             label="Email"
-                            hint={isBusiness ? "Phone OTP is required before your shop can send test Repair Offers." : "Email is optional in the MVP. Phone verification is the customer trust gate."}
+                            hint={isBusiness ? "Phone OTP is required before your business can send test Service Offers." : "Email is optional in the MVP. Phone verification is the customer trust gate."}
                         >
                             <div className="relative">
                                 <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
                                 <input className={`${inputClass} pl-10`} value={email} disabled />
                             </div>
                         </Field>
-                        <Field label="Phone Number" hint="Required for customers and repair shops. Step 1 sends SMS, Step 2 verifies the code." className="md:col-span-2">
+                        <Field label="Phone Number" hint="Required for customers and service providers. Step 1 sends SMS, Step 2 verifies the code." className="md:col-span-2">
                             <div className="mt-1 flex gap-2">
                                 <select
                                     className="w-[42%] rounded-xl border border-[#dfe8e3] bg-[#fbfdfb] px-3 py-3 text-xs font-bold text-[#06111f] outline-none focus:border-[#0a8f45] focus:ring-4 focus:ring-[#e9f9f0]"
@@ -1524,7 +1524,7 @@ export default function ProfilePage() {
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <p className="text-sm font-black text-[#06111f]">
-                                    {isBusiness ? "Precise Business Location" : "Precise Repair Location"}
+                                    {isBusiness ? "Precise Business Location" : "Precise Service Location"}
                                 </p>
                                 <p className="mt-1 text-xs leading-5 text-[#64748b]">Pin the exact place on the map for safer matching.</p>
                             </div>
@@ -1541,7 +1541,7 @@ export default function ProfilePage() {
                             className={`${inputClass} mt-4 bg-white`}
                             value={editForm.deliveryAddress}
                             onChange={(event) => setEditForm({ ...editForm, deliveryAddress: event.target.value })}
-                            placeholder={isBusiness ? "Search or pin your business location..." : "Search or pin a precise repair pickup point..."}
+                            placeholder={isBusiness ? "Search or pin your business location..." : "Search or pin a precise service pickup point..."}
                         />
                         {editForm.deliveryCoords && (
                             <p className="mt-2 text-[10px] font-black uppercase tracking-[0.08em] text-[#0a8f45]">
@@ -1725,7 +1725,7 @@ export default function ProfilePage() {
                                     className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#06111f] px-6 py-4 text-sm font-black text-white shadow-lg transition hover:bg-black"
                                 >
                                     <Briefcase size={17} />
-                                    {profilePhoneVerified ? "Browse Repair Offers" : "Verify Phone to Quote"}
+                                    {profilePhoneVerified ? "Browse Service Needs" : "Verify Phone to Quote"}
                                 </button>
                             ) : (
                                 <Link
@@ -1733,7 +1733,7 @@ export default function ProfilePage() {
                                     className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#06111f] px-6 py-4 text-sm font-black text-white shadow-lg transition hover:bg-black"
                                 >
                                     <MessageSquare size={17} />
-                                    Post Phone Repair Need
+                                    Post Service Need
                                 </Link>
                             )}
                         </div>
@@ -1788,21 +1788,21 @@ export default function ProfilePage() {
                             <div className="mt-6 grid gap-3 md:grid-cols-2">
                                 {isBusiness ? (
                                     <>
-                                        <WorkspaceTile icon={Store} title="Repair Offers" copy="Browse phone repair Needs and send Offers" href="/marketplace" />
+                                        <WorkspaceTile icon={Store} title="Service Needs" copy="Browse service needs and send offers" href="/marketplace" />
                                         <WorkspaceTile icon={Briefcase} title="Plans" copy="Upgrade visibility and lead access" href="/pricing" />
                                         <WorkspaceTile icon={MessageSquare} title="Messages" copy="Customer chats and offer updates" href="/messages" />
                                         <WorkspaceTile
                                             icon={ShieldCheck}
                                             title={businessVerificationApproved ? "Business Verified" : "Verify Business"}
-                                            copy={businessVerificationApproved ? "Extra trust proof approved" : "Optional shop proof for later trust"}
+                                            copy={businessVerificationApproved ? "Extra trust proof approved" : "Optional business proof for later trust"}
                                             onClick={openBusinessVerification}
                                         />
                                     </>
                                 ) : (
                                     <>
-                                        <WorkspaceTile icon={CheckCircle2} title="My Repair Needs" copy="Active, completed, and cancelled phone repairs" href="/client" />
-                                        <WorkspaceTile icon={Briefcase} title="Orders / Bookings" copy="Booked phone repair services" href="/client" />
-                                        <WorkspaceTile icon={Star} title="Reviews" copy="Reviews given to repair shops" href="/messages" />
+                                        <WorkspaceTile icon={CheckCircle2} title="My Service Needs" copy="Active, completed, and cancelled service requests" href="/client" />
+                                        <WorkspaceTile icon={Briefcase} title="Orders / Bookings" copy="Booked service offerings" href="/client" />
+                                        <WorkspaceTile icon={Star} title="Reviews" copy="Reviews given to service providers" href="/messages" />
                                         <WorkspaceTile icon={ShieldCheck} title="Safety" copy="Hidden contact settings and reports" onClick={() => openEditor("security")} />
                                     </>
                                 )}
@@ -2091,7 +2091,7 @@ export default function ProfilePage() {
                                         className={inputClass}
                                         value={businessVerifyForm.category}
                                         onChange={(event) => setBusinessVerifyForm({ ...businessVerifyForm, category: event.target.value })}
-                                        placeholder="Phone repair shop"
+                                        placeholder="Service provider"
                                     />
                                 </Field>
                                 <Field label="City / country">
@@ -2110,7 +2110,7 @@ export default function ProfilePage() {
                                         />
                                     </div>
                                 </Field>
-                                <Field label="Shop address" className="md:col-span-2">
+                                <Field label="Business address" className="md:col-span-2">
                                     <input
                                         className={inputClass}
                                         value={businessVerifyForm.address}
@@ -2138,8 +2138,8 @@ export default function ProfilePage() {
 
                             <div className="mt-5 grid gap-4 md:grid-cols-3">
                                 {[
-                                    ["shopFrontPhoto", "Shop front photo", businessVerifyForm.shopFrontPhoto],
-                                    ["insideShopPhoto", "Inside shop photo", businessVerifyForm.insideShopPhoto],
+                                    ["businessFrontPhoto", "Business front photo", businessVerifyForm.businessFrontPhoto],
+                                    ["businessInsidePhoto", "Inside business photo", businessVerifyForm.businessInsidePhoto],
                                     ["documentUrl", "Optional document", businessVerifyForm.documentUrl],
                                 ].map(([field, label, value]) => (
                                     <label key={field} className="block cursor-pointer rounded-2xl border border-dashed border-[#bdddc8] bg-[#fbfdfb] p-4 transition hover:border-[#0a8f45]">
@@ -2149,7 +2149,7 @@ export default function ProfilePage() {
                                             className="hidden"
                                             onChange={(event) =>
                                                 processBusinessVerificationFile(
-                                                    field as "shopFrontPhoto" | "insideShopPhoto" | "documentUrl",
+                                                    field as "businessFrontPhoto" | "businessInsidePhoto" | "documentUrl",
                                                     event.target.files?.[0],
                                                 )
                                             }
@@ -2163,7 +2163,7 @@ export default function ProfilePage() {
                                         </div>
                                         <p className="mt-3 text-sm font-black text-[#06111f]">{label}</p>
                                         <p className="mt-1 text-xs leading-5 text-[#64748b]">
-                                            {field === "shopFrontPhoto" ? `Use a fresh front photo holding paper: Needero ${todayProofDate}.` : value ? "File attached." : "Tap to upload."}
+                                            {field === "businessFrontPhoto" ? `Use a fresh front photo holding paper: Needero ${todayProofDate}.` : value ? "File attached." : "Tap to upload."}
                                         </p>
                                     </label>
                                 ))}

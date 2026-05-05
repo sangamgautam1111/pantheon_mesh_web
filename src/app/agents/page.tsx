@@ -16,12 +16,12 @@ const TEAMS = [
     {
         icon: <MessageSquare size={18} />,
         title: "Quote Helper",
-        description: "Helps shops write professional replies with price range, time, warranty, and next step.",
+        description: "Helps businesses write professional replies with price range, time, warranty, and next step.",
     },
     {
         icon: <Store size={18} />,
         title: "Business Verifier",
-        description: "Supports manual shop approval, category checks, and trust signals.",
+        description: "Supports manual business approval, category checks, and trust signals.",
     },
     {
         icon: <ClipboardCheck size={18} />,

@@ -29,7 +29,7 @@ export type OfferRecord = BusinessOffer & {
     createdAt?: string;
     serviceType?: string;
     included?: string;
-    partsQuality?: string;
+    qualityLevel?: string;
     extraCharges?: string;
     availability?: string;
     delayRefundRule?: string;
@@ -71,6 +71,7 @@ export type MessageThread = {
     offerPrice?: string;
     offerStatus?: string;
     messageCount: number;
+    category?: string;
 };
 
 export type SiteNotification = {
@@ -263,7 +264,7 @@ const mapOffer = (offer: BackendRecord): OfferRecord => {
         createdAt: offer.created_at || offer.createdAt,
         serviceType: String(parsedNote.details.serviceType || ""),
         included: String(parsedNote.details.included || ""),
-        partsQuality: String(parsedNote.details.partsQuality || parsedNote.details.parts_quality || ""),
+        qualityLevel: String(parsedNote.details.qualityLevel || parsedNote.details.quality_level || parsedNote.details.partsQuality || parsedNote.details.parts_quality || ""),
         extraCharges: String(parsedNote.details.extraCharges || ""),
         availability: String(parsedNote.details.availability || ""),
         delayRefundRule: String(parsedNote.details.delayRefundRule || ""),
@@ -423,7 +424,7 @@ export async function createOffer(input: {
     warranty: string;
     distance: string;
     included?: string;
-    partsQuality?: string;
+    qualityLevel?: string;
     extraCharges?: string;
     availability?: string;
     delayRefundRule?: string;
@@ -433,7 +434,7 @@ export async function createOffer(input: {
     const structuredNote = JSON.stringify({
         serviceType: input.serviceType || "",
         included: input.included || "",
-        partsQuality: input.partsQuality || "",
+        qualityLevel: input.qualityLevel || "",
         extraCharges: formatMoney(input.extraCharges) || input.extraCharges || "",
         distance: input.distance || "",
         availability: input.availability || "",
@@ -471,7 +472,7 @@ export async function updateOffer(input: {
     warranty: string;
     serviceType?: string;
     included?: string;
-    partsQuality?: string;
+    qualityLevel?: string;
     extraCharges?: string;
     distance?: string;
     availability?: string;
@@ -482,7 +483,7 @@ export async function updateOffer(input: {
     const structuredNote = JSON.stringify({
         serviceType: input.serviceType || "",
         included: input.included || "",
-        partsQuality: input.partsQuality || "",
+        qualityLevel: input.qualityLevel || "",
         extraCharges: formatMoney(input.extraCharges) || input.extraCharges || "",
         distance: input.distance || "",
         availability: input.availability || "",
@@ -636,6 +637,7 @@ export async function getMessageThreads(userId: string): Promise<MessageThread[]
               offerPrice: thread.offer_price || undefined,
               offerStatus: thread.offer_status || undefined,
               messageCount: Number(thread.message_count || 0),
+              category: thread.category || undefined,
           }))
         : [];
 }

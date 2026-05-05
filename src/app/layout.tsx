@@ -6,15 +6,15 @@ import { ReactNode } from "react";
 export const metadata: Metadata = {
     metadataBase: new URL('https://needero.com'),
     title: {
-        default: "Needero - Phone Repair Offers From Nearby Shops",
+        default: "Needero - Local Service Marketplace",
         template: "%s | Needero"
     },
-    description: "Needero is a demand-based marketplace platform designed to connect buyers and sellers. Post your phone issue once and compare repair offers from nearby shops.",
+    description: "Needero is a demand-based marketplace platform. Post your service Need once and compare real Offers from nearby businesses.",
     applicationName: "Needero",
     authors: [{ name: "Sangam Gautam", url: "https://needero.com/founder" }],
     creator: "Sangam Gautam",
     publisher: "Needero",
-    keywords: ["phone repair", "repair marketplace", "Needero", "Sangam Gautam", "local repair offers", "screen replacement", "demand-based marketplace"],
+    keywords: ["service marketplace", "Needero", "local offers", "demand-based marketplace", "Nepal services", "compare quotes"],
     formatDetection: {
         email: false,
         address: false,
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
         apple: '/icon.png',
     },
     openGraph: {
-        title: "Needero - Phone Repair Offers From Nearby Shops",
+        title: "Needero - Local Service Marketplace",
         description: "Demand-based marketplace platform designed to connect buyers and sellers.",
         url: "https://needero.com",
         siteName: "Needero",
@@ -46,8 +46,8 @@ export const metadata: Metadata = {
     },
     twitter: {
         card: "summary_large_image",
-        title: "Needero - Phone Repair Offers From Nearby Shops",
-        description: "Post your phone issue once and compare repair offers from nearby shops.",
+        title: "Needero - Local Service Marketplace",
+        description: "Post your service Need once and compare real Offers from nearby businesses.",
         creator: "@needero",
         images: ["https://needero.com/icon.png"],
     },

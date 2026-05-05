@@ -4,7 +4,7 @@ import { ArrowLeft, Database, LockKeyhole, Mail, ShieldCheck } from "lucide-reac
 
 export const metadata: Metadata = {
     title: "Privacy Policy - Needero",
-    description: "Needero privacy policy for the phone repair marketplace.",
+    description: "Needero privacy policy for the local service marketplace.",
 };
 
 const sections = [
@@ -13,8 +13,8 @@ const sections = [
         body: [
             "Account information such as name, email address, profile photo, username, account type, and sign-in provider details.",
             "Phone verification information, including phone number, OTP verification status, and verification timestamps.",
-            "Profile and marketplace information such as customer repair Needs, business profiles, shop photos, addresses, map pins, Offers, messages, reviews, support feedback, and subscription plan metadata.",
-            "Uploaded media such as phone issue photos, shop-front photos, inside-shop photos, logos, and optional business verification documents.",
+            "Profile and marketplace information such as customer service Needs, business profiles, business photos, addresses, map pins, Offers, messages, reviews, support feedback, and subscription plan metadata.",
+            "Uploaded media such as service issue photos, business-front photos, inside-business photos, logos, and optional business verification documents.",
             "Technical information such as device/browser data, IP-based approximate location, logs, and security events needed to run and protect the service.",
         ],
     },
@@ -22,8 +22,8 @@ const sections = [
         title: "How We Use Information",
         body: [
             "To create and secure user accounts, including Google sign-in, GitHub sign-in, email/password sign-in, and Firebase phone verification.",
-            "To help customers post phone repair Needs and compare repair Offers from nearby businesses.",
-            "To help businesses create profiles, verify shop information, send Offers, manage messages, and use paid plans.",
+            "To help customers post service Needs and compare service Offers from nearby businesses.",
+            "To help businesses create profiles, verify business information, send Offers, manage messages, and use paid plans.",
             "To run trust and safety checks, including username uniqueness, phone verification, business verification, web evidence checks, and AI-assisted risk review.",
             "To operate support, improve the product, debug errors, prevent abuse, and comply with applicable legal obligations.",
         ],
@@ -32,8 +32,8 @@ const sections = [
         title: "Service Providers",
         body: [
             "Needero uses Firebase and Google Cloud for authentication, realtime database, hosting, and related infrastructure.",
-            "Needero may use AI and search providers such as DeepSeek, Tavily, OpenRouter, and Groq to clean repair requests, assist support, and review business verification evidence.",
-            "Needero may use IP/location lookup services to suggest country, city, and nearby repair Needs.",
+            "Needero may use AI and search providers such as DeepSeek, Tavily, OpenRouter, and Groq to clean service requests, assist support, and review business verification evidence.",
+            "Needero may use IP/location lookup services to suggest country, city, and nearby service Needs.",
             "These providers process information only as needed to provide app features, security, verification, analytics, and infrastructure.",
         ],
     },
@@ -41,8 +41,8 @@ const sections = [
         title: "Sharing",
         body: [
             "Customer contact details stay protected until marketplace flows require sharing, such as selected Offers, messages, or bookings.",
-            "Businesses may see customer Need details such as issue, area, urgency, photos, budget preference, and repair preferences.",
-            "Customers may see business profile details such as business name, profile photo/logo, category, Offer terms, warranty, verification badge, and public shop information.",
+            "Businesses may see customer Need details such as issue, area, urgency, photos, budget preference, and service preferences.",
+            "Customers may see business profile details such as business name, profile photo/logo, category, Offer terms, warranty, verification badge, and public business location information.",
             "Owner documents and private verification evidence are not intended for public display.",
             "We do not sell personal information.",
         ],
@@ -95,8 +95,8 @@ export default function PrivacyPolicyPage() {
                     </h1>
                     <p className="mt-5 max-w-3xl text-base leading-8 text-[#62646a]">
                         This Privacy Policy explains how Needero Local Marketplace Ltd. collects, uses, stores, and shares
-                        information for Needero, a phone repair marketplace where customers post repair Needs and nearby
-                        businesses send repair Offers.
+                        information for Needero, a local service marketplace where customers post service Needs and nearby
+                        businesses send service Offers.
                     </p>
 
                     <div className="mt-8 grid gap-4 md:grid-cols-3">

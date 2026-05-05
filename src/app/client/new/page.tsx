@@ -67,8 +67,9 @@ const steps = [
 ];
 
 const categoryOptions = [
-    { label: "Phone Repair & Maintenance", value: "Phone Repair", icon: Smartphone, tone: "bg-[#e9f9f0] text-[#0a8f45]" },
-    { label: "Food Service & Delivery", value: "Food Service", icon: ShoppingBag, tone: "bg-[#fdf2f8] text-[#be185d]" },
+    { label: "General Service & Maintenance", value: "General Service", icon: Smartphone, tone: "bg-[#e9f9f0] text-[#0a8f45]" },
+    { label: "Food Service & Delivery", value: "Food Service & Delivery", icon: ShoppingBag, tone: "bg-[#fdf2f8] text-[#be185d]" },
+    { label: "Home & Local Services", value: "Home Service", icon: Home, tone: "bg-[#eef6ff] text-[#2563eb]" },
 ];
 
 const issueOptions = [
@@ -90,9 +91,18 @@ const foodIssueOptions = [
     { label: "Custom Food Task", value: "Custom Food Task", icon: HelpCircle, tone: "bg-[#f8fafc] text-[#475569]" },
 ];
 
-const brandOptions = ["Apple iPhone", "Samsung", "Xiaomi / Redmi", "Oppo", "Vivo", "OnePlus", "Google Pixel", "Realme", "Other"];
-const servicePreferences = ["Visit shop", "Home repair", "Pickup & return", "Ask shop to suggest"];
+const homeIssueOptions = [
+    { label: "Plumbing", value: "Plumbing", icon: Droplets, tone: "bg-[#eef6ff] text-[#2563eb]" },
+    { label: "Electrical", value: "Electrical", icon: PlugZap, tone: "bg-[#fff7ed] text-[#c2410c]" },
+    { label: "House Cleaning", value: "House Cleaning", icon: Store, tone: "bg-[#fdf2f8] text-[#be185d]" },
+    { label: "Carpentry", value: "Carpentry", icon: Wrench, tone: "bg-[#e9f9f0] text-[#0a8f45]" },
+    { label: "Other Task", value: "Other Task", icon: HelpCircle, tone: "bg-[#f8fafc] text-[#475569]" },
+];
+
+const brandOptions = ["Apple", "Samsung", "Xiaomi", "Other"];
+const servicePreferences = ["Visit business", "Home service", "Pickup & return", "Ask provider to suggest"];
 const foodPreferences = ["Delivery to my door", "Self pickup", "Order & I will collect", "Dine-in booking"];
+const homePreferences = ["Home visit", "Visit business", "Pickup & return", "Phone consultation"];
 const urgencyOptions = ["Today", "Tomorrow", "Flexible"];
 
 const issueTitleMap: Record<string, string> = {
@@ -139,15 +149,19 @@ function UploadedMediaPreview({ media, compact = false }: { media: UploadedMedia
     return <img src={media.dataUrl} alt={media.name} className={`${compact ? "h-32" : "mt-5 max-h-72"} w-full rounded-2xl object-cover`} />;
 }
 
-function buildRepairTitle(brand: string, model: string, issue: string, urgency: string) {
-    const device = [brand === "Other" ? "" : brand.replace("Apple ", ""), model].filter(Boolean).join(" ").trim() || "Phone";
-    const repair = issueTitleMap[issue] || "phone repair";
+function buildServiceTitle(category: string, issue: string, urgency: string, brand?: string, model?: string) {
+    if (category === "General Service") {
+        const device = [brand === "Other" ? "" : brand, model].filter(Boolean).join(" ").trim() || "Service";
+        const repair = issueTitleMap[issue] || "service";
+        const time = urgency === "Flexible" ? "needed" : `needed ${urgency.toLowerCase()}`;
+        return `${device} ${repair} ${time}`;
+    }
     const time = urgency === "Flexible" ? "needed" : `needed ${urgency.toLowerCase()}`;
-    return `${device} ${repair} ${time}`;
+    return `${issue} ${time}`;
 }
 
 function buildNeedCard(input: {
-    category: "Phone Repair" | "Food Service";
+    category: "General Service" | "Food Service & Delivery" | "Home Service";
     brand: string;
     model: string;
     issueType: string;
@@ -158,10 +172,9 @@ function buildNeedCard(input: {
     budget: string;
     customerAvatar?: string | null;
 }): NeedCard {
-    const isFood = input.category === "Food Service";
-    const title = isFood 
-        ? `${input.issueType} needed in ${input.location.split(",")[0] || "area"}`
-        : buildRepairTitle(input.brand, input.model, input.issueType, input.urgency);
+    const isFood = input.category === "Food Service & Delivery";
+    const isHome = input.category === "Home Service";
+    const title = buildServiceTitle(input.category, input.issueType, input.urgency, input.brand, input.model);
 
     const details = isFood
         ? [
@@ -172,12 +185,21 @@ function buildNeedCard(input: {
             `Urgency: ${input.urgency}`,
             `Area: ${input.location}`,
           ].filter(Boolean).join("\n")
+        : isHome
+        ? [
+            `Task: ${input.issueType}`,
+            input.issueDescription ? `Description: ${input.issueDescription}` : "",
+            `Service preference: ${input.servicePreference}`,
+            `Budget: ${input.budget || "Open for quotes"}`,
+            `Urgency: ${input.urgency}`,
+            `Area: ${input.location}`,
+          ].filter(Boolean).join("\n")
         : [
             `Issue: ${input.issueType}`,
-            `Phone: ${[input.brand, input.model].filter(Boolean).join(" ") || "Not specified"}`,
+            `Item/Device: ${[input.brand, input.model].filter(Boolean).join(" ") || "Not specified"}`,
             input.issueDescription ? `Details: ${input.issueDescription}` : "",
             `Service preference: ${input.servicePreference}`,
-            `Customer budget: ${input.budget || "Open for NPR repair quotes"}`,
+            `Customer budget: ${input.budget || "Open for local service quotes"}`,
             `Urgency: ${input.urgency}`,
             `Area: ${input.location}`,
           ].filter(Boolean).join("\n");
@@ -187,14 +209,14 @@ function buildNeedCard(input: {
         title,
         problem: input.issueDescription || `${input.issueType} needed.`,
         knownDetails: details,
-        missingInfo: isFood ? ["Availability", "Price with delivery", "Time of delivery"] : ["Repair price", "Estimated time", "Warranty", "Parts quality"],
-        questions: isFood ? ["Can you deliver this?", "What is the total price?", "How long will it take?"] : ["What is your repair price in NPR?", "How long will it take?", "What warranty and parts quality do you provide?"],
-        summaryForBusinesses: isFood ? "Send delivery price, availability, and estimated time." : "Send repair price in NPR, estimated time, warranty, parts quality, availability, and service method.",
+        missingInfo: isFood || isHome ? ["Availability", "Price", "Time"] : ["Price", "Estimated time", "Warranty", "Quality"],
+        questions: isFood || isHome ? ["Can you do this?", "What is the total price?", "How long will it take?"] : ["What is your service price?", "How long will it take?", "What warranty and quality do you provide?"],
+        summaryForBusinesses: isFood || isHome ? "Send price, availability, and estimated time." : "Send price, estimated time, warranty, quality, availability, and service method.",
         tags: [input.category, input.issueType, input.servicePreference],
         customerAvatar: input.customerAvatar || null,
         serviceMode: input.servicePreference,
         preferredTime: input.urgency,
-        warrantyImportant: isFood ? "N/A" : "Yes, repair warranty preferred",
+        warrantyImportant: isFood ? "N/A" : "Yes, service warranty preferred",
     };
 }
 
@@ -202,7 +224,7 @@ export default function NewCustomerRequestPage() {
     const router = useRouter();
     const { user, profile, updateUserProfile } = useAuth();
     const [step, setStep] = useState(0);
-    const [category, setCategory] = useState<"Phone Repair" | "Food Service">("Phone Repair");
+    const [category, setCategory] = useState<"General Service" | "Food Service & Delivery" | "Home Service">("General Service");
     const [issueType, setIssueType] = useState("");
     const [phoneBrand, setPhoneBrand] = useState(brandOptions[0]);
     const [phoneModel, setPhoneModel] = useState("");
@@ -258,19 +280,19 @@ export default function NewCustomerRequestPage() {
 
     useEffect(() => {
         if (!issueType) {
-            setIssueType(category === "Food Service" ? foodIssueOptions[0].value : issueOptions[0].value);
+            setIssueType(category === "Food Service & Delivery" ? foodIssueOptions[0].value : category === "Home Service" ? homeIssueOptions[0].value : issueOptions[0].value);
         }
     }, [category, issueType]);
 
     useEffect(() => {
         if (!servicePreference) {
-            setServicePreference(category === "Food Service" ? foodPreferences[0] : servicePreferences[0]);
+            setServicePreference(category === "Food Service & Delivery" ? foodPreferences[0] : category === "Home Service" ? homePreferences[0] : servicePreferences[0]);
         }
     }, [category, servicePreference]);
 
     useEffect(() => {
         if (!budget) {
-            setBudget(category === "Food Service" ? "Estimated NPR 500 - 2,000" : "Open for NPR repair quotes");
+            setBudget(category === "General Service" ? "Open for local service quotes" : "Open for quotes");
         }
     }, [category, budget]);
 
@@ -308,7 +330,7 @@ export default function NewCustomerRequestPage() {
 
     const validateStep = () => {
         if (step === 0 && !category) return "Please select a category.";
-        if (step === 1 && !issueType) return category === "Food Service" ? "Choose what type of food service you need." : "Choose what happened to your phone.";
+        if (step === 1 && !issueType) return "Please choose what service you need.";
         if (step === 4 && (!city || !area)) return "Add city and area so nearby businesses can find this request.";
         return "";
     };
@@ -331,7 +353,7 @@ export default function NewCustomerRequestPage() {
     const handleSubmit = async () => {
         if (!user) return;
         if (!profile?.phoneVerified) {
-            setError("Verify your phone number from Profile before posting a Phone Repair Need.");
+            setError("Verify your phone number from Profile before posting a new need.");
             return;
         }
         const nextError = validateStep();
@@ -347,7 +369,7 @@ export default function NewCustomerRequestPage() {
                 `Customer budget: ${budget.trim() || "Open for NPR repair quotes"}`,
                 exactAddress ? `Exact address: ${exactAddress}` : "",
                 pinPoint ? `Map pin: ${pinPoint.address}` : "",
-                "Repair shops should send price, estimated time, warranty, parts quality, availability, and note.",
+                "Businesses should send price, estimated time, and relevant details.",
             ]
                 .filter(Boolean)
                 .join("\n");
@@ -377,7 +399,7 @@ export default function NewCustomerRequestPage() {
             });
             router.push("/client");
         } catch (nextError: any) {
-            setError(nextError?.message || "Could not post this phone repair Need. Please try again.");
+            setError(nextError?.message || "Could not post this need. Please try again.");
         } finally {
             setPosting(false);
         }
@@ -423,17 +445,19 @@ export default function NewCustomerRequestPage() {
         }
 
         if (step === 1) {
-            const options = category === "Food Service" ? foodIssueOptions : issueOptions;
+            const options = category === "Food Service & Delivery" ? foodIssueOptions : category === "Home Service" ? homeIssueOptions : issueOptions;
             return (
                 <section>
                     <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 2 of 6</p>
                     <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">
-                        {category === "Food Service" ? "What food service do you need?" : "What happened to your phone?"}
+                        {category === "Food Service & Delivery" ? "What food service do you need?" : category === "Home Service" ? "What service do you need?" : "What service do you need help with?"}
                     </h1>
                     <p className="mt-3 max-w-2xl text-sm leading-7 text-[#64748b]">
-                        {category === "Food Service" 
+                        {category === "Food Service & Delivery" 
                             ? "Tell us what you are looking for. Nearby restaurants and delivery partners will respond with offers."
-                            : "Choose one repair issue. Needero started with phone repair so nearby shops can quote fast."}
+                            : category === "Home Service"
+                            ? "Tell us what help you need. Local professionals will respond with custom offers."
+                            : "Choose a service category. Nearby businesses will quote their best prices for you."}
                     </p>
                     <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                         {options.map((option) => {
@@ -465,15 +489,17 @@ export default function NewCustomerRequestPage() {
                 <section>
                     <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 3 of 6</p>
                     <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">
-                        {category === "Food Service" ? "Add order details." : "Add phone details."}
+                        {category === "Food Service & Delivery" ? "Add order details." : category === "Home Service" ? "Add service details." : "Add task details."}
                     </h1>
                     <p className="mt-3 text-sm leading-7 text-[#64748b]">
-                        {category === "Food Service"
+                        {category === "Food Service & Delivery"
                             ? "List the items you need, special instructions, or restaurant names if preferred."
-                            : "Choose the brand. Add the model only if you know it; clear photos can help shops quote the right part and price."}
+                            : category === "Home Service"
+                            ? "Describe the task, specific requirements, or any tools needed."
+                            : "Provide a brand or type if applicable. Add specific details if you know them; clear photos can help businesses quote accurately."}
                     </p>
                     <div className="mt-7 grid gap-4 md:grid-cols-2">
-                        {category === "Phone Repair" && (
+                        {category === "General Service" && (
                             <>
                                 <label>
                                     <span className={labelClass}>Phone brand</span>
@@ -490,13 +516,15 @@ export default function NewCustomerRequestPage() {
                             </>
                         )}
                         <label className="md:col-span-2">
-                            <span className={labelClass}>{category === "Food Service" ? "Order list / Details" : "Issue description"}</span>
+                            <span className={labelClass}>{category === "Food Service & Delivery" ? "Order list / Details" : category === "Home Service" ? "Task description" : "Issue description"}</span>
                             <textarea
                                 value={issueDescription}
                                 onChange={(event) => setIssueDescription(event.target.value)}
                                 className={`${inputClass} min-h-[150px] resize-y`}
-                                placeholder={category === "Food Service" 
+                                placeholder={category === "Food Service & Delivery" 
                                     ? "Example: 2x Chicken Momos, 1x Coke 500ml. Please deliver to Thapathali Heights." 
+                                    : category === "Home Service"
+                                    ? "Example: I need a plumber to fix a leaking pipe in my kitchen. Urgent help needed."
                                     : "Example: screen cracked, touch still works, need repair today near Kathmandu."}
                             />
                         </label>
@@ -508,7 +536,7 @@ export default function NewCustomerRequestPage() {
                                 <UploadCloud size={22} />
                             </div>
                             <div>
-                                <p className="font-black text-[#06111f]">{category === "Food Service" ? "Upload food or menu photo" : "Upload phone photo or video"}</p>
+                                <p className="font-black text-[#06111f]">{category === "Food Service & Delivery" ? "Upload food or menu photo" : category === "Home Service" ? "Upload task related photo" : "Upload media or photo proof"}</p>
                                 <p className="mt-1 text-sm text-[#64748b]">Optional, but helpful for businesses to understand your need.</p>
                             </div>
                         </div>
@@ -519,7 +547,7 @@ export default function NewCustomerRequestPage() {
         }
 
         if (step === 3) {
-            const preferences = category === "Food Service" ? foodPreferences : servicePreferences;
+            const preferences = category === "Food Service & Delivery" ? foodPreferences : category === "Home Service" ? homePreferences : servicePreferences;
             return (
                 <section>
                     <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 4 of 6</p>
@@ -528,7 +556,7 @@ export default function NewCustomerRequestPage() {
                     <div className="mt-7 grid gap-3 md:grid-cols-2">
                         {preferences.map((option) => {
                             const active = servicePreference === option;
-                            const Icon = category === "Food Service" ? ShoppingBag : (option === "Visit shop" ? Store : option === "Home repair" ? Home : option === "Pickup & return" ? MapPin : Wrench);
+                            const Icon = category === "Food Service & Delivery" ? ShoppingBag : (option === "Visit business" ? Store : option === "Home service" ? Home : option === "Pickup & return" ? MapPin : Wrench);
                             return (
                                 <button
                                     type="button"
@@ -544,7 +572,7 @@ export default function NewCustomerRequestPage() {
                                     <div>
                                         <p className="text-sm font-black text-[#06111f]">{option}</p>
                                         <p className="mt-1 text-xs leading-5 text-[#64748b]">
-                                            {category === "Food Service" ? "Choose how you want to receive your food." : "Choose how you want your phone repaired."}
+                                            Choose how you want to receive this service.
                                         </p>
                                     </div>
                                 </button>
@@ -552,12 +580,12 @@ export default function NewCustomerRequestPage() {
                         })}
                     </div>
                     <label className="mt-5 block">
-                        <span className={labelClass}>{category === "Food Service" ? "Estimated budget" : "Customer budget"}</span>
+                        <span className={labelClass}>Expected budget</span>
                         <input
                             value={budget}
                             onChange={(event) => setBudget(event.target.value)}
                             className={inputClass}
-                            placeholder={category === "Food Service" ? "Example: NPR 1,500" : "Open for NPR repair quotes or NPR 4,500"}
+                            placeholder="Example: NPR 1,500 or Open for quotes"
                         />
                     </label>
                 </section>
@@ -625,7 +653,7 @@ export default function NewCustomerRequestPage() {
                         </label>
                         <label>
                             <span className={labelClass}>Exact address optional</span>
-                            <input value={exactAddress} onChange={(event) => setExactAddress(event.target.value)} className={inputClass} placeholder="Only share after choosing a shop if needed" />
+                            <input value={exactAddress} onChange={(event) => setExactAddress(event.target.value)} className={inputClass} placeholder="Only share after choosing a business if needed" />
                         </label>
                     </div>
                     <div className="mt-5 rounded-2xl border border-[#dfe8e3] bg-white p-5">
@@ -665,10 +693,10 @@ export default function NewCustomerRequestPage() {
                     <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                         <Link href="/client" className="inline-flex items-center gap-2 text-sm font-black text-[#64748b] hover:text-[#06111f]">
                             <ArrowLeft size={16} />
-                            Back to my repair Needs
+                            Back to my service requests
                         </Link>
                         <div className="rounded-full border border-[#dfe8e3] bg-white px-4 py-2 text-xs font-black text-[#0a8f45]">
-                            Phone Repair MVP only
+                            Service Marketplace MVP
                         </div>
                     </div>
 
@@ -680,7 +708,7 @@ export default function NewCustomerRequestPage() {
                                 </div>
                                 <div>
                                     <p className="text-sm font-black">Phone verification required</p>
-                                    <p className="mt-1 text-sm leading-6 text-amber-800">Verify your phone number with SMS OTP before posting a repair Need.</p>
+                                    <p className="mt-1 text-sm leading-6 text-amber-800">Verify your phone number with SMS OTP before posting a new need.</p>
                                 </div>
                             </div>
                             <Link href="/profile" className="inline-flex shrink-0 items-center justify-center rounded-xl bg-[#06111f] px-5 py-3 text-sm font-black text-white transition hover:bg-black">
@@ -764,16 +792,16 @@ export default function NewCustomerRequestPage() {
                                             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#94a3b8]">Live preview</p>
                                             <h2 className="mt-2 text-xl font-black text-[#06111f]">{category} Card</h2>
                                         </div>
-                                        {category === "Food Service" ? <ShoppingBag size={22} className="text-[#be185d]" /> : <Smartphone size={22} className="text-[#0a8f45]" />}
+                                        {category === "Food Service & Delivery" ? <ShoppingBag size={22} className="text-[#be185d]" /> : category === "Home Service" ? <Home size={22} className="text-[#2563eb]" /> : <Smartphone size={22} className="text-[#0a8f45]" />}
                                     </div>
                                     <NeedPreview compact card={repairCard} location={locationString} urgency={urgency} budget={budget} media={uploadedMedia} pinPoint={pinPoint} />
                                 </div>
                                 <div className="mt-4 rounded-[22px] border border-[#dfe8e3] bg-white p-5">
                                     <p className="font-black text-[#06111f]">What happens next?</p>
                                     <div className="mt-4 space-y-3 text-sm leading-6 text-[#64748b]">
-                                        <p>1. Verified repair shops see this request.</p>
-                                        <p>2. Shops send NPR price, time, warranty, parts quality, and service method.</p>
-                                        <p>3. You compare repair Offers and choose the safest shop.</p>
+                                        <p>1. Verified businesses see this request.</p>
+                                        <p>2. Businesses send price, time, and service details.</p>
+                                        <p>3. You compare Offers and choose the best business.</p>
                                     </div>
                                 </div>
                             </aside>

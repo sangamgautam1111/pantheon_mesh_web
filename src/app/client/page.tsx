@@ -52,6 +52,7 @@ export default function RequestCenterPage() {
     const [deletingNeedId, setDeletingNeedId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("all");
+    const [selectedCategory, setSelectedCategory] = useState<string>("All Categories");
 
     const fetchNeeds = async () => {
         if (!user) return;
@@ -97,11 +98,14 @@ export default function RequestCenterPage() {
                 n.location.toLowerCase().includes(q)
             );
         }
+        if (selectedCategory !== "All Categories") {
+            list = list.filter(n => n.category === selectedCategory);
+        }
         if (statusFilter !== "all") {
             list = list.filter(n => n.status === statusFilter);
         }
         return list;
-    }, [isBusiness, needs, user?.uid, searchQuery, statusFilter]);
+    }, [isBusiness, needs, user?.uid, searchQuery, statusFilter, selectedCategory]);
 
     const openNeeds = needs.filter(n => n.status !== "chosen").length;
     const totalOffers = needs.reduce((s, n) => s + (n.offers || 0), 0);
@@ -184,6 +188,22 @@ export default function RequestCenterPage() {
                         <div className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                             {/* Status filters */}
                             <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                                {["All Categories", "General Service", "Food Service & Delivery"].map((cat) => (
+                                    <button
+                                        key={cat}
+                                        onClick={() => setSelectedCategory(cat)}
+                                        className="nd-chip flex-shrink-0 text-sm"
+                                        style={selectedCategory === cat ? {
+                                            background: "#222325",
+                                            color: "#ffffff",
+                                            borderColor: "#222325",
+                                        } : {}}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 border-l pl-2 border-[#e4e5e7]">
                                 {FILTERS.map((f) => (
                                     <button
                                         key={f.key}
@@ -239,12 +259,12 @@ export default function RequestCenterPage() {
                         >
                             <Briefcase size={40} className="mx-auto mb-4" style={{ color: "#d1d5db" }} />
                             <p className="font-semibold text-lg mb-1" style={{ color: "#404145" }}>
-                                {searchQuery ? `No results for "${searchQuery}"` : "No phone repair Needs yet"}
+                                {searchQuery ? `No results for "${searchQuery}"` : "No local service Needs yet"}
                             </p>
                             <p className="text-sm mb-6" style={{ color: "#74767e" }}>
                                 {isBusiness
-                                    ? "No live phone repair Needs in your area yet."
-                                    : "Post your first phone repair Need to get Offers from local shops."}
+                                    ? "No live service Needs in your area yet."
+                                    : "Post your first local service Need to get Offers from local businesses."}
                             </p>
                             {!isBusiness && (
                                 <Link href="/client/new" className="nd-btn nd-btn-primary rounded-full inline-flex">

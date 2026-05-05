@@ -1,16 +1,19 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ShieldCheck, CheckCircle, ArrowRight } from 'lucide-react';
 
 export default function BusinessCommissionPage() {
+    const searchParams = useSearchParams();
     const [loading, setLoading] = useState(false);
 
-    // Mock data for the first transaction (doesn't break existing db data)
-    const repairPrice = 2500;
+    // Dynamic data from URL or defaults
+    const needTitle = searchParams.get('title') || 'Service Request';
+    const rawPrice = searchParams.get('price') || '2500';
+    const repairPrice = parseInt(rawPrice.replace(/\D/g, '')) || 2500;
     const commissionRate = 0.05; // 5%
-    const commissionAmount = repairPrice * commissionRate; // 125
+    const commissionAmount = Math.ceil(repairPrice * commissionRate);
 
     // eSewa requires transaction_uuid to be unique per request.
     const transactionUuid = `NDR-${Date.now()}`;
@@ -80,19 +83,19 @@ export default function BusinessCommissionPage() {
                     <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100 mb-4">
                         <ShieldCheck className="h-6 w-6 text-emerald-600" />
                     </div>
-                    <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Commission Due</h2>
+                    <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Platform Fee</h2>
                     <p className="mt-2 text-sm text-gray-500">
-                        The repair is marked as completed by the customer. Please pay the platform fee to unlock your next leads.
+                        The service is completed. Please pay the platform fee to settle this lead and keep your account active.
                     </p>
                 </div>
 
                 <div className="mt-8 bg-gray-50 p-6 rounded-xl border border-gray-200">
                     <div className="flex justify-between py-3 border-b border-gray-200">
-                        <span className="text-gray-600 font-medium">Order</span>
-                        <span className="text-gray-900 font-semibold">iPhone Display Repair</span>
+                        <span className="text-gray-600 font-medium">Service</span>
+                        <span className="text-gray-900 font-semibold truncate ml-4" title={needTitle}>{needTitle}</span>
                     </div>
                     <div className="flex justify-between py-3 border-b border-gray-200">
-                        <span className="text-gray-600">Final Repair Price</span>
+                        <span className="text-gray-600">Total Price</span>
                         <span className="text-gray-900 font-medium">NPR {repairPrice.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between py-3 border-b border-gray-200">
@@ -111,7 +114,7 @@ export default function BusinessCommissionPage() {
                         disabled={loading}
                         className="w-full flex items-center justify-center gap-3 px-8 py-4 border border-transparent text-lg font-bold rounded-xl shadow-sm text-white bg-[#60BB46] hover:bg-[#52a33c] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        {loading ? 'Processing...' : 'Pay with eSewa'}
+                        {loading ? 'Redirecting...' : 'Pay with eSewa'}
                         {!loading && <ArrowRight className="h-5 w-5" />}
                     </button>
                     

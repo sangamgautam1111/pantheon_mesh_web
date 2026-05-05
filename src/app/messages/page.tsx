@@ -176,6 +176,7 @@ export default function MessagesPage() {
     const [reviewComment, setReviewComment] = useState("");
     const [reviewSaving, setReviewSaving] = useState(false);
     const [completionSaving, setCompletionSaving] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<string>("All Categories");
     const showOrderPanel = accountType === "customer";
 
     const clearThread = () => {
@@ -242,6 +243,10 @@ export default function MessagesPage() {
         const needle = query.trim().toLowerCase();
         let base = threads.filter((thread) => thread.messageCount > 0);
 
+        if (selectedCategory !== "All Categories") {
+            base = base.filter((thread) => thread.category === selectedCategory);
+        }
+
         const merged = selectedThread && !base.some((thread) => thread.id === selectedThread.id)
             ? [selectedThread, ...base]
             : base;
@@ -252,7 +257,7 @@ export default function MessagesPage() {
                 .toLowerCase()
                 .includes(needle),
         );
-    }, [query, selectedThread, threads]);
+    }, [query, selectedCategory, selectedThread, threads]);
 
     const loadThreads = async () => {
         if (!user) return;
@@ -542,13 +547,13 @@ export default function MessagesPage() {
             .map((message) => `${message.senderName}: ${message.text || message.attachments?.[0]?.name || "Attachment shared"}`)
             .join("\n");
         const promptByAction: Record<string, string> = {
-            "Suggest reply": "Write one short, polite customer reply for this phone repair quote chat. Focus on price, arrival time, warranty, or address safety.",
-            "Compare offer": "Compare the current repair Offer using simple customer language. Mention price, timing, warranty, and what to ask before choosing.",
-            "Check warranty": "Review the warranty conversation and suggest one clear question the customer should ask before accepting the repair Offer.",
+            "Suggest reply": "Write one short, polite customer reply for this service quote chat. Focus on price, arrival time, or location safety.",
+            "Compare offer": "Compare the current service Offer using simple customer language. Mention price, timing, and what to ask before choosing.",
+            "Check details": "Review the conversation and suggest one clear question the customer should ask before accepting the Offer.",
         };
         const prompt = `${promptByAction[action] || action}
 
-Need: ${selectedThread.needTitle || "Phone repair Need"}
+Need: ${selectedThread.needTitle || "Service Need"}
 Business: ${selectedThread.businessName || "Local Business"}
 Offer: ${selectedThread.offerPrice || "Not selected"}
 Recent chat:
@@ -612,9 +617,24 @@ ${recentMessages || "No chat messages yet."}`;
                                     className="h-11 min-w-0 flex-1 bg-transparent px-2 text-sm outline-none"
                                 />
                             </div>
+                            <div className="mt-4 flex gap-1.5 overflow-x-auto scrollbar-hide">
+                                {["All Categories", "General Service", "Food Service & Delivery", "Home Service"].map((cat) => (
+                                    <button
+                                        key={cat}
+                                        onClick={() => setSelectedCategory(cat)}
+                                        className={`whitespace-nowrap rounded-full border px-3.5 py-1.5 text-xs font-black transition-all ${
+                                            selectedCategory === cat
+                                                ? "border-[#222325] bg-[#222325] text-white"
+                                                : "border-[#e4e5e7] bg-white text-[#74767e] hover:border-[#222325] hover:text-[#222325]"
+                                        }`}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
-                        <div className="max-h-[calc(100vh-196px)] overflow-y-auto p-3">
+                        <div className="max-h-[calc(100vh-250px)] overflow-y-auto p-3">
                             {displayThreads.length === 0 ? (
                                 <div className="rounded-2xl border border-dashed border-[#dadbdd] p-8 text-center">
                                     <Send className="mx-auto text-[#b5b6ba]" size={30} />
@@ -629,9 +649,30 @@ ${recentMessages || "No chat messages yet."}`;
                                     return (
                                         <button
                                             key={thread.id}
-                                            onClick={() => selectThread(thread)}
+                                            onClick={() => {
+                                                setOrderContext({
+                                                    needId: thread.needId,
+                                                    quoteId: thread.quoteId || "",
+                                                    bookingId: thread.bookingId || "",
+                                                    businessId: thread.businessId || "",
+                                                    businessName: thread.businessName,
+                                                    businessAvatar: thread.otherAvatar || "",
+                                                    needTitle: thread.needTitle,
+                                                    customerName: thread.customerName,
+                                                    customerAvatar: "",
+                                                    offerPrice: thread.offerPrice || "",
+                                                    draftText: "",
+                                                    orderStarted: false,
+                                                });
+                                                if (typeof window !== "undefined") {
+                                                    const url = new URL(window.location.href);
+                                                    url.searchParams.set("needId", thread.needId);
+                                                    url.searchParams.set("quoteId", thread.quoteId || "");
+                                                    window.history.pushState({}, "", url.toString());
+                                                }
+                                            }}
                                             className={`mb-2 flex w-full gap-3 rounded-2xl border p-3 text-left transition ${
-                                                active ? "border-[#0a8f45] bg-[#f4fbf7] shadow-sm" : "border-transparent hover:border-[#e4e5e7] hover:bg-[#f7f7f7]"
+                                                active ? "border-[#222325] bg-[#f7f7f7] shadow-sm" : "border-transparent hover:border-[#e4e5e7] hover:bg-[#f7f7f7]"
                                             }`}
                                         >
                                             <AvatarCircle src={thread.otherAvatar} name={thread.otherName} className="h-12 w-12 text-sm" />
@@ -639,7 +680,7 @@ ${recentMessages || "No chat messages yet."}`;
                                                 <div className="flex items-center justify-between gap-2">
                                                     <p className="flex min-w-0 items-center gap-1 truncate text-sm font-black">
                                                         <span className="truncate">{thread.otherName}</span>
-                                                        {active && <CheckCircle2 size={13} className="shrink-0 text-[#0a8f45]" />}
+                                                        {active && <CheckCircle2 size={13} className="shrink-0 text-[#222325]" />}
                                                     </p>
                                                     <span className="shrink-0 text-[11px] text-[#95979d]">{formatTime(thread.lastMessageAt)}</span>
                                                 </div>
@@ -689,7 +730,7 @@ ${recentMessages || "No chat messages yet."}`;
                                             <Send className="mx-auto mb-4 text-[#b5b6ba]" size={34} />
                                             <p className="text-sm font-black">Start the conversation</p>
                                             <p className="mt-2 text-sm leading-6 text-[#74767e]">
-                                                Ask about timing, warranty, pickup and return, or exact address. This thread will appear in both inboxes after the first message.
+                                                Ask about timing, details, or exact address. This thread will appear in both inboxes after the first message.
                                             </p>
                                         </div>
                                     ) : (
@@ -929,7 +970,7 @@ ${recentMessages || "No chat messages yet."}`;
                                         </div>
                                         <div className="grid grid-cols-2 gap-2">
                                             <div className="rounded-xl bg-[#f7faf8] p-3">
-                                                <p className="font-black text-[#94a3b8]">Shop</p>
+                                                <p className="font-black text-[#94a3b8]">Business</p>
                                                 <p className="mt-1 truncate font-bold text-[#0f172a]">{selectedThread?.businessName || "Not selected"}</p>
                                             </div>
                                             <div className="rounded-xl bg-[#f7faf8] p-3">
@@ -938,8 +979,8 @@ ${recentMessages || "No chat messages yet."}`;
                                             </div>
                                         </div>
                                         <div className="rounded-xl bg-[#f7faf8] p-3">
-                                            <p className="font-black text-[#94a3b8]">Shop Details</p>
-                                            <p className="mt-1 font-bold leading-5 text-[#0f172a]">Professional local repair shop offering fast service. We specialize in electronics and offer a warranty on labor.</p>
+                                            <p className="font-black text-[#94a3b8]">Business Info</p>
+                                            <p className="mt-1 font-bold leading-5 text-[#0f172a]">Professional local business offering high-quality service. Verified provider on Needero Marketplace.</p>
                                         </div>
                                     </div>
 

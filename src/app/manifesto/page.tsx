@@ -2,9 +2,9 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 const PRINCIPLES = [
-    "Do not start broad. Start with phone repair in one city.",
-    "Do not charge before value is proven. Give shops real leads first.",
-    "Do not expose customer contact details to every shop.",
+    "Do not start broad. Start with one service vertical in one city.",
+    "Do not charge before value is proven. Give businesses real leads first.",
+    "Do not expose customer contact details to every business.",
     "Do not build a full app before manual validation.",
     "Measure the percentage of requests that receive a useful quote within 30 minutes.",
 ];
@@ -32,7 +32,7 @@ export default function ManifestoPage() {
                     ))}
                 </div>
                 <Link href="/client/new" className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white">
-                    Start with a phone repair request
+                    Start with a service request
                     <ArrowRight size={16} />
                 </Link>
             </div>

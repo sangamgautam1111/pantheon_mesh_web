@@ -32,16 +32,16 @@ const accountOptions: Array<{
     {
         type: "customer",
         title: "Customer account",
-        subtitle: "Post a phone repair Need, compare repair Offers, and choose the best nearby shop.",
+        subtitle: "Post a service Need, compare service Offers, and choose the best nearby business.",
         icon: UserRound,
-        points: ["Post phone repair Needs for free", "Compare NPR price, time, warranty", "Contact unlocks after choosing"],
+        points: ["Post service Needs for free", "Compare NPR price, time, warranty", "Contact unlocks after choosing"],
     },
     {
         type: "business",
         title: "Local Business account",
-        subtitle: "Browse nearby phone repair Needs, send Repair Offers, and grow with a business subscription.",
+        subtitle: "Browse nearby service Needs, send Service Offers, and grow with a business subscription.",
         icon: Store,
-        points: ["Repair lead inbox", "Send price, time, warranty", "Profile, analytics, and plans"],
+        points: ["Service lead inbox", "Send price, time, warranty", "Profile, analytics, and plans"],
     },
 ];
 
@@ -106,7 +106,7 @@ export default function LoginPage() {
         try {
             if (emailMode === "signup") {
                 if (!displayName.trim()) {
-                    setError(selectedAccountType === "business" ? "Shop or owner name is required." : "Your name is required.");
+                    setError(selectedAccountType === "business" ? "Business or owner name is required." : "Your name is required.");
                     return;
                 }
                 await signUpWithEmail(email, password, displayName.trim(), selectedAccountType);
@@ -167,29 +167,29 @@ export default function LoginPage() {
                         </div>
 
                         <h1 className="relative max-w-2xl text-4xl font-black leading-[0.96] tracking-[-0.055em] text-[#06111f] md:text-6xl">
-                            Phone Repair Needero. Two clear account flows.
+                            Local Service Needero. Two clear account flows.
                         </h1>
 
                         <p className="relative mt-6 max-w-2xl text-base leading-7 text-[#64748b]">
-                            Customers post one phone issue. Nearby repair shops send clear Repair Offers. Needero keeps
-                            contact details protected until the customer chooses a shop.
+                            Customers post one local issue. Nearby local businesses send clear Service Offers. Needero keeps
+                            contact details protected until the customer chooses a business.
                         </p>
 
                         <div className="relative mt-10 grid gap-4 md:grid-cols-3">
                             {[
                                 {
                                     title: "Customer",
-                                    copy: "Post a phone repair Need, upload proof, and compare real Repair Offers.",
+                                    copy: "Post a service Need, upload proof, and compare real Service Offers.",
                                     icon: UserRound,
                                 },
                                 {
                                     title: "Business",
-                                    copy: "Receive nearby phone repair leads and send price, time, warranty, and parts quality.",
+                                    copy: "Receive nearby service leads and send price, time, warranty, and quality details.",
                                     icon: Store,
                                 },
                                 {
                                     title: "Marketplace",
-                                    copy: "Start with phone repair Needs, repair shops, Offers, and messages.",
+                                    copy: "Start with service Needs, local businesses, Offers, and messages.",
                                     icon: Building2,
                                 },
                             ].map((item) => {
@@ -341,7 +341,7 @@ export default function LoginPage() {
                                 {emailMode === "signup" && (
                                     <div>
                                         <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-gcp-text-secondary">
-                                            {selectedAccountType === "business" ? "Shop or owner name" : "Your name"}
+                                            {selectedAccountType === "business" ? "Business or owner name" : "Your name"}
                                         </label>
                                         <input
                                             type="text"
@@ -363,7 +363,7 @@ export default function LoginPage() {
                                         value={email}
                                         onChange={(event) => setEmail(event.target.value)}
                                         className="gcp-input w-full"
-                                        placeholder={selectedAccountType === "business" ? "shop@needero.com" : "you@example.com"}
+                                        placeholder={selectedAccountType === "business" ? "business@needero.com" : "you@example.com"}
                                         required
                                     />
                                 </div>

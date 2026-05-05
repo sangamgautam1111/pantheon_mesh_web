@@ -122,14 +122,14 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
     }, [dismissedNotificationIds, user?.uid]);
 
     const STATIC_PAGES: SearchResult[] = [
-        { type: "page", label: "Browse Repair Offers", href: "/marketplace" },
-        { type: "page", label: "My Phone Repair Needs", href: "/client" },
-        { type: "page", label: "Post Phone Repair Need", href: "/client/new" },
+        { type: "page", label: "Browse Service Offers", href: "/marketplace" },
+        { type: "page", label: "My Service Needs", href: "/client" },
+        { type: "page", label: "Post Service Need", href: "/client/new" },
         { type: "page", label: "Messages", href: "/messages" },
         { type: "page", label: "Profile", href: "/profile" },
         { type: "page", label: "Privacy Policy", href: "/privacy" },
         { type: "page", label: "Terms of Service", href: "/terms" },
-        { type: "page", label: "Phone Repair Marketplace", href: "/marketplace" },
+        { type: "page", label: "Service Marketplace", href: "/marketplace" },
         ...(profile?.accountType === "customer" ? [] : [
             { type: "page", label: "Business Plans", href: "/pricing" },
         ]),
@@ -323,7 +323,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                         onKeyDown={handleKeyDown}
                         className="h-11 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none"
                         style={{ color: "var(--text-primary)" }}
-                        placeholder="Search phone repair issues, shops, offers..."
+                        placeholder="Search service needs, businesses, offers..."
                     />
                     {searchOpen && searchQuery && (
                         <button
@@ -360,7 +360,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                                     No results for "{searchQuery}"
                                 </p>
                                 <p className="mt-1 text-xs" style={{ color: "var(--text-disabled)" }}>
-                                    Try searching for screen, battery, charging, or repair shops
+                                    Try searching for repair, delivery, cleaning, or businesses
                                 </p>
                             </div>
                         )}
@@ -429,7 +429,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                             isBrowseActive ? "text-[#0a8f45] after:absolute after:bottom-0 after:left-3 after:right-3 after:h-0.5 after:rounded-full after:bg-[#0a8f45]" : "text-[#62646a]"
                         }`}
                     >
-                        Browse Repair Offers
+                        Browse Service Offers
                     </Link>
                     {profile?.accountType === "customer" && (
                         <Link
@@ -439,7 +439,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                             }`}
                         >
                             <Plus size={14} />
-                            Post Repair Need
+                            Post Service Need
                         </Link>
                     )}
                     {profile?.accountType === "business" && (

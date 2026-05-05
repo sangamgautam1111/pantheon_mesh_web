@@ -51,10 +51,10 @@ function clampPanelPosition(position: PanelPosition, size: PanelSize): PanelPosi
 }
 
 const SUGGESTIONS = [
-    "Post Phone Repair Need",
-    "Explain Phone Repair Needero",
-    "How do shops send Repair Offers?",
-    "Open Repair Offers",
+    "Post Service Need",
+    "Explain Needero Marketplace",
+    "How do businesses send Offers?",
+    "Open Service Offers",
     "Open business plans",
 ];
 
@@ -65,7 +65,7 @@ export const AiGuide = () => {
         {
             id: "welcome",
             role: "assistant",
-            text: "Hi, I'm Needero Assist. I can help you post a phone repair Need, compare Repair Offers, find messages, or contact support.",
+            text: "Hi, I'm Needero Assist. I can help you post a service Need, compare Offers, find messages, or contact support.",
         },
     ]);
     const [input, setInput] = useState("");
@@ -472,7 +472,7 @@ export const AiGuide = () => {
                                 value={input}
                                 onChange={(event) => setInput(event.target.value)}
                                 onKeyDown={handleKeyDown}
-                                placeholder="Ask about requests, shops, offers, or launch..."
+                                placeholder="Ask about requests, businesses, offers, or services..."
                                 className="flex-1 bg-transparent text-sm outline-none"
                                 style={{ color: "#222325" }}
                             />

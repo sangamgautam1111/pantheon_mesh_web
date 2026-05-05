@@ -19,9 +19,9 @@ import logoImg from "@/app/logo.png";
 
 const NAV_ITEMS = [
     { label: "Home", href: "/", icon: LayoutDashboard },
-    { label: "My Repair Needs", href: "/client", icon: FileText, allowedTypes: ["customer"] as ActiveAccountType[] },
-    { label: "Post Repair Need", href: "/client/new", icon: PlusCircle, allowedTypes: ["customer"] as ActiveAccountType[] },
-    { label: "Repair Offers", href: "/marketplace", icon: Store, allowedTypes: ["customer", "business"] as ActiveAccountType[] },
+    { label: "My Service Needs", href: "/client", icon: FileText, allowedTypes: ["customer"] as ActiveAccountType[] },
+    { label: "Post Service Need", href: "/client/new", icon: PlusCircle, allowedTypes: ["customer"] as ActiveAccountType[] },
+    { label: "Service Offers", href: "/marketplace", icon: Store, allowedTypes: ["customer", "business"] as ActiveAccountType[] },
     { label: "Messages", href: "/messages", icon: MessageSquare, allowedTypes: ["customer", "business"] as ActiveAccountType[] },
     { label: "Profile", href: "/profile", icon: UserRound, allowedTypes: ["customer", "business"] as ActiveAccountType[] },
     { label: "Business Plans", href: "/pricing", icon: CreditCard, allowedTypes: ["business"] as ActiveAccountType[] },
@@ -122,7 +122,7 @@ export const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
                         </Link>
                     </div>
                     <p className="text-xs text-center" style={{ color: "#b5b6ba" }}>
-                        Needero - Phone Repair MVP
+                        Needero - Local Service Marketplace
                     </p>
                 </div>
             </aside>

@@ -8,15 +8,15 @@ const SECTIONS = [
     },
     {
         title: "First market",
-        text: "Start with phone repair in one city. It is common, urgent, price-sensitive, local, competitive, and easy to explain with text and photos.",
+        text: "Start with common local services in one city. It is common, urgent, price-sensitive, local, competitive, and easy to explain with text and photos.",
     },
     {
         title: "Business model",
-        text: "Customers use the app free. Shops pay SaaS subscriptions for more quote replies, better visibility, AI quote tools, analytics, and stronger profiles.",
+        text: "Customers use the app free. Businesses pay SaaS subscriptions for more quote replies, better visibility, AI quote tools, analytics, and stronger profiles.",
     },
     {
         title: "Validation target",
-        text: "Before scaling, prove 10 onboarded repair shops, 50 customer requests, 5 completed matches, and 1 paying business.",
+        text: "Before scaling, prove 10 onboarded businesses, 50 customer requests, 5 completed matches, and 1 paying business.",
     },
 ];
 
