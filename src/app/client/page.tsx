@@ -99,7 +99,10 @@ export default function RequestCenterPage() {
             );
         }
         if (selectedCategory !== "All Categories") {
-            list = list.filter(n => n.category === selectedCategory);
+            list = list.filter(n => {
+                const normalizedCategory = n.category === "General Service" ? "Mobile Repair" : n.category;
+                return normalizedCategory === selectedCategory;
+            });
         }
         if (statusFilter !== "all") {
             list = list.filter(n => n.status === statusFilter);

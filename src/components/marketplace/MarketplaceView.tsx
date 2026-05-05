@@ -157,7 +157,7 @@ function NeedMedia({ src, title, category }: { src?: string | null; title: strin
                         Need
                     </span>
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/55">{category}</p>
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/55">{category === "General Service" ? "Mobile Repair" : category}</p>
                         <h3 className="mt-2 line-clamp-2 text-xl font-black leading-tight tracking-[-0.03em]">{title}</h3>
                     </div>
                 </div>
@@ -275,7 +275,10 @@ const categorySlugs: Record<string, string> = {
 };
 
 const slugToCategory = (slug: string) => categorySlugs[slug] || "All Categories";
-const categoryToSlug = (cat: string) => Object.keys(categorySlugs).find(k => categorySlugs[k] === cat) || "all";
+const categoryToSlug = (cat: string) => {
+    const normalized = cat === "General Service" ? "Mobile Repair" : cat;
+    return Object.keys(categorySlugs).find(k => categorySlugs[k] === normalized) || "all";
+};
 
 export interface MarketplaceViewProps {
     initialCategory?: string;
@@ -321,7 +324,8 @@ export function MarketplaceView({ initialCategory = "All Categories", isCategory
     
     const filteredNeeds = useMemo(() => {
         const visibleNeeds = needs.filter(need => {
-            const matchesCategory = selectedCategory === "All Categories" || need.category === selectedCategory;
+            const normalizedCategory = need.category === "General Service" ? "Mobile Repair" : need.category;
+            const matchesCategory = selectedCategory === "All Categories" || normalizedCategory === selectedCategory;
             if (!matchesCategory) return false;
             
             if (!searchQuery.trim()) return true;

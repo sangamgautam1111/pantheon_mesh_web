@@ -81,7 +81,10 @@ const categorySlugs: Record<string, string> = {
     "home": "Home Service",
 };
 
-const categoryToSlug = (cat: string) => Object.keys(categorySlugs).find(k => categorySlugs[k] === cat) || "all";
+const categoryToSlug = (cat: string) => {
+    const normalized = cat === "General Service" ? "Mobile Repair" : cat;
+    return Object.keys(categorySlugs).find(k => categorySlugs[k] === normalized) || "all";
+};
 
 const needsTravelCharge = (serviceType: string) => travelServiceTypes.includes(serviceType);
 const chatContextKey = (needId: string, quoteId: string) => `needero-chat:${needId}:${quoteId}`;
@@ -186,7 +189,7 @@ function NeedMedia({ need }: { need: NeedRecord }) {
                 </div>
                 <div>
                     <Link href={`/marketplace/category/${categoryToSlug(need.category)}`} className="text-xs font-black uppercase tracking-[0.22em] text-white/45 hover:text-white transition-colors">
-                        {need.category}
+                        {need.category === "General Service" ? "Mobile Repair" : need.category}
                     </Link>
                     <h2 className="mt-3 max-w-2xl text-3xl font-black leading-tight tracking-[-0.06em] sm:text-5xl">{need.title}</h2>
                 </div>
