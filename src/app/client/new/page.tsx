@@ -19,14 +19,11 @@ import {
     Loader2,
     MapPin,
     Mic,
-    Pizza,
     PlugZap,
-    ShoppingBag,
-    ShoppingCart,
+    Sparkles,
     Smartphone,
     Store,
     UploadCloud,
-    Utensils,
     Wrench,
 } from "lucide-react";
 import { City, Country, State } from "country-state-city";
@@ -60,14 +57,13 @@ type PinPoint = {
 const steps = [
     { label: "Category", helper: "What do you need?" },
     { label: "Details", helper: "Issue, description & photos" },
-    { label: "Delivery", helper: "Preference, budget & location" },
+    { label: "Location", helper: "Preference, budget & location" },
     { label: "Review", helper: "Confirm and post" },
 ];
 
 const categoryOptions = [
+    { label: "Home Cleaning", value: "Home Cleaning", icon: Home, tone: "bg-[#eef6ff] text-[#2563eb]" },
     { label: "Mobile Repair", value: "Mobile Repair", icon: Smartphone, tone: "bg-[#e9f9f0] text-[#0a8f45]" },
-    { label: "Food Service & Delivery", value: "Food Service & Delivery", icon: ShoppingBag, tone: "bg-[#fdf2f8] text-[#be185d]" },
-    { label: "Home & Local Services", value: "Home Service", icon: Home, tone: "bg-[#eef6ff] text-[#2563eb]" },
 ];
 
 const issueOptions = [
@@ -81,26 +77,18 @@ const issueOptions = [
     { label: "Other issue", value: "Other issue", icon: HelpCircle, tone: "bg-[#f8fafc] text-[#475569]" },
 ];
 
-const foodIssueOptions = [
-    { label: "Restaurant Order", value: "Restaurant Order", icon: Utensils, tone: "bg-[#fdf2f8] text-[#be185d]" },
-    { label: "Grocery Items", value: "Grocery Items", icon: ShoppingCart, tone: "bg-[#eef6ff] text-[#2563eb]" },
-    { label: "Bakery & Sweets", value: "Bakery & Sweets", icon: Pizza, tone: "bg-[#fff7ed] text-[#c2410c]" },
-    { label: "Fresh Vegetables", value: "Fresh Vegetables", icon: Store, tone: "bg-[#e9f9f0] text-[#0a8f45]" },
-    { label: "Custom Food Task", value: "Custom Food Task", icon: HelpCircle, tone: "bg-[#f8fafc] text-[#475569]" },
-];
-
 const homeIssueOptions = [
-    { label: "Plumbing", value: "Plumbing", icon: Droplets, tone: "bg-[#eef6ff] text-[#2563eb]" },
-    { label: "Electrical", value: "Electrical", icon: PlugZap, tone: "bg-[#fff7ed] text-[#c2410c]" },
-    { label: "House Cleaning", value: "House Cleaning", icon: Store, tone: "bg-[#fdf2f8] text-[#be185d]" },
-    { label: "Carpentry", value: "Carpentry", icon: Wrench, tone: "bg-[#e9f9f0] text-[#0a8f45]" },
-    { label: "Other Task", value: "Other Task", icon: HelpCircle, tone: "bg-[#f8fafc] text-[#475569]" },
+    { label: "Regular Cleaning", value: "Regular Cleaning", icon: Store, tone: "bg-[#e9f9f0] text-[#0a8f45]" },
+    { label: "Deep Cleaning", value: "Deep Cleaning", icon: Sparkles, tone: "bg-[#eef6ff] text-[#2563eb]" },
+    { label: "Kitchen Cleaning", value: "Kitchen Cleaning", icon: Droplets, tone: "bg-[#ecfeff] text-[#0e7490]" },
+    { label: "Bathroom Cleaning", value: "Bathroom Cleaning", icon: PlugZap, tone: "bg-[#fff7ed] text-[#c2410c]" },
+    { label: "Sofa / Carpet", value: "Sofa / Carpet Cleaning", icon: Wrench, tone: "bg-[#f5f3ff] text-[#6d28d9]" },
+    { label: "Other Cleaning", value: "Other Cleaning", icon: HelpCircle, tone: "bg-[#f8fafc] text-[#475569]" },
 ];
 
 const brandOptions = ["Apple", "Samsung", "Xiaomi", "Other"];
 const servicePreferences = ["Visit business", "Home service", "Pickup & return", "Ask provider to suggest"];
-const foodPreferences = ["Delivery to my door", "Self pickup", "Order & I will collect", "Dine-in booking"];
-const homePreferences = ["Home visit", "Visit business", "Pickup & return", "Phone consultation"];
+const homePreferences = ["Home visit", "Bring cleaning team", "Bring materials", "Ask provider to suggest"];
 const urgencyOptions = ["Today", "Tomorrow", "Flexible"];
 
 const issueTitleMap: Record<string, string> = {
@@ -159,7 +147,7 @@ function buildServiceTitle(category: string, issue: string, urgency: string, bra
 }
 
 function buildNeedCard(input: {
-    category: "Mobile Repair" | "Food Service & Delivery" | "Home Service";
+    category: "Home Cleaning" | "Mobile Repair";
     brand: string;
     model: string;
     issueType: string;
@@ -170,22 +158,12 @@ function buildNeedCard(input: {
     budget: string;
     customerAvatar?: string | null;
 }): NeedCard {
-    const isFood = input.category === "Food Service & Delivery";
-    const isHome = input.category === "Home Service";
+    const isHome = input.category === "Home Cleaning";
     const title = buildServiceTitle(input.category, input.issueType, input.urgency, input.brand, input.model);
 
-    const details = isFood
+    const details = isHome
         ? [
-            `Service: ${input.issueType}`,
-            input.issueDescription ? `Details: ${input.issueDescription}` : "",
-            `Delivery preference: ${input.servicePreference}`,
-            `Estimated budget: ${input.budget || "Open for quotes"}`,
-            `Urgency: ${input.urgency}`,
-            `Area: ${input.location}`,
-          ].filter(Boolean).join("\n")
-        : isHome
-        ? [
-            `Task: ${input.issueType}`,
+            `Cleaning task: ${input.issueType}`,
             input.issueDescription ? `Description: ${input.issueDescription}` : "",
             `Service preference: ${input.servicePreference}`,
             `Budget: ${input.budget || "Open for quotes"}`,
@@ -207,14 +185,14 @@ function buildNeedCard(input: {
         title,
         problem: input.issueDescription || `${input.issueType} needed.`,
         knownDetails: details,
-        missingInfo: isFood || isHome ? ["Availability", "Price", "Time"] : ["Price", "Estimated time", "Warranty", "Quality"],
-        questions: isFood || isHome ? ["Can you do this?", "What is the total price?", "How long will it take?"] : ["What is your service price?", "How long will it take?", "What warranty and quality do you provide?"],
-        summaryForBusinesses: isFood || isHome ? "Send price, availability, and estimated time." : "Send price, estimated time, warranty, quality, availability, and service method.",
+        missingInfo: isHome ? ["Availability", "Price", "Cleaning scope"] : ["Price", "Estimated time", "Warranty", "Quality"],
+        questions: isHome ? ["Can you do this cleaning job?", "What is the total price?", "How long will it take?"] : ["What is your service price?", "How long will it take?", "What warranty and quality do you provide?"],
+        summaryForBusinesses: isHome ? "Send price, availability, team/material details, and estimated time." : "Send price, estimated time, warranty, quality, availability, and service method.",
         tags: [input.category, input.issueType, input.servicePreference],
         customerAvatar: input.customerAvatar || null,
         serviceMode: input.servicePreference,
         preferredTime: input.urgency,
-        warrantyImportant: isFood ? "N/A" : "Yes, service warranty preferred",
+        warrantyImportant: isHome ? "Service guarantee preferred" : "Yes, service warranty preferred",
     };
 }
 
@@ -222,7 +200,7 @@ export default function NewCustomerRequestPage() {
     const router = useRouter();
     const { user, profile, updateUserProfile } = useAuth();
     const [step, setStep] = useState(0);
-    const [category, setCategory] = useState<"Mobile Repair" | "Food Service & Delivery" | "Home Service">("Mobile Repair");
+    const [category, setCategory] = useState<"Home Cleaning" | "Mobile Repair">("Home Cleaning");
     const [issueType, setIssueType] = useState("");
     const [phoneBrand, setPhoneBrand] = useState(brandOptions[0]);
     const [phoneModel, setPhoneModel] = useState("");
@@ -278,19 +256,19 @@ export default function NewCustomerRequestPage() {
 
     useEffect(() => {
         if (!issueType) {
-            setIssueType(category === "Food Service & Delivery" ? foodIssueOptions[0].value : category === "Home Service" ? homeIssueOptions[0].value : issueOptions[0].value);
+            setIssueType(category === "Home Cleaning" ? homeIssueOptions[0].value : issueOptions[0].value);
         }
     }, [category, issueType]);
 
     useEffect(() => {
         if (!servicePreference) {
-            setServicePreference(category === "Food Service & Delivery" ? foodPreferences[0] : category === "Home Service" ? homePreferences[0] : servicePreferences[0]);
+            setServicePreference(category === "Home Cleaning" ? homePreferences[0] : servicePreferences[0]);
         }
     }, [category, servicePreference]);
 
     useEffect(() => {
         if (!budget) {
-            setBudget(category === "Mobile Repair" ? "Open for local repair quotes" : "Open for quotes");
+            setBudget(category === "Home Cleaning" ? "Open for local cleaning quotes" : "Open for local repair quotes");
         }
     }, [category, budget]);
 
@@ -362,9 +340,10 @@ export default function NewCustomerRequestPage() {
         setPosting(true);
         setError("");
         try {
+            const openBudgetLabel = category === "Home Cleaning" ? "Open for NPR cleaning quotes" : "Open for NPR repair quotes";
             const description = [
                 repairCard.knownDetails,
-                `Customer budget: ${budget.trim() || "Open for NPR repair quotes"}`,
+                `Customer budget: ${budget.trim() || openBudgetLabel}`,
                 exactAddress ? `Exact address: ${exactAddress}` : "",
                 pinPoint ? `Map pin: ${pinPoint.address}` : "",
                 "Businesses should send price, estimated time, and relevant details.",
@@ -387,7 +366,7 @@ export default function NewCustomerRequestPage() {
                 latitude: pinPoint?.coords.lat ?? null,
                 longitude: pinPoint?.coords.lng ?? null,
                 urgency,
-                budget: budget.trim() || "Open for NPR repair quotes",
+                budget: budget.trim() || openBudgetLabel,
                 photoPreview: uploadedMedia?.dataUrl || null,
                 cleanCard: repairCard,
             });
@@ -410,7 +389,7 @@ export default function NewCustomerRequestPage() {
                     <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 1 of 4</p>
                     <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">What do you need help with?</h1>
                     <p className="mt-3 max-w-2xl text-sm leading-7 text-[#64748b]">Choose a category. Local businesses will compete to give you the best offer.</p>
-                    <div className="mt-7 grid gap-4 sm:grid-cols-3">
+                    <div className="mt-7 grid gap-4 sm:grid-cols-2">
                         {categoryOptions.map((option) => {
                             const Icon = option.icon;
                             const active = category === option.value;
@@ -430,15 +409,15 @@ export default function NewCustomerRequestPage() {
         }
 
         if (step === 1) {
-            const options = category === "Food Service & Delivery" ? foodIssueOptions : category === "Home Service" ? homeIssueOptions : issueOptions;
+            const options = category === "Home Cleaning" ? homeIssueOptions : issueOptions;
             return (
                 <section>
                     <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 2 of 4</p>
                     <h1 className="mt-3 text-3xl font-black text-[#06111f] md:text-5xl">
-                        {category === "Food Service & Delivery" ? "What would you like to order?" : category === "Home Service" ? "What's the issue?" : "What's wrong with your device?"}
+                        {category === "Home Cleaning" ? "What cleaning service do you need?" : "What's wrong with your phone?"}
                     </h1>
                     <p className="mt-3 max-w-2xl text-sm leading-7 text-[#64748b]">
-                        {category === "Food Service & Delivery" ? "Select a type, add items and special instructions." : category === "Home Service" ? "Pick a service type and describe the problem." : "Select the issue, add phone details, and upload a photo."}
+                        {category === "Home Cleaning" ? "Pick a cleaning type, add the room or scope, and upload a photo if helpful." : "Select the issue, add phone details, and upload a photo."}
                     </p>
                     <div className="mt-7 grid gap-3 grid-cols-2 sm:grid-cols-3 xl:grid-cols-4">
                         {options.map((option) => {
@@ -468,10 +447,10 @@ export default function NewCustomerRequestPage() {
                             </>
                         )}
                         <label className="md:col-span-2">
-                            <span className={labelClass}>{category === "Food Service & Delivery" ? "Order list / special instructions" : category === "Home Service" ? "Describe the problem" : "Describe the issue"}</span>
+                            <span className={labelClass}>{category === "Home Cleaning" ? "Describe the cleaning job" : "Describe the issue"}</span>
                             <textarea value={issueDescription} onChange={(event) => setIssueDescription(event.target.value)}
                                 className={`${inputClass} min-h-[120px] resize-y`}
-                                placeholder={category === "Food Service & Delivery" ? "e.g. 2x Chicken Momos, 1x Coke 500ml, deliver to Thapathali" : category === "Home Service" ? "e.g. Leaking pipe in kitchen, need plumber urgently" : "e.g. Screen cracked, touch still works, need repair today"}
+                                placeholder={category === "Home Cleaning" ? "e.g. 2 bedrooms, kitchen and bathroom deep cleaning needed tomorrow" : "e.g. Screen cracked, touch still works, need repair today"}
                             />
                         </label>
                     </div>
@@ -480,7 +459,7 @@ export default function NewCustomerRequestPage() {
                         <div className="flex items-center gap-4">
                             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e9f9f0] text-[#0a8f45]"><UploadCloud size={20} /></div>
                             <div>
-                                <p className="text-sm font-black text-[#06111f]">{category === "Food Service & Delivery" ? "Upload food or menu photo" : category === "Home Service" ? "Upload photo of the issue" : "Upload photo of the damage"}</p>
+                                <p className="text-sm font-black text-[#06111f]">{category === "Home Cleaning" ? "Upload photo of the cleaning area" : "Upload photo of the damage"}</p>
                                 <p className="mt-1 text-xs text-[#64748b]">Optional — helps businesses quote accurately</p>
                             </div>
                         </div>
@@ -491,7 +470,7 @@ export default function NewCustomerRequestPage() {
         }
 
         if (step === 2) {
-            const preferences = category === "Food Service & Delivery" ? foodPreferences : category === "Home Service" ? homePreferences : servicePreferences;
+            const preferences = category === "Home Cleaning" ? homePreferences : servicePreferences;
             return (
                 <section>
                     <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0a8f45]">Step 3 of 4</p>
@@ -550,7 +529,7 @@ export default function NewCustomerRequestPage() {
                                 <div className="rounded-2xl bg-[#06111f] p-3 text-white"><MapPin size={20} /></div>
                                 <div>
                                     <p className="font-black text-[#06111f]">Map pin (optional)</p>
-                                    <p className="mt-1 text-sm leading-6 text-[#64748b]">{pinPoint?.address || "Pin for pickup, delivery, or home service navigation."}</p>
+                                    <p className="mt-1 text-sm leading-6 text-[#64748b]">{pinPoint?.address || "Pin the service area so nearby businesses can quote accurately."}</p>
                                 </div>
                             </div>
                             <button type="button" onClick={() => setIsMapOpen(true)} className="rounded-xl bg-[#06111f] px-5 py-3 text-sm font-black text-white">
@@ -678,7 +657,7 @@ export default function NewCustomerRequestPage() {
                                             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#94a3b8]">Live preview</p>
                                             <h2 className="mt-2 text-xl font-black text-[#06111f]">{category} Card</h2>
                                         </div>
-                                        {category === "Food Service & Delivery" ? <ShoppingBag size={22} className="text-[#be185d]" /> : category === "Home Service" ? <Home size={22} className="text-[#2563eb]" /> : <Smartphone size={22} className="text-[#0a8f45]" />}
+                                        {category === "Home Cleaning" ? <Home size={22} className="text-[#2563eb]" /> : <Smartphone size={22} className="text-[#0a8f45]" />}
                                     </div>
                                     <NeedPreview compact card={repairCard} location={locationString} urgency={urgency} budget={budget} media={uploadedMedia} pinPoint={pinPoint} />
                                 </div>

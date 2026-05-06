@@ -6,8 +6,8 @@ import { ArrowLeft, Smartphone, CheckCircle2, Loader2, MapPin, Wrench, Store } f
 import { ref, push } from "firebase/database";
 import { useAuth } from "@/context/AuthContext";
 
-const repairCategories = ["Mobile Phone", "Laptop / Computer", "Tablet / iPad", "Smart Watch", "Television", "Electronics", "Home Appliances", "Bike / Scooter", "Multiple Categories"];
-const brandOptions = ["Apple", "Samsung", "Xiaomi / Redmi", "OnePlus", "Vivo", "OPPO", "Realme", "HP", "Dell", "Lenovo", "Asus", "All Brands"];
+const repairCategories = ["Mobile Phone", "Screen Replacement", "Battery Replacement", "Charging Port Repair", "Speaker / Mic Repair", "Camera Repair", "Water Damage", "Software / Unlock Help", "Multiple Mobile Repairs"];
+const brandOptions = ["Apple", "Samsung", "Xiaomi / Redmi", "OnePlus", "Vivo", "OPPO", "Realme", "All Mobile Brands"];
 
 const inputClass = "w-full rounded-xl border border-[#dadbdd] bg-white px-4 py-3 text-sm outline-none transition focus:border-[#0a8f45] focus:ring-4 focus:ring-[#0a8f45]/10";
 const labelClass = "block text-xs font-bold uppercase tracking-[0.1em] text-[#404145] mb-2";
@@ -101,8 +101,8 @@ export default function RepairShopRegistrationPage() {
                             <Smartphone size={28} />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-black sm:text-4xl">Repair Shop Partner Registration</h1>
-                            <p className="mt-1 text-white/80">Join Needero and get repair leads from customers near your shop</p>
+                            <h1 className="text-3xl font-black sm:text-4xl">Mobile Repair Partner Registration</h1>
+                            <p className="mt-1 text-white/80">Join Needero and get phone repair leads from customers near your shop</p>
                         </div>
                     </div>
                 </div>
@@ -113,7 +113,7 @@ export default function RepairShopRegistrationPage() {
                 <form onSubmit={handleSubmit}>
                     <div className="rounded-3xl border border-[#e4e5e7] bg-white p-6 shadow-sm sm:p-10">
                         <h2 className="text-xl font-black text-[#222325]">Shop Details</h2>
-                        <p className="mt-1 text-sm text-[#62646a]">Tell us about your repair business</p>
+                        <p className="mt-1 text-sm text-[#62646a]">Tell us about your mobile repair business</p>
 
                         <div className="mt-8 grid gap-6 sm:grid-cols-2">
                             <label>
@@ -181,8 +181,8 @@ export default function RepairShopRegistrationPage() {
                             <textarea className={`${inputClass} min-h-[120px] resize-y`} value={form.priceList} onChange={(e) => update("priceList", e.target.value)} placeholder="e.g. Screen replacement: NPR 3000-8000, Battery: NPR 1500-3000..." />
                         </label>
 
-                        <h2 className="mt-10 text-xl font-black text-[#222325]">Documents & Banking</h2>
-                        <p className="mt-1 text-sm text-[#62646a]">Required for payment processing and verification</p>
+                        <h2 className="mt-10 text-xl font-black text-[#222325]">Verification & Payout Details</h2>
+                        <p className="mt-1 text-sm text-[#62646a]">Optional for MVP onboarding, useful for verification and future payouts</p>
 
                         <div className="mt-6 grid gap-6 sm:grid-cols-2">
                             <label>
@@ -212,7 +212,7 @@ export default function RepairShopRegistrationPage() {
                             className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#0a8f45] to-[#38b000] px-8 py-4 text-base font-black text-white shadow-lg transition hover:shadow-xl disabled:opacity-50 sm:w-auto"
                         >
                             {submitting ? <Loader2 size={18} className="animate-spin" /> : <Store size={18} />}
-                            {submitting ? "Registering..." : "Register Repair Shop"}
+                            {submitting ? "Registering..." : "Register Mobile Repair Partner"}
                         </button>
                     </div>
                 </form>

@@ -12,9 +12,9 @@ const MAX_HISTORY_MESSAGES = 6;
 
 const NAVIGATION_TARGETS: Array<{ path: string; label: string; keywords: string[] }> = [
     { path: "/", label: "Open Needero home", keywords: ["home", "overview", "needero", "needero.com"] },
-    { path: "/client/new", label: "Post Phone Repair Need", keywords: ["post", "need", "repair", "phone", "request", "problem", "customer"] },
-    { path: "/client", label: "Open My Phone Repair Needs", keywords: ["my needs", "needs", "history", "customer requests"] },
-    { path: "/marketplace", label: "Browse Repair Offers", keywords: ["marketplace", "offers", "shops", "businesses", "repair offers"] },
+    { path: "/client/new", label: "Post Service Need", keywords: ["post", "need", "repair", "phone", "cleaning", "request", "problem", "customer"] },
+    { path: "/client", label: "Open My Service Needs", keywords: ["my needs", "needs", "history", "customer requests"] },
+    { path: "/marketplace", label: "Browse Service Offers", keywords: ["marketplace", "offers", "shops", "businesses", "repair offers", "cleaning offers"] },
     { path: "/pricing", label: "Open business plans", keywords: ["pricing", "plans", "business plan", "subscription", "npr", "1999", "4999"] },
     { path: "/messages", label: "Open messages", keywords: ["messages", "chat", "inbox"] },
 ];
@@ -97,7 +97,7 @@ async function generateGroqReply(message: string, history: ChatTurn[], knowledge
         {
             role: "system",
             content:
-                "You are Needero Assist. Needero MVP is phone repair only. Customers post a phone repair Need, nearby repair shops send Repair Offers, and customers choose the best one. Use simple language for non-technical users.",
+                "You are Needero Assist. Needero MVP focuses on Home Cleaning first and Mobile Repair second. Customers post a service Need, nearby businesses send Service Offers, and customers choose the best one. Use simple language for non-technical users.",
         },
         {
             role: "system",
@@ -140,22 +140,22 @@ function fallbackReply(message: string, docs: ReturnType<typeof retrieveKnowledg
     const query = normalizeText(message);
 
     if (query.includes("business model") || query.includes("money") || query.includes("pricing")) {
-        return "Needero makes money from repair shops, not customers. Customers post phone repair Needs for free. Shops can use Free, Pro, or Premium subscriptions for more replies, better visibility, AI quote help, and analytics.";
+        return "Needero makes money from local businesses, not customers. Customers post Home Cleaning and Mobile Repair Needs for free. Businesses can use Free, Pro, or Premium subscriptions for more replies, better visibility, AI quote help, and analytics.";
     }
 
     if (query.includes("mvp") || query.includes("first") || query.includes("start")) {
-        return "Start simple: real phone repair shops, real customer phone repair Needs, fast Repair Offers, completed matches, and one paying shop after value is proven.";
+        return "Start simple: real home cleaning partners first, mobile repair shops second, real customer Needs, fast Service Offers, completed matches, and one paying business after value is proven.";
     }
 
     if (query.includes("customer") || query.includes("request")) {
-        return "Customer flow: choose the phone issue, add brand, model, area and urgency, optionally upload proof, compare NPR repair Offers, then choose one shop.";
+        return "Customer flow: choose Home Cleaning or Mobile Repair, add the issue or cleaning scope, area and urgency, optionally upload proof, compare NPR Service Offers, then choose one business.";
     }
 
     if (docs[0]) {
         return `${docs[0].text} What part should I help you open or refine next?`;
     }
 
-    return "Needero MVP is phone repair only: post your phone issue, get repair prices from nearby shops, choose the best one.";
+    return "Needero MVP is Home Cleaning first and Mobile Repair second: post your service Need, get prices from nearby businesses, and choose the best one.";
 }
 
 export async function POST(req: NextRequest) {

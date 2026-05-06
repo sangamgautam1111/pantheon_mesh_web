@@ -63,8 +63,8 @@ const emptyDraft: QuoteDraft = {
     note: "",
 };
 
-const serviceTypes = ["Visit Business", "Home Service", "Pickup & Return", "Delivery"];
-const travelServiceTypes = ["Home Service", "Pickup & Return", "Delivery"];
+const serviceTypes = ["Visit Business", "Home Service", "Pickup & Return"];
+const travelServiceTypes = ["Home Service", "Pickup & Return"];
 const qualityLevelOptions = ["Premium", "Standard", "Economy", "N/A"];
 const lateMinuteOptions = ["15 minutes", "30 minutes", "45 minutes", "60 minutes"];
 const quoteTabs = ["All Offers", "Recommended", "Cheapest", "Fastest", "Selected"] as const;
@@ -157,7 +157,7 @@ function NeedMedia({ src, title, category }: { src?: string | null; title: strin
                         Need
                     </span>
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/55">{category === "General Service" ? "Mobile Repair" : category}</p>
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/55">{displayCategory(category)}</p>
                         <h3 className="mt-2 line-clamp-2 text-xl font-black leading-tight tracking-[-0.03em]">{title}</h3>
                     </div>
                 </div>
@@ -202,14 +202,13 @@ function QuoteCard({
     onOrder: () => void;
     category?: string;
 }) {
-    const isFood = category === "Food Service & Delivery";
     const rows = [
         ["Service type", offer.serviceType || "Not specified"],
-        [isFood ? "Prep/Delivery time" : "Estimated time", offer.time || "Not specified"],
-        [isFood ? "Special Note" : "Condition/Note", offer.warranty || "Not specified"],
-        [isFood ? "Food Source" : "Quality Level", offer.qualityLevel || "Not specified"],
+        ["Estimated time", offer.time || "Not specified"],
+        ["Condition/Note", offer.warranty || "Not specified"],
+        ["Quality Level", offer.qualityLevel || "Not specified"],
         ["Availability", offer.availability || "Not specified"],
-        ["Included", offer.included || (isFood ? "Order details in note" : "Service details in note")],
+        ["Included", offer.included || "Service details in note"],
     ];
 
     return (
@@ -269,16 +268,16 @@ function QuoteCard({
 
 const categorySlugs: Record<string, string> = {
     "all": "All Categories",
+    "home": "Home Cleaning",
     "mobile": "Mobile Repair",
-    "food": "Food Service & Delivery",
-    "home": "Home Service",
 };
 
 const slugToCategory = (slug: string) => categorySlugs[slug] || "All Categories";
 const categoryToSlug = (cat: string) => {
-    const normalized = cat === "General Service" ? "Mobile Repair" : cat;
+    const normalized = cat === "General Service" ? "Mobile Repair" : cat === "Home Service" ? "Home Cleaning" : cat;
     return Object.keys(categorySlugs).find(k => categorySlugs[k] === normalized) || "all";
 };
+const displayCategory = (cat: string) => cat === "General Service" ? "Mobile Repair" : cat === "Home Service" ? "Home Cleaning" : cat;
 
 export interface MarketplaceViewProps {
     initialCategory?: string;
@@ -324,7 +323,7 @@ export function MarketplaceView({ initialCategory = "All Categories", isCategory
     
     const filteredNeeds = useMemo(() => {
         const visibleNeeds = needs.filter(need => {
-            const normalizedCategory = need.category === "General Service" ? "Mobile Repair" : need.category;
+            const normalizedCategory = need.category === "General Service" ? "Mobile Repair" : need.category === "Home Service" ? "Home Cleaning" : need.category;
             const matchesCategory = selectedCategory === "All Categories" || normalizedCategory === selectedCategory;
             if (!matchesCategory) return false;
             
@@ -572,7 +571,7 @@ export function MarketplaceView({ initialCategory = "All Categories", isCategory
                                 {searchQuery?`No results for "${searchQuery}"`:'No live marketplace needs loaded'}
                             </h2>
                             <p className="text-sm mb-5 text-[#74767e]">
-                                {searchQuery?'Try food delivery, home cleaning, or repair.':'Service Needs appear here once customers post them.'}
+                                {searchQuery?'Try home cleaning or mobile repair.':'Service Needs appear here once customers post them.'}
                             </p>
                             {!searchQuery&&(
                                 <button onClick={loadNeeds} className="rounded-full bg-[#222325] px-6 py-3 text-sm font-black text-white transition hover:bg-black">
@@ -606,7 +605,7 @@ export function MarketplaceView({ initialCategory = "All Categories", isCategory
                                     </div>
                                     <div className="p-4">
                                         <div className="mb-3 flex items-center gap-2">
-                                            <span className="rounded bg-[#f5f5f5] px-2.5 py-1 text-[11px] font-bold text-[#62646a]">{need.category}</span>
+                                            <span className="rounded bg-[#f5f5f5] px-2.5 py-1 text-[11px] font-bold text-[#62646a]">{displayCategory(need.category)}</span>
                                             {localLabel && (
                                                 <span className="rounded bg-[#222325] px-2.5 py-1 text-[11px] font-bold text-white">{localLabel}</span>
                                             )}

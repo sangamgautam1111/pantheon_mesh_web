@@ -30,6 +30,6 @@ export async function GET(request: Request, context: RouteContext) {
             status: request.status,
             created_at: request.created_at,
         })),
-        detail: "Live Needero phone repair Need feed.",
+        detail: "Live Needero Home Cleaning and Mobile Repair Need feed.",
     });
 }

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 const terms = [
     {
         title: "1. The Service",
-        body: "Needero is a local service marketplace MVP. Customers can post service Needs (such as repair, delivery, or home help), upload photos/evidence, compare Offers, message businesses, and choose a provider. Businesses can create profiles, complete verification, browse relevant Needs, and send Offers.",
+        body: "Needero is a local service marketplace MVP. Customers can post Home Cleaning or Mobile Repair Needs, upload photos/evidence, compare Offers, message businesses, and choose a provider. Businesses can create profiles, complete verification, browse relevant Needs, and send Offers.",
     },
     {
         title: "2. Accounts and Sign-In",
@@ -22,7 +22,7 @@ const terms = [
     },
     {
         title: "4. Marketplace Relationship",
-        body: "Needero helps customers and businesses connect. Services are provided by independent businesses, not by Needero. Businesses are responsible for diagnosis, pricing, quality, warranty, delivery, performance, taxes, licenses, and customer service for their Offers.",
+        body: "Needero helps customers and businesses connect. Services are provided by independent businesses, not by Needero. Businesses are responsible for diagnosis or cleaning scope, pricing, quality, warranty or guarantee, performance, taxes, licenses, and customer service for their Offers.",
     },
     {
         title: "5. Quotes, Payments, and Plans",

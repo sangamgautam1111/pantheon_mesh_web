@@ -112,7 +112,7 @@ function validateRequired(input: BusinessVerificationSubmission) {
 }
 
 function buildQueries(input: BusinessVerificationSubmission) {
-    const category = input.category || "phone repair";
+    const category = input.category || "home cleaning";
     const queries = [
         `"${input.businessName}" "${input.city}" ${category}`,
         `"${input.businessName}" "${input.address}"`,
@@ -245,7 +245,7 @@ JSON shape:
   "reasons": ["short reason"],
   "riskFlags": ["short risk flag"]
 }
-Check whether the front image looks like a real storefront, whether a signboard is visible, whether visible sign text appears to match the business name, whether the shop/category looks like phone repair, whether the inside photo looks real, and whether the images look edited, screenshot-like, or stock-like.`,
+Check whether the front image looks like a real storefront or service workplace, whether a signboard is visible, whether visible sign text appears to match the business name, whether the shop/category looks consistent with the submitted business type, whether the inside photo looks real, and whether the images look edited, screenshot-like, or stock-like.`,
                             },
                             { type: "image_url", image_url: { url: input.shopFrontPhoto, detail: "low" } },
                             { type: "image_url", image_url: { url: input.insideShopPhoto, detail: "low" } },

@@ -40,7 +40,7 @@ import { useAuth } from "@/context/AuthContext";
 import { NeedRecord, getNeeds } from "@/lib/neederoDatabase";
 import { localRank, needDistanceLabel, ViewerLocation } from "@/lib/location";
 
-const HERO_SUGGESTIONS = ["Phone repair", "Food delivery", "Grocery shopping", "House cleaning", "Laundry service"];
+const HERO_SUGGESTIONS = ["Home cleaning", "Deep cleaning", "Mobile repair", "Screen repair", "Battery repair"];
 
 type CategoryCard = {
     label: string;
@@ -55,17 +55,15 @@ type IconInfoCard = {
 };
 
 const CATEGORY_CARDS: CategoryCard[] = [
-    { label: "Phone Repair & Maintenance", icon: Smartphone, href: "/marketplace?q=phone%20repair" },
-    { label: "Food Service & Delivery", icon: ShoppingBag, href: "/marketplace?q=food" },
-    { label: "Home & Local Services", icon: HomeIcon, href: "/marketplace?q=service" },
+    { label: "Home Cleaning", icon: HomeIcon, href: "/marketplace/category/home" },
+    { label: "Mobile Repair", icon: Smartphone, href: "/marketplace/category/mobile" },
 ];
 
 const SERVICE_TILES = [
-    { title: "Phone screen repair", copy: "Compare price, arrival time, warranty, and shop trust.", tone: "bg-[#06411f]" },
-    { title: "Food delivery", copy: "Order from local kitchens and track delivery in real-time.", tone: "bg-[#123b66]" },
-    { title: "House cleaning", copy: "Find professional cleaners for your home or office.", tone: "bg-[#5a3513]" },
-    { title: "Grocery shopping", copy: "Get your daily essentials delivered to your doorstep.", tone: "bg-[#25213f]" },
-    { title: "Laundry service", copy: "Compare pickup fee, turnaround time, and quality.", tone: "bg-[#4a1824]" },
+    { title: "Home cleaning", copy: "Find cleaners for regular, deep, kitchen, bathroom, or office cleaning.", tone: "bg-[#06411f]" },
+    { title: "Deep cleaning", copy: "Compare availability, price, team size, and cleaning scope.", tone: "bg-[#123b66]" },
+    { title: "Phone screen repair", copy: "Compare price, arrival time, warranty, and shop trust.", tone: "bg-[#25213f]" },
+    { title: "Battery replacement", copy: "Get local mobile repair quotes with clear timing and warranty.", tone: "bg-[#4a1824]" },
 ];
 
 const TRUST_ITEMS: IconInfoCard[] = [
@@ -84,28 +82,20 @@ const BUSINESS_ITEMS: IconInfoCard[] = [
 
 const PREVIEW_NEEDS = [
     {
-        title: "Urgent phone screen repair",
-        category: "Phone Repair",
-        location: "New Road",
+        title: "Deep home cleaning needed",
+        category: "Home Cleaning",
+        location: "Lalitpur",
         offers: 3,
+        bestPrice: "NPR 3,500",
+        fastest: "Tomorrow",
+    },
+    {
+        title: "Urgent phone screen repair",
+        category: "Mobile Repair",
+        location: "New Road",
+        offers: 4,
         bestPrice: "NPR 4,500",
         fastest: "45 min",
-    },
-    {
-        title: "Lunch delivery for 5 people",
-        category: "Food Delivery",
-        location: "Baneshwor",
-        offers: 4,
-        bestPrice: "NPR 2,800",
-        fastest: "30 min",
-    },
-    {
-        title: "Deep house cleaning",
-        category: "Home Service",
-        location: "Lalitpur",
-        offers: 5,
-        bestPrice: "NPR 5,500",
-        fastest: "Tomorrow",
     },
 ];
 
@@ -113,8 +103,8 @@ const FOOTER_COLUMNS = [
     {
         title: "Categories",
         links: [
-            "Phone Repair & Maintenance",
-            "Food Service & Delivery",
+            "Home Cleaning",
+            "Mobile Repair",
         ],
     },
     {
@@ -156,7 +146,6 @@ const FOOTER_COLUMNS = [
     {
         title: "Company",
         links: [
-            "About Needero",
             "Help Center",
             "Trust & Safety",
             "Careers",
@@ -335,7 +324,7 @@ export default function Home() {
                                 onKeyDown={(event) => {
                                     if (event.key === "Enter") runSearch();
                                 }}
-                                placeholder="Food delivery, phone repair, grocery, cleaning..."
+                                placeholder="Home cleaning, mobile repair, screen repair..."
                                 className="h-14 min-w-0 flex-1 bg-transparent px-2 text-base font-medium text-[#222325] outline-none"
                             />
                             <button
@@ -360,7 +349,7 @@ export default function Home() {
                         </div>
 
                         <div className="mt-10 flex flex-wrap gap-5 text-sm font-semibold text-white/70">
-                            {["Free for customers", "Real service offers", "Verified businesses", "Pickup options"].map((item) => (
+                            {["Free for customers", "Real service offers", "Verified businesses", "Home visit options"].map((item) => (
                                 <span key={item} className="inline-flex items-center gap-2">
                                     <CheckCircle2 size={17} className="text-[#24d381]" />
                                     {item}
@@ -455,7 +444,7 @@ export default function Home() {
                             <ArrowRight size={16} />
                         </Link>
                     </div>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+                    <div className="grid gap-4 sm:grid-cols-2">
                         {CATEGORY_CARDS.map((item) => (
                             <Link
                                 key={item.label}

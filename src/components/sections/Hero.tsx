@@ -35,7 +35,7 @@ export const Hero = () => {
 
             <div className="flex gap-6 mt-6 text-xs text-gcp-text-disabled">
                 <div className="flex items-center gap-2">
-                    <Zap size={12} /> Phone repair first
+                    <Zap size={12} /> Home cleaning first
                 </div>
                 <div className="flex items-center gap-2">
                     <MapPin size={12} /> One city first

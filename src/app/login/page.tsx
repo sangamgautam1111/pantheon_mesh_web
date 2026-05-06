@@ -14,7 +14,6 @@ import {
     UserRound,
     Lock,
     Smartphone,
-    UtensilsCrossed,
     Home,
 } from "lucide-react";
 import Link from "next/link";
@@ -141,24 +140,19 @@ export default function LoginPage() {
                         </h1>
 
                         <p className="relative mt-6 max-w-2xl text-base leading-7 text-[#64748b]">
-                            Post what you need — mobile repair, food delivery, or home service — and local businesses compete to give you the best offer. Quick, transparent, and hassle-free.
+                            Post a home cleaning or mobile repair Need and local businesses compete to give you the best offer. Quick, transparent, and hassle-free.
                         </p>
 
-                        <div className="relative mt-10 grid gap-4 md:grid-cols-3">
+                        <div className="relative mt-10 grid gap-4 md:grid-cols-2">
                             {[
                                 {
                                     title: "Mobile Repair",
-                                    copy: "Cracked screen, battery issue, or any phone problem. Get quotes from verified technicians.",
+                                    copy: "Cracked screen, battery issue, charging problem, water damage, or any phone repair.",
                                     icon: Smartphone,
                                 },
                                 {
-                                    title: "Food Delivery",
-                                    copy: "Order food from nearby restaurants and shops. Compare delivery offers instantly.",
-                                    icon: UtensilsCrossed,
-                                },
-                                {
-                                    title: "Home Service",
-                                    copy: "Plumbing, electrical, cleaning — post your task and let professionals bid for the job.",
+                                    title: "Home Cleaning",
+                                    copy: "Regular cleaning, deep cleaning, kitchen, bathroom, sofa, carpet, or office cleaning.",
                                     icon: Home,
                                 },
                             ].map((item) => {

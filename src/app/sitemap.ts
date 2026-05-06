@@ -17,12 +17,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
             priority: 0.9,
         },
         {
-            url: `${baseUrl}/restaurants`,
-            lastModified: new Date(),
-            changeFrequency: 'daily',
-            priority: 0.9,
-        },
-        {
             url: `${baseUrl}/repair-shops`,
             lastModified: new Date(),
             changeFrequency: 'daily',
@@ -41,12 +35,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
             priority: 0.85,
         },
         {
-            url: `${baseUrl}/marketplace/category/food`,
-            lastModified: new Date(),
-            changeFrequency: 'daily',
-            priority: 0.85,
-        },
-        {
             url: `${baseUrl}/marketplace/category/home`,
             lastModified: new Date(),
             changeFrequency: 'daily',
@@ -57,12 +45,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
             lastModified: new Date(),
             changeFrequency: 'monthly',
             priority: 0.85,
-        },
-        {
-            url: `${baseUrl}/register/restaurant`,
-            lastModified: new Date(),
-            changeFrequency: 'monthly',
-            priority: 0.8,
         },
         {
             url: `${baseUrl}/register/repair-shop`,
@@ -87,12 +69,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
             lastModified: new Date(),
             changeFrequency: 'yearly',
             priority: 0.5,
-        },
-        {
-            url: `${baseUrl}/founder`,
-            lastModified: new Date(),
-            changeFrequency: 'monthly',
-            priority: 0.8,
         },
         {
             url: `${baseUrl}/pricing`,

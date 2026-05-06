@@ -4,8 +4,8 @@ import { Search, Sparkles, TrendingUp } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const DISCOVERIES = [
-    { id: "NQ-101", domain: "Phone repair", text: "iPhone screen request received near New Road." },
-    { id: "NQ-102", domain: "Offer", text: "Repair shop replied with Rs. 4,500 and 1-month warranty." },
+    { id: "NQ-101", domain: "Home cleaning", text: "Deep cleaning request received near Lalitpur." },
+    { id: "NQ-102", domain: "Offer", text: "Cleaning partner replied with NPR 3,500 and tomorrow availability." },
     { id: "NQ-103", domain: "Match", text: "Customer chose a shop after comparing three offers." },
     { id: "NQ-104", domain: "Validation", text: "Useful quote received within 12 minutes." }
 ];

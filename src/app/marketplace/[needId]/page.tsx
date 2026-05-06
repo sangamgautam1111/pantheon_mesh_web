@@ -70,21 +70,21 @@ const emptyDraft: QuoteDraft = {
     note: "",
 };
 
-const serviceTypes = ["Visit Business", "Home Service", "Pickup & Return", "Delivery"];
-const travelServiceTypes = ["Home Service", "Pickup & Return", "Delivery"];
+const serviceTypes = ["Visit Business", "Home Service", "Pickup & Return"];
+const travelServiceTypes = ["Home Service", "Pickup & Return"];
 const qualityLevelOptions = ["Premium", "Standard", "Economy", "N/A"];
 const lateMinuteOptions = ["15 minutes", "30 minutes", "45 minutes", "60 minutes"];
 
 const categorySlugs: Record<string, string> = {
+    "home": "Home Cleaning",
     "mobile": "Mobile Repair",
-    "food": "Food Service & Delivery",
-    "home": "Home Service",
 };
 
 const categoryToSlug = (cat: string) => {
-    const normalized = cat === "General Service" ? "Mobile Repair" : cat;
+    const normalized = cat === "General Service" ? "Mobile Repair" : cat === "Home Service" ? "Home Cleaning" : cat;
     return Object.keys(categorySlugs).find(k => categorySlugs[k] === normalized) || "all";
 };
+const displayCategory = (cat: string) => cat === "General Service" ? "Mobile Repair" : cat === "Home Service" ? "Home Cleaning" : cat;
 
 const needsTravelCharge = (serviceType: string) => travelServiceTypes.includes(serviceType);
 const chatContextKey = (needId: string, quoteId: string) => `needero-chat:${needId}:${quoteId}`;
@@ -92,7 +92,6 @@ const chatContextKey = (needId: string, quoteId: string) => `needero-chat:${need
 const extraChargeLabel = (serviceType: string) => {
     if (serviceType === "Home Service") return "Service fee";
     if (serviceType === "Pickup & Return") return "Pickup & return fee";
-    if (serviceType === "Delivery") return "Delivery fee";
     return "Extra charge";
 };
 
@@ -189,7 +188,7 @@ function NeedMedia({ need }: { need: NeedRecord }) {
                 </div>
                 <div>
                     <Link href={`/marketplace/category/${categoryToSlug(need.category)}`} className="text-xs font-black uppercase tracking-[0.22em] text-white/45 hover:text-white transition-colors">
-                        {need.category === "General Service" ? "Mobile Repair" : need.category}
+                        {displayCategory(need.category)}
                     </Link>
                     <h2 className="mt-3 max-w-2xl text-3xl font-black leading-tight tracking-[-0.06em] sm:text-5xl">{need.title}</h2>
                 </div>
@@ -259,7 +258,7 @@ function QuoteRow({
         ["Price", formatMoney(offer.price) || offer.price || "Open"],
         ["Arrival", offer.time || offer.availability || "Time not set"],
         ["Service", offer.serviceType || "Service"],
-        [category === "Food Service & Delivery" ? "Food Source" : "Quality Level", offer.qualityLevel || "Not listed"],
+        ["Quality Level", offer.qualityLevel || "Not listed"],
     ];
     return (
         <article className="rounded-[26px] border border-[#dfe8e3] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl sm:p-5">
@@ -560,7 +559,7 @@ export default function NeedDetailPage() {
                             <section className="mt-6 grid gap-5 lg:grid-cols-[1fr_340px] lg:gap-8">
                                 <div className="rounded-[30px] border border-[#dfe8e3] bg-white p-6 shadow-sm sm:p-8">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <Link href={`/marketplace/category/${categoryToSlug(need.category)}`} className="rounded-full bg-[#e9f9f0] px-3 py-1 text-xs font-black text-[#0a8f45] hover:bg-[#d4f2df] transition-colors">{need.category}</Link>
+                                        <Link href={`/marketplace/category/${categoryToSlug(need.category)}`} className="rounded-full bg-[#e9f9f0] px-3 py-1 text-xs font-black text-[#0a8f45] hover:bg-[#d4f2df] transition-colors">{displayCategory(need.category)}</Link>
                                         <span className="rounded-full bg-[#f4f8f5] px-3 py-1 text-xs font-black text-[#4b5563]">{need.urgency || "Flexible"}</span>
                                         <span className="rounded-full bg-[#f4f8f5] px-3 py-1 text-xs font-black text-[#4b5563]">{offers.length} Offer{offers.length === 1 ? "" : "s"}</span>
                                         {needSolved && (
@@ -597,7 +596,7 @@ export default function NeedDetailPage() {
                                         </div>
                                     </div>
                                     <div className="mt-6 space-y-3 text-sm">
-                                        <div className="flex items-center justify-between"><span className="text-[#74767e]">Category</span><Link href={`/marketplace/category/${categoryToSlug(need.category)}`} className="font-black text-[#222325] hover:underline">{need.category}</Link></div>
+                                        <div className="flex items-center justify-between"><span className="text-[#74767e]">Category</span><Link href={`/marketplace/category/${categoryToSlug(need.category)}`} className="font-black text-[#222325] hover:underline">{displayCategory(need.category)}</Link></div>
                                         <div className="flex items-center justify-between"><span className="text-[#74767e]">Area</span><strong>{need.location}</strong></div>
                                         <div className="flex items-center justify-between"><span className="text-[#74767e]">Urgency</span><strong>{need.urgency}</strong></div>
                                         <div className="flex items-center justify-between"><span className="text-[#74767e]">Customer budget</span><strong>{need.budget || "Open"}</strong></div>
@@ -634,7 +633,7 @@ export default function NeedDetailPage() {
 
                                     <div className="mt-6 flex items-center justify-between">
                                         <div>
-                                            <h2 className="text-2xl font-black">{need?.category === "Food Service & Delivery" ? "Offers from local food services" : "Service Offers from local businesses"}</h2>
+                                            <h2 className="text-2xl font-black">Service Offers from local businesses</h2>
                                             <p className="mt-1 text-sm font-semibold text-[#74767e]">Compare price, timing, terms, and trust before choosing.</p>
                                         </div>
                                         <span className="rounded-full bg-[#0a8f45] px-4 py-2 text-sm font-black text-white">{offers.length} Offers</span>
@@ -725,7 +724,7 @@ export default function NeedDetailPage() {
                                             <form onSubmit={submitQuote} className="space-y-4">
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div>
-                                                        <h3 className="text-xl font-black">{editingOfferId ? (need?.category === "Food Service & Delivery" ? "Edit Delivery Offer" : "Edit Service Offer") : (need?.category === "Food Service & Delivery" ? "Send Delivery Offer" : "Send Service Offer")}</h3>
+                                                        <h3 className="text-xl font-black">{editingOfferId ? "Edit Service Offer" : "Send Service Offer"}</h3>
                                                         <p className="mt-1 text-xs font-semibold text-[#74767e]">Customers compare price, service type, timing, and trust.</p>
                                                     </div>
                                                     {editingOfferId && (
@@ -745,17 +744,13 @@ export default function NeedDetailPage() {
                                                     </select>
                                                 </label>
                                                 <label className="block">
-                                                    <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">{need?.category === "Food Service & Delivery" ? "Estimated prep/delivery time" : "Estimated service completion"}</span>
+                                                    <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-[#74767e]">Estimated service completion</span>
                                                     <input required type="datetime-local" value={draft.time} onChange={(e) => updateDraft("time", e.target.value)} className="nd-input rounded-xl" />
                                                 </label>
                                                 <input value={draft.availability} onChange={(e) => updateDraft("availability", e.target.value)} className="nd-input rounded-xl" placeholder="Availability, e.g. today 4:00 PM" />
-                                                <input value={draft.warranty} onChange={(e) => updateDraft("warranty", e.target.value)} className="nd-input rounded-xl" placeholder={need?.category === "Food Service & Delivery" ? "Guarantees, e.g. Freshness, Temperature" : "Warranty, e.g. 7 days"} />
+                                                <input value={draft.warranty} onChange={(e) => updateDraft("warranty", e.target.value)} className="nd-input rounded-xl" placeholder="Warranty or service guarantee, e.g. 7 days" />
                                                 <select value={draft.qualityLevel} onChange={(e) => updateDraft("qualityLevel", e.target.value)} className="nd-select w-full rounded-xl">
-                                                    {need?.category === "Food Service & Delivery" ? (
-                                                        ["Fresh/Organic", "Premium Quality", "Standard", "Value"].map((q) => <option key={q}>{q}</option>)
-                                                    ) : (
-                                                        qualityLevelOptions.map((quality) => <option key={quality}>{quality}</option>)
-                                                    )}
+                                                    {qualityLevelOptions.map((quality) => <option key={quality}>{quality}</option>)}
                                                 </select>
                                                 <input value={draft.included} onChange={(e) => updateDraft("included", e.target.value)} className="nd-input rounded-xl" placeholder="Included, e.g. screen part + labor" />
                                                 {needsTravelCharge(draft.serviceType) && (
@@ -774,10 +769,10 @@ export default function NeedDetailPage() {
                                                         </select>
                                                     </div>
                                                 </label>
-                                                <textarea required value={draft.note} onChange={(e) => updateDraft("note", e.target.value)} className="nd-input min-h-28 resize-none rounded-xl" placeholder={need?.category === "Food Service & Delivery" ? "Explain food source, ingredients, prep time, and delivery terms." : "Explain service details, warranty, and professional terms."} />
+                                                <textarea required value={draft.note} onChange={(e) => updateDraft("note", e.target.value)} className="nd-input min-h-28 resize-none rounded-xl" placeholder="Explain service details, warranty, and professional terms." />
                                                 <button disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a8f45] px-5 py-4 text-sm font-black text-white hover:bg-[#08783b] disabled:opacity-60">
                                                     {saving ? <Clock size={16} className="animate-spin" /> : <Send size={16} />}
-                                                    {editingOfferId ? (need?.category === "Food Service & Delivery" ? "Save Delivery Offer" : "Save Service Offer") : (need?.category === "Food Service & Delivery" ? "Send Delivery Offer" : "Send Service Offer")}
+                                                    {editingOfferId ? "Save Service Offer" : "Send Service Offer"}
                                                 </button>
                                             </form>
                                         )

@@ -100,7 +100,7 @@ export default function RequestCenterPage() {
         }
         if (selectedCategory !== "All Categories") {
             list = list.filter(n => {
-                const normalizedCategory = n.category === "General Service" ? "Mobile Repair" : n.category;
+                const normalizedCategory = n.category === "General Service" ? "Mobile Repair" : n.category === "Home Service" ? "Home Cleaning" : n.category;
                 return normalizedCategory === selectedCategory;
             });
         }
@@ -191,7 +191,7 @@ export default function RequestCenterPage() {
                         <div className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                             {/* Status filters */}
                             <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-                                {["All Categories", "Mobile Repair", "Food Service & Delivery", "Home Service"].map((cat) => (
+                                {["All Categories", "Home Cleaning", "Mobile Repair"].map((cat) => (
                                     <button
                                         key={cat}
                                         onClick={() => setSelectedCategory(cat)}

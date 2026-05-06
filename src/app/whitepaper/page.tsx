@@ -73,8 +73,8 @@ export default function WhitepaperPage() {
                             <p className="mt-3 text-sm font-semibold leading-6">Get nearby customers who already need your service.</p>
                         </div>
                         <div className="rounded-3xl bg-white/10 p-5">
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Founder</p>
-                            <p className="mt-3 text-sm font-semibold leading-6">One category. One city. One painful problem. Validate manually first.</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Launch Focus</p>
+                            <p className="mt-3 text-sm font-semibold leading-6">Home cleaning first. Mobile repair second. Validate manually before scaling.</p>
                         </div>
                     </div>
                 </section>

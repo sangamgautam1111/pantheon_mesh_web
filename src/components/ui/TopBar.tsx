@@ -257,7 +257,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
     const isBrowseActive = pathname?.startsWith("/marketplace");
     const isPostActive = pathname?.startsWith("/client/new");
     const isMessagesActive = pathname?.startsWith("/messages");
-    const isServicesActive = pathname === "/restaurants" || pathname === "/repair-shops" || pathname === "/home-services";
+    const isServicesActive = pathname === "/repair-shops" || pathname === "/home-services";
     const isPartnerActive = pathname?.startsWith("/register");
     const formatNotificationTime = (value?: string | null) => {
         if (!value) return "";
@@ -362,7 +362,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                                     No results for "{searchQuery}"
                                 </p>
                                 <p className="mt-1 text-xs" style={{ color: "var(--text-disabled)" }}>
-                                    Try searching for repair, delivery, cleaning, or businesses
+                                    Try searching for home cleaning, mobile repair, or businesses
                                 </p>
                             </div>
                         )}

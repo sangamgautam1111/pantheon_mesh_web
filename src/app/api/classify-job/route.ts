@@ -17,17 +17,19 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "A request title or description is required." }, { status: 400 });
         }
 
-        const category = "Phone Repair";
-        const reason = /\b(phone|iphone|samsung|redmi|screen|display|battery|charging|touch|camera|speaker|mic|water)\b/.test(combined)
-            ? "Detected phone repair language."
-            : "Needero MVP accepts phone repair Needs only.";
+        const isMobileRepair = /\b(phone|iphone|samsung|redmi|screen|display|battery|charging|touch|camera|speaker|mic|water|mobile)\b/.test(combined);
+        const isCleaning = /\b(clean|cleaning|deep clean|bathroom|kitchen|sofa|carpet|maid|house|home|office)\b/.test(combined);
+        const category = isMobileRepair && !isCleaning ? "Mobile Repair" : "Home Cleaning";
+        const reason = isMobileRepair && !isCleaning
+            ? "Detected mobile repair language."
+            : "Detected home cleaning language or defaulted to the first MVP category.";
 
         return NextResponse.json({
             service_category: category,
             label: category,
             confidence: 0.92,
             reason,
-            strategy: "needero-phone-repair-mvp-classifier",
+            strategy: "needero-two-category-mvp-classifier",
         });
     } catch {
         return NextResponse.json({ error: "Invalid classification request." }, { status: 400 });

@@ -6,7 +6,7 @@ import { ArrowLeft, Home, CheckCircle2, Loader2, MapPin, Clock, Store, User } fr
 import { ref, push } from "firebase/database";
 import { useAuth } from "@/context/AuthContext";
 
-const serviceCategories = ["Plumbing", "Electrical", "Cleaning", "Painting", "Carpentry", "AC / Refrigeration", "Pest Control", "Gardening", "Moving & Packing", "Interior Design", "Masonry", "Multiple Services"];
+const serviceCategories = ["Home Cleaning", "Deep Cleaning", "Regular House Cleaning", "Kitchen Cleaning", "Bathroom Cleaning", "Sofa / Carpet Cleaning", "Office Cleaning", "Move-in / Move-out Cleaning", "Post-construction Cleaning", "Multiple Cleaning Services"];
 const providerTypes = ["Individual", "Company / Team"];
 const timeSlots = ["Morning (6 AM - 12 PM)", "Afternoon (12 PM - 5 PM)", "Evening (5 PM - 9 PM)", "Full Day", "Flexible / On Call", "24/7 Available"];
 
@@ -101,8 +101,8 @@ export default function HomeServiceRegistrationPage() {
                             <Home size={28} />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-black sm:text-4xl">Home Service Partner Registration</h1>
-                            <p className="mt-1 text-white/80">Join Needero and get booked by customers who need help at their doorstep</p>
+                            <h1 className="text-3xl font-black sm:text-4xl">Home Cleaning Partner Registration</h1>
+                            <p className="mt-1 text-white/80">Join Needero and receive cleaning leads from customers near your service area</p>
                         </div>
                     </div>
                 </div>
@@ -113,7 +113,7 @@ export default function HomeServiceRegistrationPage() {
                 <form onSubmit={handleSubmit}>
                     <div className="rounded-3xl border border-[#e4e5e7] bg-white p-6 shadow-sm sm:p-10">
                         <h2 className="text-xl font-black text-[#222325]">Service Provider Details</h2>
-                        <p className="mt-1 text-sm text-[#62646a]">Tell us about yourself or your company</p>
+                        <p className="mt-1 text-sm text-[#62646a]">Tell us about your cleaning business or team</p>
 
                         <div className="mt-8 grid gap-6 sm:grid-cols-2">
                             <label>
@@ -173,8 +173,8 @@ export default function HomeServiceRegistrationPage() {
                             </label>
                         </div>
 
-                        <h2 className="mt-10 text-xl font-black text-[#222325]">Documents & Banking</h2>
-                        <p className="mt-1 text-sm text-[#62646a]">Required for payment processing and verification</p>
+                        <h2 className="mt-10 text-xl font-black text-[#222325]">Verification & Payout Details</h2>
+                        <p className="mt-1 text-sm text-[#62646a]">Optional for MVP onboarding, useful for verification and future payouts</p>
 
                         <div className="mt-6 grid gap-6 sm:grid-cols-2">
                             <label>
@@ -204,7 +204,7 @@ export default function HomeServiceRegistrationPage() {
                             className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#2563eb] to-[#7c3aed] px-8 py-4 text-base font-black text-white shadow-lg transition hover:shadow-xl disabled:opacity-50 sm:w-auto"
                         >
                             {submitting ? <Loader2 size={18} className="animate-spin" /> : <Store size={18} />}
-                            {submitting ? "Registering..." : "Register Home Service"}
+                            {submitting ? "Registering..." : "Register Home Cleaning Partner"}
                         </button>
                     </div>
                 </form>

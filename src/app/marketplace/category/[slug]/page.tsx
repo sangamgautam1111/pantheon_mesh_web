@@ -4,9 +4,8 @@ import { useParams } from "next/navigation";
 import { MarketplaceView } from "@/components/marketplace/MarketplaceView";
 
 const categorySlugs: Record<string, string> = {
+    "home": "Home Cleaning",
     "mobile": "Mobile Repair",
-    "food": "Food Service & Delivery",
-    "home": "Home Service",
 };
 
 export default function CategoryMarketplacePage() {

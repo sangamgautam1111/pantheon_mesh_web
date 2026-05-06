@@ -14,19 +14,22 @@ export async function POST(req: Request) {
         const urgency = getText(body.urgency);
         const lower = description.toLowerCase();
 
-        const quoteType = lower.includes("screen") || lower.includes("display")
+        const isCleaning = /\b(clean|cleaning|bathroom|kitchen|sofa|carpet|maid|house|home|office)\b/.test(lower);
+        const quoteType = isCleaning
+            ? "home cleaning quote"
+            : lower.includes("screen") || lower.includes("display")
             ? "screen repair quote"
             : lower.includes("battery")
               ? "battery repair quote"
               : lower.includes("charging") || lower.includes("port")
                 ? "charging repair quote"
-                : "phone repair quote";
+                : "mobile repair quote";
 
         return NextResponse.json({
-            service_category: "Phone Repair",
+            service_category: isCleaning ? "Home Cleaning" : "Mobile Repair",
             quote_type: quoteType,
             customer_pays_platform: 0,
-            customer_payment_note: "Customers post free during the MVP. The customer pays the chosen repair shop directly in NPR.",
+            customer_payment_note: "Customers post free during the MVP. The customer pays the chosen local business directly in NPR.",
             request_quality: {
                 has_location: Boolean(location),
                 has_urgency: Boolean(urgency),

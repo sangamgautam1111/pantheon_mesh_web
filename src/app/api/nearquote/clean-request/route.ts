@@ -18,12 +18,12 @@ function getString(value: unknown) {
 }
 
 function fallbackCard(input: CleanRequestInput) {
-    const category = "Phone Repair";
+    const normalizedCategory = input.category === "Mobile Repair" ? "Mobile Repair" : "Home Cleaning";
     const title = input.description.length > 70 ? `${input.description.slice(0, 67)}...` : input.description;
 
     return {
-        category,
-        title: title || "New phone repair Need",
+        category: normalizedCategory,
+        title: title || `New ${normalizedCategory} Need`,
         problem: input.description,
         knownDetails: input.description,
         missingInfo: [
@@ -37,10 +37,10 @@ function fallbackCard(input: CleanRequestInput) {
             input.budget ? "" : "Do you have an NPR budget?",
         ].filter(Boolean),
         summaryForBusinesses:
-            "Please send NPR price, repair time, service type, warranty, parts quality, availability, and any important conditions.",
+            "Please send NPR price, estimated time, service type, availability, quality or guarantee, and any important conditions.",
         customerSummary: input.description,
-        businessPrompt: "Send a clear Repair Offer with NPR price, timing, service type, warranty, parts quality, and availability.",
-        tags: [category],
+        businessPrompt: "Send a clear Service Offer with NPR price, timing, service type, quality or guarantee, and availability.",
+        tags: [normalizedCategory],
         fallback: true,
     };
 }
@@ -57,10 +57,10 @@ function parseJson(content: string) {
 
 async function callDeepSeek(input: CleanRequestInput, apiKey: string) {
     const systemPrompt = `You are Needero's AI Need Card cleaner.
-Needero MVP is phone repair only. Customers post one phone repair Need; nearby repair shops send Repair Offers.
+Needero MVP has two active categories only: Home Cleaning first priority, and Mobile Repair second. Customers post one Need; nearby businesses send Service Offers.
 Return JSON only:
 {
-  "category": "Phone Repair",
+  "category": "Home Cleaning | Mobile Repair",
   "title": "short Need title",
   "problem": "plain problem summary",
   "knownDetails": "facts the customer already gave",
@@ -71,7 +71,7 @@ Return JSON only:
   "businessPrompt": "simple instruction businesses see before replying",
   "tags": ["short tag"]
 }
-Use simple words for non-technical users. Keep the category as Phone Repair and focus on brand, model, issue, service preference, location, urgency, photos, NPR price, warranty, and parts quality. Keep it short and useful.`;
+Use simple words for non-technical users. For home cleaning, focus on rooms, cleaning type, service preference, location, urgency, photos, NPR price, and team/material needs. For mobile repair, focus on brand, optional model, issue, service preference, location, urgency, photos, NPR price, warranty, and parts quality. Keep it short and useful.`;
 
     const response = await fetch(DEEPSEEK_API_URL, {
         method: "POST",

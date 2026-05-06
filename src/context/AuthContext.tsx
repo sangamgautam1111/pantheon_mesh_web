@@ -62,6 +62,8 @@ export interface UserProfile {
     firstNeedCompletedAt?: number | null;
     shopFrontPhotoUrl?: string | null;
     shopInsidePhotoUrl?: string | null;
+    businessFrontPhotoUrl?: string | null;
+    businessInsidePhotoUrl?: string | null;
     businessDocumentUrl?: string | null;
     businessSocialLinks?: string[] | null;
     googleMapsUrl?: string | null;
@@ -358,6 +360,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 firstNeedCompletedAt: profileData.firstNeedCompletedAt,
                 shopFrontPhotoUrl: profileData.shopFrontPhotoUrl,
                 shopInsidePhotoUrl: profileData.shopInsidePhotoUrl,
+                businessFrontPhotoUrl: profileData.businessFrontPhotoUrl,
+                businessInsidePhotoUrl: profileData.businessInsidePhotoUrl,
                 businessDocumentUrl: profileData.businessDocumentUrl,
                 businessSocialLinks: profileData.businessSocialLinks,
                 googleMapsUrl: profileData.googleMapsUrl,

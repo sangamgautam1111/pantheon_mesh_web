@@ -13,7 +13,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "overview",
         route: "/",
         text:
-            "Needero MVP is phone repair only: customers post a phone issue once, nearby repair shops send Repair Offers, and the customer chooses the best shop. Customers do not pay Needero.",
+            "Needero MVP focuses on two categories: Home Cleaning first, and Mobile Repair second. Customers post one Need, nearby businesses send Service Offers, and the customer chooses the best provider. Customers do not pay Needero during MVP testing.",
     },
     {
         id: "customer-flow",
@@ -21,7 +21,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "customer",
         route: "/client/new",
         text:
-            "Customer flow: Post a Phone Repair Need, choose the issue, add brand, model, area, urgency, service preference, and optional photo or video. Repair shops send Offers. The customer compares NPR price, repair time, service type, warranty, parts quality, and note, then chooses one shop.",
+            "Customer flow: post a Home Cleaning or Mobile Repair Need, choose the issue or cleaning type, add location, urgency, service preference, budget, and optional photo or video. Businesses send Offers. The customer compares NPR price, time, service type, guarantee or warranty, quality, and note, then chooses one provider.",
     },
     {
         id: "business-flow",
@@ -29,7 +29,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "business",
         route: "/marketplace",
         text:
-            "Local repair shops browse nearby phone repair Needs in Marketplace and reply with clear Repair Offers: NPR price, estimated time, service type, warranty, parts quality, availability, and a helpful note. The marketplace is the key shop workspace.",
+            "Home cleaning teams and mobile repair shops browse nearby Needs in Marketplace and reply with clear Service Offers: NPR price, estimated time, service type, quality or warranty, availability, and a helpful note. Phone OTP is required before sending Offers.",
     },
     {
         id: "messages",
@@ -45,7 +45,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "pricing",
         route: "/pricing",
         text:
-            "Business plans are only for local repair shop accounts. Free is NPR 0/month with a basic profile, 5 offer replies per month, and relevant phone repair Need visibility. Pro is NPR 1,999/month with unlimited offer replies, AI quote helper, verified profile, basic analytics, and higher placement. Premium is NPR 4,999/month with Pro features plus priority placement, featured profile, instant lead alerts, advanced analytics, Top Rated eligibility, and stronger recommendation boost.",
+            "Business plans are for local Home Cleaning and Mobile Repair accounts. Free is NPR 0/month with a basic profile, limited offer replies, and relevant Need visibility. Pro and Premium add more replies, AI quote help, verified profile, analytics, and placement benefits.",
     },
     {
         id: "customer-pricing",
@@ -53,7 +53,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "pricing",
         route: "/client/new",
         text:
-            "Customers can post phone repair Needs for free. Needero should not show business subscription plans to customer accounts.",
+            "Customers can post Home Cleaning and Mobile Repair Needs for free during MVP testing. Needero should not show business subscription plans to customer accounts.",
     },
     {
         id: "privacy",
@@ -69,7 +69,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "launch",
         route: "/marketplace",
         text:
-            "Needero should validate phone repair first: onboard real local repair shops, get real phone repair Needs, make sure Repair Offers arrive fast, complete a few matches, and only charge shops after they see value.",
+            "Needero should validate Home Cleaning first, then Mobile Repair: onboard real local partners, get real Needs, make sure Service Offers arrive fast, complete a few matches, and only charge businesses after value is proven.",
     },
     {
         id: "system-architecture",
@@ -77,7 +77,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "overview",
         route: "/",
         text:
-            "Needero uses a dual-repository architecture. The Backend (Pantheon-Mesh) uses FastAPI and Cloud SQL PostgreSQL for processing relational data (Needs, Offers, Messages). The Frontend (pantheon_mesh_web) is built on Next.js and uses Firebase for authentication and basic profile storage.",
+            "Needero uses a dual-repository architecture. The Backend (Pantheon-Mesh) uses FastAPI and Cloud SQL PostgreSQL for relational data such as Needs, Offers, and Messages. The Frontend (pantheon_mesh_web) is built on Next.js and uses Firebase for authentication and basic profile storage.",
     },
     {
         id: "auth-role-management",
@@ -85,7 +85,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "safety",
         route: "/profile",
         text:
-            "Needero strictly segregates 'Customer' and 'Business' roles. We use signInWithRedirect for Google/GitHub logins, caching the pending account type in sessionStorage. This ensures users are properly directed to their respective dashboards (/client for Customers, /marketplace for Businesses).",
+            "Needero strictly separates Customer and Business roles. We use signInWithRedirect for Google/GitHub logins, caching the pending account type in sessionStorage. This directs customers to /client and businesses to /marketplace.",
     },
     {
         id: "profile-editing-workflow",
@@ -93,7 +93,7 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "overview",
         route: "/profile",
         text:
-            "Users can edit their profiles via a unified modal on /profile. Customer profiles capture basic contact info and saved addresses, while Business profiles capture comprehensive details like services, opening hours, and warranty policies to act as a mini website.",
+            "Users can edit their profiles via a unified modal on /profile. Customer profiles capture basic contact info and saved addresses, while Business profiles capture services, opening hours, photos, and warranty or guarantee policies.",
     },
     {
         id: "global-location-currency",
@@ -101,6 +101,6 @@ export const ASSISTANT_KNOWLEDGE: AssistantKnowledgeDoc[] = [
         category: "overview",
         route: "/profile",
         text:
-            "Needero MVP uses NPR across the product while validating phone repair in Nepal first. It limits marketplace visibility logically (city first, country next) and stores monetary values securely in minor units.",
-    }
+            "Needero MVP uses NPR while validating local service demand in Nepal first. It limits marketplace visibility logically by area and stores monetary values securely in minor units.",
+    },
 ];

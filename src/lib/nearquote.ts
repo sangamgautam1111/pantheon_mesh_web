@@ -61,12 +61,14 @@ export type BusinessOffer = {
 };
 
 export const NEED_CATEGORIES = [
-    "Phone Repair",
+    "Home Cleaning",
+    "Mobile Repair",
 ];
 
 export const URGENCY_OPTIONS = ["Today", "Tomorrow", "Flexible"];
 
 export const BUDGET_OPTIONS = [
+    "Open for NPR cleaning quotes",
     "Open for NPR repair quotes",
     "Under NPR 2,000",
     "NPR 2,000 - NPR 8,000",
@@ -88,7 +90,7 @@ export const NEEDARO_PLANS: NeederoPlan[] = [
         features: [
             "Basic business profile",
             "5 offer replies each month",
-            "Appear in relevant phone repair Needs",
+            "Appear in relevant home cleaning and mobile repair Needs",
             "Manual quote replies",
         ],
     },
@@ -135,8 +137,8 @@ export const NEEDARO_PLANS: NeederoPlan[] = [
 export const NEEDARO_METRICS = [
     { label: "Customer price", value: "Free" },
     { label: "Business model", value: "SaaS plans" },
-    { label: "Core object", value: "Phone Repair Need" },
-    { label: "Main action", value: "Send Repair Offer" },
+    { label: "Core object", value: "Service Need" },
+    { label: "Main action", value: "Send Service Offer" },
 ];
 
 export function normalizeNeedaroPlan(planId: string | null | undefined) {
@@ -147,16 +149,16 @@ export function makeCategorySlug(category: string) {
     return category.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "other";
 }
 
-export function createFallbackNeedCard(description: string, category = "Phone Repair"): NeedCard {
+export function createFallbackNeedCard(description: string, category = "Home Cleaning"): NeedCard {
     const clean = description.trim();
     return {
         category,
-        title: clean.length > 70 ? `${clean.slice(0, 67)}...` : clean || "New phone repair Need",
-        problem: clean || "Customer needs phone repair help from a nearby shop.",
+        title: clean.length > 70 ? `${clean.slice(0, 67)}...` : clean || `New ${category} Need`,
+        problem: clean || "Customer needs service help from a nearby business.",
         knownDetails: clean || "No details added yet.",
         missingInfo: ["Area", "Urgency", "NPR budget if available"].filter(Boolean),
-        questions: ["Where should repair shops be near?", "When do you need this repair done?"],
-        summaryForBusinesses: clean || "Please send NPR price, repair time, warranty, parts quality, service type, and availability.",
+        questions: ["Where should businesses be near?", "When do you need this done?"],
+        summaryForBusinesses: clean || "Please send NPR price, estimated time, guarantee or warranty, quality, service type, and availability.",
         tags: [category],
         fallback: true,
     };

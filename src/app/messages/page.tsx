@@ -244,7 +244,10 @@ export default function MessagesPage() {
         let base = threads.filter((thread) => thread.messageCount > 0);
 
         if (selectedCategory !== "All Categories") {
-            base = base.filter((thread) => thread.category === selectedCategory);
+            base = base.filter((thread) => {
+                const normalizedCategory = thread.category === "Home Service" ? "Home Cleaning" : thread.category === "General Service" ? "Mobile Repair" : thread.category;
+                return normalizedCategory === selectedCategory;
+            });
         }
 
         const merged = selectedThread && !base.some((thread) => thread.id === selectedThread.id)
@@ -618,7 +621,7 @@ ${recentMessages || "No chat messages yet."}`;
                                 />
                             </div>
                             <div className="mt-4 flex gap-1.5 overflow-x-auto scrollbar-hide">
-                                {["All Categories", "Mobile Repair", "Food Service & Delivery", "Home Service"].map((cat) => (
+                                {["All Categories", "Home Cleaning", "Mobile Repair"].map((cat) => (
                                     <button
                                         key={cat}
                                         onClick={() => setSelectedCategory(cat)}
