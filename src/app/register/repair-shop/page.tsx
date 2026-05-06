@@ -16,6 +16,7 @@ import {
     ShieldCheck,
     Smartphone,
     Store,
+    UploadCloud,
     Wrench,
     Zap,
 } from "lucide-react";
@@ -28,6 +29,16 @@ const brandOptions = ["Apple", "Samsung", "Xiaomi / Redmi", "OnePlus", "Vivo", "
 const inputClass = "h-9 w-full rounded-[6px] border border-[#dfe5ea] bg-white px-3 text-[11px] font-semibold text-[#07121f] outline-none transition placeholder:text-[#a4afba] focus:border-[#0a8f45] focus:ring-2 focus:ring-[#dff6e8]";
 const textareaClass = "w-full rounded-[6px] border border-[#dfe5ea] bg-white px-3 py-2 text-[11px] font-semibold text-[#07121f] outline-none transition placeholder:text-[#a4afba] focus:border-[#0a8f45] focus:ring-2 focus:ring-[#dff6e8]";
 const labelClass = "mb-1.5 block text-[9px] font-black uppercase tracking-[0.12em] text-[#536170]";
+const kycDocumentTypes = ["Passport", "Driving License", "Identity Card", "Citizenship Card", "Other Government ID"];
+
+function readFileAsDataUrl(file: File) {
+    return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Could not read file."));
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.readAsDataURL(file);
+    });
+}
 
 function SectionTitle({ number, title, subtitle }: { number: string; title: string; subtitle: string }) {
     return (
@@ -46,6 +57,40 @@ function Field({ label, children, className = "" }: { label: string; children: R
         <label className={className}>
             <span className={labelClass}>{label}</span>
             {children}
+        </label>
+    );
+}
+
+function UploadField({
+    label,
+    value,
+    onChange,
+    helper,
+}: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    helper: string;
+}) {
+    const handleFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        onChange(await readFileAsDataUrl(file));
+    };
+
+    return (
+        <label className="block rounded-[8px] border border-dashed border-[#cfd8df] bg-[#fbfffd] p-3">
+            <span className={labelClass}>{label}</span>
+            <input type="file" accept="image/*,application/pdf,.pdf" onChange={handleFile} className="hidden" />
+            <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-[#e8f8ef] text-[#0a8f45]">
+                    <UploadCloud size={17} />
+                </span>
+                <div className="min-w-0">
+                    <p className="text-[11px] font-black text-[#07121f]">{value ? "File attached" : "Click to upload"}</p>
+                    <p className="text-[10px] font-medium leading-4 text-[#7a8793]">{helper}</p>
+                </div>
+            </div>
         </label>
     );
 }
@@ -161,7 +206,18 @@ export default function RepairShopRegistrationPage() {
         priceList: "",
         businessDocuments: "",
         bankName: "",
+        bankAccountHolderName: "",
         bankAccount: "",
+        bankBranch: "",
+        esewaNumber: "",
+        khaltiNumber: "",
+        payoutMethod: "",
+        shopPhoto: "",
+        ownerKycType: "",
+        ownerKycNumber: "",
+        ownerKycDocument: "",
+        businessDocumentFile: "",
+        verificationNote: "",
         additionalNotes: "",
     });
     const [submitting, setSubmitting] = useState(false);
@@ -172,7 +228,7 @@ export default function RepairShopRegistrationPage() {
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
-        if (!form.shopName || !form.ownerName || !form.phone || !form.shopAddress || !form.repairCategory) {
+        if (!form.shopName || !form.ownerName || !form.phone || !form.shopAddress || !form.repairCategory || !form.shopPhoto || !form.ownerKycType || !form.ownerKycDocument) {
             setError("Please fill in all required fields.");
             return;
         }
@@ -324,27 +380,67 @@ export default function RepairShopRegistrationPage() {
                         </section>
 
                         <section className="mt-7 border-t border-[#edf2f5] pt-5">
-                            <SectionTitle number="3" title="Payout & Verification" subtitle="Provide verification documents and payout details." />
+                            <SectionTitle number="3" title="Payout & Verification" subtitle="Provide shop photo, owner KYC, legal documents, and payout details." />
                             <div className="grid gap-3 md:grid-cols-4">
+                                <UploadField
+                                    label="Service shop photo *"
+                                    value={form.shopPhoto}
+                                    onChange={(value) => update("shopPhoto", value)}
+                                    helper="Upload a clear shop/front/service photo for verification."
+                                />
+                                <UploadField
+                                    label="Business legal document / PAN"
+                                    value={form.businessDocumentFile}
+                                    onChange={(value) => update("businessDocumentFile", value)}
+                                    helper="PAN, business registration, or other legal document."
+                                />
+                                <UploadField
+                                    label="Owner KYC document *"
+                                    value={form.ownerKycDocument}
+                                    onChange={(value) => update("ownerKycDocument", value)}
+                                    helper="Passport, driving license, identity card, or citizenship."
+                                />
+                                <Field label="KYC document type *">
+                                    <select className={inputClass} value={form.ownerKycType} onChange={(event) => update("ownerKycType", event.target.value)}>
+                                        <option value="">Select KYC type</option>
+                                        {kycDocumentTypes.map((type) => <option key={type}>{type}</option>)}
+                                    </select>
+                                </Field>
                                 <Field label="Business document / PAN">
                                     <input className={inputClass} value={form.businessDocuments} onChange={(event) => update("businessDocuments", event.target.value)} placeholder="PAN or registration no." />
                                 </Field>
+                                <Field label="KYC ID number">
+                                    <input className={inputClass} value={form.ownerKycNumber} onChange={(event) => update("ownerKycNumber", event.target.value)} placeholder="Document / ID number" />
+                                </Field>
                                 <Field label="Payout method">
-                                    <select className={inputClass}>
+                                    <select className={inputClass} value={form.payoutMethod} onChange={(event) => update("payoutMethod", event.target.value)}>
                                         <option>Select payout method</option>
                                         <option>Bank transfer</option>
-                                        <option>Wallet</option>
-                                        <option>Cash settlement</option>
+                                        <option>eSewa</option>
+                                        <option>Khalti</option>
+                                        <option>Bank + wallet backup</option>
                                     </select>
                                 </Field>
                                 <Field label="Account holder name">
-                                    <input className={inputClass} value={form.bankName} onChange={(event) => update("bankName", event.target.value)} placeholder="Name as per bank/wallet" />
+                                    <input className={inputClass} value={form.bankAccountHolderName} onChange={(event) => update("bankAccountHolderName", event.target.value)} placeholder="Name as per bank/wallet" />
                                 </Field>
-                                <Field label="Account number / wallet ID">
+                                <Field label="Bank name">
+                                    <input className={inputClass} value={form.bankName} onChange={(event) => update("bankName", event.target.value)} placeholder="e.g. NICA Asia, Global IME" />
+                                </Field>
+                                <Field label="Bank account number">
                                     <input className={inputClass} value={form.bankAccount} onChange={(event) => update("bankAccount", event.target.value)} placeholder="Account number or wallet ID" />
                                 </Field>
+                                <Field label="Bank branch">
+                                    <input className={inputClass} value={form.bankBranch} onChange={(event) => update("bankBranch", event.target.value)} placeholder="Branch name" />
+                                </Field>
+                                <Field label="eSewa number">
+                                    <input className={inputClass} value={form.esewaNumber} onChange={(event) => update("esewaNumber", event.target.value)} placeholder="98XXXXXXXX" />
+                                </Field>
+                                <Field label="Khalti number">
+                                    <input className={inputClass} value={form.khaltiNumber} onChange={(event) => update("khaltiNumber", event.target.value)} placeholder="98XXXXXXXX" />
+                                </Field>
                                 <Field label="Optional verification note" className="md:col-span-4">
-                                    <textarea className={`${textareaClass} min-h-16 resize-y`} placeholder="Add any additional information or note for our verification team." />
+                                    <textarea className={`${textareaClass} min-h-16 resize-y`} value={form.verificationNote} onChange={(event) => update("verificationNote", event.target.value)} placeholder="Add any additional information or note for our verification team." />
                                 </Field>
                             </div>
                         </section>
