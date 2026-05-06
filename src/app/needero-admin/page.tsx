@@ -195,7 +195,7 @@ export default function NeederoAdminPage() {
                         <Lock size={24} />
                     </div>
                     <h1 className="mt-5 text-2xl font-black tracking-[-0.04em]">Needero Admin</h1>
-                    <p className="mt-2 text-sm leading-6 text-[#627181]">Enter the admin password to manage partner onboarding, KYC documents, payout details, and approval status.</p>
+                    <p className="mt-2 text-sm leading-6 text-[#627181]">Enter the admin password to manage partner onboarding, owner KYC, service photos, payout details, and approval status.</p>
                     <form
                         className="mt-6 space-y-3"
                         onSubmit={(event) => {
@@ -229,7 +229,7 @@ export default function NeederoAdminPage() {
                         <div>
                             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#0a8f45]">Needero Website Admin</p>
                             <h1 className="mt-1 text-3xl font-black tracking-[-0.05em]">Partner KYC & Onboarding</h1>
-                            <p className="mt-1 text-sm font-medium text-[#627181]">Manage repair-shop and home-service registrations, owner KYC, legal documents, payout numbers, and approval status.</p>
+                            <p className="mt-1 text-sm font-medium text-[#627181]">Manage repair-shop and home-service registrations, owner KYC, service photos, payout numbers, and approval status.</p>
                         </div>
                         <button onClick={() => void load(password)} className="inline-flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#dfe5ea] bg-white px-4 text-xs font-black hover:border-[#07121f]">
                             <RefreshCw size={14} />
@@ -303,7 +303,6 @@ export default function NeederoAdminPage() {
                                     <InfoLine label="Address / Area" value={data.shopAddress || data.serviceArea} />
                                     <InfoLine label="KYC Type" value={data.ownerKycType} />
                                     <InfoLine label="KYC Number" value={data.ownerKycNumber || data.idProof} />
-                                    <InfoLine label="PAN / Legal No." value={data.businessDocuments} />
                                     <InfoLine label="Payout Method" value={data.payoutMethod} />
                                     <InfoLine label="Account Holder" value={data.bankAccountHolderName} />
                                     <InfoLine label="Bank" value={data.bankName} />
@@ -317,7 +316,6 @@ export default function NeederoAdminPage() {
                                 <div className="mt-4 flex flex-wrap gap-2">
                                     <AttachmentLink label="Shop / Service Photo" value={data.shopPhoto || data.serviceShopPhoto} />
                                     <AttachmentLink label="Owner KYC Document" value={data.ownerKycDocument} />
-                                    <AttachmentLink label="Business Legal Document" value={data.businessDocumentFile} />
                                 </div>
 
                                 <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">

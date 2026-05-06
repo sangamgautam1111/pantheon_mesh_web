@@ -204,7 +204,6 @@ export default function RepairShopRegistrationPage() {
         pickupDrop: "",
         warrantyOffered: "",
         priceList: "",
-        businessDocuments: "",
         bankName: "",
         bankAccountHolderName: "",
         bankAccount: "",
@@ -216,7 +215,6 @@ export default function RepairShopRegistrationPage() {
         ownerKycType: "",
         ownerKycNumber: "",
         ownerKycDocument: "",
-        businessDocumentFile: "",
         verificationNote: "",
         additionalNotes: "",
     });
@@ -380,19 +378,13 @@ export default function RepairShopRegistrationPage() {
                         </section>
 
                         <section className="mt-7 border-t border-[#edf2f5] pt-5">
-                            <SectionTitle number="3" title="Payout & Verification" subtitle="Provide shop photo, owner KYC, legal documents, and payout details." />
+                            <SectionTitle number="3" title="Payout & Verification" subtitle="Provide shop photo, owner identity KYC, and payout details." />
                             <div className="grid gap-3 md:grid-cols-4">
                                 <UploadField
                                     label="Service shop photo *"
                                     value={form.shopPhoto}
                                     onChange={(value) => update("shopPhoto", value)}
                                     helper="Upload a clear shop/front/service photo for verification."
-                                />
-                                <UploadField
-                                    label="Business legal document / PAN"
-                                    value={form.businessDocumentFile}
-                                    onChange={(value) => update("businessDocumentFile", value)}
-                                    helper="PAN, business registration, or other legal document."
                                 />
                                 <UploadField
                                     label="Owner KYC document *"
@@ -405,9 +397,6 @@ export default function RepairShopRegistrationPage() {
                                         <option value="">Select KYC type</option>
                                         {kycDocumentTypes.map((type) => <option key={type}>{type}</option>)}
                                     </select>
-                                </Field>
-                                <Field label="Business document / PAN">
-                                    <input className={inputClass} value={form.businessDocuments} onChange={(event) => update("businessDocuments", event.target.value)} placeholder="PAN or registration no." />
                                 </Field>
                                 <Field label="KYC ID number">
                                     <input className={inputClass} value={form.ownerKycNumber} onChange={(event) => update("ownerKycNumber", event.target.value)} placeholder="Document / ID number" />

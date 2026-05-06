@@ -206,7 +206,6 @@ export default function HomeServiceRegistrationPage() {
         experience: "",
         availableSlots: "",
         homeVisitFee: "",
-        idProof: "",
         bankName: "",
         bankAccountHolderName: "",
         bankAccount: "",
@@ -218,7 +217,6 @@ export default function HomeServiceRegistrationPage() {
         ownerKycType: "",
         ownerKycNumber: "",
         ownerKycDocument: "",
-        businessDocumentFile: "",
         verificationNote: "",
         additionalNotes: "",
     });
@@ -388,12 +386,6 @@ export default function HomeServiceRegistrationPage() {
                                     helper="Upload a clear service/team/shop photo for verification."
                                 />
                                 <UploadField
-                                    label="Business legal document / PAN"
-                                    value={form.businessDocumentFile}
-                                    onChange={(value) => update("businessDocumentFile", value)}
-                                    helper="PAN, business registration, or other legal document."
-                                />
-                                <UploadField
                                     label="Owner KYC document *"
                                     value={form.ownerKycDocument}
                                     onChange={(value) => update("ownerKycDocument", value)}
@@ -405,10 +397,7 @@ export default function HomeServiceRegistrationPage() {
                                         {kycDocumentTypes.map((type) => <option key={type}>{type}</option>)}
                                     </select>
                                 </Field>
-                                <Field label="ID proof / citizenship / PAN *">
-                                    <input className={inputClass} value={form.idProof} onChange={(event) => update("idProof", event.target.value)} placeholder="Enter ID number" />
-                                </Field>
-                                <Field label="KYC ID number">
+                                <Field label="Owner identity number">
                                     <input className={inputClass} value={form.ownerKycNumber} onChange={(event) => update("ownerKycNumber", event.target.value)} placeholder="Document / ID number" />
                                 </Field>
                                 <Field label="Payout method">

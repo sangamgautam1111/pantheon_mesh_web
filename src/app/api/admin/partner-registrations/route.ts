@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { applicationDefault, cert, getApps, initializeApp, type ServiceAccount } from "firebase-admin/app";
+import { getDatabase } from "firebase-admin/database";
 
 export const runtime = "nodejs";
 
-const DB_URL = (process.env.FIREBASE_DATABASE_URL || "https://pantheon-mesh-default-rtdb.firebaseio.com").replace(/\/$/, "");
-const DB_AUTH = process.env.FIREBASE_DATABASE_SECRET || process.env.NEEDERO_FIREBASE_DATABASE_AUTH || "";
+const DATABASE_URL = (process.env.FIREBASE_DATABASE_URL || "https://pantheon-mesh-default-rtdb.firebaseio.com").replace(/\/$/, "");
 
 const allowedTypes = new Set(["repairShop", "homeService"]);
+type RegistrationType = "repairShop" | "homeService";
 
 function adminPassword() {
     return process.env.NEEDERO_ADMIN_PASSWORD || "";
@@ -16,17 +18,52 @@ function verifyPassword(value: unknown) {
     return Boolean(configured && typeof value === "string" && value === configured);
 }
 
-function firebaseUrl(path: string) {
-    const authQuery = DB_AUTH ? `?auth=${encodeURIComponent(DB_AUTH)}` : "";
-    return `${DB_URL}/${path}.json${authQuery}`;
+function parseServiceAccount(raw: string): ServiceAccount | null {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+        return null;
+    }
+
+    const jsonText = trimmed.startsWith("{") ? trimmed : Buffer.from(trimmed, "base64").toString("utf8");
+    const parsed = JSON.parse(jsonText) as Record<string, string>;
+    return {
+        projectId: parsed.project_id || parsed.projectId,
+        clientEmail: parsed.client_email || parsed.clientEmail,
+        privateKey: (parsed.private_key || parsed.privateKey || "").replace(/\\n/g, "\n"),
+    };
 }
 
-async function readRegistrations(type: "repairShop" | "homeService") {
-    const response = await fetch(firebaseUrl(`partnerRegistrations/${type}`), { cache: "no-store" });
-    if (!response.ok) {
-        throw new Error(`Firebase read failed for ${type}: ${response.status}`);
+function serviceAccountFromEnv() {
+    const rawServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT || "";
+    if (rawServiceAccount) {
+        return parseServiceAccount(rawServiceAccount);
     }
-    const data = await response.json();
+
+    const projectId = process.env.FIREBASE_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+    if (projectId && clientEmail && privateKey) {
+        return { projectId, clientEmail, privateKey };
+    }
+
+    return null;
+}
+
+function adminDb() {
+    if (!getApps().length) {
+        const serviceAccount = serviceAccountFromEnv();
+        initializeApp({
+            credential: serviceAccount ? cert(serviceAccount) : applicationDefault(),
+            databaseURL: DATABASE_URL,
+        });
+    }
+
+    return getDatabase();
+}
+
+async function readRegistrations(type: RegistrationType) {
+    const snapshot = await adminDb().ref(`partnerRegistrations/${type}`).get();
+    const data = snapshot.val();
     if (!data || typeof data !== "object") {
         return [];
     }
@@ -88,19 +125,12 @@ export async function PATCH(req: NextRequest) {
             return NextResponse.json({ error: "Invalid status." }, { status: 400 });
         }
 
-        const response = await fetch(firebaseUrl(`partnerRegistrations/${type}/${id}`), {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                status,
-                adminNote: typeof body?.adminNote === "string" ? body.adminNote : "",
-                reviewedAt: new Date().toISOString(),
-                reviewedBy: "needero-admin",
-            }),
+        await adminDb().ref(`partnerRegistrations/${type}/${id}`).update({
+            status,
+            adminNote: typeof body?.adminNote === "string" ? body.adminNote : "",
+            reviewedAt: new Date().toISOString(),
+            reviewedBy: "needero-admin",
         });
-        if (!response.ok) {
-            throw new Error(`Firebase update failed: ${response.status}`);
-        }
 
         return NextResponse.json({ ok: true });
     } catch (error) {
