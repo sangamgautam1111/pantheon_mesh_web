@@ -2,15 +2,149 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Smartphone, CheckCircle2, Loader2, MapPin, Wrench, Store } from "lucide-react";
+import {
+    ArrowLeft,
+    BadgeCheck,
+    BarChart3,
+    Check,
+    CheckCircle2,
+    Clock,
+    FileText,
+    Headphones,
+    Loader2,
+    MapPin,
+    ShieldCheck,
+    Smartphone,
+    Store,
+    Wrench,
+    Zap,
+} from "lucide-react";
 import { ref, push } from "firebase/database";
 import { useAuth } from "@/context/AuthContext";
 
 const repairCategories = ["Mobile Phone", "Screen Replacement", "Battery Replacement", "Charging Port Repair", "Speaker / Mic Repair", "Camera Repair", "Water Damage", "Software / Unlock Help", "Multiple Mobile Repairs"];
 const brandOptions = ["Apple", "Samsung", "Xiaomi / Redmi", "OnePlus", "Vivo", "OPPO", "Realme", "All Mobile Brands"];
 
-const inputClass = "w-full rounded-xl border border-[#dadbdd] bg-white px-4 py-3 text-sm outline-none transition focus:border-[#0a8f45] focus:ring-4 focus:ring-[#0a8f45]/10";
-const labelClass = "block text-xs font-bold uppercase tracking-[0.1em] text-[#404145] mb-2";
+const inputClass = "h-9 w-full rounded-[6px] border border-[#dfe5ea] bg-white px-3 text-[11px] font-semibold text-[#07121f] outline-none transition placeholder:text-[#a4afba] focus:border-[#0a8f45] focus:ring-2 focus:ring-[#dff6e8]";
+const textareaClass = "w-full rounded-[6px] border border-[#dfe5ea] bg-white px-3 py-2 text-[11px] font-semibold text-[#07121f] outline-none transition placeholder:text-[#a4afba] focus:border-[#0a8f45] focus:ring-2 focus:ring-[#dff6e8]";
+const labelClass = "mb-1.5 block text-[9px] font-black uppercase tracking-[0.12em] text-[#536170]";
+
+function SectionTitle({ number, title, subtitle }: { number: string; title: string; subtitle: string }) {
+    return (
+        <div className="mb-4 flex items-center gap-2.5">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e8f8ef] text-[11px] font-black text-[#0a8f45]">{number}</span>
+            <div>
+                <h2 className="text-sm font-black text-[#07121f]">{title}</h2>
+                <p className="text-[10px] font-medium text-[#7a8793]">{subtitle}</p>
+            </div>
+        </div>
+    );
+}
+
+function Field({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
+    return (
+        <label className={className}>
+            <span className={labelClass}>{label}</span>
+            {children}
+        </label>
+    );
+}
+
+function SidebarCard({
+    title,
+    copy,
+    children,
+}: {
+    title: string;
+    copy?: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <section className="rounded-[10px] border border-[#e1e7ec] bg-white p-4 shadow-sm">
+            <h3 className="text-sm font-black text-[#07121f]">{title}</h3>
+            {copy && <p className="mt-1 text-[10px] font-medium leading-4 text-[#72808e]">{copy}</p>}
+            <div className="mt-3">{children}</div>
+        </section>
+    );
+}
+
+function PartnerSidebar() {
+    const benefitCards = [
+        { label: "Verified customer leads", icon: ShieldCheck },
+        { label: "Zero commission start", icon: CheckCircle2 },
+        { label: "Easy lead management", icon: BarChart3 },
+        { label: "Grow your local visibility", icon: Zap },
+    ];
+
+    const journey = [
+        ["Submit Application", "Fill in your details and services."],
+        ["Verification", "Our team verifies your documents and details."],
+        ["Profile Activation", "Your profile goes live on Needero."],
+        ["Start Receiving Leads", "Get repair leads and grow your business."],
+    ];
+
+    return (
+        <aside className="space-y-4 lg:sticky lg:top-20">
+            <SidebarCard title="Why partner with Needero?" copy="Grow your repair business with quality leads from customers in your area.">
+                <div className="grid grid-cols-2 gap-2">
+                    {benefitCards.map((item) => (
+                        <div key={item.label} className="rounded-[8px] border border-[#edf2ef] bg-[#fbfffd] p-2">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-[#e8f8ef] text-[#0a8f45]">
+                                <item.icon size={14} />
+                            </div>
+                            <p className="mt-2 text-[10px] font-black leading-4 text-[#405060]">{item.label}</p>
+                        </div>
+                    ))}
+                </div>
+            </SidebarCard>
+
+            <SidebarCard title="Your onboarding journey">
+                <div className="space-y-3">
+                    {journey.map(([title, copy], index) => (
+                        <div key={title} className="flex gap-3">
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0a8f45] text-[10px] font-black text-white">{index + 1}</span>
+                            <div>
+                                <p className="text-[11px] font-black text-[#07121f]">{title}</p>
+                                <p className="text-[10px] font-medium leading-4 text-[#7a8793]">{copy}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </SidebarCard>
+
+            <SidebarCard title="Trusted & Secure">
+                <div className="flex gap-3 rounded-[8px] border border-[#dfe8ff] bg-[#f7faff] p-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#2457ff] shadow-sm">
+                        <BadgeCheck size={19} />
+                    </div>
+                    <div>
+                        <p className="text-[11px] font-black text-[#07121f]">ISO 27001 Infrastructure Security</p>
+                        <p className="mt-1 text-[10px] font-medium leading-4 text-[#72808e]">Your data and documents are encrypted and safe with us.</p>
+                    </div>
+                </div>
+            </SidebarCard>
+
+            <SidebarCard title="Profile preview (Example)">
+                <div className="rounded-[9px] border border-[#e5eaef] bg-[#fbfcfd] p-3">
+                    <div className="flex gap-3">
+                        <div className="h-14 w-16 rounded-[8px] bg-[linear-gradient(135deg,#e7f8ee,#ffffff)]" />
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-black text-[#07121f]">QuickFix Mobile Repair</p>
+                            <p className="mt-1 text-[10px] font-medium text-[#7a8793]">New Road, Kathmandu</p>
+                            <div className="mt-1 inline-flex rounded-full bg-[#e8f8ef] px-2 py-0.5 text-[9px] font-black text-[#0a8f45]">Verified Partner</div>
+                        </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-1.5 text-[9px] font-bold text-[#6b7886]">
+                        {["Screen Repair", "Battery", "Water Damage"].map((item) => (
+                            <span key={item} className="rounded-full border border-[#dfe5ea] bg-white px-2 py-1">{item}</span>
+                        ))}
+                    </div>
+                    <button className="mt-3 h-8 w-full rounded-[7px] bg-[#0a8f45] text-[10px] font-black text-white">Request Repair</button>
+                </div>
+            </SidebarCard>
+        </aside>
+    );
+}
 
 export default function RepairShopRegistrationPage() {
     const { user } = useAuth();
@@ -36,8 +170,8 @@ export default function RepairShopRegistrationPage() {
 
     const update = (key: string, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
         if (!form.shopName || !form.ownerName || !form.phone || !form.shopAddress || !form.repairCategory) {
             setError("Please fill in all required fields.");
             return;
@@ -65,20 +199,20 @@ export default function RepairShopRegistrationPage() {
 
     if (submitted) {
         return (
-            <main className="flex min-h-screen items-center justify-center bg-[#fafafa] px-4">
-                <div className="mx-auto max-w-lg text-center">
-                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#0a8f45]/10">
-                        <CheckCircle2 size={40} className="text-[#0a8f45]" />
+            <main className="flex min-h-screen items-center justify-center bg-[#f7f9fb] px-4">
+                <div className="mx-auto max-w-lg rounded-[12px] border border-[#e1e7ec] bg-white p-8 text-center shadow-sm">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#e8f8ef]">
+                        <CheckCircle2 size={34} className="text-[#0a8f45]" />
                     </div>
-                    <h1 className="mt-6 text-3xl font-black text-[#222325]">Registration Submitted!</h1>
-                    <p className="mt-3 text-[#62646a]">
+                    <h1 className="mt-5 text-2xl font-black text-[#07121f]">Registration submitted</h1>
+                    <p className="mt-2 text-sm leading-6 text-[#627181]">
                         Thank you, <strong>{form.shopName}</strong>. Our team will review your application and contact you within 24-48 hours.
                     </p>
-                    <div className="mt-8 flex flex-wrap justify-center gap-3">
-                        <Link href="/register" className="rounded-xl border border-[#dadbdd] bg-white px-6 py-3 text-sm font-bold text-[#222325] hover:bg-[#f5f5f5]">
+                    <div className="mt-6 flex flex-wrap justify-center gap-3">
+                        <Link href="/register" className="rounded-[8px] border border-[#dfe5ea] bg-white px-5 py-2.5 text-xs font-black text-[#07121f] hover:bg-[#f6f8fa]">
                             Back to Registration
                         </Link>
-                        <Link href="/marketplace" className="rounded-xl bg-[#0a8f45] px-6 py-3 text-sm font-bold text-white hover:bg-[#08783b]">
+                        <Link href="/marketplace" className="rounded-[8px] bg-[#0a8f45] px-5 py-2.5 text-xs font-black text-white hover:bg-[#08783b]">
                             Browse Marketplace
                         </Link>
                     </div>
@@ -88,135 +222,161 @@ export default function RepairShopRegistrationPage() {
     }
 
     return (
-        <main className="min-h-screen bg-[#fafafa]">
-            {/* Hero */}
-            <section className="relative overflow-hidden bg-gradient-to-br from-[#0a8f45] to-[#38b000] text-white">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_80%,rgba(255,255,255,0.1),transparent_50%)]" />
-                <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6">
-                    <Link href="/register" className="inline-flex items-center gap-2 text-sm font-bold text-white/80 hover:text-white">
-                        <ArrowLeft size={16} /> Back to Partner Registration
-                    </Link>
-                    <div className="mt-6 flex items-center gap-5">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
-                            <Smartphone size={28} />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-black sm:text-4xl">Mobile Repair Partner Registration</h1>
-                            <p className="mt-1 text-white/80">Join Needero and get phone repair leads from customers near your shop</p>
-                        </div>
+        <main className="min-h-screen bg-[#f7f9fb] text-[#07121f]">
+            <div className="mx-auto max-w-[1180px] px-4 py-5 md:px-6">
+                <Link href="/register" className="inline-flex items-center gap-1.5 text-[11px] font-black text-[#526170] hover:text-[#0a8f45]">
+                    <ArrowLeft size={13} />
+                    Back to Partner Registration
+                </Link>
+
+                <header className="mt-4 flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-[10px] bg-[#e8f8ef] text-[#0a8f45]">
+                        <Smartphone size={24} />
                     </div>
+                    <div>
+                        <h1 className="text-2xl font-black tracking-[-0.04em] text-[#07121f]">Repair Shop Partner Registration</h1>
+                        <p className="mt-0.5 text-xs font-medium text-[#72808e]">Join Needero and start receiving nearby phone repair leads.</p>
+                    </div>
+                </header>
+
+                <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+                    <form onSubmit={handleSubmit} className="rounded-[10px] border border-[#e1e7ec] bg-white p-5 shadow-sm">
+                        <section>
+                            <SectionTitle number="1" title="Business Information" subtitle="Tell us about your shop and how customers can reach you." />
+                            <div className="grid gap-3 md:grid-cols-4">
+                                <Field label="Shop name *">
+                                    <input className={inputClass} value={form.shopName} onChange={(event) => update("shopName", event.target.value)} placeholder="e.g. QuickFix Mobile Repair" required />
+                                </Field>
+                                <Field label="Owner name *">
+                                    <input className={inputClass} value={form.ownerName} onChange={(event) => update("ownerName", event.target.value)} placeholder="Full name" required />
+                                </Field>
+                                <Field label="Phone number *">
+                                    <input className={inputClass} type="tel" value={form.phone} onChange={(event) => update("phone", event.target.value)} placeholder="+977-98XXXXXXXX" required />
+                                </Field>
+                                <Field label="Email address">
+                                    <input className={inputClass} type="email" value={form.email} onChange={(event) => update("email", event.target.value)} placeholder="you@email.com" />
+                                </Field>
+                                <Field label="Shop address *" className="md:col-span-2">
+                                    <input className={inputClass} value={form.shopAddress} onChange={(event) => update("shopAddress", event.target.value)} placeholder="Full address, building, landmark" required />
+                                </Field>
+                                <Field label="City / area" className="md:col-span-2">
+                                    <input className={inputClass} placeholder="e.g. Kathmandu, New Baneshwor" />
+                                </Field>
+                            </div>
+                        </section>
+
+                        <section className="mt-7 border-t border-[#edf2f5] pt-5">
+                            <SectionTitle number="2" title="Repair Services" subtitle="Share the services you provide and your shop specialties." />
+                            <div className="grid gap-3 md:grid-cols-4">
+                                <Field label="Repair category *">
+                                    <select className={inputClass} value={form.repairCategory} onChange={(event) => update("repairCategory", event.target.value)} required>
+                                        <option value="">Select repair category</option>
+                                        {repairCategories.map((category) => <option key={category}>{category}</option>)}
+                                    </select>
+                                </Field>
+                                <Field label="Brands handled">
+                                    <select className={inputClass} value={form.brandsHandled} onChange={(event) => update("brandsHandled", event.target.value)}>
+                                        <option value="">Select brands</option>
+                                        {brandOptions.map((brand) => <option key={brand}>{brand}</option>)}
+                                    </select>
+                                </Field>
+                                <Field label="Pickup / drop availability">
+                                    <select className={inputClass} value={form.pickupDrop} onChange={(event) => update("pickupDrop", event.target.value)}>
+                                        <option value="">Select option</option>
+                                        <option>Yes - Free pickup & drop</option>
+                                        <option>Yes - Paid pickup & drop</option>
+                                        <option>No - Customer visits shop</option>
+                                    </select>
+                                </Field>
+                                <Field label="Home visit availability">
+                                    <select className={inputClass}>
+                                        <option>Select option</option>
+                                        <option>Available</option>
+                                        <option>Limited areas only</option>
+                                        <option>Not available</option>
+                                    </select>
+                                </Field>
+                                <Field label="Warranty offered">
+                                    <select className={inputClass} value={form.warrantyOffered} onChange={(event) => update("warrantyOffered", event.target.value)}>
+                                        <option value="">Select warranty</option>
+                                        <option>Yes - 30 days</option>
+                                        <option>Yes - 90 days</option>
+                                        <option>Yes - 6 months</option>
+                                        <option>Yes - 1 year</option>
+                                        <option>No warranty</option>
+                                        <option>Depends on repair</option>
+                                    </select>
+                                </Field>
+                                <Field label="Opening hours">
+                                    <input className={inputClass} placeholder="09:00 AM" />
+                                </Field>
+                                <Field label="Closing hours">
+                                    <input className={inputClass} placeholder="07:00 PM" />
+                                </Field>
+                                <label className="flex items-end gap-2 pb-2 text-[10px] font-black text-[#536170]">
+                                    <input type="checkbox" className="h-3.5 w-3.5 rounded border-[#cfd8df] text-[#0a8f45]" />
+                                    Open 24 hours
+                                </label>
+                                <Field label="Popular services / price list" className="md:col-span-4">
+                                    <textarea className={`${textareaClass} min-h-20 resize-y`} value={form.priceList} onChange={(event) => update("priceList", event.target.value)} placeholder="List common services with starting prices, e.g. screen replacement NPR 3000-8000, battery NPR 1500-3000." />
+                                </Field>
+                            </div>
+                        </section>
+
+                        <section className="mt-7 border-t border-[#edf2f5] pt-5">
+                            <SectionTitle number="3" title="Payout & Verification" subtitle="Provide verification documents and payout details." />
+                            <div className="grid gap-3 md:grid-cols-4">
+                                <Field label="Business document / PAN">
+                                    <input className={inputClass} value={form.businessDocuments} onChange={(event) => update("businessDocuments", event.target.value)} placeholder="PAN or registration no." />
+                                </Field>
+                                <Field label="Payout method">
+                                    <select className={inputClass}>
+                                        <option>Select payout method</option>
+                                        <option>Bank transfer</option>
+                                        <option>Wallet</option>
+                                        <option>Cash settlement</option>
+                                    </select>
+                                </Field>
+                                <Field label="Account holder name">
+                                    <input className={inputClass} value={form.bankName} onChange={(event) => update("bankName", event.target.value)} placeholder="Name as per bank/wallet" />
+                                </Field>
+                                <Field label="Account number / wallet ID">
+                                    <input className={inputClass} value={form.bankAccount} onChange={(event) => update("bankAccount", event.target.value)} placeholder="Account number or wallet ID" />
+                                </Field>
+                                <Field label="Optional verification note" className="md:col-span-4">
+                                    <textarea className={`${textareaClass} min-h-16 resize-y`} placeholder="Add any additional information or note for our verification team." />
+                                </Field>
+                            </div>
+                        </section>
+
+                        <section className="mt-7 border-t border-[#edf2f5] pt-5">
+                            <SectionTitle number="4" title="Final Notes" subtitle="Tell customers why they should choose your shop." />
+                            <Field label="Business description">
+                                <textarea className={`${textareaClass} min-h-20 resize-y`} value={form.additionalNotes} onChange={(event) => update("additionalNotes", event.target.value)} placeholder="Describe your shop, experience, warranty, and what makes your service reliable." />
+                            </Field>
+                        </section>
+
+                        {error && <div className="mt-5 rounded-[8px] border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-700">{error}</div>}
+
+                        <div className="mt-5 flex flex-col gap-3 border-t border-[#edf2f5] pt-4 sm:flex-row sm:items-center">
+                            <button
+                                type="submit"
+                                disabled={submitting}
+                                className="inline-flex h-10 items-center justify-center gap-2 rounded-[8px] bg-[#0a8f45] px-5 text-xs font-black text-white shadow-sm transition hover:bg-[#08783b] disabled:opacity-50"
+                            >
+                                {submitting ? <Loader2 size={15} className="animate-spin" /> : <Store size={15} />}
+                                {submitting ? "Submitting..." : "Submit Repair Shop Application"}
+                            </button>
+                            <p className="flex items-center gap-2 text-[10px] font-semibold text-[#7a8793]">
+                                <Clock size={13} />
+                                Our team will review your application and get back to you within 24-48 hours.
+                            </p>
+                        </div>
+                    </form>
+
+                    <PartnerSidebar />
                 </div>
-            </section>
-
-            {/* Form */}
-            <section className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
-                <form onSubmit={handleSubmit}>
-                    <div className="rounded-3xl border border-[#e4e5e7] bg-white p-6 shadow-sm sm:p-10">
-                        <h2 className="text-xl font-black text-[#222325]">Shop Details</h2>
-                        <p className="mt-1 text-sm text-[#62646a]">Tell us about your mobile repair business</p>
-
-                        <div className="mt-8 grid gap-6 sm:grid-cols-2">
-                            <label>
-                                <span className={labelClass}>Shop Name *</span>
-                                <input className={inputClass} value={form.shopName} onChange={(e) => update("shopName", e.target.value)} placeholder="e.g. QuickFix Mobile Repair" required />
-                            </label>
-                            <label>
-                                <span className={labelClass}>Owner Name *</span>
-                                <input className={inputClass} value={form.ownerName} onChange={(e) => update("ownerName", e.target.value)} placeholder="Full name" required />
-                            </label>
-                            <label>
-                                <span className={labelClass}>Phone Number *</span>
-                                <input className={inputClass} type="tel" value={form.phone} onChange={(e) => update("phone", e.target.value)} placeholder="+977-98XXXXXXXX" required />
-                            </label>
-                            <label>
-                                <span className={labelClass}>Email</span>
-                                <input className={inputClass} type="email" value={form.email} onChange={(e) => update("email", e.target.value)} placeholder="shop@email.com" />
-                            </label>
-                        </div>
-
-                        <div className="mt-8 grid gap-6 sm:grid-cols-2">
-                            <label className="sm:col-span-2">
-                                <span className={labelClass}><MapPin size={12} className="inline mr-1" />Shop Address *</span>
-                                <input className={inputClass} value={form.shopAddress} onChange={(e) => update("shopAddress", e.target.value)} placeholder="Full address with landmark" required />
-                            </label>
-                            <label>
-                                <span className={labelClass}><Wrench size={12} className="inline mr-1" />Repair Category *</span>
-                                <select className={inputClass} value={form.repairCategory} onChange={(e) => update("repairCategory", e.target.value)} required>
-                                    <option value="">Select category</option>
-                                    {repairCategories.map((c) => <option key={c}>{c}</option>)}
-                                </select>
-                            </label>
-                            <label>
-                                <span className={labelClass}>Brands Handled</span>
-                                <select className={inputClass} value={form.brandsHandled} onChange={(e) => update("brandsHandled", e.target.value)}>
-                                    <option value="">Select brands</option>
-                                    {brandOptions.map((b) => <option key={b}>{b}</option>)}
-                                </select>
-                            </label>
-                            <label>
-                                <span className={labelClass}>Pickup / Drop Available?</span>
-                                <select className={inputClass} value={form.pickupDrop} onChange={(e) => update("pickupDrop", e.target.value)}>
-                                    <option value="">Select</option>
-                                    <option>Yes — Free pickup & drop</option>
-                                    <option>Yes — Paid pickup & drop</option>
-                                    <option>No — Customer visits shop</option>
-                                </select>
-                            </label>
-                            <label>
-                                <span className={labelClass}>Warranty Offered?</span>
-                                <select className={inputClass} value={form.warrantyOffered} onChange={(e) => update("warrantyOffered", e.target.value)}>
-                                    <option value="">Select</option>
-                                    <option>Yes — 30 days</option>
-                                    <option>Yes — 90 days</option>
-                                    <option>Yes — 6 months</option>
-                                    <option>Yes — 1 year</option>
-                                    <option>No warranty</option>
-                                    <option>Depends on repair</option>
-                                </select>
-                            </label>
-                        </div>
-
-                        <label className="mt-8 block">
-                            <span className={labelClass}>Price List / Common Repairs</span>
-                            <textarea className={`${inputClass} min-h-[120px] resize-y`} value={form.priceList} onChange={(e) => update("priceList", e.target.value)} placeholder="e.g. Screen replacement: NPR 3000-8000, Battery: NPR 1500-3000..." />
-                        </label>
-
-                        <h2 className="mt-10 text-xl font-black text-[#222325]">Verification & Payout Details</h2>
-                        <p className="mt-1 text-sm text-[#62646a]">Optional for MVP onboarding, useful for verification and future payouts</p>
-
-                        <div className="mt-6 grid gap-6 sm:grid-cols-2">
-                            <label>
-                                <span className={labelClass}>Business Documents / PAN</span>
-                                <input className={inputClass} value={form.businessDocuments} onChange={(e) => update("businessDocuments", e.target.value)} placeholder="PAN or registration number" />
-                            </label>
-                            <label>
-                                <span className={labelClass}>Bank Name</span>
-                                <input className={inputClass} value={form.bankName} onChange={(e) => update("bankName", e.target.value)} placeholder="e.g. NIC Asia, Global IME" />
-                            </label>
-                            <label>
-                                <span className={labelClass}>Bank Account Number</span>
-                                <input className={inputClass} value={form.bankAccount} onChange={(e) => update("bankAccount", e.target.value)} placeholder="Account number for payouts" />
-                            </label>
-                        </div>
-
-                        <label className="mt-6 block">
-                            <span className={labelClass}>Additional Notes</span>
-                            <textarea className={`${inputClass} min-h-[80px] resize-y`} value={form.additionalNotes} onChange={(e) => update("additionalNotes", e.target.value)} placeholder="Anything else you'd like us to know?" />
-                        </label>
-
-                        {error && <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</div>}
-
-                        <button
-                            type="submit"
-                            disabled={submitting}
-                            className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#0a8f45] to-[#38b000] px-8 py-4 text-base font-black text-white shadow-lg transition hover:shadow-xl disabled:opacity-50 sm:w-auto"
-                        >
-                            {submitting ? <Loader2 size={18} className="animate-spin" /> : <Store size={18} />}
-                            {submitting ? "Registering..." : "Register Mobile Repair Partner"}
-                        </button>
-                    </div>
-                </form>
-            </section>
+            </div>
         </main>
     );
 }
