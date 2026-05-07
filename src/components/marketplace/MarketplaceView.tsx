@@ -6,14 +6,23 @@ import Link from "next/link";
 import {
     Briefcase,
     CheckCircle2,
+    ChevronDown,
     Clock,
     FileText,
+    Filter,
     Flame,
+    Home,
     MapPin,
     MessageSquare,
     Navigation,
     Search,
+    Send,
     ShoppingBag,
+    ShieldCheck,
+    SlidersHorizontal,
+    Smartphone,
+    Star,
+    TrendingUp,
 } from "lucide-react";
 import {
     localRank,
@@ -492,148 +501,286 @@ export function MarketplaceView({ initialCategory = "All Categories", isCategory
         }
     };
 
-    const pageTitle = selectedCategory === "All Categories" 
-        ? (isBusiness ? "Service Needs Near You" : "Find Service Offers")
-        : `Marketplace: ${selectedCategory}`;
+    const pageTitle = selectedCategory === "All Categories"
+        ? "Browse customer needs"
+        : `${selectedCategory} customer needs`;
 
     return (
         <RouteGuard allowedTypes={["customer", "business"]}>
-            <main className="min-h-screen bg-[#fafafa] text-[#222325]">
-                <div className="bg-white border-b border-[#e4e5e7]">
-                    <div className="mx-auto max-w-7xl px-4 sm:px-6 py-7">
-                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                            <div>
-                                <p className="text-xs font-black uppercase tracking-[0.18em] mb-2 text-[#222325]">
-                                    {isBusiness?"Lead Inbox":"Browse Offers"}
-                                </p>
-                                <h1 className="font-heading text-3xl font-black tracking-[-0.04em] text-[#222325]">
-                                    {pageTitle}
-                                </h1>
-                                <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-[#74767e]">
-                                    <span className="font-semibold">{loading ? "Loading" : `${needs.length} live`} marketplace needs</span>
-                                    <span className="h-1 w-1 rounded-full bg-[#b5b6ba]" />
-                                    <span>{locationStatus}</span>
+            <main className="min-h-screen bg-[#f7faf8] text-[#081a13]">
+                <section className="border-b border-[#dfe8e3] bg-white">
+                    <div className="mx-auto max-w-[1220px] px-4 py-5 sm:px-6">
+                        <div className="overflow-hidden rounded-[16px] border border-[#dfe8e3] bg-[linear-gradient(110deg,#ffffff_0%,#f7fff9_58%,#eaf8f1_100%)] px-5 py-6 md:px-7">
+                            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-center">
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#009f58]">
+                                        {isBusiness ? "Seller lead inbox" : "Needero marketplace"}
+                                    </p>
+                                    <h1 className="mt-2 text-3xl font-black tracking-[-0.05em] text-[#081a13] md:text-4xl">
+                                        {pageTitle}. <span className="text-[#009f58]">Send better offers.</span>
+                                    </h1>
+                                    <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-[#5c6c64]">
+                                        Browse mobile repair and home service requests. Compare customer budget, location, urgency, and active offers from one clean dashboard.
+                                    </p>
                                 </div>
-                            </div>
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                                <div className="flex h-11 min-w-[280px] items-center overflow-hidden rounded-full border border-[#d7d9dc] bg-white">
-                                    <Search size={16} className="ml-4 shrink-0 text-[#74767e]"/>
-                                    <input type="text" placeholder="Search needs..." value={searchQuery}
-                                        onChange={e=>setSearchQuery(e.target.value)}
-                                        className="min-w-0 flex-1 bg-transparent px-3 text-sm outline-none text-[#222325]"/>
+                                <div className="rounded-[14px] border border-[#d4e9dc] bg-white p-4 shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-black text-[#5c6c64]">Marketplace at a glance</span>
+                                        <TrendingUp size={17} className="text-[#009f58]" />
+                                    </div>
+                                    <div className="mt-4 grid grid-cols-2 gap-3">
+                                        {[
+                                            [loading ? "..." : String(needs.length), "Active Needs"],
+                                            ["2", "Core categories"],
+                                            ["24/7", "Quote access"],
+                                            ["98%", "Trust focus"],
+                                        ].map(([value, label]) => (
+                                            <div key={label} className="rounded-[10px] bg-[#f1faf5] p-3">
+                                                <p className="text-xl font-black text-[#009f58]">{value}</p>
+                                                <p className="text-[10px] font-black text-[#5c6c64]">{label}</p>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                                <button onClick={() => void requestLocation()} className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#222325] px-5 text-sm font-black text-[#222325] transition hover:bg-[#222325] hover:text-white">
-                                    <Navigation size={14}/> My Area
-                                </button>
                             </div>
                         </div>
 
-                        <div className="mt-8 flex gap-6 border-b border-[#e4e5e7]">
-                            {Object.values(categorySlugs).map((cat) => (
-                                <button
-                                    key={cat}
-                                    onClick={() => handleCategoryClick(cat)}
-                                    className={`pb-4 text-sm font-black transition-colors ${
-                                        selectedCategory === cat
-                                            ? "border-b-2 border-[#222325] text-[#222325]"
-                                            : "text-[#74767e] hover:text-[#222325]"
-                                    } ${isCategoryLocked && selectedCategory !== cat ? "hidden" : ""}`}
-                                >
-                                    {cat}
+                        <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                            <div className="flex h-11 min-w-0 flex-1 items-center overflow-hidden rounded-[10px] border border-[#d7e5dc] bg-white shadow-sm lg:max-w-xl">
+                                <Search size={16} className="ml-4 shrink-0 text-[#6b7a73]" />
+                                <input
+                                    type="text"
+                                    placeholder="Search customer needs, phone repair, cleaning..."
+                                    value={searchQuery}
+                                    onChange={(event) => setSearchQuery(event.target.value)}
+                                    className="min-w-0 flex-1 bg-transparent px-3 text-sm font-semibold text-[#081a13] outline-none"
+                                />
+                            </div>
+                            <div className="flex gap-2 overflow-x-auto">
+                                {Object.values(categorySlugs).map((cat) => {
+                                    const Icon = cat === "Home Cleaning" ? Home : cat === "Mobile Repair" ? Smartphone : SlidersHorizontal;
+                                    return (
+                                        <button
+                                            key={cat}
+                                            onClick={() => handleCategoryClick(cat)}
+                                            className={`inline-flex h-11 shrink-0 items-center gap-2 rounded-[10px] border px-4 text-xs font-black transition ${
+                                                selectedCategory === cat
+                                                    ? "border-[#009f58] bg-[#009f58] text-white"
+                                                    : "border-[#d7e5dc] bg-white text-[#081a13] hover:border-[#009f58]"
+                                            } ${isCategoryLocked && selectedCategory !== cat ? "hidden" : ""}`}
+                                        >
+                                            <Icon size={14} />
+                                            {cat}
+                                        </button>
+                                    );
+                                })}
+                                <button onClick={() => void requestLocation()} className="inline-flex h-11 shrink-0 items-center gap-2 rounded-[10px] border border-[#081a13] bg-white px-4 text-xs font-black text-[#081a13]">
+                                    <Navigation size={14} />
+                                    My Area
                                 </button>
-                            ))}
-                        </div>
-
-                        <div className="mt-6 flex gap-3 overflow-x-auto pb-1">
-                            {["Issue", "Service option", "Trust", "Price", "Urgency"].map((filter) => (
-                                <button key={filter} className="whitespace-nowrap rounded-full border border-[#d7d9dc] bg-white px-5 py-2.5 text-sm font-bold text-[#222325] transition hover:border-[#222325]">
-                                    {filter}
-                                </button>
-                            ))}
-                            <button className="whitespace-nowrap rounded-full bg-[#222325] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-black">
-                                Recommended
-                            </button>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
-                    {message&&(
-                        <div className="mb-4 rounded-xl border border-[#fde68a] bg-[#fffbeb] px-4 py-3 text-sm text-[#92630a]">
-                            {message}
-                        </div>
-                    )}
-
-                    {filteredNeeds.length===0&&!loading?(
-                        <div className="rounded-2xl border-2 border-dashed border-[#e4e5e7] py-20 text-center">
-                            <Briefcase size={40} className="mx-auto mb-4 text-[#d1d5db]"/>
-                            <h2 className="text-xl font-bold mb-2 text-[#404145]">
-                                {searchQuery?`No results for "${searchQuery}"`:'No live marketplace needs loaded'}
-                            </h2>
-                            <p className="text-sm mb-5 text-[#74767e]">
-                                {searchQuery?'Try home cleaning or mobile repair.':'Service Needs appear here once customers post them.'}
-                            </p>
-                            {!searchQuery&&(
-                                <button onClick={loadNeeds} className="rounded-full bg-[#222325] px-6 py-3 text-sm font-black text-white transition hover:bg-black">
-                                    Refresh
-                                </button>
-                            )}
-                        </div>
-                    ):(
-                        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {filteredNeeds.map((need) => {
-                                const localLabel = needDistanceLabel(need, viewerLocation);
-                                return (
-                                <article key={need.id}
-                                    className={`overflow-hidden rounded-xl border border-[#e4e5e7] bg-white shadow-sm transition hover:shadow-xl cursor-pointer ${
-                                        selectedNeedId===need.id?"ring-2 ring-[#222325]":""
-                                    }`}
-                                    onClick={()=>router.push(`/marketplace/${encodeURIComponent(need.id)}`)}
-                                >
-                                    <div className="relative w-full overflow-hidden bg-gray-100 aspect-[4/3]">
-                                        <NeedMedia src={need.photoPreview} title={need.title} category={need.category} />
-                                        {need.status === "solved" && (
-                                            <span className="absolute top-2 right-2 rounded bg-green-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm flex items-center">
-                                                <CheckCircle2 size={12} className="mr-1" /> Offer Completed
-                                            </span>
-                                        )}
-                                        {need.urgency==="Immediate"&&(
-                                            <span className="absolute top-2 left-2 rounded bg-red-600 px-2.5 py-1 text-[10px] font-bold text-white shadow-sm flex items-center">
-                                                <Flame size={10} className="mr-1 fill-current" /> Urgent
-                                            </span>
-                                        )}
+                <section className="mx-auto grid max-w-[1220px] gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[190px_minmax(0,1fr)_260px]">
+                    <aside className="hidden lg:block">
+                        <div className="sticky top-20 rounded-[14px] border border-[#dfe8e3] bg-white p-4 shadow-sm">
+                            <div className="flex items-center justify-between">
+                                <p className="text-xs font-black text-[#081a13]">Filters</p>
+                                <Filter size={15} className="text-[#009f58]" />
+                            </div>
+                            <div className="mt-5 space-y-5">
+                                {[
+                                    ["Budget (NPR)", ["Min amount", "Max amount"]],
+                                    ["Location", ["My city only", "Nearby areas"]],
+                                    ["Delivery time", ["Today", "Tomorrow", "Flexible"]],
+                                    ["Category", ["Mobile Repair", "Home Cleaning"]],
+                                ].map(([title, items]) => (
+                                    <div key={title as string} className="border-t border-[#edf2ef] pt-4">
+                                        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.12em] text-[#5c6c64]">
+                                            {title as string}
+                                            <ChevronDown size={13} />
+                                        </div>
+                                        <div className="mt-3 space-y-2">
+                                            {(items as string[]).map((item) => (
+                                                <label key={item} className="flex items-center gap-2 text-xs font-semibold text-[#5c6c64]">
+                                                    <input type="checkbox" className="h-3.5 w-3.5 rounded border-[#cbdad2] text-[#009f58]" />
+                                                    {item}
+                                                </label>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <div className="p-4">
-                                        <div className="mb-3 flex items-center gap-2">
-                                            <span className="rounded bg-[#f5f5f5] px-2.5 py-1 text-[11px] font-bold text-[#62646a]">{displayCategory(need.category)}</span>
-                                            {localLabel && (
-                                                <span className="rounded bg-[#222325] px-2.5 py-1 text-[11px] font-bold text-white">{localLabel}</span>
-                                            )}
-                                            <span className="ml-auto text-xs font-semibold text-[#74767e]">{need.offers || 0} offers</span>
-                                        </div>
-                                        <div className="mb-3 flex items-center gap-2">
-                                            <AvatarCircle src={need.customerAvatar} name={need.customerName || "Customer"} className="h-7 w-7 text-[11px]" />
-                                            <span className="truncate text-xs font-bold text-[#62646a]">{need.customerName || "Customer"}</span>
-                                        </div>
-                                        <h3 className="line-clamp-2 min-h-[48px] text-base font-semibold leading-snug text-[#222325]">{need.title}</h3>
-                                        <div className="mt-4 flex items-end justify-between gap-3 border-t border-[#efeff0] pt-4">
-                                            <span className="flex min-w-0 items-center gap-1 text-xs text-[#74767e]">
-                                                <MapPin size={11}/>{need.location}
-                                            </span>
-                                            <div className="max-w-[45%] text-right">
-                                                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#95979d]">Customer budget</p>
-                                                <p className="truncate text-sm font-black text-[#222325]">
-                                                    {need.budget || "Open"}
-                                                </p>
+                                ))}
+                            </div>
+                        </div>
+                    </aside>
+
+                    <div>
+                        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="text-sm font-black text-[#5c6c64]">
+                                {loading ? "Loading customer needs" : `${filteredNeeds.length} customer needs found`}
+                                <span className="ml-2 text-xs font-semibold text-[#87958f]">{locationStatus}</span>
+                            </div>
+                            <button className="inline-flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#d7e5dc] bg-white px-3 text-xs font-black text-[#081a13]">
+                                Sort by: Newest first
+                                <ChevronDown size={13} />
+                            </button>
+                        </div>
+
+                        {message && (
+                            <div className="mb-4 rounded-[12px] border border-[#fde68a] bg-[#fffbeb] px-4 py-3 text-sm font-bold text-[#92630a]">
+                                {message}
+                            </div>
+                        )}
+
+                        {filteredNeeds.length === 0 && !loading ? (
+                            <div className="rounded-[14px] border-2 border-dashed border-[#dfe8e3] bg-white py-20 text-center">
+                                <Briefcase size={38} className="mx-auto mb-4 text-[#cbd5d0]" />
+                                <h2 className="text-xl font-black text-[#081a13]">
+                                    {searchQuery ? `No results for "${searchQuery}"` : "No live customer needs loaded"}
+                                </h2>
+                                <p className="mt-2 text-sm font-semibold text-[#6b7a73]">
+                                    {searchQuery ? "Try mobile repair or home cleaning." : "Customer Needs appear here once users post them."}
+                                </p>
+                                {!searchQuery && (
+                                    <button onClick={loadNeeds} className="mt-5 rounded-[9px] bg-[#081a13] px-6 py-3 text-sm font-black text-white">
+                                        Refresh
+                                    </button>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {filteredNeeds.map((need) => {
+                                    const localLabel = needDistanceLabel(need, viewerLocation);
+                                    const category = displayCategory(need.category);
+                                    return (
+                                        <article
+                                            key={need.id}
+                                            className={`grid cursor-pointer gap-4 rounded-[14px] border border-[#dfe8e3] bg-white p-3 shadow-sm transition hover:border-[#b8d8c5] hover:shadow-md md:grid-cols-[126px_minmax(0,1fr)_190px] ${
+                                                selectedNeedId === need.id ? "ring-2 ring-[#009f58]" : ""
+                                            }`}
+                                            onClick={() => router.push(`/marketplace/${encodeURIComponent(need.id)}`)}
+                                        >
+                                            <div className="relative h-36 overflow-hidden rounded-[10px] bg-[#eff8f3] md:h-full">
+                                                <NeedMedia src={need.photoPreview} title={need.title} category={need.category} />
+                                                {need.urgency === "Immediate" && (
+                                                    <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-1 text-[10px] font-black text-white">
+                                                        <Flame size={10} />
+                                                        Urgent
+                                                    </span>
+                                                )}
                                             </div>
-                                        </div>
-                                    </div>
-                                </article>
-                                );
-                            })}
+                                            <div className="min-w-0 py-1">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className="rounded-[5px] bg-[#edf7f1] px-2.5 py-1 text-[10px] font-black text-[#087646]">{category}</span>
+                                                    {localLabel && (
+                                                        <span className="rounded-[5px] bg-[#f3f7f5] px-2.5 py-1 text-[10px] font-black text-[#5c6c64]">{localLabel}</span>
+                                                    )}
+                                                    {need.status === "solved" && (
+                                                        <span className="inline-flex items-center gap-1 rounded-[5px] bg-[#e9f8f0] px-2.5 py-1 text-[10px] font-black text-[#087646]">
+                                                            <CheckCircle2 size={11} />
+                                                            Completed
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <h3 className="mt-3 line-clamp-2 text-lg font-black leading-tight tracking-[-0.02em] text-[#081a13]">{need.title}</h3>
+                                                <p className="mt-2 line-clamp-2 text-sm font-medium leading-6 text-[#5c6c64]">
+                                                    {need.issue || need.description || "Customer is waiting for trusted local offers."}
+                                                </p>
+                                                <div className="mt-4 grid gap-2 text-xs font-bold text-[#5c6c64] sm:grid-cols-3">
+                                                    <span className="inline-flex items-center gap-1">
+                                                        <MapPin size={12} />
+                                                        {need.location || "Location pending"}
+                                                    </span>
+                                                    <span className="inline-flex items-center gap-1">
+                                                        <Clock size={12} />
+                                                        {need.urgency || "Flexible"}
+                                                    </span>
+                                                    <span className="inline-flex items-center gap-1">
+                                                        <ShieldCheck size={12} />
+                                                        Customer verified
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="rounded-[12px] border border-[#edf2ef] bg-[#fbfdfc] p-4">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#87958f]">Budget</p>
+                                                <p className="mt-1 text-base font-black text-[#009f58]">{need.budget || "Open for quotes"}</p>
+                                                <div className="mt-3 flex items-center justify-between text-xs font-bold text-[#5c6c64]">
+                                                    <span>{need.offers || 0} Active offers</span>
+                                                    <span className="inline-flex items-center gap-1 text-[#f59e0b]">
+                                                        <Star size={12} fill="currentColor" />
+                                                        High intent
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        router.push(`/marketplace/${encodeURIComponent(need.id)}`);
+                                                    }}
+                                                    className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-[#081a13] text-xs font-black text-white transition hover:bg-black"
+                                                >
+                                                    {isBusiness ? <Send size={13} /> : <ShoppingBag size={13} />}
+                                                    {isBusiness ? "Send Offer" : "View Offers"}
+                                                </button>
+                                            </div>
+                                        </article>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    <aside className="space-y-4">
+                        <div className="rounded-[14px] border border-[#dfe8e3] bg-white p-4 shadow-sm">
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm font-black text-[#081a13]">Trending requests</p>
+                                <Flame size={16} className="text-[#009f58]" />
+                            </div>
+                            <div className="mt-4 space-y-3">
+                                {[
+                                    ["iPhone screen repair", "12 offers"],
+                                    ["Deep home cleaning", "8 offers"],
+                                    ["Battery replacement", "6 offers"],
+                                ].map(([title, offers]) => (
+                                    <button key={title} className="flex w-full items-center justify-between gap-3 rounded-[10px] border border-[#edf2ef] p-3 text-left hover:border-[#b8d8c5]">
+                                        <span>
+                                            <span className="block text-xs font-black text-[#081a13]">{title}</span>
+                                            <span className="block text-[11px] font-semibold text-[#6b7a73]">{offers}</span>
+                                        </span>
+                                        <ChevronDown size={13} className="-rotate-90 text-[#87958f]" />
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    )}
-                </div>
+
+                        {isBusiness && !canSendBusinessOffer && (
+                            <div className="rounded-[14px] border border-[#cfe8d9] bg-[#edf9f2] p-4">
+                                <ShieldCheck size={20} className="text-[#009f58]" />
+                                <h3 className="mt-3 text-sm font-black text-[#081a13]">Phone verification required</h3>
+                                <p className="mt-2 text-xs font-bold leading-5 text-[#5c6c64]">{businessQuoteBlocker}</p>
+                                <Link href="/profile" className="mt-3 inline-flex h-9 items-center justify-center rounded-[8px] bg-[#009f58] px-4 text-xs font-black text-white">
+                                    Complete profile
+                                </Link>
+                            </div>
+                        )}
+
+                        <div className="rounded-[14px] border border-[#dfe8e3] bg-white p-4 shadow-sm">
+                            <div className="flex items-start gap-3">
+                                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e9f8f0] text-[#009f58]">
+                                    <MessageSquare size={18} />
+                                </span>
+                                <div>
+                                    <h3 className="text-sm font-black text-[#081a13]">Need help?</h3>
+                                    <p className="mt-1 text-xs font-semibold leading-5 text-[#6b7a73]">Our team is here to support your first Needero deal.</p>
+                                </div>
+                            </div>
+                            <Link href="/support" className="mt-4 inline-flex h-9 w-full items-center justify-center rounded-[8px] border border-[#d7e5dc] text-xs font-black text-[#081a13]">
+                                Contact support
+                            </Link>
+                        </div>
+                    </aside>
+                </section>
             </main>
         </RouteGuard>
     );

@@ -1,0 +1,80 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      "$uid": {
+        ".read": "auth != null && $uid === auth.uid",
+        ".write": "auth != null && $uid === auth.uid"
+      }
+    },
+    "usernames": {
+      ".read": "auth != null",
+      "$username": {
+        ".write": "auth != null && ((!data.exists() && newData.child('uid').val() === auth.uid) || data.child('uid').val() === auth.uid || newData.val() === null)"
+      }
+    },
+    "accounts": {
+      ".read": "auth != null",
+      "developer": {
+        "$uid": {
+          ".write": "auth != null && $uid === auth.uid"
+        }
+      },
+      "personal": {
+        "$uid": {
+          ".write": "auth != null && $uid === auth.uid"
+        }
+      },
+      "customer": {
+        "$uid": {
+          ".write": "auth != null && $uid === auth.uid"
+        }
+      },
+      "business": {
+        "$uid": {
+          ".write": "auth != null && $uid === auth.uid"
+        }
+      }
+    },
+    "partnerRegistrations": {
+      ".read": false,
+      "repairShop": {
+        "$registrationId": {
+          ".read": "auth != null && data.child('userId').val() === auth.uid",
+          ".write": "auth != null && ((!data.exists() && newData.child('userId').val() === auth.uid) || data.child('userId').val() === auth.uid)"
+        }
+      },
+      "homeService": {
+        "$registrationId": {
+          ".read": "auth != null && data.child('userId').val() === auth.uid",
+          ".write": "auth != null && ((!data.exists() && newData.child('userId').val() === auth.uid) || data.child('userId').val() === auth.uid)"
+        }
+      }
+    },
+    "treasury": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "completedOffers": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "needStatuses": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "reviews": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "threads": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "messages": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
+  }
+}

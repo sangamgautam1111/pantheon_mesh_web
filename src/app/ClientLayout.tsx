@@ -30,10 +30,10 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     {!isAuthPage && <Sidebar mobileOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />}
                     {/* 
                         Fiverr-style: no sidebar on desktop, so no marginLeft.
-                        Only add top padding for the fixed topbar height (64px).
+                        Only add top padding for the fixed topbar height.
                     */}
                     <div
-                        className={`${!isAuthPage ? "pt-16" : ""} min-h-screen`}
+                        className={`${!isAuthPage ? "pt-14" : ""} min-h-screen`}
                         style={{ background: "var(--bg-primary)" }}
                     >
                         {children}

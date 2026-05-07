@@ -10,10 +10,10 @@
    ════════════════════════════════════════════════ */
 :root {
     /* Brand Colors */
-    --ndgreen: #222325;
-    --ndgreen-hover: #000000;
-    --ndgreen-light: #f5f5f5;
-    --ndgreen-mid: #dadbdd;
+    --ndgreen: #009f58;
+    --ndgreen-hover: #087646;
+    --ndgreen-light: #e9f8f0;
+    --ndgreen-mid: #b8d8c5;
 
     /* Backgrounds */
     --bg-primary: #ffffff;
@@ -36,18 +36,18 @@
     --text-primary: #404145;
     --text-secondary: #74767e;
     --text-disabled: #b5b6ba;
-    --text-link: #222325;
+    --text-link: #009f58;
 
     /* Legacy color mapping (keep compat with existing pages) */
-    --gcp-blue: #222325;
-    --gcp-blue-hover: #000000;
-    --gcp-green: #222325;
-    --gcp-green-dark: #000000;
+    --gcp-blue: #009f58;
+    --gcp-blue-hover: #087646;
+    --gcp-green: #009f58;
+    --gcp-green-dark: #087646;
     --gcp-yellow: #ffbe57;
     --gcp-yellow-dark: #e5a800;
     --gcp-red: #e63946;
     --gcp-red-dark: #c1121f;
-    --gcp-cyan: #222325;
+    --gcp-cyan: #009f58;
 
     /* Cards */
     --card-bg: #ffffff;
@@ -56,16 +56,16 @@
     --card-shadow-hover: 0 8px 24px rgba(0,0,0,0.10);
 
     /* Buttons */
-    --btn-primary-bg: #222325;
+    --btn-primary-bg: #009f58;
     --btn-primary-text: #ffffff;
-    --btn-primary-hover: #000000;
+    --btn-primary-hover: #087646;
     --btn-secondary-bg: #ffffff;
     --btn-secondary-text: #404145;
 
     /* Inputs */
     --input-bg: #ffffff;
     --input-border: #dadbdd;
-    --input-focus: #222325;
+    --input-focus: #009f58;
 
     /* Overlay */
     --overlay-bg: rgba(0, 0, 0, 0.55);

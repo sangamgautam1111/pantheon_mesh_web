@@ -122,14 +122,14 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
     }, [dismissedNotificationIds, user?.uid]);
 
     const STATIC_PAGES: SearchResult[] = [
-        { type: "page", label: "Browse Service Offers", href: "/marketplace" },
-        { type: "page", label: "My Service Needs", href: "/client" },
-        { type: "page", label: "Post Service Need", href: "/client/new" },
+        { type: "page", label: "Browse Customer Needs", href: "/marketplace" },
+        { type: "page", label: "My Requests", href: "/client" },
+        { type: "page", label: "Post a Request", href: "/client/new" },
         { type: "page", label: "Messages", href: "/messages" },
         { type: "page", label: "Profile", href: "/profile" },
         { type: "page", label: "Privacy Policy", href: "/privacy" },
         { type: "page", label: "Terms of Service", href: "/terms" },
-        { type: "page", label: "Service Marketplace", href: "/marketplace" },
+        { type: "page", label: "Needero Marketplace", href: "/marketplace" },
         ...(profile?.accountType === "customer" ? [] : [
             { type: "page", label: "Business Plans", href: "/pricing" },
         ]),
@@ -268,7 +268,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
 
     return (
         <header
-            className="fixed left-0 right-0 top-0 z-50 flex h-16 items-center justify-between px-4 lg:px-8 transition-shadow duration-200"
+            className="fixed left-0 right-0 top-0 z-50 flex h-14 items-center justify-between px-4 lg:px-8 transition-shadow duration-200"
             style={{
                 background: "#ffffff",
                 borderBottom: "1px solid #e4e5e7",
@@ -295,8 +295,8 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                             className="h-full w-full object-contain"
                         />
                     </div>
-                    <span className="hidden sm:block font-heading font-extrabold text-xl tracking-tight" style={{ color: "var(--text-primary)" }}>
-                        Need<span style={{ color: "var(--text-primary)" }}>ero</span>
+                    <span className="hidden sm:block font-heading font-extrabold text-xl tracking-tight" style={{ color: "#081a13" }}>
+                        Need<span style={{ color: "#009f58" }}>ero</span>
                     </span>
                 </Link>
             </div>
@@ -307,8 +307,8 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                     className="flex cursor-text items-center overflow-hidden rounded-full border transition-all"
                     style={{
                         background: "#ffffff",
-                        borderColor: searchOpen ? "#222325" : "#e4e5e7",
-                        boxShadow: searchOpen ? "0 0 0 3px rgba(34,35,37,0.08)" : "none",
+                        borderColor: searchOpen ? "#009f58" : "#dfe8e3",
+                        boxShadow: searchOpen ? "0 0 0 3px rgba(0,159,88,0.10)" : "none",
                     }}
                     onClick={() => {
                         setSearchOpen(true);
@@ -325,7 +325,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                         onKeyDown={handleKeyDown}
                         className="h-11 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none"
                         style={{ color: "var(--text-primary)" }}
-                        placeholder="Search service needs, businesses, offers..."
+                        placeholder="Search customer needs, services, businesses, offers..."
                     />
                     {searchOpen && searchQuery && (
                         <button
@@ -344,7 +344,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                             e.stopPropagation();
                             runGlobalSearch();
                         }}
-                        className="h-11 bg-[#222325] px-5 text-sm font-bold text-white transition hover:bg-black"
+                        className="h-11 bg-[#081a13] px-5 text-sm font-bold text-white transition hover:bg-black"
                     >
                         Search
                     </button>
@@ -427,21 +427,21 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                 <nav className="desktop-only mr-3 flex items-center gap-1">
                     <Link
                         href="/marketplace"
-                        className={`relative px-3 py-5 text-sm font-bold transition-colors hover:text-[#0a8f45] ${
+                        className={`relative px-3 py-4 text-sm font-bold transition-colors hover:text-[#009f58] ${
                             isBrowseActive ? "text-[#0a8f45] after:absolute after:bottom-0 after:left-3 after:right-3 after:h-0.5 after:rounded-full after:bg-[#0a8f45]" : "text-[#62646a]"
                         }`}
                     >
-                        Browse Service Offers
+                        Browse Customer Needs
                     </Link>
                     {profile?.accountType === "customer" && (
                         <Link
                             href="/client/new"
                             className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-black transition ${
-                                isPostActive ? "bg-[#08783b] text-white" : "bg-[#0a8f45] text-white hover:bg-[#08783b]"
+                                isPostActive ? "bg-[#087646] text-white" : "bg-[#009f58] text-white hover:bg-[#087646]"
                             }`}
                         >
                             <Plus size={14} />
-                            Post Service Need
+                            Post a Request
                         </Link>
                     )}
                     {profile?.accountType === "business" && (
@@ -451,7 +451,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                     )}
                     <Link
                         href="/messages"
-                        className={`relative px-3 py-5 text-sm font-bold transition-colors hover:text-[#0a8f45] ${
+                        className={`relative px-3 py-4 text-sm font-bold transition-colors hover:text-[#009f58] ${
                             isMessagesActive ? "text-[#0a8f45] after:absolute after:bottom-0 after:left-3 after:right-3 after:h-0.5 after:rounded-full after:bg-[#0a8f45]" : "text-[#62646a]"
                         }`}
                     >
@@ -460,7 +460,7 @@ export const TopBar = ({ onMenuToggle }: TopBarProps) => {
                     {!user && (
                         <Link
                             href="/register"
-                            className={`relative px-3 py-5 text-sm font-bold transition-colors hover:text-[#0a8f45] ${
+                            className={`relative px-3 py-4 text-sm font-bold transition-colors hover:text-[#009f58] ${
                                 isPartnerActive ? "text-[#0a8f45] after:absolute after:bottom-0 after:left-3 after:right-3 after:h-0.5 after:rounded-full after:bg-[#0a8f45]" : "text-[#62646a]"
                             }`}
                         >
